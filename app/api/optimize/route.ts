@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       try {
         const arrayBuffer = await cvFile.arrayBuffer();
         const { text } = await extractText(arrayBuffer);
-        cvText = text;
+        cvText = text.join("\n");
       } catch (pdfError) {
         console.error("PDF parsing error:", pdfError);
         return NextResponse.json(
