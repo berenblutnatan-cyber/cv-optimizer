@@ -1,0 +1,17 @@
+node_modules
+
+# Env files (never commit secrets)
+.env
+.env.Local
+.env.*
+!.env.example
+
+# Local Next.js build output
+.next
+
+# Misc
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm-cache
