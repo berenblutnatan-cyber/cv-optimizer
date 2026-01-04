@@ -341,9 +341,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                 <h4 className="text-white font-semibold tracking-tight">
                   {coverLetterTab.title || "Cover Letter"}
                 </h4>
-                {coverLetterTab.subtitle && (
-                  <p className="text-sm text-white/70">{coverLetterTab.subtitle}</p>
-                )}
               </div>
             </div>
 
