@@ -110,6 +110,25 @@ function looksLikeContact(line: string) {
   return isEmail || isUrl || isLinkedIn || isPhone;
 }
 
+function canonicalSectionName(line: string): string | null {
+  const t = line.trim().replace(/:\s*$/, "");
+  if (!t) return null;
+
+  // Normalize common CV section headers into a canonical set
+  const s = t.toLowerCase();
+  if (/(^|\b)(summary|profile|about me|about)(\b|$)/.test(s)) return "Summary";
+  if (/(^|\b)(experience|work experience|employment|work history|professional experience)(\b|$)/.test(s))
+    return "Experience";
+  if (/(^|\b)(education|academics?|academic background)(\b|$)/.test(s)) return "Education";
+  if (/(^|\b)(skills|technical skills|core competencies|competencies)(\b|$)/.test(s)) return "Skills";
+  if (/(^|\b)(projects?|project experience)(\b|$)/.test(s)) return "Projects";
+  if (/(^|\b)(certifications?|certificates?|licenses?)(\b|$)/.test(s)) return "Certifications";
+  if (/(^|\b)(awards?|honors?)(\b|$)/.test(s)) return "Awards";
+  if (/(^|\b)(volunteering|volunteer)(\b|$)/.test(s)) return "Volunteer";
+  if (/(^|\b)(languages?)(\b|$)/.test(s)) return "Languages";
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
@@ -214,67 +233,138 @@ export async function POST(request: NextRequest) {
     });
     y -= 10;
 
-    // Body rendering with simple styling heuristics
-    for (const raw of bodyLines) {
-      const line = raw.replace(/\t/g, "  ");
-      const t = line.trim();
+    const renderLines = (lines: string[]) => {
+      for (const raw of lines) {
+        const line = raw.replace(/\t/g, "  ");
+        const t = line.trim();
 
-      if (!t) {
-        y -= bodyLineHeight * 0.6;
-        continue;
-      }
-
-      if (isSectionHeader(t)) {
-        y -= 4;
-        const header = t.replace(/:\s*$/, "");
-        drawWrapped(header.toUpperCase(), { x: pageMargin, font: fontBold, size: headingFontSize, color: rgb(0.1, 0.2, 0.35) });
-        y -= 2;
-        continue;
-      }
-
-      const isBullet = /^(\s*[-*]\s+|\s*•\s+)/.test(line);
-      if (isBullet) {
-        const cleaned = line.replace(/^(\s*[-*]\s+|\s*•\s+)/, "").trim();
-        // Draw bullet + text with indent
-        const bulletX = pageMargin;
-        const textX = pageMargin + 14;
-        if (y < pageMargin + bodyLineHeight) {
-          page = pdfDoc.addPage(pageSize);
-          ({ width, height } = page.getSize());
-          y = height - pageMargin;
+        if (!t) {
+          y -= bodyLineHeight * 0.6;
+          continue;
         }
-        page.drawText("•", {
-          x: bulletX,
-          y: y - bodyFontSize,
-          size: bodyFontSize,
-          font: fontRegular,
-          color: rgb(0.08, 0.08, 0.08),
-        });
-        const wrapped = wrapLineToWidth(cleaned, usableWidth - 14, fontRegular, bodyFontSize);
-        for (const [idx, w] of wrapped.entries()) {
+
+        const isBullet = /^(\s*[-*]\s+|\s*•\s+)/.test(line);
+        if (isBullet) {
+          const cleaned = line.replace(/^(\s*[-*]\s+|\s*•\s+)/, "").trim();
+          // Draw bullet + text with indent
+          const bulletX = pageMargin;
+          const textX = pageMargin + 14;
           if (y < pageMargin + bodyLineHeight) {
             page = pdfDoc.addPage(pageSize);
             ({ width, height } = page.getSize());
             y = height - pageMargin;
           }
-          page.drawText(w, {
-            x: textX,
+          page.drawText("•", {
+            x: bulletX,
             y: y - bodyFontSize,
             size: bodyFontSize,
             font: fontRegular,
             color: rgb(0.08, 0.08, 0.08),
           });
-          y -= bodyLineHeight;
-          // For wrapped bullet lines after the first, don't repeat bullet; indent stays
-          if (idx === 0) {
-            // already drew bullet, nothing else
+          const wrapped = wrapLineToWidth(cleaned, usableWidth - 14, fontRegular, bodyFontSize);
+          for (const w of wrapped) {
+            if (y < pageMargin + bodyLineHeight) {
+              page = pdfDoc.addPage(pageSize);
+              ({ width, height } = page.getSize());
+              y = height - pageMargin;
+            }
+            page.drawText(w, {
+              x: textX,
+              y: y - bodyFontSize,
+              size: bodyFontSize,
+              font: fontRegular,
+              color: rgb(0.08, 0.08, 0.08),
+            });
+            y -= bodyLineHeight;
           }
+          continue;
+        }
+
+        // Normal line
+        drawWrapped(line.trimEnd(), { x: pageMargin, font: fontRegular, size: bodyFontSize });
+      }
+    };
+
+    // Parse body into sections using keywords + header heuristics, then render in a fixed order
+    const sections: Record<string, string[]> = {};
+    const seenOrder: string[] = [];
+    let currentSection = "Summary";
+    sections[currentSection] = [];
+    seenOrder.push(currentSection);
+
+    for (const raw of bodyLines) {
+      const line = raw.replace(/\t/g, "  ");
+      const t = line.trim();
+      if (!t) {
+        sections[currentSection].push("");
+        continue;
+      }
+
+      const canonical = canonicalSectionName(t);
+      if (canonical) {
+        currentSection = canonical;
+        if (!sections[currentSection]) {
+          sections[currentSection] = [];
+          seenOrder.push(currentSection);
         }
         continue;
       }
 
-      // Normal line
-      drawWrapped(line.trimEnd(), { x: pageMargin, font: fontRegular, size: bodyFontSize });
+      if (isSectionHeader(t)) {
+        // Unknown header – keep it but still render it later
+        const header = t.replace(/:\s*$/, "").trim();
+        currentSection = header;
+        if (!sections[currentSection]) {
+          sections[currentSection] = [];
+          seenOrder.push(currentSection);
+        }
+        continue;
+      }
+
+      sections[currentSection].push(line);
+    }
+
+    const canonicalOrder = [
+      "Summary",
+      "Experience",
+      "Projects",
+      "Education",
+      "Skills",
+      "Certifications",
+      "Awards",
+      "Volunteer",
+      "Languages",
+    ];
+
+    const rendered = new Set<string>();
+    const renderSection = (title: string, lines: string[]) => {
+      const hasContent = lines.some((l) => l.trim().length > 0);
+      if (!hasContent) return;
+      y -= 4;
+      drawWrapped(title.toUpperCase(), {
+        x: pageMargin,
+        font: fontBold,
+        size: headingFontSize,
+        color: rgb(0.1, 0.2, 0.35),
+      });
+      y -= 2;
+      renderLines(lines);
+      y -= 2;
+    };
+
+    for (const title of canonicalOrder) {
+      const lines = sections[title];
+      if (!lines) continue;
+      renderSection(title, lines);
+      rendered.add(title);
+    }
+
+    // Render any remaining sections (unknown headers) in the order we encountered them
+    for (const title of seenOrder) {
+      if (rendered.has(title)) continue;
+      const lines = sections[title];
+      if (!lines) continue;
+      renderSection(title, lines);
     }
 
     const bytes = await pdfDoc.save();

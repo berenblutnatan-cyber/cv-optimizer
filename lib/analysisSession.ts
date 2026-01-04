@@ -1,8 +1,23 @@
 export const ANALYSIS_SESSION_KEY = "cv_optimizer_analysis_v1";
 
-export function saveAnalysisToSession(analysis: unknown) {
+export type AnalysisMode = "title_only" | "specific_role";
+
+export type AnalysisSessionPayload = {
+  analysis: unknown;
+  meta: {
+    mode: AnalysisMode;
+    jobTitle: string;
+    jobUrl?: string;
+    companyName?: string;
+    cvTextUsed?: string;
+    jobDescriptionUsed?: string;
+  };
+  coverLetter?: string;
+};
+
+export function saveAnalysisToSession(payload: AnalysisSessionPayload) {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(ANALYSIS_SESSION_KEY, JSON.stringify(analysis));
+  window.sessionStorage.setItem(ANALYSIS_SESSION_KEY, JSON.stringify(payload));
 }
 
 export function loadAnalysisFromSession<T = unknown>(): T | null {

@@ -6,6 +6,33 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+function cleanTitle(raw: string) {
+  return raw
+    .replace(/[*_`~]/g, "") // strip markdown emphasis
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function inferJobTitleFromDescription(desc: string, companyName: string) {
+  const lines = desc.replace(/\r\n/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return "";
+  let first = lines[0];
+  // Remove common separators + company name
+  if (companyName) {
+    const re = new RegExp(companyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+    first = first.replace(re, "").trim();
+  }
+  first = first.replace(/^the job posting for (the )?(position|role)\s*(of)?/i, "").trim();
+  first = first.replace(/^job posting[:\-]?\s*/i, "").trim();
+  first = first.replace(/^position[:\-]?\s*/i, "").trim();
+  first = first.replace(/^role[:\-]?\s*/i, "").trim();
+  first = first.replace(/\s*\|\s*/g, " ").replace(/\s*-\s*/g, " ").trim();
+  first = cleanTitle(first);
+  // Keep it reasonably short
+  if (first.length > 80) first = first.slice(0, 80).trim();
+  return first;
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -19,9 +46,11 @@ export async function POST(request: NextRequest) {
     
     let cvText = formData.get("cvText") as string || "";
     const cvFile = formData.get("cv") as File | null;
+    const mode = (formData.get("mode") as string) || "specific_role";
     const jobDescription = formData.get("jobDescription") as string || "";
     const jobUrl = formData.get("jobUrl") as string || "";
     const jobTitle = formData.get("jobTitle") as string || "";
+    const companyName = formData.get("companyName") as string || "";
 
     // Extract text from PDF if provided
     if (cvFile && !cvText) {
@@ -80,14 +109,22 @@ User-provided job title (may be empty): ${jobTitle}`,
     }
 
     if (!finalJobDescription) {
-      // Allow "general" optimization based on job title only
-      if (!jobTitle) {
+      // Allow title-only optimization
+      if (!jobTitle && mode === "title_only") {
+        return NextResponse.json({ error: "No job title provided" }, { status: 400 });
+      }
+      if (mode === "specific_role") {
         return NextResponse.json(
-          { error: "No job title or job description provided" },
+          { error: "No job description provided for specific-role mode" },
           { status: 400 }
         );
       }
     }
+
+    const effectiveJobTitle =
+      cleanTitle(jobTitle) ||
+      (finalJobDescription ? inferJobTitleFromDescription(finalJobDescription, companyName) : "") ||
+      "Role";
 
     // Analyze CV against job description using OpenAI
     const analysisPrompt = `You are an expert HR consultant and CV optimization specialist. Analyze the following CV against the job description and provide detailed, actionable feedback.
@@ -96,7 +133,10 @@ User-provided job title (may be empty): ${jobTitle}`,
 ${cvText}
 
 ## Job Title (provided by user, may be empty):
-${jobTitle}
+${effectiveJobTitle}
+
+## Company (may be empty):
+${companyName}
 
 ## Job Description (may be empty if user wants general optimization for the job title):
 ${finalJobDescription || "[No job description provided. Optimize generally for the job title above.]"}
@@ -121,8 +161,8 @@ CRITICAL RULES:
 
 Return your analysis as a JSON object with this exact structure:
 {
-  "overallScore": <number 0-100 representing likelihood of passing initial screening for THIS role (ATS + recruiter screen)>,
-  "summary": "<one sentence about screening likelihood and why (keywords + evidence + clarity)>",
+  "overallScore": <number 0-100 representing match score for THIS role based on ACTUAL CV evidence>,
+  "summary": "<one sentence match assessment and why (keywords + evidence + clarity)>",
   "strengths": [
     "<existing strength that matches the role>",
     "<existing strength that matches the role>",
@@ -156,7 +196,7 @@ Return your analysis as a JSON object with this exact structure:
 Remember: You are helping the candidate present their REAL experience more effectively, not creating a fictional CV.
 
 Scoring guidance (overallScore):
-- This is NOT a generic 'match %'. Score the probability the CV passes initial screening for this role.
+- This is a role-specific match score based on what the CV actually demonstrates.
 - Weigh: role-relevant keyword coverage, evidence of required skills/responsibilities in experience bullets, seniority/years fit, clarity/readability, and missing must-haves.
 - Penalize: vague wording, missing core requirements, lack of measurable outcomes, and unclear scope.
 - Do NOT reward invented experience; only what is supported in the CV text.
@@ -205,6 +245,14 @@ Return ONLY the JSON object, no other text.`;
     return NextResponse.json({
       success: true,
       analysis,
+      meta: {
+        mode: mode === "title_only" ? "title_only" : "specific_role",
+        jobTitle: effectiveJobTitle,
+        jobUrl,
+        companyName,
+        cvTextUsed: cvText,
+        jobDescriptionUsed: finalJobDescription || "",
+      },
     });
 
   } catch (error) {

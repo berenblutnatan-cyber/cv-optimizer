@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
-  title: "CV Optimizer - Tailor Your CV to Land More Interviews",
-  description: "Upload your CV and job description. Get AI-powered suggestions to optimize your CV for ATS and increase your chances of getting interviews.",
+  title: "CV Optimizer",
+  description: "Choose quick optimization by job title or tailor your CV to a specific job posting with a cover letter.",
 };
 
 export default function RootLayout({
@@ -16,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans`}>{children}</body>
     </html>
   );
 }
