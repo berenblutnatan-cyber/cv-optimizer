@@ -90,13 +90,6 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 pt-8 pb-5 flex-1 min-h-0 w-full">
         <div className="h-full min-h-0 flex flex-col">
-          {/* Counter */}
-          <div className="text-center mb-5">
-            <div className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-lg font-semibold">
-              ✨ {cvOptimizedCount.toLocaleString()} CVs optimized
-            </div>
-          </div>
-
           {/* Hero Section */}
           <div className="text-center mb-7">
             <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white mb-2">
@@ -337,8 +330,11 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
       </main>
 
       <footer className="relative z-10 border-t border-white/10 py-3 mt-auto">
-        <div className="max-w-6xl mx-auto px-4 text-center text-white/60 text-xs">
-          Powered by OpenAI • Your data is not stored
+        <div className="max-w-6xl mx-auto px-4 flex flex-col items-center gap-2">
+          <div className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white">
+            {cvOptimizedCount.toLocaleString()} CVs optimized
+          </div>
+          <div className="text-center text-white/60 text-xs">Powered by OpenAI • Your data is not stored</div>
         </div>
       </footer>
     </div>
