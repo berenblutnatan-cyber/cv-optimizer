@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { CVUpload } from "@/components/CVUpload";
 import { JobInput } from "@/components/JobInput";
 import { AnalysisMode, saveAnalysisToSession } from "@/lib/analysisSession";
+import { FileText, Sparkles, Link2, Target, Check, ArrowDown, Upload, Download, Briefcase } from "lucide-react";
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 
 export function HomeClient({ initialCount }: { initialCount: number }) {
   const router = useRouter();
@@ -80,7 +88,7 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
   };
 
   return (
-    <div className="min-h-screen text-white bg-black flex flex-col overflow-hidden">
+    <div className="min-h-screen text-white bg-black flex flex-col overflow-x-hidden overflow-y-auto">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 h-[540px] w-[920px] -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-600/22 via-sky-500/14 to-fuchsia-500/12 blur-3xl" />
@@ -88,15 +96,48 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(255,255,255,0.05),transparent_45%),radial-gradient(circle_at_80%_18%,rgba(99,102,241,0.10),transparent_50%)]" />
       </div>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-4 pt-8 pb-5 flex-1 min-h-0 w-full">
-        <div className="h-full min-h-0 flex flex-col">
+      {/* Auth Header */}
+      <header className="relative z-20 w-full px-4 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="text-xl font-bold text-white">CV Optimizer</div>
+          <div className="flex items-center gap-3">
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="px-4 py-2 text-sm font-medium bg-purple-500 hover:bg-purple-400 text-white rounded-lg transition-colors">
+                  Sign Up
+                </button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton 
+                appearance={{
+                  elements: {
+                    avatarBox: "w-9 h-9"
+                  }
+                }}
+              />
+            </SignedIn>
+          </div>
+        </div>
+      </header>
+
+      <main className="relative z-10 max-w-7xl mx-auto px-4 pt-4 pb-5 w-full">
+        <div className="flex flex-col">
           {/* Hero Section */}
           <div className="text-center mb-7">
-            <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white mb-2">
-              AI That Adapts Your CV to the Job
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-3">
+              Land More Interviews with an{" "}
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+                AI-Optimized CV
+              </span>
             </h2>
-            <p className="text-white/70 max-w-3xl mx-auto text-base">
-              Pick quick optimization or tailor to a specific posting — with an optimized CV and a cover letter.
+            <p className="text-white/60 max-w-2xl mx-auto text-lg">
+              Upload your CV, get a tailored version that matches the job — plus a cover letter ready to send.
             </p>
 
             <div className="mt-5 flex items-center justify-center gap-10 text-white/80">
@@ -121,67 +162,110 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
             </div>
           </div>
 
-          <div className="bg-white/4 border border-white/10 rounded-2xl p-6 sm:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.50)] backdrop-blur-md flex-1 min-h-0 flex flex-col">
-            {/* Step tabs */}
-            <div className="mb-4 flex gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
-              <button
-                type="button"
-                onClick={() => {
-                  setError("");
-                  setMode(null);
-                  setStepTab("choose");
-                }}
-                className={`flex-1 py-3.5 px-5 rounded-lg text-base font-medium transition-colors ${
-                  stepTab === "choose" ? "bg-indigo-500 text-white" : "text-white/70 hover:bg-white/5"
-                }`}
-              >
-                1) Choose option
-              </button>
-              <button
-                type="button"
-                disabled={!mode}
-                onClick={() => mode && setStepTab("upload")}
-                className={`flex-1 py-3.5 px-5 rounded-lg text-base font-medium transition-colors ${
-                  stepTab === "upload" ? "bg-indigo-500 text-white" : "text-white/70 hover:bg-white/5"
-                } disabled:opacity-40 disabled:hover:bg-transparent`}
-              >
-                2) Upload & Analyze
-              </button>
+          <div className="bg-white/4 border border-white/10 rounded-2xl p-6 sm:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.50)] backdrop-blur-md flex flex-col overflow-visible">
+            {/* Progress Stepper */}
+            <div className="mb-6 flex items-center justify-center">
+              <div className="flex items-center gap-0">
+                {/* Step 1 */}
+                <div className="flex items-center">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all ${
+                    stepTab === "choose" 
+                      ? "bg-purple-500 border-purple-500 text-white" 
+                      : mode 
+                        ? "bg-purple-500 border-purple-500 text-white"
+                        : "bg-white/10 border-white/30 text-white/50"
+                  }`}>
+                    {mode ? <Check className="w-4 h-4" /> : <span className="text-sm font-semibold">1</span>}
+                  </div>
+                  <span className={`ml-3 text-sm font-medium transition-colors ${
+                    stepTab === "choose" ? "text-white" : "text-white/50"
+                  }`}>
+                    Choose Option
+                  </span>
+                </div>
+
+                {/* Connector Line */}
+                <div className={`w-16 sm:w-24 h-0.5 mx-4 transition-colors ${
+                  mode ? "bg-purple-500" : "bg-white/20"
+                }`} />
+
+                {/* Step 2 */}
+                <div className="flex items-center">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all ${
+                    stepTab === "upload" 
+                      ? "bg-purple-500 border-purple-500 text-white" 
+                      : "bg-white/10 border-white/30 text-white/50"
+                  }`}>
+                    <span className="text-sm font-semibold">2</span>
+                  </div>
+                  <span className={`ml-3 text-sm font-medium transition-colors ${
+                    stepTab === "upload" ? "text-white" : "text-white/50"
+                  }`}>
+                    Upload & Analyze
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-auto pr-1">
+            <div className="overflow-visible">
               {stepTab === "choose" ? (
-                <div className="grid md:grid-cols-2 gap-6 min-h-full">
+                <div className="grid md:grid-cols-2 gap-6 pt-4">
+                  {/* Left Card - Quick Optimize (Neutral) */}
                   <div
-                    className={`rounded-2xl border px-8 py-8 transition-colors min-h-[320px] h-full ${
+                    className={`rounded-2xl border px-6 py-6 transition-all duration-200 ${
                       mode === "title_only"
-                        ? "border-indigo-300/35 bg-indigo-500/15 shadow-[0_0_0_1px_rgba(129,140,248,0.35)]"
-                        : "border-white/10 bg-white/5"
+                        ? "border-white/30 bg-white/10 shadow-lg"
+                        : "border-white/15 bg-white/5 hover:border-white/25 hover:bg-white/[0.07]"
                     }`}
                   >
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-start gap-4">
-                        <div className="mt-0.5 h-14 w-14 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0">
-                          <svg className="h-6 w-6 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14H5V6a2 2 0 012-2z" />
-                          </svg>
+                    <div className="flex flex-col">
+                        <div className="flex items-start gap-4">
+                        <div className="mt-0.5 h-14 w-14 rounded-2xl border border-white/15 bg-white/5 flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-6 w-6 text-white/70" />
                         </div>
                         <div>
                           <div className="text-xl font-semibold text-white tracking-tight">Quick Optimize</div>
-                          <div className="mt-2 text-base text-white/70 leading-relaxed">
-                            General CV optimization for a role type — no job posting needed.
+                          <div className="mt-2 text-base text-white/60 leading-relaxed">
+                            Polishes your existing CV for general roles.
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-7 space-y-3 text-base flex-1">
-                        <div className="text-white/80">
-                          <span className="font-semibold text-white">You provide:</span>{" "}
-                          <span className="text-white/70">Job title + CV</span>
+                      <div className="mt-6 space-y-4">
+                        {/* Input Section */}
+                        <div className="rounded-xl bg-white/[0.03] border border-white/10 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Upload className="w-3.5 h-3.5 text-white/40" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/40">You provide</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                              <FileText className="w-4 h-4 text-white/60" />
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-white/90">Your CV</span>
+                              <span className="text-xs text-white/40 ml-2">+ Job title</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-white/80">
-                          <span className="font-semibold text-white">You get:</span>{" "}
-                          <span className="text-white/70">Match score + optimized CV + key improvements</span>
+
+                        {/* Arrow */}
+                        <div className="flex justify-center">
+                          <ArrowDown className="w-4 h-4 text-white/30" />
+                        </div>
+
+                        {/* Output Section */}
+                        <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Download className="w-3.5 h-3.5 text-emerald-400/60" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400/60">You get</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                              <Sparkles className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <span className="text-sm font-medium text-white/90">Polished CV</span>
+                          </div>
                         </div>
                       </div>
 
@@ -192,57 +276,106 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
                           setMode("title_only");
                           setStepTab("upload");
                         }}
-                        className="mt-8 w-full px-7 py-4 bg-indigo-500 hover:bg-indigo-400 border border-white/10 text-white text-lg font-semibold rounded-2xl transition-colors"
+                        className="mt-8 w-full px-7 py-4 bg-white/10 hover:bg-white/15 border border-white/15 text-white text-lg font-semibold rounded-2xl transition-all duration-200"
                       >
-                        Select Quick Optimize
+                        Quick Polish
                       </button>
                     </div>
                   </div>
 
-                  <div
-                    className={`rounded-2xl border px-8 py-8 transition-colors min-h-[320px] h-full ${
-                      mode === "specific_role"
-                        ? "border-indigo-300/35 bg-indigo-500/15 shadow-[0_0_0_1px_rgba(129,140,248,0.35)]"
-                        : "border-white/10 bg-white/5"
-                    }`}
-                  >
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-start gap-4">
-                        <div className="mt-0.5 h-14 w-14 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0">
-                          <svg className="h-6 w-6 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19a8 8 0 100-16 8 8 0 000 16zm10 2l-4.35-4.35" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="text-xl font-semibold text-white tracking-tight">Tailor to a Specific Job</div>
-                          <div className="mt-2 text-base text-white/70 leading-relaxed">
-                            Tailored optimization for a real posting + a cover letter you can download.
+                  {/* Right Card - Tailor to Job (Recommended) */}
+                  <div className="relative">
+                    {/* Recommended Badge */}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                      <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-purple-500 text-white text-xs font-semibold uppercase tracking-wide shadow-lg shadow-purple-500/30">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Recommended
+                      </span>
+                    </div>
+
+                    <div
+                      className={`rounded-2xl border-2 px-6 py-6 pt-8 transition-all duration-200 ${
+                        mode === "specific_role"
+                          ? "border-purple-400 bg-purple-500/15 shadow-[0_0_40px_rgba(168,85,247,0.25)]"
+                          : "border-purple-500/50 bg-purple-500/5 shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:border-purple-400/70 hover:bg-purple-500/10"
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-start gap-4">
+                          <div className="mt-0.5 h-14 w-14 rounded-2xl border border-purple-400/30 bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                            <Target className="h-6 w-6 text-purple-300" />
+                          </div>
+                          <div>
+                            <div className="text-xl font-semibold text-white tracking-tight">Tailor to Job</div>
+                            <div className="mt-2 text-base text-white/60 leading-relaxed">
+                              Rewrite your CV to match a specific job description perfectly.
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="mt-7 space-y-3 text-base flex-1">
-                        <div className="text-white/80">
-                          <span className="font-semibold text-white">You provide:</span>{" "}
-                          <span className="text-white/70">Company + job description / LinkedIn URL + CV</span>
-                        </div>
-                        <div className="text-white/80">
-                          <span className="font-semibold text-white">You get:</span>{" "}
-                          <span className="text-white/70">Match score + tailored CV + cover letter (PDF)</span>
-                        </div>
-                      </div>
+                        <div className="mt-6 space-y-4">
+                          {/* Input Section */}
+                          <div className="rounded-xl bg-purple-500/5 border border-purple-400/15 p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Upload className="w-3.5 h-3.5 text-purple-300/50" />
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-300/50">You provide</span>
+                            </div>
+                            <div className="space-y-2.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-400/20 flex items-center justify-center">
+                                  <FileText className="w-4 h-4 text-purple-300" />
+                                </div>
+                                <span className="text-sm font-medium text-white/90">Your CV</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-400/20 flex items-center justify-center">
+                                  <Link2 className="w-4 h-4 text-purple-300" />
+                                </div>
+                                <span className="text-sm font-medium text-white/90">Job URL or description</span>
+                              </div>
+                            </div>
+                          </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setError("");
-                          setMode("specific_role");
-                          setStepTab("upload");
-                        }}
-                        className="mt-8 w-full px-7 py-4 bg-indigo-500 hover:bg-indigo-400 border border-white/10 text-white text-lg font-semibold rounded-2xl transition-colors"
-                      >
-                        Select Tailored Job Mode
-                      </button>
+                          {/* Arrow */}
+                          <div className="flex justify-center">
+                            <ArrowDown className="w-4 h-4 text-purple-400/40" />
+                          </div>
+
+                          {/* Output Section */}
+                          <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Download className="w-3.5 h-3.5 text-emerald-400/60" />
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400/60">You get</span>
+                            </div>
+                            <div className="space-y-2.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                  <Target className="w-4 h-4 text-emerald-400" />
+                                </div>
+                                <span className="text-sm font-medium text-white/90">Tailored CV</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                  <FileText className="w-4 h-4 text-emerald-400" />
+                                </div>
+                                <span className="text-sm font-medium text-white/90">Cover Letter</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setError("");
+                            setMode("specific_role");
+                            setStepTab("upload");
+                          }}
+                          className="mt-8 w-full px-7 py-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 border border-purple-400/30 text-white text-lg font-semibold rounded-2xl transition-all duration-200 shadow-lg shadow-purple-500/25"
+                        >
+                          Tailor My CV
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -334,7 +467,7 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
           <div className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white">
             {cvOptimizedCount.toLocaleString()} CVs optimized
           </div>
-          <div className="text-center text-white/60 text-xs">Powered by OpenAI • Your data is not stored</div>
+          <div className="text-center text-white/60 text-xs">Powered by Google Gemini • Your data is not stored</div>
         </div>
       </footer>
     </div>

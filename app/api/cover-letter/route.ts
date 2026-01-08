@@ -69,12 +69,12 @@ STRICT REQUIREMENTS:
 - Voice: first-person, active voice
 - Do NOT sound like AI wrote this
 - Do NOT over-explain or repeat my CV
-- Do NOT use corporate fluff (e.g. “passionate”, “synergy”, “fast-paced environment”)
+- Do NOT use corporate fluff (e.g. "passionate", "synergy", "fast-paced environment")
 
 STRUCTURE:
 1. Opening (2–3 sentences)
    - Directly state the role
-   - One sharp hook linking my background to the company’s mission/product
+   - One sharp hook linking my background to the company's mission/product
 
 2. Core Value (1 short paragraph)
    - 2–3 concrete strengths or achievements from my CV
@@ -139,5 +139,3 @@ Return ONLY the cover letter text.`;
     );
   }
 }
-
-

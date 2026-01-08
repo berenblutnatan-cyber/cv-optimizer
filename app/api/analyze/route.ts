@@ -78,27 +78,38 @@ export async function POST(request: NextRequest) {
     let finalJobDescription = jobDescription;
     if (jobUrl && !jobDescription) {
       try {
-        const urlResponse = await openai.responses.create({
-          model: "gpt-4o",
-          tools: [{ type: "web_search_preview" }],
-          tool_choice: { type: "web_search_preview" },
-          input: `Go to this job posting URL and extract the full job description including title, company, requirements, qualifications, and responsibilities.
-
-Job posting URL: ${jobUrl}
-User-provided job title (may be empty): ${jobTitle}`,
-        });
-
-        let urlContent = "";
-        for (const item of urlResponse.output) {
-          if (item.type === "message" && item.content) {
-            for (const block of item.content) {
-              if (block.type === "output_text") {
-                urlContent += block.text;
-              }
-            }
+        // Try to fetch the job posting page content
+        const pageResponse = await fetch(jobUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
           }
+        });
+        if (pageResponse.ok) {
+          const html = await pageResponse.text();
+          // Extract text content (basic extraction)
+          const textContent = html
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 15000); // Limit content length
+          
+          // Use OpenAI to extract the job description from the page content
+          const extractResponse = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "user",
+                content: `Extract the job description from this webpage content. Include job title, company, requirements, qualifications, and responsibilities. Return only the extracted job description, no other commentary.\n\nWebpage content:\n${textContent}`
+              }
+            ],
+            temperature: 0.3,
+          });
+          finalJobDescription = extractResponse.choices[0]?.message?.content || "";
+        } else {
+          throw new Error("Failed to fetch URL");
         }
-        finalJobDescription = urlContent;
       } catch (urlError) {
         console.error("Error fetching job URL:", urlError);
         return NextResponse.json(
