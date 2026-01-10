@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { X, Download } from "lucide-react";
+import { useAuth, SignInButton } from "@clerk/nextjs";
 import {
   HarvardTemplate,
   ModernTemplate,
@@ -30,12 +31,15 @@ function TemplateCard({
   templateId,
   cvData,
   fileName,
+  onAuthRequired,
 }: {
   templateId: TemplateType;
   cvData: string;
   fileName: string;
+  onAuthRequired: () => void;
 }) {
   const printRef = useRef<HTMLDivElement>(null);
+  const { isSignedIn } = useAuth();
   const info = TEMPLATE_INFO[templateId];
   const Component = TEMPLATE_COMPONENTS[templateId];
 
@@ -58,6 +62,14 @@ function TemplateCard({
     `,
   });
 
+  const handleDownloadClick = () => {
+    if (!isSignedIn) {
+      onAuthRequired();
+      return;
+    }
+    handlePrint();
+  };
+
   return (
     <div className="flex flex-col bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
       {/* Template Header */}
@@ -67,7 +79,7 @@ function TemplateCard({
           <p className="text-xs text-white/60">{info.description}</p>
         </div>
         <button
-          onClick={() => handlePrint()}
+          onClick={handleDownloadClick}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors"
         >
           <Download className="w-4 h-4" />
@@ -104,6 +116,8 @@ export function TemplateSelectorModal({
   cvData,
   fileName = "Optimized-CV",
 }: TemplateSelectorModalProps) {
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -141,6 +155,7 @@ export function TemplateSelectorModal({
                 templateId={templateId}
                 cvData={cvData}
                 fileName={fileName}
+                onAuthRequired={() => setShowSignInPrompt(true)}
               />
             ))}
           </div>
@@ -159,6 +174,48 @@ export function TemplateSelectorModal({
           </button>
         </div>
       </div>
+
+      {/* Sign In Prompt Modal */}
+      {showSignInPrompt && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setShowSignInPrompt(false)}
+        >
+          <div 
+            className="relative bg-gray-900 border border-white/20 rounded-2xl shadow-2xl p-8 max-w-md text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowSignInPrompt(false)}
+              className="absolute top-4 right-4 p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-white/60" />
+            </button>
+            <div className="mb-4">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <Download className="w-8 h-8 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Sign in to Download</h3>
+              <p className="text-white/60">
+                Create a free account to download your optimized CV as a PDF.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <SignInButton mode="modal">
+                <button className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+              <button
+                onClick={() => setShowSignInPrompt(false)}
+                className="w-full px-6 py-3 bg-white/10 hover:bg-white/15 text-white font-medium rounded-xl transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

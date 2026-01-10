@@ -121,13 +121,6 @@ export default function LandingPage() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
 
-              {/* Badge */}
-              <div className="absolute -top-3 right-6">
-                <span className="px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-medium">
-                  Coming Soon
-                </span>
-              </div>
-
               {/* Hover glow */}
               <div className="absolute inset-0 rounded-2xl bg-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </div>

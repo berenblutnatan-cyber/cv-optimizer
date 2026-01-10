@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { auth } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
 
@@ -131,6 +132,15 @@ function canonicalSectionName(line: string): string | null {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication to download PDFs
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Please sign in to download your CV" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const text = sanitizeForWinAnsi(((body?.text as string | undefined) ?? ""));
     const fileName = (body?.fileName as string | undefined) ?? "Optimized-CV.pdf";

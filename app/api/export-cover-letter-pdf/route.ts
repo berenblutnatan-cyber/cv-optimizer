@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { auth } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,15 @@ function wrapLineToWidth(line: string, maxWidth: number, font: PDFFontLike, font
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication to download PDFs
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Please sign in to download your cover letter" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const text = sanitizeForWinAnsi(((body?.text as string | undefined) ?? "").trim());
     const fileName = (body?.fileName as string | undefined) ?? "Cover-Letter.pdf";

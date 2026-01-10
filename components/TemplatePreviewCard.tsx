@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Download, Maximize2, X } from "lucide-react";
+import { useAuth, SignInButton } from "@clerk/nextjs";
 import {
   HarvardTemplate,
   ModernTemplate,
@@ -30,6 +31,8 @@ export function TemplatePreviewCard({
 }: TemplatePreviewCardProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [showFullPreview, setShowFullPreview] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const { isSignedIn } = useAuth();
   const info = TEMPLATE_INFO[templateId];
   const Component = TEMPLATE_COMPONENTS[templateId];
 
@@ -71,6 +74,14 @@ export function TemplatePreviewCard({
       }
     `,
   });
+
+  const handleDownloadClick = () => {
+    if (!isSignedIn) {
+      setShowSignInPrompt(true);
+      return;
+    }
+    handlePrint();
+  };
 
   const closePreview = () => setShowFullPreview(false);
 
@@ -116,7 +127,7 @@ export function TemplatePreviewCard({
         {/* Download Button */}
         <div className="p-3 border-t border-white/10">
           <button
-            onClick={() => handlePrint()}
+            onClick={handleDownloadClick}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-colors"
           >
             <Download className="w-4 h-4" />
@@ -159,7 +170,7 @@ export function TemplatePreviewCard({
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => handlePrint()}
+                  onClick={handleDownloadClick}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors"
                 >
                   <Download className="w-4 h-4" />
@@ -180,6 +191,48 @@ export function TemplatePreviewCard({
               <div className="shadow-2xl">
                 <Component data={cvData} />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sign In Prompt Modal */}
+      {showSignInPrompt && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setShowSignInPrompt(false)}
+        >
+          <div 
+            className="relative bg-gray-900 border border-white/20 rounded-2xl shadow-2xl p-8 max-w-md text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowSignInPrompt(false)}
+              className="absolute top-4 right-4 p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-white/60" />
+            </button>
+            <div className="mb-4">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <Download className="w-8 h-8 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Sign in to Download</h3>
+              <p className="text-white/60">
+                Create a free account to download your optimized CV as a PDF.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <SignInButton mode="modal">
+                <button className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+              <button
+                onClick={() => setShowSignInPrompt(false)}
+                className="w-full px-6 py-3 bg-white/10 hover:bg-white/15 text-white font-medium rounded-xl transition-colors"
+              >
+                Maybe Later
+              </button>
             </div>
           </div>
         </div>
