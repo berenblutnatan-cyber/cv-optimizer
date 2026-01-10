@@ -2,17 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth, SignInButton } from "@clerk/nextjs";
+import { Download, X } from "lucide-react";
 import { AnalysisResults } from "@/components/AnalysisResults";
 import { AnalysisSessionPayload, clearAnalysisSession, loadAnalysisFromSession, saveAnalysisToSession } from "@/lib/analysisSession";
 import { ShellNav } from "@/components/ShellNav";
 
 export default function ResultsPage() {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
   const [payload, setPayload] = useState<AnalysisSessionPayload | null>(null);
   const [coverLetter, setCoverLetter] = useState<string>("");
   const [generatingCoverLetter, setGeneratingCoverLetter] = useState(false);
   const [downloadingCoverLetterPdf, setDownloadingCoverLetterPdf] = useState(false);
   const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
 
   useEffect(() => {
     const stored = loadAnalysisFromSession<AnalysisSessionPayload>();
@@ -108,6 +112,11 @@ export default function ResultsPage() {
                   },
                   copied: copiedCoverLetter,
                   onDownloadPdf: async () => {
+                    // Require sign-in to download
+                    if (!isSignedIn) {
+                      setShowSignInPrompt(true);
+                      return;
+                    }
                     try {
                       if (!coverLetter) return;
                       setDownloadingCoverLetterPdf(true);
@@ -147,6 +156,48 @@ export default function ResultsPage() {
           Powered by OpenAI • Your data is not stored
         </div>
       </footer>
+
+      {/* Sign In Prompt Modal */}
+      {showSignInPrompt && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setShowSignInPrompt(false)}
+        >
+          <div 
+            className="relative bg-gray-900 border border-white/20 rounded-2xl shadow-2xl p-8 max-w-md text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowSignInPrompt(false)}
+              className="absolute top-4 right-4 p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-white/60" />
+            </button>
+            <div className="mb-4">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <Download className="w-8 h-8 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Sign in to Download</h3>
+              <p className="text-white/60">
+                Create a free account to download your cover letter as a PDF.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <SignInButton mode="modal">
+                <button className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+              <button
+                onClick={() => setShowSignInPrompt(false)}
+                className="w-full px-6 py-3 bg-white/10 hover:bg-white/15 text-white font-medium rounded-xl transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

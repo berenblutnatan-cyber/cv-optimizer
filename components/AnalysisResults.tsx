@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { TemplatePreviewCard } from "./TemplatePreviewCard";
+import { TemplateType } from "./cv-templates";
 
 interface AnalysisResult {
   overallScore: number;
@@ -41,7 +43,6 @@ interface AnalysisResultsProps {
 export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "changes" | "optimized" | "cover-letter">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const scoreTone =
     results.overallScore >= 80 ? "bg-emerald-400/15 border-emerald-300/25 text-emerald-100" : results.overallScore >= 60
@@ -52,40 +53,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
     navigator.clipboard.writeText(results.optimizedCV);
     setCopiedOptimized(true);
     setTimeout(() => setCopiedOptimized(false), 2000);
-  };
-
-  const handleDownloadPdf = async () => {
-    try {
-      setDownloadingPdf(true);
-      const response = await fetch("/api/export-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: results.optimizedCV,
-          fileName: "Optimized-CV.pdf",
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.error || "Failed to generate PDF");
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "Optimized-CV.pdf";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert(e instanceof Error ? e.message : "Failed to download PDF");
-    } finally {
-      setDownloadingPdf(false);
-    }
   };
 
   const missingKeySkills =
@@ -307,29 +274,31 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
         )}
 
         {activeTab === "optimized" && (
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 flex flex-col overflow-auto">
+            {/* Header */}
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <p className="text-white/75">Here's your optimized CV with all suggested changes applied:</p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleDownloadPdf}
-                  disabled={downloadingPdf}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 disabled:bg-indigo-500/10 border border-indigo-300/20 text-indigo-100 rounded-xl transition-colors"
-                >
-                  {downloadingPdf ? "Generating PDF..." : "Download PDF"}
-                </button>
-                <button
-                  onClick={handleCopyOptimized}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/10 text-white rounded-xl transition-colors"
-                >
-                  {copiedOptimized ? "Copied!" : "Copy to Clipboard"}
-                </button>
+              <div>
+                <p className="text-white/75">Choose a template and download your optimized CV:</p>
+                <p className="text-white/50 text-sm mt-1">Click on any template to preview full size</p>
               </div>
+              <button
+                onClick={handleCopyOptimized}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/10 text-white rounded-xl transition-colors"
+              >
+                {copiedOptimized ? "Copied!" : "Copy Raw Text"}
+              </button>
             </div>
-            <div className="bg-white/5 rounded-2xl p-4 border border-white/10 flex-1 min-h-0 overflow-auto">
-              <pre className="whitespace-pre-wrap text-white/85 font-sans text-sm leading-relaxed">
-                {results.optimizedCV}
-              </pre>
+
+            {/* Template Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
+              {(["harvard", "modern", "creative"] as TemplateType[]).map((templateId) => (
+                <TemplatePreviewCard
+                  key={templateId}
+                  templateId={templateId}
+                  cvData={results.optimizedCV}
+                  fileName="Optimized-CV"
+                />
+              ))}
             </div>
           </div>
         )}
@@ -385,6 +354,7 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
           </div>
         )}
       </div>
+
     </div>
   );
 }
