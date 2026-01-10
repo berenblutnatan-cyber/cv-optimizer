@@ -1,0 +1,69 @@
+=======================================================
+VERCEL DEPLOYMENT - ENVIRONMENT VARIABLES TO ADD
+=======================================================
+
+Copy these into your Vercel Dashboard → Settings → Environment Variables:
+
+REQUIRED VARIABLES (app will not work without these):
+-----------------------------------------------------
+
+1. NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+   Get from: https://dashboard.clerk.com
+   Example: pk_test_xxxxx or pk_live_xxxxx
+
+2. CLERK_SECRET_KEY
+   Get from: https://dashboard.clerk.com
+   Example: sk_test_xxxxx or sk_live_xxxxx
+
+3. OPENAI_API_KEY
+   Get from: https://platform.openai.com/api-keys
+   Example: sk-proj-xxxxx
+
+
+OPTIONAL VARIABLES (for analytics tracking):
+---------------------------------------------
+
+4. KV_REST_API_URL
+   Auto-configured if you add Vercel KV Storage
+   Or get from: https://console.upstash.com
+
+5. KV_REST_API_TOKEN
+   Auto-configured if you add Vercel KV Storage
+   Or get from: https://console.upstash.com
+
+
+=======================================================
+DEPLOYMENT STEPS:
+=======================================================
+
+1. Push to GitHub:
+   git add .
+   git commit -m "feat: configure for Vercel deployment"
+   git push origin main
+
+2. In Vercel Dashboard:
+   - Import your GitHub repository
+   - Add the 3 REQUIRED environment variables above
+   - Click Deploy
+
+3. After deployment:
+   - Test your production URL
+   - All features should work with just these 3 env vars
+   - KV is optional (for analytics counter)
+
+=======================================================
+STATUS: ✅ READY TO DEPLOY
+=======================================================
+
+✅ .env.local created (with your OpenAI key)
+✅ .env.local is in .gitignore (won't be committed)
+✅ .env.example created (documentation only)
+✅ README.md updated with deployment instructions
+✅ DEPLOYMENT.md created (detailed checklist)
+✅ vercel.json created (Vercel configuration)
+✅ Production build tested successfully
+✅ All files ready to commit
+
+IMPORTANT: Make sure you have your Clerk keys ready!
+- Visit https://dashboard.clerk.com to get them
+- You'll need to add them in Vercel BEFORE the app works
