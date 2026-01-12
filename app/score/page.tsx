@@ -164,7 +164,7 @@ export default function ScoreTeaserPage() {
       {/* Header */}
       <header className="w-full px-6 lg:px-12 py-6 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Logo variant="dark" size="md" linkTo="/" />
+          <Logo variant="dark" size="md" />
           <Link 
             href="/"
             className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"

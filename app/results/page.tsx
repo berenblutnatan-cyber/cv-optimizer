@@ -57,7 +57,7 @@ export default function ResultsPage() {
       {/* Header */}
       <header className="w-full bg-white border-b border-slate-200 px-6 lg:px-12 py-4">
         <div className="flex items-center justify-between">
-          <Logo variant="dark" size="md" linkTo="/" />
+          <Logo variant="dark" size="md" />
           <button
             onClick={() => {
               clearAnalysisSession();
