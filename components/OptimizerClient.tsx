@@ -21,9 +21,33 @@ import {
 } from "lucide-react";
 import { saveAnalysisToSession } from "@/lib/analysisSession";
 
+interface CVEntry {
+  title: string;
+  organization?: string;
+}
+
+interface CVEntries {
+  summary?: {
+    exists: boolean;
+  };
+  work_experience?: CVEntry[];
+  education?: CVEntry[];
+  projects?: CVEntry[];
+}
+
+interface SkillPlacement {
+  skill: string;
+  targetCvEntry: {
+    section: "summary" | "work_experience" | "education" | "projects";
+    title?: string;
+    organization?: string;
+  } | null;
+  userProvidedContext: string;
+}
+
 interface GapAnalysisData {
   missingKeywords: string[];
-  suggestedQuestions: string[];
+  cvEntries: CVEntries;
 }
 
 export function OptimizerClient() {
@@ -46,8 +70,7 @@ export function OptimizerClient() {
   // Gap Analysis Modal State
   const [showGapModal, setShowGapModal] = useState(false);
   const [gapData, setGapData] = useState<GapAnalysisData | null>(null);
-  const [userSkillsInput, setUserSkillsInput] = useState<Record<string, boolean>>({});
-  const [additionalAchievements, setAdditionalAchievements] = useState("");
+  const [skillPlacements, setSkillPlacements] = useState<SkillPlacement[]>([]);
   const [isReOptimizing, setIsReOptimizing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [analysisMeta, setAnalysisMeta] = useState<any>(null);
@@ -119,25 +142,23 @@ export function OptimizerClient() {
       setAnalysisResult(data.analysis);
       setAnalysisMeta(data.meta);
 
-      // Extract missing keywords for gap analysis
+      // Extract missing keywords and CV entries for gap analysis
       const missingKeywords = data.analysis.missingKeySkills || [];
+      const cvEntries = data.analysis.cv_entries || { work_experience: [], education: [], projects: [] };
       
       // Create gap analysis data
       setGapData({
         missingKeywords,
-        suggestedQuestions: [
-          "Did you lead any projects or teams?",
-          "Any quantifiable achievements (revenue, efficiency, etc.)?",
-          "Any certifications or specialized training?"
-        ]
+        cvEntries
       });
 
-      // Initialize skill toggles
-      const initialSkills: Record<string, boolean> = {};
-      missingKeywords.forEach((skill: string) => {
-        initialSkills[skill] = false;
-      });
-      setUserSkillsInput(initialSkills);
+      // Initialize skill placements - one per missing skill
+      const initialPlacements: SkillPlacement[] = missingKeywords.map((skill: string) => ({
+        skill,
+        targetCvEntry: null,
+        userProvidedContext: ""
+      }));
+      setSkillPlacements(initialPlacements);
 
       // Show gap analysis modal
       setShowGapModal(true);
@@ -163,35 +184,29 @@ export function OptimizerClient() {
     setIsReOptimizing(true);
 
     try {
-      // Get confirmed skills
-      const confirmedSkills = Object.entries(userSkillsInput)
-        .filter(([_, has]) => has)
-        .map(([skill]) => skill);
+      // Filter skill placements that have both a selected CV entry AND user context
+      const validPlacements = skillPlacements.filter(
+        sp => sp.targetCvEntry && sp.userProvidedContext.trim()
+      );
 
-      // Re-optimize with additional context
+      if (validPlacements.length === 0) {
+        // No skills to add, just use original analysis
+        handleSkipGapAnalysis();
+        return;
+      }
+
+      // Use the new optimize-with-skills endpoint
       const formData = new FormData();
       if (cvFile) formData.append("cv", cvFile);
       if (cvText) formData.append("cvText", cvText);
-      formData.append("mode", "specific_role");
+      formData.append("skillPlacements", JSON.stringify(validPlacements));
       
       if (jobTitle.trim()) formData.append("jobTitle", jobTitle.trim());
       if (jobDescription.trim()) formData.append("jobDescription", jobDescription.trim());
-      if (jobUrl.trim()) formData.append("jobUrl", jobUrl.trim());
-      
-      const companyName = extractCompanyFromContext() || "Target Company";
-      formData.append("companyName", companyName);
-      
-      // Add gap analysis inputs
-      if (confirmedSkills.length > 0) {
-        formData.append("additionalSkills", confirmedSkills.join(", "));
-      }
-      if (additionalAchievements.trim()) {
-        formData.append("additionalAchievements", additionalAchievements);
-      }
 
-      const response = await fetch("/api/analyze", { method: "POST", body: formData });
+      const response = await fetch("/api/optimize-with-skills", { method: "POST", body: formData });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Re-optimization failed");
+      if (!response.ok) throw new Error(data.error || "Optimization failed");
 
       // Track optimization
       try {
@@ -200,12 +215,19 @@ export function OptimizerClient() {
         // ignore
       }
 
-      // Save final result and navigate
-      saveAnalysisToSession({ analysis: data.analysis, meta: data.meta });
+      // Keep skill placement changes separate from regular suggested changes
+      const updatedAnalysis = {
+        ...analysisResult,
+        optimizedCV: data.optimizedCV,
+        skillPlacementChanges: data.skillPlacementChanges || []
+      };
+
+      // Save and navigate to results
+      saveAnalysisToSession({ analysis: updatedAnalysis, meta: analysisMeta });
       router.push("/results");
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Re-optimization failed");
+      setError(err instanceof Error ? err.message : "Optimization failed");
       setShowGapModal(false);
     } finally {
       setIsReOptimizing(false);
@@ -466,7 +488,7 @@ export function OptimizerClient() {
 
             {/* Modal Content */}
             <div className="px-6 py-6 space-y-6">
-              {/* Missing Keywords Section */}
+              {/* Skills Section */}
               {gapData.missingKeywords.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
@@ -477,47 +499,144 @@ export function OptimizerClient() {
                     We noticed the job requires these skills that weren't obvious in your resume. 
                     <strong> Do you have experience with any of them?</strong>
                   </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {gapData.missingKeywords.map((skill) => (
-                      <button
-                        key={skill}
-                        onClick={() => setUserSkillsInput(prev => ({ ...prev, [skill]: !prev[skill] }))}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${
-                          userSkillsInput[skill]
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                            : "border-slate-200 hover:border-slate-300 text-slate-600"
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                          userSkillsInput[skill]
-                            ? "border-emerald-500 bg-emerald-500"
-                            : "border-slate-300"
-                        }`}>
-                          {userSkillsInput[skill] && <Check className="w-3 h-3 text-white" />}
+                  
+                  <div className="space-y-6">
+                    {skillPlacements.map((placement, index) => {
+                      // Build dropdown options from CV entries
+                      const dropdownOptions: Array<{label: string; value: string; section: string; title?: string; organization?: string}> = [];
+                      
+                      // Add Summary option if it exists in CV
+                      if (gapData.cvEntries.summary?.exists) {
+                        dropdownOptions.push({
+                          label: '📝 Professional Summary',
+                          value: 'summary|||',
+                          section: 'summary'
+                        });
+                      }
+                      
+                      // Add work experience entries
+                      gapData.cvEntries.work_experience?.forEach(entry => {
+                        dropdownOptions.push({
+                          label: `${entry.title}${entry.organization ? ` — ${entry.organization}` : ''}`,
+                          value: `work_experience|${entry.title}|${entry.organization || ''}`,
+                          section: 'work_experience',
+                          title: entry.title,
+                          organization: entry.organization
+                        });
+                      });
+                      
+                      // Add education entries
+                      gapData.cvEntries.education?.forEach(entry => {
+                        dropdownOptions.push({
+                          label: `${entry.title}${entry.organization ? ` — ${entry.organization}` : ''}`,
+                          value: `education|${entry.title}|${entry.organization || ''}`,
+                          section: 'education',
+                          title: entry.title,
+                          organization: entry.organization
+                        });
+                      });
+                      
+                      // Add project entries
+                      gapData.cvEntries.projects?.forEach(entry => {
+                        dropdownOptions.push({
+                          label: entry.title,
+                          value: `projects|${entry.title}|`,
+                          section: 'projects',
+                          title: entry.title
+                        });
+                      });
+
+                      const isSelected = placement.targetCvEntry !== null;
+                      const hasContext = placement.userProvidedContext.trim().length > 0;
+
+                      return (
+                        <div 
+                          key={placement.skill}
+                          className={`border-2 rounded-xl p-4 transition-all ${
+                            isSelected && hasContext
+                              ? 'border-emerald-500 bg-emerald-50/50'
+                              : isSelected
+                              ? 'border-blue-300 bg-blue-50/30'
+                              : 'border-slate-200'
+                          }`}
+                        >
+                          {/* Skill Name */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                              isSelected && hasContext
+                                ? 'border-emerald-500 bg-emerald-500'
+                                : 'border-slate-300 bg-white'
+                            }`}>
+                              {isSelected && hasContext && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                            <h4 className="font-semibold text-slate-900">{placement.skill}</h4>
+                          </div>
+
+                          {/* CV Entry Selector */}
+                          <div className="mb-3">
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              Where should this skill be added in your CV?
+                            </label>
+                            <select
+                              value={placement.targetCvEntry ? `${placement.targetCvEntry.section}|${placement.targetCvEntry.title || ''}|${placement.targetCvEntry.organization || ''}` : ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (!value) {
+                                  // Deselected
+                                  const updated = [...skillPlacements];
+                                  updated[index].targetCvEntry = null;
+                                  setSkillPlacements(updated);
+                                  return;
+                                }
+                                
+                                const selected = dropdownOptions.find(opt => opt.value === value);
+                                if (selected) {
+                                  const updated = [...skillPlacements];
+                                  updated[index].targetCvEntry = {
+                                    section: selected.section as "summary" | "work_experience" | "education" | "projects",
+                                    title: selected.title,
+                                    organization: selected.organization
+                                  };
+                                  setSkillPlacements(updated);
+                                }
+                              }}
+                              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+                            >
+                              <option value="">Select a CV entry...</option>
+                              {dropdownOptions.length > 0 ? (
+                                dropdownOptions.map(opt => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </option>
+                                ))
+                              ) : (
+                                <option value="" disabled>No CV entries found</option>
+                              )}
+                            </select>
+                          </div>
+
+                          {/* Context Text Area */}
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              Describe how this experience relates to the skill:
+                            </label>
+                            <textarea
+                              value={placement.userProvidedContext}
+                              onChange={(e) => {
+                                const updated = [...skillPlacements];
+                                updated[index].userProvidedContext = e.target.value;
+                                setSkillPlacements(updated);
+                              }}
+                              placeholder={`Example: Used ${placement.skill} to analyze data and improve performance by 20%...`}
+                              className="w-full h-24 px-4 py-2.5 border border-slate-300 rounded-lg text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            />
+                          </div>
                         </div>
-                        <span className="font-medium">{skill}</span>
-                      </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
-
-              {/* Additional Achievements Section */}
-              <div>
-                <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-sm font-bold flex items-center justify-center">2</span>
-                  Hidden Value
-                </h3>
-                <p className="text-slate-600 mb-4">
-                  Any other achievements relevant to this job that we should highlight?
-                </p>
-                <textarea
-                  value={additionalAchievements}
-                  onChange={(e) => setAdditionalAchievements(e.target.value)}
-                  placeholder="e.g. Led a team of 5 engineers, Increased revenue by 30%, AWS certified..."
-                  className="w-full h-32 p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
-              </div>
             </div>
 
             {/* Modal Footer */}

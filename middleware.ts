@@ -2,10 +2,8 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
-  "/optimize(.*)",
   "/builder(.*)",
   "/dashboard(.*)",
-  "/results(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -13,6 +11,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
+  // Note: /optimize and /results are now public for testing
 });
 
 export const config = {

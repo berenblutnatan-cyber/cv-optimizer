@@ -28,6 +28,13 @@ interface AnalysisResult {
     suggested: string;
     reason: string;
   }[];
+  skillPlacementChanges?: {
+    id?: string;
+    section: string;
+    original: string;
+    suggested: string;
+    reason: string;
+  }[];
   keywords: {
     missing: string[];
     present: string[];
@@ -53,8 +60,12 @@ interface AnalysisResultsProps {
 }
 
 export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "changes" | "optimized" | "cover-letter">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "changes" | "skills" | "optimized" | "cover-letter">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
+
+  // Separate regular changes from skill placements
+  const regularChanges = results.suggestedChanges.filter(change => !change.id?.startsWith('skill_'));
+  const skillChanges = results.skillPlacementChanges || results.suggestedChanges.filter(change => change.id?.startsWith('skill_'));
 
   // Score color based on value
   const getScoreColor = (score: number) => {
@@ -87,30 +98,31 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
 
   const tabs = [
     { id: "overview" as const, label: "Overview" },
-    { id: "changes" as const, label: `Suggested Changes`, count: results.suggestedChanges.length },
+    { id: "changes" as const, label: `Suggested Changes`, count: regularChanges.length },
+    ...(skillChanges.length > 0 ? [{ id: "skills" as const, label: "Skills Added", count: skillChanges.length }] : []),
     { id: "optimized" as const, label: "Optimized CV" },
     ...(coverLetterTab ? [{ id: "cover-letter" as const, label: "Cover Letter" }] : []),
   ];
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl h-full flex flex-col min-h-0">
-      {/* Top Navigation - Pill-shaped Segmented Control */}
-      <div className="p-3 bg-slate-800/50 border-b border-slate-700/50">
-        <div className="inline-flex bg-slate-800 rounded-xl p-1 gap-1">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm max-w-6xl mx-auto">
+      {/* Top Navigation - Modern Tabs */}
+      <div className="px-6 py-4 bg-white border-b border-slate-200">
+        <div className="flex gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 ${
                 activeTab === tab.id
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25"
-                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               {tab.label}
               {tab.count !== undefined && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.id ? "bg-white/20" : "bg-slate-700"
+                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === tab.id ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                 }`}>
                   {tab.count}
                 </span>
@@ -171,17 +183,17 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
             {/* Strengths & Areas to Improve Grid */}
             <div className="grid md:grid-cols-2 gap-4">
               {/* Strengths Card */}
-              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   </div>
                   Strengths
                 </h4>
                 <ul className="space-y-3">
                   {results.strengths.map((strength, index) => (
-                    <li key={index} className="flex items-start gap-3 text-slate-300">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-3 text-slate-700">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <span>{strength}</span>
                     </li>
                   ))}
@@ -189,17 +201,17 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
               </div>
 
               {/* Areas to Improve Card */}
-              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
                   </div>
                   Areas to Improve
                 </h4>
                 <ul className="space-y-3">
                   {results.improvements.map((improvement, index) => (
-                    <li key={index} className="flex items-start gap-3 text-slate-300">
-                      <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-3 text-slate-700">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <span>{improvement}</span>
                     </li>
                   ))}
@@ -210,10 +222,10 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
             {/* Keywords Analysis Section */}
             <div className="grid md:grid-cols-2 gap-4">
               {/* Keywords Found */}
-              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                    <Check className="w-5 h-5 text-emerald-400" />
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <Check className="w-5 h-5 text-emerald-600" />
                   </div>
                   Keywords Found
                 </h4>
@@ -221,7 +233,7 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                   {results.keywords.present.map((keyword, index) => (
                     <span 
                       key={index} 
-                      className="px-3 py-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-lg text-sm font-medium"
+                      className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium"
                     >
                       {keyword}
                     </span>
@@ -233,10 +245,10 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
               </div>
 
               {/* Missing Keywords */}
-              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-rose-500/20 rounded-lg flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-rose-600" />
                   </div>
                   Missing Keywords
                 </h4>
@@ -244,7 +256,7 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                   {results.keywords.missing.map((keyword, index) => (
                     <span 
                       key={index} 
-                      className="px-3 py-1.5 bg-rose-500/15 text-rose-300 border border-rose-500/30 rounded-lg text-sm font-medium"
+                      className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-sm font-medium"
                     >
                       {keyword}
                     </span>
@@ -258,10 +270,10 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
 
             {/* Skills Gap / Learning Path */}
             {missingKeySkills.length > 0 && (
-              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-indigo-400" />
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-blue-600" />
                   </div>
                   Missing Skills to Learn
                 </h4>
@@ -269,11 +281,11 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                   {missingKeySkills.slice(0, 6).map((skill, index) => (
                     <div 
                       key={`${skill}-${index}`} 
-                      className="flex items-center justify-between gap-4 bg-slate-700/50 rounded-lg p-3 border border-slate-600/50"
+                      className="flex items-center justify-between gap-4 bg-slate-50 rounded-lg p-3 border border-slate-200"
                     >
                       <div className="flex items-center gap-3">
-                        <Lightbulb className="w-4 h-4 text-amber-400" />
-                        <span className="font-medium text-white">{skill}</span>
+                        <Lightbulb className="w-4 h-4 text-amber-600" />
+                        <span className="font-medium text-slate-900">{skill}</span>
                       </div>
                       <div className="flex gap-2">
                         {getLearningLinks(skill).map((link) => (
@@ -282,7 +294,7 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                             href={link.href}
                             target="_blank"
                             rel="noreferrer"
-                            className={`text-xs px-3 py-1.5 rounded-lg border font-medium hover:opacity-80 transition-opacity flex items-center gap-1 ${link.color}`}
+                            className="text-xs px-3 py-1.5 rounded-lg border font-medium hover:opacity-80 transition-opacity flex items-center gap-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                           >
                             {link.label}
                             <ExternalLink className="w-3 h-3" />
@@ -292,8 +304,8 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 text-sm text-slate-400 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
+                <p className="mt-4 text-sm text-slate-600 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
                   Tip: Only add skills to your CV if you genuinely have them or are actively learning.
                 </p>
               </div>
@@ -302,36 +314,82 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
         )}
 
         {activeTab === "changes" && (
-          <div className="space-y-4 flex-1 min-h-0 overflow-auto pr-1">
-            {results.suggestedChanges.length === 0 ? (
+          <div className="space-y-4">
+            {regularChanges.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-                <p className="text-slate-400">No suggested changes - your CV looks great!</p>
+                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
+                <p className="text-slate-500">No suggested changes - your CV looks great!</p>
               </div>
             ) : (
-              results.suggestedChanges.map((change, index) => (
-                <div key={index} className="bg-slate-800 border border-slate-700/50 rounded-xl overflow-hidden shadow-lg">
-                  <div className="bg-slate-700/50 px-5 py-3 border-b border-slate-600/50 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-indigo-400" />
-                    <span className="font-semibold text-white">{change.section}</span>
+              regularChanges.map((change, index) => (
+                <div key={index} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    <span className="font-semibold text-slate-900">{change.section}</span>
                   </div>
                   <div className="p-5 space-y-4">
                     <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Original</p>
-                      <p className="text-slate-300 bg-rose-500/10 p-4 rounded-lg border border-rose-500/20 leading-relaxed">
+                      <p className="text-slate-700 bg-rose-50 p-4 rounded-lg border border-rose-200 leading-relaxed">
                         {change.original}
                       </p>
                     </div>
 
                     <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Suggested</p>
-                      <p className="text-white bg-emerald-500/10 p-4 rounded-lg border border-emerald-500/20 leading-relaxed">
+                      <p className="text-slate-900 bg-emerald-50 p-4 rounded-lg border border-emerald-200 leading-relaxed">
                         {change.suggested}
                       </p>
                     </div>
                     
-                    <div className="flex items-start gap-3 text-sm text-slate-400 bg-slate-700/30 p-3 rounded-lg">
-                      <Lightbulb className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-3 text-sm text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                      <Lightbulb className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <span>{change.reason}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Skills Added Tab */}
+        {activeTab === "skills" && (
+          <div className="space-y-4">
+            {skillChanges.length === 0 ? (
+              <div className="text-center py-12">
+                <Sparkles className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
+                <p className="text-slate-500">No skills were added through gap analysis</p>
+              </div>
+            ) : (
+              skillChanges.map((change, index) => (
+                <div key={index} className="bg-white border border-emerald-200 rounded-xl overflow-hidden shadow-sm">
+                  {/* Header with location */}
+                  <div className="bg-emerald-50 px-5 py-3 border-b border-emerald-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <span className="font-semibold text-slate-900">{change.section}</span>
+                    </div>
+                    {/* Skill badge */}
+                    <span className="px-3 py-1 bg-emerald-600 text-white text-sm font-semibold rounded-full">
+                      {change.original}
+                    </span>
+                  </div>
+                  
+                  <div className="p-5 space-y-4">
+                    {/* New content added */}
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 font-medium">Content Added</p>
+                      <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                        <p className="text-slate-900 leading-relaxed whitespace-pre-line">
+                          {change.suggested}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Success message */}
+                    <div className="flex items-start gap-3 text-sm text-emerald-700 bg-emerald-50/50 p-3 rounded-lg">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <span>{change.reason}</span>
                     </div>
                   </div>
