@@ -34,6 +34,8 @@ import {
 } from "@/types/resume";
 import { ModernTemplate } from "@/components/cv-templates";
 import { TemplatePreviewCard } from "@/components/TemplatePreviewCard";
+import { Logo } from "@/components/Logo";
+import { UserButton } from "@clerk/nextjs";
 
 // Month options for date picker
 const MONTHS = [
@@ -72,29 +74,27 @@ export default function BuilderPage() {
   const progressPercent = ((currentStep + 1) / TOTAL_STEPS) * 100;
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-slate-50 text-slate-900 flex flex-col overflow-hidden">
       {/* Header with Progress Bar */}
-      <header className="flex-shrink-0 w-full border-b border-white/10 bg-black/80 backdrop-blur-sm z-20">
+      <header className="flex-shrink-0 w-full border-b border-slate-200 bg-white z-20">
         <div className="px-6 py-4">
           <div className="max-w-[1800px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xl font-bold tracking-tight">CV Studio</span>
-              </Link>
-              <span className="px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-medium">
-                Builder
+              <Logo variant="dark" size="md" />
+              <span className="px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                Resume Builder
               </span>
             </div>
-            <Link 
-              href="/"
-              className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/"
+                className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Home
+              </Link>
+              <UserButton appearance={{ elements: { avatarBox: "w-9 h-9" } }} />
+            </div>
           </div>
         </div>
 
@@ -114,32 +114,32 @@ export default function BuilderPage() {
       {/* Main Content - Split Screen */}
       <main className="flex-1 flex overflow-hidden">
         {/* Left Panel - Step Editor */}
-        <div className="w-1/2 border-r border-white/10 flex flex-col overflow-hidden">
+        <div className="w-1/2 border-r border-slate-200 bg-white flex flex-col overflow-hidden">
           {/* Step Content */}
           <div className="flex-1 overflow-y-auto p-6">
             <StepContent step={currentStep} />
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex-shrink-0 px-6 py-4 border-t border-white/10 bg-black/50">
+          <div className="flex-shrink-0 px-6 py-4 border-t border-slate-200 bg-slate-50">
             <div className="flex items-center justify-between">
               <button
                 onClick={prevStep}
                 disabled={currentStep === 0}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 text-white rounded-xl transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed border border-slate-200 text-slate-700 rounded-xl transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </button>
               
-              <span className="text-white/40 text-sm">
+              <span className="text-slate-400 text-sm">
                 Step {currentStep + 1} of {TOTAL_STEPS}
               </span>
 
               {currentStep < TOTAL_STEPS - 1 ? (
                 <button
                   onClick={nextStep}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors"
                 >
                   Next
                   <ArrowRight className="w-4 h-4" />
@@ -152,16 +152,16 @@ export default function BuilderPage() {
         </div>
 
         {/* Right Panel - Live Preview */}
-        <div className="w-1/2 bg-gray-900/50 overflow-hidden flex flex-col">
+        <div className="w-1/2 bg-slate-100 overflow-hidden flex flex-col">
           {/* Preview Header */}
-          <div className="flex-shrink-0 px-6 py-4 border-b border-white/10 bg-black/50">
+          <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 bg-white">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center">
-                <Eye className="w-4 h-4 text-teal-400" />
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <Eye className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
-                <h2 className="font-semibold">Live Preview</h2>
-                <p className="text-xs text-white/50">Updates as you type</p>
+                <h2 className="font-semibold text-slate-900">Live Preview</h2>
+                <p className="text-xs text-slate-500">Updates as you type</p>
               </div>
             </div>
           </div>
@@ -203,14 +203,14 @@ function ProgressBar({
     <div className="space-y-3">
       {/* Progress percentage */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-white/60">Progress</span>
-        <span className="text-purple-400 font-medium">{Math.round(progressPercent)}% Complete</span>
+        <span className="text-slate-500">Progress</span>
+        <span className="text-emerald-600 font-medium">{Math.round(progressPercent)}% Complete</span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-300"
+          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -223,18 +223,18 @@ function ProgressBar({
             onClick={() => onStepClick(index)}
             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all ${
               index === currentStep
-                ? "bg-purple-500/20 text-purple-300"
+                ? "bg-emerald-100 text-emerald-700"
                 : index < currentStep
-                ? "text-green-400 hover:bg-white/5"
-                : "text-white/30 hover:bg-white/5 hover:text-white/50"
+                ? "text-emerald-600 hover:bg-slate-100"
+                : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             }`}
           >
             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
               index < currentStep 
-                ? "bg-green-500/20" 
+                ? "bg-emerald-100 text-emerald-600" 
                 : index === currentStep 
-                ? "bg-purple-500/30" 
-                : "bg-white/10"
+                ? "bg-emerald-600 text-white" 
+                : "bg-slate-200 text-slate-500"
             }`}>
               {index < currentStep ? (
                 <Check className="w-3 h-3" />
@@ -395,7 +395,7 @@ function ExperienceStep() {
         />
         <button
           onClick={() => addExperience()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium rounded-xl transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Position
@@ -434,7 +434,7 @@ function EducationStep() {
         />
         <button
           onClick={() => addEducation()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium rounded-xl transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Education
@@ -465,6 +465,7 @@ function SkillsStep() {
   const { resumeData, addSkill, removeSkill, addLanguage, removeLanguage } = useResumeStore();
   const [newSkill, setNewSkill] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
+  const [isSuggesting, setIsSuggesting] = useState(false);
 
   const handleAddSkill = () => {
     if (newSkill.trim()) {
@@ -480,6 +481,21 @@ function SkillsStep() {
     }
   };
 
+  const handleSuggestSkills = async () => {
+    setIsSuggesting(true);
+    try {
+      // Mock suggestion - in production would call AI API
+      const suggestedSkills = ["Problem Solving", "Team Leadership", "Agile Methodology", "Communication"];
+      suggestedSkills.forEach(skill => {
+        if (!resumeData.skills.includes(skill)) {
+          addSkill(skill);
+        }
+      });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <StepHeader 
@@ -489,10 +505,24 @@ function SkillsStep() {
 
       {/* Skills */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Wrench className="w-5 h-5 text-purple-400" />
-          Skills
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
+            <Wrench className="w-5 h-5 text-emerald-600" />
+            Skills
+          </h3>
+          <button
+            onClick={handleSuggestSkills}
+            disabled={isSuggesting}
+            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-sm font-medium rounded-lg transition-all"
+          >
+            {isSuggesting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            ✨ Suggest Skills
+          </button>
+        </div>
         <div className="flex gap-2">
           <FormInput
             value={newSkill}
@@ -502,7 +532,7 @@ function SkillsStep() {
           />
           <button
             onClick={handleAddSkill}
-            className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium rounded-xl transition-colors whitespace-nowrap"
+            className="px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors whitespace-nowrap"
           >
             Add
           </button>
@@ -514,13 +544,13 @@ function SkillsStep() {
             ))}
           </div>
         ) : (
-          <p className="text-white/40 text-sm">No skills added yet</p>
+          <p className="text-slate-400 text-sm">No skills added yet</p>
         )}
       </div>
 
       {/* Languages */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
           <span className="text-lg">🌐</span>
           Languages
         </h3>
@@ -533,7 +563,7 @@ function SkillsStep() {
           />
           <button
             onClick={handleAddLanguage}
-            className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium rounded-xl transition-colors whitespace-nowrap"
+            className="px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors whitespace-nowrap"
           >
             Add
           </button>
@@ -545,7 +575,7 @@ function SkillsStep() {
             ))}
           </div>
         ) : (
-          <p className="text-white/40 text-sm">No languages added yet</p>
+          <p className="text-slate-400 text-sm">No languages added yet</p>
         )}
       </div>
     </div>
@@ -592,7 +622,7 @@ function CustomSectionsStep() {
         />
         <button
           onClick={handleAddSection}
-          className="flex items-center gap-1.5 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium rounded-xl transition-colors whitespace-nowrap"
+          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           Add Section
@@ -692,10 +722,10 @@ function ReviewStep() {
       />
 
       {/* Completion Status */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">CV Completion</h3>
-          <span className={`text-lg font-bold ${completionPercent === 100 ? 'text-green-400' : 'text-yellow-400'}`}>
+          <h3 className="font-semibold text-slate-900">CV Completion</h3>
+          <span className={`text-lg font-bold ${completionPercent === 100 ? 'text-emerald-600' : 'text-amber-500'}`}>
             {completionPercent}%
           </span>
         </div>
@@ -711,16 +741,16 @@ function ReviewStep() {
       </div>
 
       {/* AI Analysis */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold flex items-center gap-2">
-            <Wand2 className="w-5 h-5 text-purple-400" />
+          <h3 className="font-semibold flex items-center gap-2 text-slate-900">
+            <Sparkles className="w-5 h-5 text-emerald-600" />
             AI Analysis
           </h3>
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-600/50 text-white font-medium rounded-xl transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white font-medium rounded-xl transition-colors"
           >
             {isAnalyzing ? (
               <>
@@ -740,23 +770,23 @@ function ReviewStep() {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className={`text-4xl font-bold ${
-                analysis.score >= 80 ? 'text-green-400' : 
-                analysis.score >= 60 ? 'text-yellow-400' : 'text-red-400'
+                analysis.score >= 80 ? 'text-emerald-600' : 
+                analysis.score >= 60 ? 'text-amber-500' : 'text-red-500'
               }`}>
                 {analysis.score}
               </div>
               <div>
-                <div className="font-medium">Resume Score</div>
-                <div className="text-white/50 text-sm">out of 100</div>
+                <div className="font-medium text-slate-900">Resume Score</div>
+                <div className="text-slate-500 text-sm">out of 100</div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-white/70">Suggestions:</h4>
+              <h4 className="text-sm font-medium text-slate-600">Suggestions:</h4>
               {analysis.suggestions.map((suggestion, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-sm">
-                  <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-white/70">{suggestion}</span>
+                  <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-slate-600">{suggestion}</span>
                 </div>
               ))}
             </div>
@@ -766,8 +796,8 @@ function ReviewStep() {
 
       {/* Export Templates */}
       <div className="space-y-4">
-        <h3 className="font-semibold flex items-center gap-2">
-          <Download className="w-5 h-5 text-purple-400" />
+        <h3 className="font-semibold flex items-center gap-2 text-slate-900">
+          <Download className="w-5 h-5 text-emerald-600" />
           Download Your CV
         </h3>
         <div className="grid grid-cols-3 gap-4">
@@ -787,17 +817,17 @@ function ReviewStep() {
 function StepHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="space-y-1">
-      <h2 className="text-xl font-bold">{title}</h2>
-      <p className="text-white/50">{description}</p>
+      <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+      <p className="text-slate-500">{description}</p>
     </div>
   );
 }
 
 function FormLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-sm text-white/60 mb-1.5">
+    <label className="block text-sm font-medium text-slate-700 mb-1.5">
       {children}
-      {required && <span className="text-red-400 ml-1">*</span>}
+      {required && <span className="text-red-500 ml-1">*</span>}
     </label>
   );
 }
@@ -809,27 +839,27 @@ function FormInput({
   return (
     <input
       {...props}
-      className={`w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all ${className}`}
+      className={`w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all ${className}`}
     />
   );
 }
 
 function EmptyState({ text, subtext }: { text: string; subtext?: string }) {
   return (
-    <div className="text-center py-10 bg-white/5 border border-dashed border-white/10 rounded-2xl">
-      <p className="text-white/50">{text}</p>
-      {subtext && <p className="text-white/30 text-sm mt-1">{subtext}</p>}
+    <div className="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+      <p className="text-slate-500">{text}</p>
+      {subtext && <p className="text-slate-400 text-sm mt-1">{subtext}</p>}
     </div>
   );
 }
 
 function SkillTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="group flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm hover:border-white/20 transition-colors">
+    <span className="group flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm hover:border-emerald-300 transition-colors">
       {label}
       <button
         onClick={onRemove}
-        className="text-white/30 hover:text-red-400 transition-colors"
+        className="text-emerald-400 hover:text-red-500 transition-colors"
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -839,7 +869,7 @@ function SkillTag({ label, onRemove }: { label: string; onRemove: () => void }) 
 
 function CompletionItem({ label, completed }: { label: string; completed: boolean }) {
   return (
-    <div className={`flex items-center gap-2 ${completed ? 'text-green-400' : 'text-white/40'}`}>
+    <div className={`flex items-center gap-2 ${completed ? 'text-emerald-600' : 'text-slate-400'}`}>
       {completed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
       <span>{label}</span>
     </div>
@@ -897,16 +927,16 @@ function TextAreaWithLimit({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={rows}
-          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all resize-none"
+          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
         />
         <div className={`absolute bottom-3 right-3 text-xs font-medium ${
-          isOverLimit ? 'text-red-400' : isNearLimit ? 'text-orange-400' : 'text-white/30'
+          isOverLimit ? 'text-red-500' : isNearLimit ? 'text-amber-500' : 'text-slate-400'
         }`}>
           {charCount}/{limit}
         </div>
       </div>
       {isOverLimit && (
-        <p className="text-orange-400 text-xs flex items-center gap-1">
+        <p className="text-amber-600 text-xs flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />
           Consider shortening for better readability
         </p>
@@ -914,17 +944,17 @@ function TextAreaWithLimit({
       <button
         onClick={handleOptimize}
         disabled={isOptimizing || !value.trim()}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed border border-purple-500/30 text-purple-300 text-sm font-medium rounded-lg transition-all"
+        className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-200 text-emerald-700 text-sm font-medium rounded-lg transition-all"
       >
         {isOptimizing ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Optimizing...
+            Generating...
           </>
         ) : (
           <>
-            <Wand2 className="w-4 h-4" />
-            Optimize with AI
+            <Sparkles className="w-4 h-4" />
+            ✨ Generate Summary
           </>
         )}
       </button>
@@ -963,12 +993,12 @@ function DatePicker({
   if (showPresent && isPresent) {
     return (
       <div className="flex items-center gap-2">
-        <span className="px-4 py-2.5 bg-purple-500/20 border border-purple-500/30 rounded-xl text-purple-300 flex-1 text-center">
+        <span className="px-4 py-2.5 bg-emerald-100 border border-emerald-200 rounded-xl text-emerald-700 flex-1 text-center">
           Present
         </span>
         <button
           onClick={() => onPresentChange?.(false)}
-          className="px-3 py-2.5 text-white/50 hover:text-white/80 text-sm transition-colors"
+          className="px-3 py-2.5 text-slate-500 hover:text-slate-700 text-sm transition-colors"
         >
           Change
         </button>
@@ -981,27 +1011,27 @@ function DatePicker({
       <select
         value={month}
         onChange={(e) => handleChange(e.target.value, year)}
-        className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-all appearance-none cursor-pointer"
+        className="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer"
       >
-        <option value="" className="bg-gray-900">Month</option>
+        <option value="" className="bg-white">Month</option>
         {MONTHS.map((m) => (
-          <option key={m} value={m} className="bg-gray-900">{m}</option>
+          <option key={m} value={m} className="bg-white">{m}</option>
         ))}
       </select>
       <select
         value={year}
         onChange={(e) => handleChange(month, e.target.value)}
-        className="w-24 px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-all appearance-none cursor-pointer"
+        className="w-24 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer"
       >
-        <option value="" className="bg-gray-900">Year</option>
+        <option value="" className="bg-white">Year</option>
         {YEARS.map((y) => (
-          <option key={y} value={y} className="bg-gray-900">{y}</option>
+          <option key={y} value={y} className="bg-white">{y}</option>
         ))}
       </select>
       {showPresent && (
         <button
           onClick={() => onPresentChange?.(true)}
-          className="px-3 py-2.5 text-purple-400/70 hover:text-purple-300 text-sm font-medium transition-colors whitespace-nowrap"
+          className="px-3 py-2.5 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors whitespace-nowrap"
         >
           Present
         </button>
@@ -1045,12 +1075,12 @@ function ExperienceCard({ experience, index }: { experience: Experience; index: 
   };
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-white/50">Position {index + 1}</span>
+        <span className="text-sm text-slate-500">Position {index + 1}</span>
         <button
           onClick={() => removeExperience(experience.id)}
-          className="flex items-center gap-1 text-red-400/70 hover:text-red-400 text-sm transition-colors"
+          className="flex items-center gap-1 text-red-500/70 hover:text-red-600 text-sm transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
           Remove
@@ -1107,22 +1137,22 @@ function ExperienceCard({ experience, index }: { experience: Experience; index: 
             onChange={(e) => updateExperience(experience.id, { description: e.target.value.split("\n") })}
             placeholder="• Led development of new features serving 1M+ users&#10;• Improved performance by 40% through optimization&#10;• Mentored 3 junior developers"
             rows={4}
-            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 transition-all resize-none"
+            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
           />
           <button
             onClick={handleOptimizeBullets}
             disabled={isOptimizing || !experience.description.some(Boolean)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed border border-purple-500/30 text-purple-300 text-xs font-medium rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-200 text-emerald-700 text-xs font-medium rounded-lg transition-all"
           >
             {isOptimizing ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Optimizing...
+                Generating...
               </>
             ) : (
               <>
-                <Wand2 className="w-3.5 h-3.5" />
-                Optimize with AI
+                <Sparkles className="w-3.5 h-3.5" />
+                ✨ Generate Bullets
               </>
             )}
           </button>
@@ -1136,12 +1166,12 @@ function EducationCard({ education, index }: { education: Education; index: numb
   const { updateEducation, removeEducation } = useResumeStore();
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-white/50">Education {index + 1}</span>
+        <span className="text-sm text-slate-500">Education {index + 1}</span>
         <button
           onClick={() => removeEducation(education.id)}
-          className="flex items-center gap-1 text-red-400/70 hover:text-red-400 text-sm transition-colors"
+          className="flex items-center gap-1 text-red-500/70 hover:text-red-600 text-sm transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
           Remove
@@ -1224,7 +1254,7 @@ function CustomSectionCard({
   onRemoveItem: (itemId: string) => void;
 }) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <FormInput
           value={section.title}
@@ -1234,7 +1264,7 @@ function CustomSectionCard({
         />
         <button
           onClick={onRemove}
-          className="flex items-center gap-1 text-red-400/70 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 text-red-500/70 hover:text-red-600 text-sm transition-colors whitespace-nowrap"
         >
           <Trash2 className="w-3.5 h-3.5" />
           Remove
@@ -1244,16 +1274,16 @@ function CustomSectionCard({
       <div className="space-y-2">
         {section.items.map((item, idx) => (
           <div key={item.id} className="flex items-center gap-2">
-            <span className="text-white/30 text-sm w-6">{idx + 1}.</span>
+            <span className="text-slate-400 text-sm w-6">{idx + 1}.</span>
             <input
               value={item.text}
               onChange={(e) => onUpdateItem(item.id, e.target.value)}
               placeholder="Add an item..."
-              className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 transition-all"
+              className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-all"
             />
             <button
               onClick={() => onRemoveItem(item.id)}
-              className="text-white/30 hover:text-red-400 transition-colors p-1"
+              className="text-slate-400 hover:text-red-500 transition-colors p-1"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1261,7 +1291,7 @@ function CustomSectionCard({
         ))}
         <button
           onClick={onAddItem}
-          className="flex items-center gap-1.5 text-purple-400/70 hover:text-purple-300 text-sm transition-colors"
+          className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 text-sm transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Item

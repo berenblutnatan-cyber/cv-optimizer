@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==============================================
+   GLOBAL NAVIGATION & SCROLL BEHAVIOR
+   ============================================== */
+
+html {
+  /* Offset for fixed header when scrolling to anchors (h-20 = 80px + 16px buffer) */
+  scroll-padding-top: 96px;
+}
+
 body {
   /* Black base across the entire app */
   background-color: #000000;
@@ -17,4 +26,118 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ==============================================
+   PRINT STYLES - Pixel-Perfect CV Printing
+   ============================================== */
+
+@media print {
+  @page {
+    margin: 0;
+    size: A4;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide non-print elements */
+  .no-print,
+  header:not(.cv-header),
+  footer:not(.cv-footer),
+  nav,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Ensure CV page fills exactly */
+  .a4-page {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+
+  /* Prevent orphaned content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+}
+
+/* ==============================================
+   A4 PAGE CONTAINER - Screen Preview
+   ============================================== */
+
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+  min-height: 297mm;
+  max-height: 297mm;
+  background: white;
+  margin: 0 auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Ensure proper scaling in preview */
+.a4-page * {
+  box-sizing: border-box;
+}
+
+/* ==============================================
+   CV TYPOGRAPHY - Consistent Text Rendering
+   ============================================== */
+
+.cv-text {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.cv-text-serif {
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.cv-text-sans {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ==============================================
+   CV LAYOUT UTILITIES
+   ============================================== */
+
+/* Prevent text overflow */
+.cv-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ensure content doesn't break outside container */
+.cv-contain {
+  contain: layout style;
+}
+
+/* Flex column that fills space evenly */
+.cv-flex-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }

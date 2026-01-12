@@ -1,36 +1,113 @@
 "use client";
 
 import React from "react";
-import { useCVDensity, isBulletLine, isJobTitleLine } from "@/hooks/useCVDensity";
+import { parseCV, isBulletLine, isJobTitleLine } from "@/hooks/useCVDensity";
 
 interface ModernTemplateProps {
   data: string;
 }
 
 /**
- * Modern Template
- * Clean tech look with sans-serif font, purple accents
- * Uses density-based styling for consistent layout across all CV lengths
+ * Modern Template - "The Modern"
+ * 
+ * DESIGN PHILOSOPHY:
+ * - Clean, contemporary tech aesthetic
+ * - Sans-serif typography (Inter/System)
+ * - Emerald accent color (#059669)
+ * - Left accent bar on header
+ * - Geometric bullet markers
+ * 
+ * PIXEL-PERFECT SPECS:
+ * - A4: 210mm x 297mm
+ * - Margins: 18mm all sides
+ * - Name: 22px, bold, tight tracking
+ * - Section Headers: 11px, bold, uppercase, emerald color
+ * - Body: 10px, leading: 1.45
+ * - Accent: 4px emerald left border on header
  */
 export function ModernTemplate({ data }: ModernTemplateProps) {
-  const { parsed, density } = useCVDensity(data);
+  const parsed = parseCV(data);
   const { name, contact, sections } = parsed;
+
+  // Emerald brand color
+  const EMERALD = "#059669";
+  const EMERALD_LIGHT = "#10b981";
+
+  // Calculate content density for adaptive spacing
+  const totalLines = sections.reduce((acc, s) => acc + s.content.length, 0);
+  const isCompact = totalLines > 35;
+  const isVeryCompact = totalLines > 50;
+
+  // Adaptive spacing
+  const spacing = {
+    sectionGap: isVeryCompact ? "12px" : isCompact ? "14px" : "18px",
+    lineGap: isVeryCompact ? "2px" : isCompact ? "3px" : "4px",
+    headerMargin: isVeryCompact ? "5px" : isCompact ? "7px" : "10px",
+    bodySize: isVeryCompact ? "9px" : isCompact ? "9.5px" : "10px",
+    lineHeight: isVeryCompact ? 1.35 : isCompact ? 1.4 : 1.45,
+  };
 
   return (
     <div
-      className={`w-[210mm] h-[297mm] bg-white text-gray-800 ${density.containerPadding} box-border flex flex-col overflow-hidden`}
-      style={{ fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
+      className="a4-page cv-text cv-text-sans"
+      style={{
+        padding: "18mm",
+        display: "flex",
+        flexDirection: "column",
+        color: "#374151",
+        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
     >
-      {/* Header with purple accent */}
-      <header className="border-l-4 border-purple-600 pl-4 mb-5 flex-shrink-0">
-        <h1 className={`${density.nameSize} font-bold text-gray-900 tracking-tight mb-2`}>
+      {/* Header with Emerald Accent Bar */}
+      <header
+        className="cv-header"
+        style={{
+          borderLeft: `4px solid ${EMERALD}`,
+          paddingLeft: "16px",
+          marginBottom: "18px",
+          flexShrink: 0,
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "22px",
+            fontWeight: 700,
+            color: "#111827",
+            letterSpacing: "-0.02em",
+            margin: 0,
+            marginBottom: "6px",
+          }}
+        >
           {name}
         </h1>
         {contact.length > 0 && (
-          <div className={`${density.contactSize} flex flex-wrap gap-3 text-gray-600`}>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "12px",
+              fontSize: "9.5px",
+              color: "#6b7280",
+            }}
+          >
             {contact.map((c, idx) => (
-              <span key={idx} className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+              <span
+                key={idx}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span
+                  style={{
+                    width: "5px",
+                    height: "5px",
+                    borderRadius: "50%",
+                    backgroundColor: EMERALD_LIGHT,
+                    flexShrink: 0,
+                  }}
+                />
                 {c}
               </span>
             ))}
@@ -38,46 +115,121 @@ export function ModernTemplate({ data }: ModernTemplateProps) {
         )}
       </header>
 
-      {/* Content - flex-1 to fill available space */}
-      <div className={`flex-1 flex flex-col ${density.sectionGap} overflow-hidden`}>
-        {sections.map((section, idx) => (
-          <section key={idx} className="flex-shrink-0">
-            <h2 className={`${density.headerSize} font-bold text-purple-600 uppercase tracking-wider ${density.headerMargin} flex items-center gap-2`}>
-              <span className="w-5 h-0.5 bg-purple-600" />
+      {/* Sections Container */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: spacing.sectionGap,
+          overflow: "hidden",
+        }}
+      >
+        {sections.map((section, sectionIdx) => (
+          <section
+            key={sectionIdx}
+            style={{
+              flexShrink: 0,
+            }}
+          >
+            {/* Section Header with Dash Icon */}
+            <h2
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "10px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: EMERALD,
+                marginBottom: spacing.headerMargin,
+              }}
+            >
+              <span
+                style={{
+                  width: "16px",
+                  height: "2px",
+                  backgroundColor: EMERALD,
+                  flexShrink: 0,
+                }}
+              />
               {section.title}
             </h2>
-            <div className={`flex flex-col ${density.lineGap} pl-2`}>
+
+            {/* Section Content */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: spacing.lineGap,
+                paddingLeft: "8px",
+              }}
+            >
               {section.content.map((line, lineIdx) => {
                 const isBullet = isBulletLine(line);
                 const isJobTitle = isJobTitleLine(line, lineIdx);
-                
+
+                // Bullet point with arrow marker
                 if (isBullet) {
+                  const cleanLine = line.replace(/^[•\-*]\s*/, "");
                   return (
-                    <p 
-                      key={lineIdx} 
-                      className={`${density.bodySize} ${density.lineHeight} text-gray-700 flex items-start gap-2`}
+                    <p
+                      key={lineIdx}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "8px",
+                        fontSize: spacing.bodySize,
+                        lineHeight: spacing.lineHeight,
+                        color: "#4b5563",
+                        margin: 0,
+                      }}
                     >
-                      <span className="text-purple-500 mt-1 text-[8px]">▸</span>
-                      <span>{line.replace(/^[•\-*]\s*/, "")}</span>
+                      <span
+                        style={{
+                          color: EMERALD_LIGHT,
+                          fontSize: "8px",
+                          marginTop: "3px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        ▸
+                      </span>
+                      <span>{cleanLine}</span>
                     </p>
                   );
                 }
-                
+
+                // Job title / Company line
                 if (isJobTitle) {
                   return (
-                    <p 
-                      key={lineIdx} 
-                      className={`${density.bodySize} ${density.lineHeight} font-semibold text-gray-900 ${lineIdx > 0 ? "mt-3" : ""}`}
+                    <p
+                      key={lineIdx}
+                      style={{
+                        fontSize: spacing.bodySize,
+                        lineHeight: spacing.lineHeight,
+                        fontWeight: 600,
+                        color: "#111827",
+                        margin: 0,
+                        marginTop: lineIdx > 0 ? "6px" : 0,
+                      }}
                     >
                       {line}
                     </p>
                   );
                 }
-                
+
+                // Regular content
                 return (
-                  <p 
-                    key={lineIdx} 
-                    className={`${density.bodySize} ${density.lineHeight} text-gray-700`}
+                  <p
+                    key={lineIdx}
+                    style={{
+                      fontSize: spacing.bodySize,
+                      lineHeight: spacing.lineHeight,
+                      color: "#4b5563",
+                      margin: 0,
+                    }}
                   >
                     {line}
                   </p>

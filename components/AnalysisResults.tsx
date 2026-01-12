@@ -3,6 +3,18 @@
 import { useState } from "react";
 import { TemplatePreviewCard } from "./TemplatePreviewCard";
 import { TemplateType } from "./cv-templates";
+import { 
+  CheckCircle2, 
+  AlertTriangle, 
+  ExternalLink, 
+  Sparkles,
+  Target,
+  BookOpen,
+  Copy,
+  Check,
+  FileText,
+  Lightbulb
+} from "lucide-react";
 
 interface AnalysisResult {
   overallScore: number;
@@ -44,10 +56,14 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
   const [activeTab, setActiveTab] = useState<"overview" | "changes" | "optimized" | "cover-letter">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
 
-  const scoreTone =
-    results.overallScore >= 80 ? "bg-emerald-400/15 border-emerald-300/25 text-emerald-100" : results.overallScore >= 60
-      ? "bg-amber-400/15 border-amber-300/25 text-amber-100"
-      : "bg-rose-400/15 border-rose-300/25 text-rose-100";
+  // Score color based on value
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return { ring: "stroke-emerald-500", bg: "bg-emerald-500/20", text: "text-emerald-400" };
+    if (score >= 60) return { ring: "stroke-amber-500", bg: "bg-amber-500/20", text: "text-amber-400" };
+    return { ring: "stroke-rose-500", bg: "bg-rose-500/20", text: "text-rose-400" };
+  };
+
+  const scoreColors = getScoreColor(results.overallScore);
 
   const handleCopyOptimized = () => {
     navigator.clipboard.writeText(results.optimizedCV);
@@ -63,177 +79,222 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
   const getLearningLinks = (skill: string) => {
     const q = encodeURIComponent(`${skill} course`);
     return [
-      { label: "Coursera", href: `https://www.coursera.org/search?query=${q}` },
-      { label: "Udemy", href: `https://www.udemy.com/courses/search/?q=${q}` },
-      { label: "edX", href: `https://www.edx.org/search?q=${q}` },
-      { label: "YouTube", href: `https://www.youtube.com/results?search_query=${q}` },
+      { label: "Coursera", href: `https://www.coursera.org/search?query=${q}`, color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+      { label: "Udemy", href: `https://www.udemy.com/courses/search/?q=${q}`, color: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
+      { label: "YouTube", href: `https://www.youtube.com/results?search_query=${q}`, color: "bg-red-500/20 text-red-300 border-red-500/30" },
     ];
   };
 
+  const tabs = [
+    { id: "overview" as const, label: "Overview" },
+    { id: "changes" as const, label: `Suggested Changes`, count: results.suggestedChanges.length },
+    { id: "optimized" as const, label: "Optimized CV" },
+    ...(coverLetterTab ? [{ id: "cover-letter" as const, label: "Cover Letter" }] : []),
+  ];
+
   return (
-    <div className="bg-white/5 rounded-3xl border border-white/10 overflow-hidden backdrop-blur shadow-[0_30px_90px_rgba(0,0,0,0.45)] h-full flex flex-col min-h-0">
-      {/* Tabs */}
-      <div className="border-b border-white/10 bg-white/5">
-        <div className="flex p-1.5 gap-2">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors rounded-2xl border ${
-              activeTab === "overview"
-                ? "bg-indigo-500 text-white border-white/10"
-                : "bg-white/0 text-white/70 border-white/0 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab("changes")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors rounded-2xl border ${
-              activeTab === "changes"
-                ? "bg-indigo-500 text-white border-white/10"
-                : "bg-white/0 text-white/70 border-white/0 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            Suggested Changes ({results.suggestedChanges.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("optimized")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors rounded-2xl border ${
-              activeTab === "optimized"
-                ? "bg-indigo-500 text-white border-white/10"
-                : "bg-white/0 text-white/70 border-white/0 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            Optimized CV
-          </button>
-          {coverLetterTab && (
+    <div className="bg-slate-900 rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl h-full flex flex-col min-h-0">
+      {/* Top Navigation - Pill-shaped Segmented Control */}
+      <div className="p-3 bg-slate-800/50 border-b border-slate-700/50">
+        <div className="inline-flex bg-slate-800 rounded-xl p-1 gap-1">
+          {tabs.map((tab) => (
             <button
-              onClick={() => setActiveTab("cover-letter")}
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors rounded-2xl border ${
-                activeTab === "cover-letter"
-                  ? "bg-indigo-500 text-white border-white/10"
-                  : "bg-white/0 text-white/70 border-white/0 hover:bg-white/5 hover:text-white"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                activeTab === tab.id
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25"
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
               }`}
             >
-              Cover Letter
+              {tab.label}
+              {tab.count !== undefined && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === tab.id ? "bg-white/20" : "bg-slate-700"
+                }`}>
+                  {tab.count}
+                </span>
+              )}
             </button>
-          )}
+          ))}
         </div>
       </div>
 
       {/* Tab Content */}
-      <div className="p-4 flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="p-5 flex-1 min-h-0 overflow-hidden flex flex-col">
         {activeTab === "overview" && (
-          <div className="space-y-4 flex-1 min-h-0 overflow-auto pr-1">
-            {/* Header with Score (Overview only) */}
-            <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 p-4 text-white rounded-2xl border border-white/10">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold tracking-tight mb-1">Match Analysis</h3>
-                  <p className="text-white/85">{results.summary}</p>
-                </div>
-                <div className="text-center">
-                  <div className={`w-[68px] h-[68px] rounded-2xl border ${scoreTone} backdrop-blur flex items-center justify-center`}>
-                    <span className="text-2xl font-bold text-white">{results.overallScore}</span>
+          <div className="space-y-5 flex-1 min-h-0 overflow-auto pr-1">
+            {/* Hero Score Card - Gradient Banner */}
+            <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 rounded-xl p-6 shadow-lg shadow-indigo-500/20">
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-5 h-5 text-white/80" />
+                    <h3 className="text-lg font-bold text-white">Match Analysis</h3>
                   </div>
-                  <p className="text-sm mt-2 text-white/85">Match Score</p>
+                  <p className="text-white/90 leading-relaxed">{results.summary}</p>
+                </div>
+                
+                {/* Large Score Circle */}
+                <div className="flex-shrink-0 text-center">
+                  <div className="relative w-24 h-24">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.2)"
+                        strokeWidth="8"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={`${results.overallScore * 2.64} 264`}
+                        className="transition-all duration-1000"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-3xl font-bold text-white">{results.overallScore}</span>
+                    </div>
+                  </div>
+                  <p className="text-sm mt-2 text-white/80 font-medium">Match Score</p>
                 </div>
               </div>
             </div>
 
-            {/* Strengths */}
+            {/* Strengths & Areas to Improve Grid */}
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white/4 border border-white/10 rounded-2xl p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <span className="w-6 h-6 bg-emerald-400/15 border border-emerald-300/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
-                Strengths
-              </h4>
-              <ul className="space-y-2">
-                {results.strengths.map((strength, index) => (
-                  <li key={index} className="flex items-start gap-2 text-white/80">
-                    <span className="text-emerald-200 mt-1">•</span>
-                    {strength}
-                  </li>
-                ))}
-              </ul>
+              {/* Strengths Card */}
+              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
+                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  Strengths
+                </h4>
+                <ul className="space-y-3">
+                  {results.strengths.map((strength, index) => (
+                    <li key={index} className="flex items-start gap-3 text-slate-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                      <span>{strength}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-            {/* Areas to Improve */}
-              <div className="bg-white/4 border border-white/10 rounded-2xl p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <span className="w-6 h-6 bg-amber-400/15 border border-amber-300/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </span>
-                Areas to Improve
-              </h4>
-              <ul className="space-y-2">
-                {results.improvements.map((improvement, index) => (
-                  <li key={index} className="flex items-start gap-2 text-white/80">
-                    <span className="text-amber-200 mt-1">•</span>
-                    {improvement}
-                  </li>
-                ))}
-              </ul>
+              {/* Areas to Improve Card */}
+              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
+                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  </div>
+                  Areas to Improve
+                </h4>
+                <ul className="space-y-3">
+                  {results.improvements.map((improvement, index) => (
+                    <li key={index} className="flex items-start gap-3 text-slate-300">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                      <span>{improvement}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
-            {/* Keywords */}
+            {/* Keywords Analysis Section */}
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                <h4 className="font-semibold text-white mb-2">Keywords Found</h4>
+              {/* Keywords Found */}
+              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
+                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                    <Check className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  Keywords Found
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {results.keywords.present.map((keyword, index) => (
-                    <span key={index} className="px-2.5 py-1 bg-emerald-400/15 text-emerald-100 border border-emerald-300/20 rounded-full text-xs">
+                    <span 
+                      key={index} 
+                      className="px-3 py-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-lg text-sm font-medium"
+                    >
                       {keyword}
                     </span>
                   ))}
+                  {results.keywords.present.length === 0 && (
+                    <span className="text-slate-500 text-sm">No keywords found</span>
+                  )}
                 </div>
               </div>
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                <h4 className="font-semibold text-white mb-2">Missing Keywords</h4>
+
+              {/* Missing Keywords */}
+              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
+                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-rose-500/20 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+                  </div>
+                  Missing Keywords
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {results.keywords.missing.map((keyword, index) => (
-                    <span key={index} className="px-2.5 py-1 bg-rose-400/15 text-rose-100 border border-rose-300/20 rounded-full text-xs">
+                    <span 
+                      key={index} 
+                      className="px-3 py-1.5 bg-rose-500/15 text-rose-300 border border-rose-500/30 rounded-lg text-sm font-medium"
+                    >
                       {keyword}
                     </span>
                   ))}
+                  {results.keywords.missing.length === 0 && (
+                    <span className="text-slate-500 text-sm">No missing keywords</span>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Skill gaps + learning resources */}
+            {/* Skills Gap / Learning Path */}
             {missingKeySkills.length > 0 && (
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                <h4 className="font-semibold text-white mb-3">Missing skills to learn</h4>
+              <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-5 shadow-lg">
+                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  Missing Skills to Learn
+                </h4>
                 <div className="space-y-3">
-                  {missingKeySkills.map((skill, index) => (
-                    <div key={`${skill}-${index}`} className="bg-white/5 rounded-xl p-3 border border-white/10">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
+                  {missingKeySkills.slice(0, 6).map((skill, index) => (
+                    <div 
+                      key={`${skill}-${index}`} 
+                      className="flex items-center justify-between gap-4 bg-slate-700/50 rounded-lg p-3 border border-slate-600/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Lightbulb className="w-4 h-4 text-amber-400" />
                         <span className="font-medium text-white">{skill}</span>
-                        <div className="flex flex-wrap gap-2">
-                          {getLearningLinks(skill).map((link) => (
-                            <a
-                              key={link.label}
-                              href={link.href}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-100 border border-indigo-300/20 hover:bg-indigo-500/30 transition-colors"
-                            >
-                              {link.label}
-                            </a>
-                          ))}
-                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {getLearningLinks(skill).map((link) => (
+                          <a
+                            key={link.label}
+                            href={link.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`text-xs px-3 py-1.5 rounded-lg border font-medium hover:opacity-80 transition-opacity flex items-center gap-1 ${link.color}`}
+                          >
+                            {link.label}
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ))}
                       </div>
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-sm text-white/60">
-                  Tip: only add a skill to your CV if you genuinely have it (or are actively learning it).
+                <p className="mt-4 text-sm text-slate-400 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Tip: Only add skills to your CV if you genuinely have them or are actively learning.
                 </p>
               </div>
             )}
@@ -242,50 +303,67 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
 
         {activeTab === "changes" && (
           <div className="space-y-4 flex-1 min-h-0 overflow-auto pr-1">
-            {results.suggestedChanges.map((change, index) => (
-              <div key={index} className="border border-white/10 rounded-2xl overflow-hidden bg-white/5">
-                <div className="bg-white/5 px-4 py-3 border-b border-white/10">
-                  <span className="font-medium text-white">{change.section}</span>
-                </div>
-                <div className="p-4 space-y-3">
-                  <div>
-                    <p className="text-xs text-white/50 uppercase tracking-wide mb-1">Original</p>
-                    <p className="text-white/80 bg-rose-500/10 p-3 rounded-xl border border-rose-400/20">
-                      {change.original}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-white/50 uppercase tracking-wide mb-1">Suggested</p>
-                    <p className="text-white bg-emerald-500/10 p-3 rounded-xl border border-emerald-400/20">
-                      {change.suggested}
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2 text-sm text-white/70">
-                    <svg className="w-4 h-4 text-indigo-200 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{change.reason}</span>
-                  </div>
-                </div>
+            {results.suggestedChanges.length === 0 ? (
+              <div className="text-center py-12">
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                <p className="text-slate-400">No suggested changes - your CV looks great!</p>
               </div>
-            ))}
+            ) : (
+              results.suggestedChanges.map((change, index) => (
+                <div key={index} className="bg-slate-800 border border-slate-700/50 rounded-xl overflow-hidden shadow-lg">
+                  <div className="bg-slate-700/50 px-5 py-3 border-b border-slate-600/50 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <span className="font-semibold text-white">{change.section}</span>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Original</p>
+                      <p className="text-slate-300 bg-rose-500/10 p-4 rounded-lg border border-rose-500/20 leading-relaxed">
+                        {change.original}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Suggested</p>
+                      <p className="text-white bg-emerald-500/10 p-4 rounded-lg border border-emerald-500/20 leading-relaxed">
+                        {change.suggested}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-start gap-3 text-sm text-slate-400 bg-slate-700/30 p-3 rounded-lg">
+                      <Lightbulb className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                      <span>{change.reason}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
 
         {activeTab === "optimized" && (
           <div className="flex-1 min-h-0 flex flex-col overflow-auto">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+            <div className="flex justify-between items-center mb-5 flex-shrink-0">
               <div>
-                <p className="text-white/75">Choose a template and download your optimized CV:</p>
-                <p className="text-white/50 text-sm mt-1">Click on any template to preview full size</p>
+                <h3 className="text-white font-semibold mb-1">Choose Your Template</h3>
+                <p className="text-slate-400 text-sm">Click on any template to preview and download</p>
               </div>
               <button
                 onClick={handleCopyOptimized}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/10 text-white rounded-xl transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white rounded-lg transition-colors font-medium"
               >
-                {copiedOptimized ? "Copied!" : "Copy Raw Text"}
+                {copiedOptimized ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy Text
+                  </>
+                )}
               </button>
             </div>
 
@@ -305,11 +383,15 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
 
         {activeTab === "cover-letter" && coverLetterTab && (
           <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center">
+                <FileText className="w-5 h-5 text-indigo-400" />
+              </div>
               <div>
-                <h4 className="text-white font-semibold tracking-tight">
-                  {coverLetterTab.title || "Cover Letter"}
+                <h4 className="text-white font-semibold">
+                  {coverLetterTab.title || "AI Cover Letter Generator"}
                 </h4>
+                <p className="text-slate-400 text-sm">Generate a tailored cover letter for this position</p>
               </div>
             </div>
 
@@ -317,44 +399,56 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
             <button
               onClick={coverLetterTab.onGenerate}
               disabled={coverLetterTab.isGenerating || !!coverLetterTab.text}
-              className="w-full px-6 py-4 bg-indigo-500 hover:bg-indigo-400 disabled:bg-white/10 border border-white/10 text-white text-base font-semibold rounded-2xl transition-colors"
+              className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-slate-700 disabled:to-slate-700 text-white text-base font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/20 disabled:shadow-none flex items-center justify-center gap-2"
             >
-              {coverLetterTab.isGenerating
-                ? "Generating cover letter..."
-                : coverLetterTab.text
-                ? "Cover Letter Generated"
-                : "Generate Cover Letter"}
+              {coverLetterTab.isGenerating ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Generating cover letter...
+                </>
+              ) : coverLetterTab.text ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Cover Letter Generated
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Generate Cover Letter
+                </>
+              )}
             </button>
 
             {/* Show textarea only after generation */}
             {coverLetterTab.text && (
               <div className="mt-4 flex-1 min-h-0 flex flex-col">
-                <div className="flex items-center justify-end gap-2 mb-2 flex-shrink-0">
+                <div className="flex items-center justify-end gap-2 mb-3 flex-shrink-0">
                   <button
                     onClick={coverLetterTab.onCopy}
-                    className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium rounded-xl transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white text-sm font-medium rounded-lg transition-colors"
                   >
+                    {coverLetterTab.copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {coverLetterTab.copied ? "Copied" : "Copy"}
                   </button>
                   <button
                     onClick={coverLetterTab.onDownloadPdf}
                     disabled={coverLetterTab.isDownloadingPdf}
-                    className="px-3 py-2 bg-white/5 hover:bg-white/10 disabled:bg-white/5 border border-white/10 text-white text-sm font-medium rounded-xl transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 border border-slate-600 text-white text-sm font-medium rounded-lg transition-colors"
                   >
+                    <FileText className="w-4 h-4" />
                     {coverLetterTab.isDownloadingPdf ? "Downloading..." : "Download PDF"}
                   </button>
                 </div>
                 <textarea
                   value={coverLetterTab.text}
                   onChange={(e) => coverLetterTab.onTextChange(e.target.value)}
-                  className="w-full h-[42vh] md:h-[50vh] lg:h-[55vh] min-h-[320px] px-4 py-3 bg-white/5 text-white border border-white/10 rounded-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none resize-none placeholder:text-white/35 leading-relaxed"
+                  className="w-full flex-1 min-h-[320px] px-5 py-4 bg-slate-800 text-white border border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none placeholder:text-slate-500 leading-relaxed"
                 />
               </div>
             )}
           </div>
         )}
       </div>
-
     </div>
   );
 }

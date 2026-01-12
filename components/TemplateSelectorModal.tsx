@@ -5,11 +5,9 @@ import { useReactToPrint } from "react-to-print";
 import { X, Download } from "lucide-react";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import {
-  HarvardTemplate,
-  ModernTemplate,
-  CreativeTemplate,
   TemplateType,
   TEMPLATE_INFO,
+  TEMPLATE_COMPONENTS,
 } from "./cv-templates";
 
 interface TemplateSelectorModalProps {
@@ -18,13 +16,6 @@ interface TemplateSelectorModalProps {
   cvData: string; // The optimized CV text
   fileName?: string;
 }
-
-// Template components map
-const TEMPLATE_COMPONENTS: Record<TemplateType, React.ComponentType<{ data: string }>> = {
-  harvard: HarvardTemplate,
-  modern: ModernTemplate,
-  creative: CreativeTemplate,
-};
 
 // Individual template card with its own print ref
 function TemplateCard({

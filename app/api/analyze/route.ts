@@ -119,17 +119,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!finalJobDescription) {
-      // Allow title-only optimization
-      if (!jobTitle && mode === "title_only") {
-        return NextResponse.json({ error: "No job title provided" }, { status: 400 });
-      }
-      if (mode === "specific_role") {
-        return NextResponse.json(
-          { error: "No job description provided for specific-role mode" },
-          { status: 400 }
-        );
-      }
+    // Validation: Need at least jobDescription OR jobTitle to proceed
+    const hasJobContext = finalJobDescription?.trim() || jobTitle?.trim();
+    
+    if (!hasJobContext) {
+      return NextResponse.json(
+        { error: "Please provide a Job Title, Job Description, or URL to continue." },
+        { status: 400 }
+      );
     }
 
     const effectiveJobTitle =

@@ -5,18 +5,10 @@ import { useReactToPrint } from "react-to-print";
 import { Download, Maximize2, X } from "lucide-react";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import {
-  HarvardTemplate,
-  ModernTemplate,
-  CreativeTemplate,
   TemplateType,
   TEMPLATE_INFO,
+  TEMPLATE_COMPONENTS,
 } from "./cv-templates";
-
-const TEMPLATE_COMPONENTS: Record<TemplateType, React.ComponentType<{ data: string }>> = {
-  harvard: HarvardTemplate,
-  modern: ModernTemplate,
-  creative: CreativeTemplate,
-};
 
 interface TemplatePreviewCardProps {
   templateId: TemplateType;
