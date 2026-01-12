@@ -1,55 +1,49 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
 
 type LogoProps = {
   variant?: "light" | "dark";
   size?: "sm" | "md" | "lg";
-  linkTo?: string;
 };
 
-export function Logo({ variant = "dark", size = "md", linkTo }: LogoProps) {
+export function Logo({ variant = "dark", size = "md" }: LogoProps) {
   const sizeClasses = {
-    sm: "w-6 h-6",
-    md: "w-8 h-8",
-    lg: "w-10 h-10",
+    sm: "w-7 h-7",
+    md: "w-9 h-9",
+    lg: "w-11 h-11",
   };
 
   const textSizeClasses = {
-    sm: "text-base",
-    md: "text-xl",
-    lg: "text-2xl",
+    sm: "text-xl",
+    md: "text-2xl",
+    lg: "text-3xl",
   };
 
-  const iconSizeClasses = {
-    sm: "w-3 h-3",
-    md: "w-4 h-4",
-    lg: "w-5 h-5",
-  };
-
-  const textColorClass = variant === "dark" ? "text-slate-900" : "text-white";
-
-  const content = (
-    <>
-      <div className={`${sizeClasses[size]} rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center`}>
-        <Sparkles className={`${iconSizeClasses[size]} text-white`} />
-      </div>
-      <span className={`${textSizeClasses[size]} font-bold tracking-tight ${textColorClass}`}>
-        Hired
-      </span>
-    </>
-  );
-
-  if (linkTo) {
-    return (
-      <Link href={linkTo} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-        {content}
-      </Link>
-    );
-  }
+  const textColorClass = variant === "dark" ? "text-[#2c3e7d]" : "text-white";
 
   return (
-    <div className="flex items-center gap-2">
-      {content}
-    </div>
+    <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-all duration-200 cursor-pointer group">
+      <div className={`${sizeClasses[size]} flex items-center justify-center relative`}>
+        <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
+          {/* Left vertical bar (dark blue) */}
+          <rect x="15" y="20" width="15" height="60" fill="#2c3e7d" rx="2"/>
+          
+          {/* Right vertical bar (dark blue) */}
+          <rect x="70" y="20" width="15" height="60" fill="#2c3e7d" rx="2"/>
+          
+          {/* Middle horizontal bar (yellow/orange) */}
+          <path 
+            d="M 30 45 L 70 55 L 70 65 L 30 55 Z" 
+            fill="#f59e0b"
+          />
+        </svg>
+      </div>
+      <div className="flex flex-col leading-none">
+        <span 
+          className={`${textSizeClasses[size]} font-bold ${textColorClass} tracking-tight`}
+        >
+          Hired
+        </span>
+      </div>
+    </Link>
   );
 }

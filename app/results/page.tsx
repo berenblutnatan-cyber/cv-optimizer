@@ -31,7 +31,7 @@ export default function ResultsPage() {
       <div className="min-h-screen bg-slate-50">
         <header className="w-full bg-white border-b border-slate-200 px-6 lg:px-12 py-4">
           <div className="flex items-center justify-between">
-            <Logo variant="dark" size="md" linkTo="/" />
+            <Logo variant="dark" size="md" />
           </div>
         </header>
         <div className="max-w-4xl mx-auto px-4 py-16">
