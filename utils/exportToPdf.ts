@@ -1,9 +1,8 @@
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-
 /**
  * Export an HTML element to PDF using html2canvas + jsPDF
  * This provides a direct download without print dialog
+ * 
+ * Uses dynamic imports to avoid SSR issues with jspdf
  */
 export async function exportToPdf(
   element: HTMLElement,
@@ -12,6 +11,10 @@ export async function exportToPdf(
   if (!element) {
     throw new Error("No element provided for PDF export");
   }
+
+  // Dynamic imports to avoid SSR issues
+  const html2canvas = (await import("html2canvas")).default;
+  const { jsPDF } = await import("jspdf");
 
   // A4 dimensions in mm
   const A4_WIDTH_MM = 210;
@@ -35,7 +38,7 @@ export async function exportToPdf(
 
   // Create PDF
   const pdf = new jsPDF({
-    orientation: imgHeight > A4_HEIGHT_MM ? "portrait" : "portrait",
+    orientation: "portrait",
     unit: "mm",
     format: "a4",
   });
