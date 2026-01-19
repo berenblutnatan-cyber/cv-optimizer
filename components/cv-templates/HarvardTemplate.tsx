@@ -5,6 +5,7 @@ import { parseCV, isBulletLine, isJobTitleLine } from "@/hooks/useCVDensity";
 
 interface HarvardTemplateProps {
   data: string;
+  photo?: string; // Not used in this template, but included for consistency
 }
 
 /**

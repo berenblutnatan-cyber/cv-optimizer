@@ -84,11 +84,11 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
       {inputMode === "upload" ? (
         <>
           {selectedFile ? (
-            <div className="border border-emerald-400/30 bg-emerald-500/10 rounded-xl p-4">
+            <div className="border border-indigo-400/30 bg-indigo-500/10 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-emerald-500/15 rounded-lg flex items-center justify-center border border-emerald-400/20">
-                    <svg className="w-6 h-6 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-indigo-500/15 rounded-lg flex items-center justify-center border border-indigo-400/20">
+                    <svg className="w-6 h-6 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>

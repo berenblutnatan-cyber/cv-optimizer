@@ -48,19 +48,36 @@ export async function POST(request: NextRequest) {
     const companyName = (body?.companyName as string | undefined) ?? "";
 
     if (!cvText.trim()) return NextResponse.json({ error: "Missing cvText" }, { status: 400 });
-    if (!jobDescription.trim()) return NextResponse.json({ error: "Missing jobDescription" }, { status: 400 });
-    if (!companyName.trim()) return NextResponse.json({ error: "Missing companyName" }, { status: 400 });
+    
+    // Either job description OR job title is required (not both)
+    const hasJobDescription = jobDescription.trim().length > 0;
+    const hasJobTitle = jobTitle.trim().length > 0;
+    
+    if (!hasJobDescription && !hasJobTitle) {
+      return NextResponse.json({ error: "Please provide either a job title or job description" }, { status: 400 });
+    }
 
     const effectiveJobTitle =
       cleanTitle(jobTitle).trim() || inferJobTitleFromDescription(jobDescription, companyName) || "Role";
+    
+    const effectiveCompany = companyName.trim() || "Target Company";
+
+    // Build dynamic prompt based on available information
+    const jobContextSection = hasJobDescription 
+      ? `Job description:\n${jobDescription}`
+      : `[No job description provided. Create a cover letter targeting the "${effectiveJobTitle}" role, using typical responsibilities and requirements for this position.]`;
+
+    const companySection = companyName.trim()
+      ? `Company:\n${effectiveCompany}`
+      : `[Company name not specified. Keep company references generic but professional.]`;
 
     const prompt = `I will provide:
 1) My CV
-2) The job description
-3) The company name and context
+2) The target role${hasJobDescription ? " and job description" : ""}
+${companyName.trim() ? "3) The company name" : ""}
 
 Your task:
-Create a concise, high-impact cover letter tailored specifically to this role and company.
+Create a concise, high-impact cover letter tailored specifically to this role${companyName.trim() ? " and company" : ""}.
 
 STRICT REQUIREMENTS:
 - Length: 220–300 words MAX (never exceed one page)
@@ -74,16 +91,14 @@ STRICT REQUIREMENTS:
 STRUCTURE:
 1. Opening (2–3 sentences)
    - Directly state the role
-   - One sharp hook linking my background to the company's mission/product
+   - One sharp hook linking my background to ${companyName.trim() ? "the company's mission/product" : "typical requirements for this role"}
 
 2. Core Value (1 short paragraph)
    - 2–3 concrete strengths or achievements from my CV
-   - Tie each explicitly to what the job description prioritizes
+   - ${hasJobDescription ? "Tie each explicitly to what the job description prioritizes" : "Tie each to what is typically valued for this role"}
    - Focus on outcomes and impact, not responsibilities
 
-3. Company Fit (1 short paragraph)
-   - Why this company specifically (product, market, strategy, culture)
-   - Show understanding of what they do — no generic praise
+3. ${companyName.trim() ? "Company Fit (1 short paragraph)\n   - Why this company specifically (product, market, strategy, culture)\n   - Show understanding of what they do — no generic praise" : "Role Fit (1 short paragraph)\n   - Why this role specifically and how your experience aligns\n   - Show understanding of typical challenges and priorities"}
 
 4. Closing (2 sentences)
    - Clear interest and confidence
@@ -108,11 +123,9 @@ If something in my CV is weak or missing, subtly work around it without calling 
 Role title:
 ${effectiveJobTitle}
 
-Company:
-${companyName}
+${companySection}
 
-Job description:
-${jobDescription}
+${jobContextSection}
 
 CV:
 ${cvText}

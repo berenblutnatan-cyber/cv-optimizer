@@ -5,6 +5,7 @@ import { parseCV, isBulletLine, isJobTitleLine, splitSections } from "@/hooks/us
 
 interface CreativeTemplateProps {
   data: string;
+  photo?: string; // Optional base64 photo URL
 }
 
 /**
@@ -26,7 +27,7 @@ interface CreativeTemplateProps {
  * - Name: 16px, bold, white
  * - Headers: 9px uppercase, emerald accent
  */
-export function CreativeTemplate({ data }: CreativeTemplateProps) {
+export function CreativeTemplate({ data, photo }: CreativeTemplateProps) {
   const parsed = parseCV(data);
   const { name, contact, sections } = parsed;
   const { sidebar: sidebarSections, main: mainSections } = splitSections(sections);
@@ -88,29 +89,42 @@ export function CreativeTemplate({ data }: CreativeTemplateProps) {
             flexShrink: 0,
           }}
         >
-          {/* Avatar Circle */}
+          {/* Avatar Circle - Shows photo if provided, otherwise initials */}
           <div
             style={{
               width: "56px",
               height: "56px",
               borderRadius: "50%",
-              background: `linear-gradient(135deg, ${EMERALD_LIGHT} 0%, ${EMERALD} 100%)`,
+              background: photo ? "transparent" : `linear-gradient(135deg, ${EMERALD_LIGHT} 0%, ${EMERALD} 100%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: "12px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+              overflow: "hidden",
             }}
           >
-            <span
-              style={{
-                fontSize: "18px",
-                fontWeight: 700,
-                color: "#ffffff",
-              }}
-            >
-              {initials}
-            </span>
+            {photo ? (
+              <img
+                src={photo}
+                alt={name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                }}
+              >
+                {initials}
+              </span>
+            )}
           </div>
 
           {/* Name */}

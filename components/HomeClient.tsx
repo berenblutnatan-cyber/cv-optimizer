@@ -255,14 +255,14 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
                         </div>
 
                         {/* Output Section */}
-                        <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4">
+                        <div className="rounded-xl bg-indigo-500/5 border border-indigo-500/20 p-4">
                           <div className="flex items-center gap-2 mb-3">
-                            <Download className="w-3.5 h-3.5 text-emerald-400/60" />
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400/60">You get</span>
+                            <Download className="w-3.5 h-3.5 text-indigo-400/60" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400/60">You get</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                              <Sparkles className="w-4 h-4 text-emerald-400" />
+                            <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                              <Sparkles className="w-4 h-4 text-indigo-400" />
                             </div>
                             <span className="text-sm font-medium text-white/90">Polished CV</span>
                           </div>
@@ -342,21 +342,21 @@ export function HomeClient({ initialCount }: { initialCount: number }) {
                           </div>
 
                           {/* Output Section */}
-                          <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4">
+                          <div className="rounded-xl bg-indigo-500/5 border border-indigo-500/20 p-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <Download className="w-3.5 h-3.5 text-emerald-400/60" />
-                              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400/60">You get</span>
+                              <Download className="w-3.5 h-3.5 text-indigo-400/60" />
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400/60">You get</span>
                             </div>
                             <div className="space-y-2.5">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                  <Target className="w-4 h-4 text-emerald-400" />
+                                <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                                  <Target className="w-4 h-4 text-indigo-400" />
                                 </div>
                                 <span className="text-sm font-medium text-white/90">Tailored CV</span>
                               </div>
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                  <FileText className="w-4 h-4 text-emerald-400" />
+                                <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                                  <FileText className="w-4 h-4 text-indigo-400" />
                                 </div>
                                 <span className="text-sm font-medium text-white/90">Cover Letter</span>
                               </div>

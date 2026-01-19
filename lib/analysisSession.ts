@@ -13,6 +13,14 @@ export type AnalysisSessionPayload = {
     jobDescriptionUsed?: string;
   };
   coverLetter?: string;
+  // For re-optimization with additional skills
+  originalInputs?: {
+    cvFile: string | null;
+    cvText: string;
+    jobTitle: string;
+    jobDescription: string;
+    jobUrl: string;
+  };
 };
 
 export function saveAnalysisToSession(payload: AnalysisSessionPayload) {

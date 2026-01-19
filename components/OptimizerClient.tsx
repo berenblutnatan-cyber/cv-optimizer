@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { Logo } from "@/components/Logo";
 import Link from "next/link";
 import { 
@@ -13,50 +13,33 @@ import {
   X, 
   Check, 
   AlertCircle,
-  ChevronRight,
   Loader2,
   Link as LinkIcon,
   Type,
-  FileSearch
+  FileSearch,
+  Camera,
+  User,
+  FileEdit
 } from "lucide-react";
 import { saveAnalysisToSession } from "@/lib/analysisSession";
-
-interface CVEntry {
-  title: string;
-  organization?: string;
-}
-
-interface CVEntries {
-  summary?: {
-    exists: boolean;
-  };
-  work_experience?: CVEntry[];
-  education?: CVEntry[];
-  projects?: CVEntry[];
-}
-
-interface SkillPlacement {
-  skill: string;
-  targetCvEntry: {
-    section: "summary" | "work_experience" | "education" | "projects";
-    title?: string;
-    organization?: string;
-  } | null;
-  userProvidedContext: string;
-}
-
-interface GapAnalysisData {
-  missingKeywords: string[];
-  cvEntries: CVEntries;
-}
+import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
+import { AIDeepDive, DeepDiveAnswers } from "@/components/optimizer/AIDeepDive";
 
 export function OptimizerClient() {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   
   // CV State
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvText, setCvText] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Photo State
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  
+  // Summary State
+  const [summary, setSummary] = useState("");
   
   // Job Context State - Flexible inputs
   const [jobTitle, setJobTitle] = useState("");
@@ -67,13 +50,12 @@ export function OptimizerClient() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState("");
   
-  // Gap Analysis Modal State
-  const [showGapModal, setShowGapModal] = useState(false);
-  const [gapData, setGapData] = useState<GapAnalysisData | null>(null);
-  const [skillPlacements, setSkillPlacements] = useState<SkillPlacement[]>([]);
-  const [isReOptimizing, setIsReOptimizing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const [analysisMeta, setAnalysisMeta] = useState<any>(null);
+  // AI Deep Dive State
+  const [isDeepDiveOpen, setIsDeepDiveOpen] = useState(false);
+  const [deepDiveAnswers, setDeepDiveAnswers] = useState<DeepDiveAnswers | null>(null);
+  
+  // Auth modal for deferred authentication
+  const { isOpen: isAuthModalOpen, trigger: authTrigger, openModal: openAuthModal, closeModal: closeAuthModal } = useAuthModal();
 
   // Handle file drop
   const handleDrop = async (e: React.DragEvent) => {
@@ -101,6 +83,25 @@ export function OptimizerClient() {
     }
   };
 
+  // Handle photo upload
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setPhotoFile(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
   // Validation: Resume required + at least one context field
   const hasResume = cvText.trim() || cvFile;
   const hasJobContext = jobTitle.trim() || jobDescription.trim() || jobUrl.trim();
@@ -113,6 +114,22 @@ export function OptimizerClient() {
     }
     if (!hasJobContext) {
       setError("Please provide at least one: Target Job Title, Job Description, or Job URL");
+      return;
+    }
+    
+    // Check authentication - show modal if not signed in
+    if (!isSignedIn) {
+      // Save data to localStorage before showing auth modal
+      localStorage.setItem("optimizer_draft", JSON.stringify({
+        cvText,
+        cvFileName: cvFile?.name || null,
+        jobTitle,
+        jobDescription,
+        jobUrl,
+        summary,
+        photoPreview,
+      }));
+      openAuthModal("analyze");
       return;
     }
 
@@ -133,35 +150,51 @@ export function OptimizerClient() {
       // For company name, try to extract from context or use a generic placeholder
       const companyName = extractCompanyFromContext() || "Target Company";
       formData.append("companyName", companyName);
+      
+      // Include AI Deep Dive answers if provided (for enhanced optimization)
+      if (deepDiveAnswers) {
+        formData.append("deepDiveAnswers", JSON.stringify(deepDiveAnswers));
+      }
+      
+      // Include photo if provided
+      if (photoFile) {
+        formData.append("photo", photoFile);
+      }
+      
+      // Include summary if provided
+      if (summary.trim()) {
+        formData.append("summary", summary.trim());
+      }
 
-      const response = await fetch("/api/analyze", { method: "POST", body: formData });
+      const response = await fetch("/api/optimize-with-skills", { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Analysis failed");
 
-      // Store analysis data
-      setAnalysisResult(data.analysis);
-      setAnalysisMeta(data.meta);
-
-      // Extract missing keywords and CV entries for gap analysis
-      const missingKeywords = data.analysis.missingKeySkills || [];
-      const cvEntries = data.analysis.cv_entries || { work_experience: [], education: [], projects: [] };
-      
-      // Create gap analysis data
-      setGapData({
-        missingKeywords,
-        cvEntries
+      // Store analysis data and navigate directly to results
+      // Gap analysis will be shown on the results page after the user reviews feedback
+      saveAnalysisToSession({ 
+        analysis: data.analysis, 
+        meta: data.meta,
+        // Include original inputs for potential re-optimization
+        originalInputs: {
+          cvFile: cvFile ? cvFile.name : null,
+          cvText,
+          jobTitle: jobTitle.trim(),
+          jobDescription: jobDescription.trim(),
+          jobUrl: jobUrl.trim(),
+          summary: summary.trim(),
+          photo: photoPreview, // Include photo preview for results page
+        }
       });
-
-      // Initialize skill placements - one per missing skill
-      const initialPlacements: SkillPlacement[] = missingKeywords.map((skill: string) => ({
-        skill,
-        targetCvEntry: null,
-        userProvidedContext: ""
-      }));
-      setSkillPlacements(initialPlacements);
-
-      // Show gap analysis modal
-      setShowGapModal(true);
+      
+      // Track optimization
+      try {
+        await fetch("/api/track", { method: "POST" });
+      } catch {
+        // ignore
+      }
+      
+      router.push("/results");
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -180,68 +213,6 @@ export function OptimizerClient() {
     return null;
   };
 
-  const handleReOptimize = async () => {
-    setIsReOptimizing(true);
-
-    try {
-      // Filter skill placements that have both a selected CV entry AND user context
-      const validPlacements = skillPlacements.filter(
-        sp => sp.targetCvEntry && sp.userProvidedContext.trim()
-      );
-
-      if (validPlacements.length === 0) {
-        // No skills to add, just use original analysis
-        handleSkipGapAnalysis();
-        return;
-      }
-
-      // Use the new optimize-with-skills endpoint
-      const formData = new FormData();
-      if (cvFile) formData.append("cv", cvFile);
-      if (cvText) formData.append("cvText", cvText);
-      formData.append("skillPlacements", JSON.stringify(validPlacements));
-      
-      if (jobTitle.trim()) formData.append("jobTitle", jobTitle.trim());
-      if (jobDescription.trim()) formData.append("jobDescription", jobDescription.trim());
-
-      const response = await fetch("/api/optimize-with-skills", { method: "POST", body: formData });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Optimization failed");
-
-      // Track optimization
-      try {
-        await fetch("/api/track", { method: "POST" });
-      } catch {
-        // ignore
-      }
-
-      // Keep skill placement changes separate from regular suggested changes
-      const updatedAnalysis = {
-        ...analysisResult,
-        optimizedCV: data.optimizedCV,
-        skillPlacementChanges: data.skillPlacementChanges || []
-      };
-
-      // Save and navigate to results
-      saveAnalysisToSession({ analysis: updatedAnalysis, meta: analysisMeta });
-      router.push("/results");
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Optimization failed");
-      setShowGapModal(false);
-    } finally {
-      setIsReOptimizing(false);
-    }
-  };
-
-  const handleSkipGapAnalysis = () => {
-    // Save original result and navigate
-    if (analysisResult && analysisMeta) {
-      saveAnalysisToSession({ analysis: analysisResult, meta: analysisMeta });
-      router.push("/results");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header - Full Width */}
@@ -256,14 +227,23 @@ export function OptimizerClient() {
               Resume Builder
             </Link>
             <span className="text-slate-300">|</span>
-            <span className="text-sm font-medium text-emerald-600">Optimizer</span>
-            <UserButton 
-              appearance={{
-                elements: {
-                  avatarBox: "w-9 h-9"
-                }
-              }}
-            />
+            <span className="text-sm font-medium text-indigo-600">Optimizer</span>
+            <SignedIn>
+              <UserButton 
+                appearance={{
+                  elements: {
+                    avatarBox: "w-9 h-9"
+                  }
+                }}
+              />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignedOut>
           </div>
         </div>
       </header>
@@ -283,8 +263,8 @@ export function OptimizerClient() {
           {/* Left Panel - Resume Upload */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-emerald-600" />
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-indigo-600" />
               </div>
               <div>
                 <h2 className="font-semibold text-slate-900">Your Resume</h2>
@@ -299,16 +279,16 @@ export function OptimizerClient() {
               onDrop={handleDrop}
               className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all mb-4 ${
                 isDragging
-                  ? "border-emerald-500 bg-emerald-50"
+                  ? "border-indigo-500 bg-indigo-50"
                   : cvFile
-                    ? "border-emerald-500 bg-emerald-50/50"
+                    ? "border-indigo-500 bg-indigo-50/50"
                     : "border-slate-200 hover:border-slate-300"
               }`}
             >
               {cvFile ? (
                 <div className="flex items-center justify-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                    <Check className="w-5 h-5 text-emerald-600" />
+                  <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left">
                     <p className="font-medium text-slate-900">{cvFile.name}</p>
@@ -326,7 +306,7 @@ export function OptimizerClient() {
                   <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
                   <p className="text-slate-600 mb-2 font-medium">Drag and drop your resume here</p>
                   <p className="text-sm text-slate-400 mb-4">or</p>
-                  <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl cursor-pointer transition-colors">
+                  <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl cursor-pointer transition-colors">
                     <span>Browse Files</span>
                     <input
                       type="file"
@@ -351,8 +331,81 @@ export function OptimizerClient() {
               value={cvText}
               onChange={(e) => { setCvText(e.target.value); if (e.target.value) setCvFile(null); }}
               placeholder="Paste your resume text here..."
-              className="w-full h-48 p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full h-48 p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
+
+            {/* Photo Upload Section */}
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                  <Camera className="w-4 h-4 text-violet-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-slate-900 text-sm">Profile Photo</h3>
+                  <p className="text-xs text-slate-500">Optional - for templates with photo</p>
+                </div>
+              </div>
+              
+              {photoPreview ? (
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <img 
+                      src={photoPreview} 
+                      alt="Profile preview" 
+                      className="w-20 h-20 rounded-xl object-cover border-2 border-violet-200"
+                    />
+                    <button
+                      onClick={removePhoto}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    <p className="font-medium">{photoFile?.name}</p>
+                    <p className="text-slate-400 text-xs">Click X to remove</p>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex items-center gap-3 p-4 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-violet-300 hover:bg-violet-50/50 transition-all">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Upload a photo</p>
+                    <p className="text-xs text-slate-400">JPG, PNG up to 5MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* Summary Section */}
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <FileEdit className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-slate-900 text-sm">Professional Summary</h3>
+                  <p className="text-xs text-slate-500">Optional - AI will enhance it</p>
+                </div>
+              </div>
+              <textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                placeholder="Write a brief professional summary (2-4 sentences). AI will optimize it for the target role..."
+                className="w-full h-24 p-3 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-400"
+              />
+              <p className="text-xs text-slate-400 mt-2">
+                💡 Tip: Include your years of experience, key skills, and career goals
+              </p>
+            </div>
           </div>
 
           {/* Right Panel - Job Context (Flexible) */}
@@ -370,7 +423,7 @@ export function OptimizerClient() {
             {/* Validation Indicator */}
             <div className={`mb-6 p-3 rounded-lg flex items-center gap-2 text-sm ${
               hasJobContext 
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+                ? "bg-indigo-50 text-indigo-700 border border-indigo-200" 
                 : "bg-amber-50 text-amber-700 border border-amber-200"
             }`}>
               {hasJobContext ? (
@@ -397,7 +450,7 @@ export function OptimizerClient() {
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 placeholder="e.g. Senior Software Engineer, Product Manager"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
@@ -413,7 +466,7 @@ export function OptimizerClient() {
                 value={jobUrl}
                 onChange={(e) => setJobUrl(e.target.value)}
                 placeholder="https://linkedin.com/jobs/view/..."
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
@@ -428,11 +481,38 @@ export function OptimizerClient() {
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 placeholder="Paste the full job description here for best results..."
-                className="w-full h-[180px] p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full h-[180px] p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
           </div>
         </div>
+
+        {/* AI Deep Dive Section - Full Width */}
+        {hasResume && hasJobContext && (
+          <div className="mt-8">
+            <AIDeepDive
+              isOpen={isDeepDiveOpen}
+              onToggle={() => setIsDeepDiveOpen(!isDeepDiveOpen)}
+              onComplete={(answers) => {
+                setDeepDiveAnswers(answers);
+                setIsDeepDiveOpen(false);
+              }}
+              jobTitle={jobTitle}
+            />
+            {deepDiveAnswers && !isDeepDiveOpen && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
+                <Check className="w-4 h-4" />
+                <span>Deep Dive complete! Your answers will enhance the optimization.</span>
+                <button 
+                  onClick={() => setIsDeepDiveOpen(true)}
+                  className="ml-auto text-emerald-700 underline hover:no-underline"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (
@@ -447,7 +527,7 @@ export function OptimizerClient() {
           <button
             onClick={handleAnalyze}
             disabled={!canAnalyze || isAnalyzing}
-            className="inline-flex items-center gap-3 px-10 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-emerald-600/25 disabled:shadow-none text-lg"
+            className="inline-flex items-center gap-3 px-10 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/25 disabled:shadow-none text-lg"
           >
             {isAnalyzing ? (
               <>
@@ -469,206 +549,12 @@ export function OptimizerClient() {
         </p>
       </main>
 
-      {/* Gap Analysis Modal */}
-      {showGapModal && gapData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6 text-amber-600" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">Gap Analysis</h2>
-                  <p className="text-slate-600">Help us create a better resume for you</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Content */}
-            <div className="px-6 py-6 space-y-6">
-              {/* Skills Section */}
-              {gapData.missingKeywords.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-sm font-bold flex items-center justify-center">1</span>
-                    Skills Check
-                  </h3>
-                  <p className="text-slate-600 mb-4">
-                    We noticed the job requires these skills that weren't obvious in your resume. 
-                    <strong> Do you have experience with any of them?</strong>
-                  </p>
-                  
-                  <div className="space-y-6">
-                    {skillPlacements.map((placement, index) => {
-                      // Build dropdown options from CV entries
-                      const dropdownOptions: Array<{label: string; value: string; section: string; title?: string; organization?: string}> = [];
-                      
-                      // Add Summary option if it exists in CV
-                      if (gapData.cvEntries.summary?.exists) {
-                        dropdownOptions.push({
-                          label: '📝 Professional Summary',
-                          value: 'summary|||',
-                          section: 'summary'
-                        });
-                      }
-                      
-                      // Add work experience entries
-                      gapData.cvEntries.work_experience?.forEach(entry => {
-                        dropdownOptions.push({
-                          label: `${entry.title}${entry.organization ? ` — ${entry.organization}` : ''}`,
-                          value: `work_experience|${entry.title}|${entry.organization || ''}`,
-                          section: 'work_experience',
-                          title: entry.title,
-                          organization: entry.organization
-                        });
-                      });
-                      
-                      // Add education entries
-                      gapData.cvEntries.education?.forEach(entry => {
-                        dropdownOptions.push({
-                          label: `${entry.title}${entry.organization ? ` — ${entry.organization}` : ''}`,
-                          value: `education|${entry.title}|${entry.organization || ''}`,
-                          section: 'education',
-                          title: entry.title,
-                          organization: entry.organization
-                        });
-                      });
-                      
-                      // Add project entries
-                      gapData.cvEntries.projects?.forEach(entry => {
-                        dropdownOptions.push({
-                          label: entry.title,
-                          value: `projects|${entry.title}|`,
-                          section: 'projects',
-                          title: entry.title
-                        });
-                      });
-
-                      const isSelected = placement.targetCvEntry !== null;
-                      const hasContext = placement.userProvidedContext.trim().length > 0;
-
-                      return (
-                        <div 
-                          key={placement.skill}
-                          className={`border-2 rounded-xl p-4 transition-all ${
-                            isSelected && hasContext
-                              ? 'border-emerald-500 bg-emerald-50/50'
-                              : isSelected
-                              ? 'border-blue-300 bg-blue-50/30'
-                              : 'border-slate-200'
-                          }`}
-                        >
-                          {/* Skill Name */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                              isSelected && hasContext
-                                ? 'border-emerald-500 bg-emerald-500'
-                                : 'border-slate-300 bg-white'
-                            }`}>
-                              {isSelected && hasContext && <Check className="w-3 h-3 text-white" />}
-                            </div>
-                            <h4 className="font-semibold text-slate-900">{placement.skill}</h4>
-                          </div>
-
-                          {/* CV Entry Selector */}
-                          <div className="mb-3">
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                              Where should this skill be added in your CV?
-                            </label>
-                            <select
-                              value={placement.targetCvEntry ? `${placement.targetCvEntry.section}|${placement.targetCvEntry.title || ''}|${placement.targetCvEntry.organization || ''}` : ''}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (!value) {
-                                  // Deselected
-                                  const updated = [...skillPlacements];
-                                  updated[index].targetCvEntry = null;
-                                  setSkillPlacements(updated);
-                                  return;
-                                }
-                                
-                                const selected = dropdownOptions.find(opt => opt.value === value);
-                                if (selected) {
-                                  const updated = [...skillPlacements];
-                                  updated[index].targetCvEntry = {
-                                    section: selected.section as "summary" | "work_experience" | "education" | "projects",
-                                    title: selected.title,
-                                    organization: selected.organization
-                                  };
-                                  setSkillPlacements(updated);
-                                }
-                              }}
-                              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
-                            >
-                              <option value="">Select a CV entry...</option>
-                              {dropdownOptions.length > 0 ? (
-                                dropdownOptions.map(opt => (
-                                  <option key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                  </option>
-                                ))
-                              ) : (
-                                <option value="" disabled>No CV entries found</option>
-                              )}
-                            </select>
-                          </div>
-
-                          {/* Context Text Area */}
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                              Describe how this experience relates to the skill:
-                            </label>
-                            <textarea
-                              value={placement.userProvidedContext}
-                              onChange={(e) => {
-                                const updated = [...skillPlacements];
-                                updated[index].userProvidedContext = e.target.value;
-                                setSkillPlacements(updated);
-                              }}
-                              placeholder={`Example: Used ${placement.skill} to analyze data and improve performance by 20%...`}
-                              className="w-full h-24 px-4 py-2.5 border border-slate-300 rounded-lg text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
-              <button
-                onClick={handleSkipGapAnalysis}
-                className="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium transition-colors"
-              >
-                Skip & use original
-              </button>
-              <button
-                onClick={handleReOptimize}
-                disabled={isReOptimizing}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all"
-              >
-                {isReOptimizing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Re-optimizing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    Re-Optimize Resume
-                    <ChevronRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Auth Modal for Deferred Authentication */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={closeAuthModal}
+        trigger={authTrigger}
+      />
     </div>
   );
 }

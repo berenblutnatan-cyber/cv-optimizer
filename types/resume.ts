@@ -11,6 +11,7 @@ export interface PersonalInfo {
   website: string;
   location: string;
   title: string; // Professional title, e.g., "Software Engineer"
+  photo?: string; // Base64 encoded photo for templates that support it
 }
 
 export interface Experience {

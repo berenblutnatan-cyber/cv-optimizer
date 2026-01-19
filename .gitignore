@@ -17,5 +17,4 @@ yarn-debug.log*
 yarn-error.log*
 .npm-cache
 
-# clerk configuration (can include secrets)
-/.clerk/
+/lib/generated/prisma
