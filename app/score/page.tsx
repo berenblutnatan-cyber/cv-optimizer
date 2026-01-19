@@ -154,13 +154,13 @@ export default function ScoreTeaserPage() {
   const getScoreColor = (score: number) => {
     if (score <= 50) return { text: "text-red-600", bg: "bg-red-500", ring: "ring-red-500" };
     if (score <= 75) return { text: "text-amber-600", bg: "bg-amber-500", ring: "ring-amber-500" };
-    return { text: "text-emerald-600", bg: "bg-emerald-500", ring: "ring-emerald-500" };
+    return { text: "text-indigo-600", bg: "bg-indigo-500", ring: "ring-indigo-500" };
   };
 
   const scoreColor = result ? getScoreColor(result.score) : getScoreColor(0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
       {/* Header */}
       <header className="w-full px-6 lg:px-12 py-6 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -183,7 +183,7 @@ export default function ScoreTeaserPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-4"
             >
               <Sparkles className="w-4 h-4" />
               Free Resume Analysis
@@ -223,16 +223,16 @@ export default function ScoreTeaserPage() {
                   onDrop={handleDrop}
                   className={`relative border-2 border-dashed rounded-2xl p-10 text-center transition-all bg-white shadow-sm ${
                     isDragging
-                      ? "border-emerald-500 bg-emerald-50"
+                      ? "border-indigo-500 bg-indigo-50"
                       : file
-                        ? "border-emerald-500 bg-emerald-50/50"
+                        ? "border-indigo-500 bg-indigo-50/50"
                         : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
                   {file ? (
                     <div className="flex items-center justify-center gap-4">
-                      <div className="w-14 h-14 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <FileCheck className="w-7 h-7 text-emerald-600" />
+                      <div className="w-14 h-14 rounded-xl bg-indigo-100 flex items-center justify-center">
+                        <FileCheck className="w-7 h-7 text-indigo-600" />
                       </div>
                       <div className="text-left">
                         <p className="font-semibold text-slate-900">{file.name}</p>
@@ -254,7 +254,7 @@ export default function ScoreTeaserPage() {
                         Drop your resume here
                       </p>
                       <p className="text-slate-500 mb-4">PDF format only (max 5MB)</p>
-                      <label className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl cursor-pointer transition-colors">
+                      <label className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl cursor-pointer transition-colors">
                         <span>Browse Files</span>
                         <input
                           type="file"
@@ -270,7 +270,7 @@ export default function ScoreTeaserPage() {
                 {/* Goal Selector */}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                   <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-3">
-                    <Target className="w-4 h-4 text-emerald-600" />
+                    <Target className="w-4 h-4 text-indigo-600" />
                     Target Role
                   </label>
                   <GoalSelector
@@ -291,7 +291,7 @@ export default function ScoreTeaserPage() {
                 <button
                   onClick={handleAnalyze}
                   disabled={!file || !targetRole || isAnalyzing}
-                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3 text-lg shadow-lg shadow-emerald-600/20 disabled:shadow-none"
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-3 text-lg shadow-lg shadow-indigo-600/20 disabled:shadow-none"
                 >
                   <Sparkles className="w-5 h-5" />
                   Calculate My Score
@@ -310,7 +310,7 @@ export default function ScoreTeaserPage() {
               >
                 <div className="relative inline-block mb-8">
                   <div className="w-24 h-24 rounded-full border-4 border-slate-100 flex items-center justify-center">
-                    <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
+                    <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-3">Analyzing Your Resume...</h2>
@@ -331,7 +331,7 @@ export default function ScoreTeaserPage() {
               >
                 {/* Score Card */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
-                  <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 p-8">
+                  <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 p-8">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                       {/* Left: Summary */}
                       <div className="flex-1 text-center md:text-left">
@@ -410,8 +410,8 @@ export default function ScoreTeaserPage() {
                   {/* Blurred content */}
                   <div className="p-6 filter blur-md select-none pointer-events-none opacity-60">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-emerald-600" />
+                      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-indigo-600" />
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-slate-900">Detailed Analysis</h3>
@@ -422,7 +422,7 @@ export default function ScoreTeaserPage() {
                     <div className="grid md:grid-cols-2 gap-4 mb-6">
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
                         <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                          <Check className="w-5 h-5 text-emerald-600" />
+                          <Check className="w-5 h-5 text-indigo-600" />
                           Strengths
                         </h4>
                         <ul className="space-y-2 text-slate-600 text-sm">
@@ -449,9 +449,9 @@ export default function ScoreTeaserPage() {
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                         <h4 className="font-medium text-slate-900 mb-2">Keywords Found</h4>
                         <div className="flex flex-wrap gap-2">
-                          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs">Leadership</span>
-                          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs">Strategy</span>
-                          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs">Management</span>
+                          <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">Leadership</span>
+                          <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">Strategy</span>
+                          <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">Management</span>
                         </div>
                       </div>
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
@@ -480,7 +480,7 @@ export default function ScoreTeaserPage() {
                       </p>
                       
                       <SignUpButton mode="modal">
-                        <button className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/20">
+                        <button className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20">
                           <Sparkles className="w-5 h-5" />
                           Create Free Account
                           <ArrowRight className="w-5 h-5" />
@@ -489,11 +489,11 @@ export default function ScoreTeaserPage() {
                       
                       <p className="text-sm text-slate-500 mt-4 flex items-center justify-center gap-4">
                         <span className="flex items-center gap-1">
-                          <Check className="w-4 h-4 text-emerald-600" />
+                          <Check className="w-4 h-4 text-indigo-600" />
                           Free forever
                         </span>
                         <span className="flex items-center gap-1">
-                          <Check className="w-4 h-4 text-emerald-600" />
+                          <Check className="w-4 h-4 text-indigo-600" />
                           No credit card
                         </span>
                       </p>

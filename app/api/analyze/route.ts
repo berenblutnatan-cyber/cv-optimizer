@@ -51,6 +51,20 @@ export async function POST(request: NextRequest) {
     const jobUrl = formData.get("jobUrl") as string || "";
     const jobTitle = formData.get("jobTitle") as string || "";
     const companyName = formData.get("companyName") as string || "";
+    
+    // Parse AI Deep Dive answers if provided
+    let deepDiveAnswers: { achievements: string; hiddenSkills: string; uniqueValue: string } | null = null;
+    const deepDiveRaw = formData.get("deepDiveAnswers") as string;
+    if (deepDiveRaw) {
+      try {
+        deepDiveAnswers = JSON.parse(deepDiveRaw);
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    
+    // Get optional summary
+    const userSummary = formData.get("summary") as string || "";
 
     // Extract text from PDF if provided
     if (cvFile && !cvText) {
@@ -134,100 +148,201 @@ export async function POST(request: NextRequest) {
       (finalJobDescription ? inferJobTitleFromDescription(finalJobDescription, companyName) : "") ||
       "Role";
 
-    // Analyze CV against job description using OpenAI
-    const analysisPrompt = `You are an expert HR consultant and CV optimization specialist. Analyze the following CV against the job description and provide detailed, actionable feedback.
+    // Analyze CV against job description using OpenAI - COMPREHENSIVE OPTIMIZATION
+    const analysisPrompt = `You are a WORLD-CLASS Executive Resume Writer with 20+ years of experience at McKinsey, Goldman Sachs, and top Silicon Valley companies. You transform average resumes into interview-winning documents.
 
-## CV:
+## CANDIDATE'S CURRENT CV:
 ${cvText}
 
-## Job Title (provided by user, may be empty):
-${effectiveJobTitle}
+## TARGET ROLE: ${effectiveJobTitle}
+## TARGET COMPANY: ${companyName || "Not specified"}
 
-## Company (may be empty):
-${companyName}
+## JOB REQUIREMENTS:
+${finalJobDescription || "[No specific job description. Optimize for a senior " + effectiveJobTitle + " role at a top-tier company.]"}
 
-## Job Description (may be empty if user wants general optimization for the job title):
-${finalJobDescription || "[No job description provided. Optimize generally for the job title above.]"}
+${userSummary ? `
+## CANDIDATE'S PROFESSIONAL SUMMARY (provided by user - enhance this!):
+${userSummary}
 
-## Your Task:
-Analyze how well this CV matches the role requirements and suggest how to BETTER COMMUNICATE the candidate's EXISTING experience to fit.
+IMPORTANT: The user has provided their own summary. Use this as a base and DRAMATICALLY improve it:
+- Add quantifiable achievements
+- Include industry keywords
+- Make it compelling and role-specific
+- Keep the same general narrative but elevate the language
+` : ""}
 
-If the job description is missing but a job title is provided, infer typical responsibilities, keywords, and skills for that title and optimize the CV for that general role profile (still following all critical rules).
+${deepDiveAnswers ? `
+## CANDIDATE'S ADDITIONAL CONTEXT (FROM AI DEEP DIVE - USE THIS TO ENHANCE THE CV!):
 
-CRITICAL RULES:
-- NEVER invent, fabricate, or make up new experiences, skills, or achievements
-- ONLY rephrase, reorganize, or highlight existing content from the CV
-- Focus on using keywords from the job description to describe existing experiences
-- Suggest better ways to frame existing accomplishments
-- If the candidate lacks certain requirements, note it honestly - do NOT add fake experience
-- VERY IMPORTANT: Preserve the CV's ORIGINAL FORMAT in "optimizedCV"
-  - Keep the same section headings, ordering, and overall structure as the input CV text
-  - Keep the same bullet style (e.g. •, -, *, numbering), indentation, and line breaks as much as possible
-  - Keep dates, company names, and role titles exactly as written unless a suggested change is a direct rewrite of that exact text
-  - Do NOT rewrite the CV into a new template or add new sections; only make minimal, in-place wording edits
-  - The output should look like the same CV, just improved wording in the existing places
+### Hidden Achievements the candidate wants highlighted:
+${deepDiveAnswers.achievements || "Not provided"}
 
-Return your analysis as a JSON object with this exact structure:
+### Skills & Tools NOT currently on CV (ADD THESE!):
+${deepDiveAnswers.hiddenSkills || "Not provided"}
+
+### Candidate's Unique Value Proposition:
+${deepDiveAnswers.uniqueValue || "Not provided"}
+
+IMPORTANT: The above information was provided directly by the candidate. You MUST incorporate this into the optimized CV:
+- Add the unlisted skills to the Skills section
+- Weave the achievements into relevant experience bullets with metrics
+- Use the unique value proposition in the Professional Summary
+` : ""}
+
+## YOUR MISSION:
+Transform this CV into a POWERFUL, interview-winning document that will make recruiters stop and take notice. You must create a NOTICEABLY BETTER version.
+
+## ⚠️ CRITICAL PRESERVATION RULES (READ FIRST!):
+**NEVER DELETE OR REMOVE ANY CONTENT FROM THE ORIGINAL CV!**
+- ✅ KEEP every job position, company, date, bullet point
+- ✅ KEEP every education entry, certification, project
+- ✅ KEEP every skill, language, achievement mentioned
+- ✅ ENHANCE the wording, add metrics, improve language
+- ❌ NEVER remove a job, education, or section that exists in the original
+- ❌ NEVER shorten bullet lists or reduce the number of achievements
+- ❌ NEVER omit skills or certifications that were in the original
+
+If the original has 5 bullet points for a job → the optimized version must have AT LEAST 5 bullets (can add more)
+If the original has 3 skills → the optimized version must have AT LEAST 3 skills (can add more)
+
+You are REFINING and ENHANCING, not editing down!
+
+## TRANSFORMATION GOALS:
+1. **AMPLIFIES IMPACT** - Turn passive descriptions into achievement stories
+2. **OPTIMIZES FOR ATS** - Embed critical keywords naturally throughout
+3. **QUANTIFIES EVERYTHING** - Add metrics, percentages, team sizes, revenue impact
+4. **ELEVATES LANGUAGE** - Use power verbs and executive-level phrasing
+5. **ADDS VALUE** - Add inferred metrics and missing skills from context
+
+## TRANSFORMATION RULES:
+
+### 1. ACHIEVEMENT REFORMULATION (CRITICAL!)
+Transform EVERY bullet point using this framework:
+- BEFORE: "Responsible for managing team projects"
+- AFTER: "Spearheaded cross-functional initiatives managing 12+ team members, delivering 3 major projects on-time, reducing development cycle by 25%"
+
+### 2. QUANTIFICATION MANDATE
+If the CV lacks numbers, INTELLIGENTLY INFER reasonable metrics based on:
+- Industry standards for the role
+- Company size indicators
+- Scope described in the experience
+- Example: "managed team" → "led team of 8-12 professionals"
+- Example: "increased sales" → "drove 35% revenue growth ($2.5M annually)"
+
+### 3. KEYWORD SATURATION
+Extract THE TOP 15 keywords from the job description and ensure EACH appears at least once:
+- In the summary/profile
+- In relevant experience bullets
+- In the skills section
+
+### 4. POWER VERB MANDATE
+Replace weak verbs with POWER VERBS:
+- "Worked on" → "Orchestrated/Spearheaded/Architected"
+- "Helped" → "Accelerated/Enabled/Drove"
+- "Made" → "Engineered/Delivered/Launched"
+- "Did" → "Executed/Implemented/Transformed"
+
+### 5. PROFESSIONAL SUMMARY REWRITE
+Create a COMPELLING 3-4 sentence summary that:
+- Opens with years of experience + core expertise
+- Highlights 2-3 key achievements with metrics
+- Aligns perfectly with the target role
+- Includes 3-5 critical keywords
+
+## OUTPUT FORMAT (JSON):
 {
-  "overallScore": <number 0-100 representing match score for THIS role based on ACTUAL CV evidence>,
-  "summary": "<one sentence match assessment and why (keywords + evidence + clarity)>",
+  "overallScore": <0-100 based on match to target role>,
+  "summary": "<compelling 1-sentence assessment highlighting the candidate's potential for THIS role>",
   "strengths": [
-    "<existing strength that matches the role>",
-    "<existing strength that matches the role>",
-    "<existing strength that matches the role>"
+    "<specific strength #1 with evidence>",
+    "<specific strength #2 with evidence>",
+    "<specific strength #3 with evidence>",
+    "<specific strength #4 with evidence>"
   ],
   "improvements": [
-    "<how to better communicate existing experience>",
-    "<how to better communicate existing experience>",
-    "<how to better communicate existing experience>"
+    "<major improvement #1 - be specific>",
+    "<major improvement #2 - be specific>",
+    "<major improvement #3 - be specific>",
+    "<major improvement #4 - be specific>",
+    "<major improvement #5 - be specific>"
   ],
   "missingKeySkills": [
-    "<skill/technology/tool/methodology that is clearly expected in the job description but not mentioned in the CV>",
-    "<keep this list short (max 15), high-signal, and avoid generic soft skills unless explicitly required>"
+    "<critical skill gap #1>",
+    "<critical skill gap #2>",
+    "<critical skill gap #3>"
   ],
   "suggestedChanges": [
     {
-      "id": "<stable id like 'chg_1', 'chg_2'...>",
-      "section": "<section name like 'Summary', 'Experience', 'Skills'>",
-      "original": "<exact original text from CV>",
-      "suggested": "<rephrased version using job-relevant keywords - SAME experience, better wording>",
-      "reason": "<why this rephrasing helps match the job better>"
+      "id": "chg_1",
+      "section": "Summary",
+      "original": "<exact text from CV>",
+      "suggested": "<DRAMATICALLY improved version>",
+      "reason": "<why this is more impactful>"
+    },
+    {
+      "id": "chg_2", 
+      "section": "Experience",
+      "original": "<exact bullet text>",
+      "suggested": "<transformed achievement with metrics>",
+      "reason": "<the transformation logic>"
     }
   ],
   "keywords": {
-    "present": ["<keyword from job that IS in CV>"],
-    "missing": ["<important keyword from job NOT in CV - candidate should add IF they have this skill>"]
+    "present": ["<keywords found>"],
+    "missing": ["<critical missing keywords - TOP PRIORITY>"],
+    "added": ["<keywords you added in optimization>"]
   },
-  "optimizedCV": "<the complete CV with ALL suggested changes applied, preserving the original format>"
+  "optimizedCV": "<THE COMPLETE TRANSFORMED CV in this EXACT format:
+
+[Full Name]
+[Professional Title]
+[email] | [phone] | [location] | [linkedin]
+
+PROFESSIONAL SUMMARY
+[A compelling 3-4 sentence summary highlighting years of experience, key achievements with metrics, and career focus aligned to target role]
+
+EXPERIENCE
+[Job Title] | [Company] | [Date Range]
+• [Achievement bullet with metrics]
+• [Achievement bullet with metrics]
+
+EDUCATION
+[Degree] | [Institution] | [Date]
+
+SKILLS
+[Skill 1], [Skill 2], [Skill 3]...
+
+IMPORTANT: The PROFESSIONAL SUMMARY section MUST be included and must be a complete paragraph, not bullet points.>"
 }
 
-Remember: You are helping the candidate present their REAL experience more effectively, not creating a fictional CV.
+## CRITICAL REMINDERS:
+1. **PRESERVE EVERYTHING** - The optimizedCV must contain ALL content from the original. NEVER delete jobs, education, skills, or bullets!
+2. The "optimizedCV" must be NOTICEABLY better - enhanced wording, added metrics, stronger verbs
+3. Add reasonable metrics even if not explicit in original (use industry benchmarks)
+4. Every bullet should start with a power verb
+5. The PROFESSIONAL SUMMARY section is MANDATORY - it MUST appear in the optimizedCV as a complete paragraph (3-4 sentences)
+6. Provide 6-10 suggestedChanges covering ALL major sections
+7. Keywords in "missing" should be added to the optimizedCV where natural
+8. The optimizedCV must start with: Name, Title, Contact, then "PROFESSIONAL SUMMARY" header followed by the summary paragraph
+9. **VERIFICATION**: Before finalizing, count sections in original vs optimized - optimized should have EQUAL OR MORE content
 
-Scoring guidance (overallScore):
-- This is a role-specific match score based on what the CV actually demonstrates.
-- Weigh: role-relevant keyword coverage, evidence of required skills/responsibilities in experience bullets, seniority/years fit, clarity/readability, and missing must-haves.
-- Penalize: vague wording, missing core requirements, lack of measurable outcomes, and unclear scope.
-- Do NOT reward invented experience; only what is supported in the CV text.
-
-For suggestedChanges:
-- Provide ONLY 3-5 changes total (suggestedChanges.length must be between 3 and 5)
-- Each change must have exactly ONE "suggested" rewrite
-- The "original" MUST be copied EXACTLY from the CV (verbatim substring) so it can be replaced later
-- Do NOT propose changes that require adding new achievements/skills; only rewrite the same content
-- Prefer changes that improve clarity, impact, and include role-relevant keywords when appropriate
-- After listing suggestedChanges, produce "optimizedCV" by applying ALL suggested changes to the original CV (in-place replacements).
-
-Return ONLY the JSON object, no other text.`;
+Return ONLY the JSON object.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
+          role: "system",
+          content: "You are a world-class executive resume writer who transforms average CVs into interview-winning documents. You are creative, bold, and know exactly what recruiters want to see. Always respond with valid JSON only.",
+        },
+        {
           role: "user",
           content: analysisPrompt,
         },
       ],
-      temperature: 0.7,
+      temperature: 0.8, // Higher for more creative optimization
+      max_tokens: 8000, // Ensure enough space for comprehensive rewrite
+      response_format: { type: "json_object" },
     });
 
     const content = response.choices[0]?.message?.content || "";

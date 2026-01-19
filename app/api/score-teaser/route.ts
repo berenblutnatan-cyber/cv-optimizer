@@ -108,12 +108,17 @@ Return ONLY the JSON object, no markdown, no other text.`;
       model: "gpt-4o",
       messages: [
         {
+          role: "system",
+          content: "You are an expert resume analyst. Always respond with valid JSON only.",
+        },
+        {
           role: "user",
           content: analysisPrompt,
         },
       ],
       temperature: 0.5,
       max_tokens: 300,
+      response_format: { type: "json_object" },
     });
 
     const content = response.choices[0]?.message?.content || "";

@@ -255,8 +255,28 @@ const RAW_JOB_TITLES = [
   "Psychologist",
 ];
 
-// DEDUPLICATED job titles array - prevents React "duplicate key" errors
-export const JOB_TITLES = Array.from(new Set(RAW_JOB_TITLES));
+// DEDUPLICATED and SORTED job titles array - prevents React "duplicate key" errors
+// Using Set for deduplication, then sorting alphabetically (categories first)
+export const JOB_TITLES = Array.from(new Set(RAW_JOB_TITLES)).sort((a, b) => {
+  // Keep categories at the top
+  const categories = [
+    "General Application",
+    "Student / Intern", 
+    "Career Change",
+    "Entry Level Position",
+    "Senior / Leadership Role",
+  ];
+  const aIsCategory = categories.includes(a);
+  const bIsCategory = categories.includes(b);
+  
+  if (aIsCategory && !bIsCategory) return -1;
+  if (!aIsCategory && bIsCategory) return 1;
+  if (aIsCategory && bIsCategory) {
+    return categories.indexOf(a) - categories.indexOf(b);
+  }
+  
+  return a.localeCompare(b);
+});
 
 export type JobTitle = string;
 

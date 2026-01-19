@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -21,7 +22,10 @@ import {
   Wand2,
   Download,
   AlertCircle,
-  Check
+  Check,
+  Camera,
+  Upload,
+  PanelRightOpen
 } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { 
@@ -32,8 +36,12 @@ import {
   WIZARD_STEPS,
   TOTAL_STEPS
 } from "@/types/resume";
-import { ModernTemplate } from "@/components/cv-templates";
-import { TemplatePreviewCard } from "@/components/TemplatePreviewCard";
+import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
+import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
+import { TemplateDownloadCard } from "@/components/TemplateDownloadCard";
+import { AllTemplateId, ALL_TEMPLATES } from "@/components/cv-templates";
+import { convertToPreviewData } from "@/lib/resumeDataConverter";
+import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { Logo } from "@/components/Logo";
 import { UserButton } from "@clerk/nextjs";
 
@@ -59,6 +67,7 @@ const STEP_ICONS = [
 ];
 
 export default function BuilderPage() {
+  const { isSignedIn } = useUser();
   const { 
     resumeData, 
     currentStep,
@@ -67,8 +76,17 @@ export default function BuilderPage() {
     goToStep,
   } = useResumeStore();
   
-  // Convert structured data to text for the template
+  // Preview panel state - default CLOSED to focus on form
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("executive");
+  const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
+  
+  // Auth modal for deferred authentication
+  const { isOpen: isAuthModalOpen, trigger: authTrigger, openModal: openAuthModal, closeModal: closeAuthModal } = useAuthModal();
+  
+  // Convert structured data for templates
   const cvText = resumeToText(resumeData);
+  const previewData = convertToPreviewData(resumeData);
 
   // Calculate progress percentage
   const progressPercent = ((currentStep + 1) / TOTAL_STEPS) * 100;
@@ -81,7 +99,7 @@ export default function BuilderPage() {
           <div className="max-w-[1800px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Logo variant="dark" size="md" />
-              <span className="px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-medium">
+              <span className="px-3 py-1 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-medium">
                 Resume Builder
               </span>
             </div>
@@ -112,9 +130,13 @@ export default function BuilderPage() {
       </header>
 
       {/* Main Content - Split Screen */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden relative">
         {/* Left Panel - Step Editor */}
-        <div className="w-1/2 border-r border-slate-200 bg-white flex flex-col overflow-hidden">
+        <div 
+          className={`bg-white flex flex-col overflow-hidden border-r border-slate-200 transition-all duration-300 ease-in-out ${
+            isPreviewOpen ? "w-full lg:w-1/2" : "w-full"
+          }`}
+        >
           {/* Step Content */}
           <div className="flex-1 overflow-y-auto p-6">
             <StepContent step={currentStep} />
@@ -139,7 +161,7 @@ export default function BuilderPage() {
               {currentStep < TOTAL_STEPS - 1 ? (
                 <button
                   onClick={nextStep}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors"
                 >
                   Next
                   <ArrowRight className="w-4 h-4" />
@@ -151,35 +173,71 @@ export default function BuilderPage() {
           </div>
         </div>
 
-        {/* Right Panel - Live Preview */}
-        <div className="w-1/2 bg-slate-100 overflow-hidden flex flex-col">
-          {/* Preview Header */}
-          <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 bg-white">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <Eye className="w-4 h-4 text-emerald-600" />
+        {/* Right Panel - Live Preview (Collapsible) */}
+        <div 
+          className={`bg-slate-100 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+            isPreviewOpen ? "w-full lg:w-1/2 absolute lg:relative inset-0 lg:inset-auto z-30" : "w-0"
+          }`}
+        >
+          {isPreviewOpen && (
+            <>
+              {/* Preview Header */}
+              <div className="flex-shrink-0 px-4 py-3 border-b border-slate-200 bg-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                      <Eye className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-slate-900">Live Preview</h2>
+                      <p className="text-xs text-slate-500">Auto-scales to fit</p>
+                    </div>
+                  </div>
+                  <Link 
+                    href="/builder/demo"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white text-xs font-medium rounded-lg transition-all shadow-sm"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Pro Editor
+                  </Link>
+                </div>
               </div>
-              <div>
-                <h2 className="font-semibold text-slate-900">Live Preview</h2>
-                <p className="text-xs text-slate-500">Updates as you type</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Preview Content */}
-          <div className="flex-1 overflow-auto p-6 flex justify-center">
-            <div 
-              className="origin-top shadow-2xl"
-              style={{ 
-                transform: "scale(0.5)",
-                transformOrigin: "top center",
-              }}
-            >
-              <ModernTemplate data={cvText} />
-            </div>
-          </div>
+              {/* Preview Content - SmartResumePreview handles scaling */}
+              <SmartResumePreview
+                data={previewData}
+                templateId={selectedTemplate}
+                themeColor={selectedColor}
+                showToolbar={true}
+                onTemplateChange={setSelectedTemplate}
+                onColorChange={setSelectedColor}
+                onClose={() => setIsPreviewOpen(false)}
+                className="flex-1 rounded-b-xl overflow-hidden"
+              />
+            </>
+          )}
         </div>
+
+        {/* Toggle Preview Button - Floating tab on right edge */}
+        {!isPreviewOpen && (
+          <button
+            onClick={() => setIsPreviewOpen(true)}
+            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 pl-4 pr-3 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-l-2xl shadow-xl hover:shadow-2xl transition-all duration-300 group"
+            title="Show Preview"
+          >
+            <Eye className="w-5 h-5" />
+            <span className="text-sm font-semibold writing-vertical">Preview</span>
+            <PanelRightOpen className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        )}
       </main>
+
+      {/* Auth Modal for Deferred Authentication */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={closeAuthModal}
+        trigger={authTrigger}
+      />
     </div>
   );
 }
@@ -204,13 +262,13 @@ function ProgressBar({
       {/* Progress percentage */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-500">Progress</span>
-        <span className="text-emerald-600 font-medium">{Math.round(progressPercent)}% Complete</span>
+        <span className="text-indigo-600 font-medium">{Math.round(progressPercent)}% Complete</span>
       </div>
 
       {/* Progress bar */}
       <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-300"
+          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -223,17 +281,17 @@ function ProgressBar({
             onClick={() => onStepClick(index)}
             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all ${
               index === currentStep
-                ? "bg-emerald-100 text-emerald-700"
+                ? "bg-indigo-100 text-indigo-700"
                 : index < currentStep
-                ? "text-emerald-600 hover:bg-slate-100"
+                ? "text-indigo-600 hover:bg-slate-100"
                 : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             }`}
           >
             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
               index < currentStep 
-                ? "bg-emerald-100 text-emerald-600" 
+                ? "bg-indigo-100 text-indigo-600" 
                 : index === currentStep 
-                ? "bg-emerald-600 text-white" 
+                ? "bg-indigo-600 text-white" 
                 : "bg-slate-200 text-slate-500"
             }`}>
               {index < currentStep ? (
@@ -282,12 +340,90 @@ function StepContent({ step }: { step: number }) {
 function PersonalInfoStep() {
   const { resumeData, updatePersonalInfo } = useResumeStore();
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file');
+        return;
+      }
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image size should be less than 2MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updatePersonalInfo({ photo: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    updatePersonalInfo({ photo: undefined });
+  };
+
   return (
     <div className="space-y-6">
       <StepHeader 
         title="Personal Information" 
         description="Let's start with your contact details. This information will appear at the top of your CV."
       />
+
+      {/* Photo Upload Section */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <div className="flex items-start gap-4">
+          {/* Photo Preview */}
+          <div className="relative flex-shrink-0">
+            {resumeData.personalInfo.photo ? (
+              <div className="relative">
+                <img
+                  src={resumeData.personalInfo.photo}
+                  alt="Profile"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md"
+                />
+                <button
+                  onClick={handleRemovePhoto}
+                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center border-2 border-dashed border-slate-300">
+                <Camera className="w-8 h-8 text-slate-400" />
+              </div>
+            )}
+          </div>
+          
+          {/* Upload Instructions */}
+          <div className="flex-1">
+            <h4 className="font-medium text-amber-800 flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              Profile Photo
+              <span className="text-xs font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                Optional
+              </span>
+            </h4>
+            <p className="text-sm text-amber-700 mt-1">
+              Some templates (like "Executive") include a photo placeholder. Upload your professional headshot to personalize it.
+            </p>
+            <label className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 text-sm font-medium rounded-lg cursor-pointer transition-colors">
+              <Upload className="w-4 h-4" />
+              {resumeData.personalInfo.photo ? 'Change Photo' : 'Upload Photo'}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
@@ -395,7 +531,7 @@ function ExperienceStep() {
         />
         <button
           onClick={() => addExperience()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Position
@@ -434,7 +570,7 @@ function EducationStep() {
         />
         <button
           onClick={() => addEducation()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Education
@@ -507,13 +643,13 @@ function SkillsStep() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
-            <Wrench className="w-5 h-5 text-emerald-600" />
+            <Wrench className="w-5 h-5 text-indigo-600" />
             Skills
           </h3>
           <button
             onClick={handleSuggestSkills}
             disabled={isSuggesting}
-            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-sm font-medium rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-sm font-medium rounded-lg transition-all"
           >
             {isSuggesting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -532,7 +668,7 @@ function SkillsStep() {
           />
           <button
             onClick={handleAddSkill}
-            className="px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors whitespace-nowrap"
+            className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap"
           >
             Add
           </button>
@@ -563,7 +699,7 @@ function SkillsStep() {
           />
           <button
             onClick={handleAddLanguage}
-            className="px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors whitespace-nowrap"
+            className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap"
           >
             Add
           </button>
@@ -622,7 +758,7 @@ function CustomSectionsStep() {
         />
         <button
           onClick={handleAddSection}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium rounded-xl transition-colors whitespace-nowrap"
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           Add Section
@@ -725,7 +861,7 @@ function ReviewStep() {
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-slate-900">CV Completion</h3>
-          <span className={`text-lg font-bold ${completionPercent === 100 ? 'text-emerald-600' : 'text-amber-500'}`}>
+          <span className={`text-lg font-bold ${completionPercent === 100 ? 'text-indigo-600' : 'text-amber-500'}`}>
             {completionPercent}%
           </span>
         </div>
@@ -744,13 +880,13 @@ function ReviewStep() {
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold flex items-center gap-2 text-slate-900">
-            <Sparkles className="w-5 h-5 text-emerald-600" />
+            <Sparkles className="w-5 h-5 text-indigo-600" />
             AI Analysis
           </h3>
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white font-medium rounded-xl transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 text-white font-medium rounded-xl transition-colors"
           >
             {isAnalyzing ? (
               <>
@@ -770,7 +906,7 @@ function ReviewStep() {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className={`text-4xl font-bold ${
-                analysis.score >= 80 ? 'text-emerald-600' : 
+                analysis.score >= 80 ? 'text-indigo-600' : 
                 analysis.score >= 60 ? 'text-amber-500' : 'text-red-500'
               }`}>
                 {analysis.score}
@@ -794,16 +930,25 @@ function ReviewStep() {
         )}
       </div>
 
-      {/* Export Templates */}
+      {/* Export Templates - All 8 Options */}
       <div className="space-y-4">
         <h3 className="font-semibold flex items-center gap-2 text-slate-900">
-          <Download className="w-5 h-5 text-emerald-600" />
+          <Download className="w-5 h-5 text-indigo-600" />
           Download Your CV
         </h3>
-        <div className="grid grid-cols-3 gap-4">
-          <TemplatePreviewCard templateId="harvard" cvData={cvText} fileName="My-CV" />
-          <TemplatePreviewCard templateId="modern" cvData={cvText} fileName="My-CV" />
-          <TemplatePreviewCard templateId="creative" cvData={cvText} fileName="My-CV" />
+        <p className="text-sm text-slate-500">
+          Choose from 8 professional templates. Click to preview, then download as PDF.
+        </p>
+        <div className="grid grid-cols-4 gap-3">
+          {(Object.keys(ALL_TEMPLATES) as AllTemplateId[]).map((templateId) => (
+            <TemplateDownloadCard
+              key={templateId}
+              templateId={templateId}
+              data={convertToPreviewData(resumeData)}
+              fileName="My-CV"
+              themeColor="indigo"
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -839,7 +984,7 @@ function FormInput({
   return (
     <input
       {...props}
-      className={`w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all ${className}`}
+      className={`w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all ${className}`}
     />
   );
 }
@@ -855,11 +1000,11 @@ function EmptyState({ text, subtext }: { text: string; subtext?: string }) {
 
 function SkillTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="group flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm hover:border-emerald-300 transition-colors">
+    <span className="group flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg text-sm hover:border-indigo-300 transition-colors">
       {label}
       <button
         onClick={onRemove}
-        className="text-emerald-400 hover:text-red-500 transition-colors"
+        className="text-indigo-400 hover:text-red-500 transition-colors"
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -869,7 +1014,7 @@ function SkillTag({ label, onRemove }: { label: string; onRemove: () => void }) 
 
 function CompletionItem({ label, completed }: { label: string; completed: boolean }) {
   return (
-    <div className={`flex items-center gap-2 ${completed ? 'text-emerald-600' : 'text-slate-400'}`}>
+    <div className={`flex items-center gap-2 ${completed ? 'text-indigo-600' : 'text-slate-400'}`}>
       {completed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
       <span>{label}</span>
     </div>
@@ -927,7 +1072,7 @@ function TextAreaWithLimit({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={rows}
-          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
+          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
         />
         <div className={`absolute bottom-3 right-3 text-xs font-medium ${
           isOverLimit ? 'text-red-500' : isNearLimit ? 'text-amber-500' : 'text-slate-400'
@@ -944,7 +1089,7 @@ function TextAreaWithLimit({
       <button
         onClick={handleOptimize}
         disabled={isOptimizing || !value.trim()}
-        className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-200 text-emerald-700 text-sm font-medium rounded-lg transition-all"
+        className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-200 text-indigo-700 text-sm font-medium rounded-lg transition-all"
       >
         {isOptimizing ? (
           <>
@@ -993,7 +1138,7 @@ function DatePicker({
   if (showPresent && isPresent) {
     return (
       <div className="flex items-center gap-2">
-        <span className="px-4 py-2.5 bg-emerald-100 border border-emerald-200 rounded-xl text-emerald-700 flex-1 text-center">
+        <span className="px-4 py-2.5 bg-indigo-100 border border-indigo-200 rounded-xl text-indigo-700 flex-1 text-center">
           Present
         </span>
         <button
@@ -1011,7 +1156,7 @@ function DatePicker({
       <select
         value={month}
         onChange={(e) => handleChange(e.target.value, year)}
-        className="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer"
+        className="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
       >
         <option value="" className="bg-white">Month</option>
         {MONTHS.map((m) => (
@@ -1021,7 +1166,7 @@ function DatePicker({
       <select
         value={year}
         onChange={(e) => handleChange(month, e.target.value)}
-        className="w-24 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer"
+        className="w-24 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
       >
         <option value="" className="bg-white">Year</option>
         {YEARS.map((y) => (
@@ -1031,7 +1176,7 @@ function DatePicker({
       {showPresent && (
         <button
           onClick={() => onPresentChange?.(true)}
-          className="px-3 py-2.5 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors whitespace-nowrap"
+          className="px-3 py-2.5 text-indigo-600 hover:text-indigo-700 text-sm font-medium transition-colors whitespace-nowrap"
         >
           Present
         </button>
@@ -1137,12 +1282,12 @@ function ExperienceCard({ experience, index }: { experience: Experience; index: 
             onChange={(e) => updateExperience(experience.id, { description: e.target.value.split("\n") })}
             placeholder="• Led development of new features serving 1M+ users&#10;• Improved performance by 40% through optimization&#10;• Mentored 3 junior developers"
             rows={4}
-            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
+            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
           />
           <button
             onClick={handleOptimizeBullets}
             disabled={isOptimizing || !experience.description.some(Boolean)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-200 text-emerald-700 text-xs font-medium rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-200 text-indigo-700 text-xs font-medium rounded-lg transition-all"
           >
             {isOptimizing ? (
               <>
@@ -1279,7 +1424,7 @@ function CustomSectionCard({
               value={item.text}
               onChange={(e) => onUpdateItem(item.id, e.target.value)}
               placeholder="Add an item..."
-              className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-all"
+              className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 transition-all"
             />
             <button
               onClick={() => onRemoveItem(item.id)}
@@ -1291,7 +1436,7 @@ function CustomSectionCard({
         ))}
         <button
           onClick={onAddItem}
-          className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 text-sm transition-colors"
+          className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 text-sm transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Item

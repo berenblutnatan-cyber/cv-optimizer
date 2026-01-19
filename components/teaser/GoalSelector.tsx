@@ -115,11 +115,11 @@ export function GoalSelector({ value, onChange, error }: GoalSelectorProps) {
       <div
         className={`relative flex items-center gap-2 px-4 py-3.5 bg-white border-2 rounded-xl transition-all cursor-text ${
           isOpen
-            ? "border-emerald-500 ring-4 ring-emerald-500/10"
+            ? "border-indigo-500 ring-4 ring-indigo-500/10"
             : error
               ? "border-red-300"
               : value
-                ? "border-emerald-200 bg-emerald-50/30"
+                ? "border-indigo-200 bg-indigo-50/30"
                 : "border-slate-200 hover:border-slate-300"
         }`}
         onClick={() => {
@@ -128,7 +128,7 @@ export function GoalSelector({ value, onChange, error }: GoalSelectorProps) {
         }}
       >
         {/* Icon */}
-        <div className={`flex-shrink-0 ${value ? "text-emerald-600" : "text-slate-400"}`}>
+        <div className={`flex-shrink-0 ${value ? "text-indigo-600" : "text-slate-400"}`}>
           {isOpen ? (
             <Search className="w-5 h-5" />
           ) : (
@@ -203,23 +203,23 @@ export function GoalSelector({ value, onChange, error }: GoalSelectorProps) {
 
               return (
                 <li
-                  key={title}
+                  key={`${title}-${index}`}
                   onClick={() => handleSelect(title)}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={`px-4 py-2.5 cursor-pointer transition-colors flex items-center gap-3 ${
                     isHighlighted
-                      ? "bg-emerald-50"
+                      ? "bg-indigo-50"
                       : isSelected
                         ? "bg-slate-50"
                         : "hover:bg-slate-50"
-                  } ${isCategory ? "font-medium text-emerald-700 bg-emerald-50/50" : "text-slate-700"}`}
+                  } ${isCategory ? "font-medium text-indigo-700 bg-indigo-50/50" : "text-slate-700"}`}
                 >
                   {isCategory && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0" />
                   )}
                   <span className={isCategory ? "" : "pl-5"}>{title}</span>
                   {isSelected && (
-                    <span className="ml-auto text-emerald-600 text-sm">✓</span>
+                    <span className="ml-auto text-indigo-600 text-sm">✓</span>
                   )}
                 </li>
               );
