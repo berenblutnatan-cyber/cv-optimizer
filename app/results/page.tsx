@@ -6,7 +6,7 @@ import { useAuth, SignInButton } from "@clerk/nextjs";
 import { Download, X, Check, Sparkles, Loader2, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { AnalysisResults } from "@/components/AnalysisResults";
 import { AnalysisSessionPayload, clearAnalysisSession, loadAnalysisFromSession, saveAnalysisToSession } from "@/lib/analysisSession";
-import { ShellNav } from "@/components/ShellNav";
+import { Logo } from "@/components/Logo";
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -140,7 +140,7 @@ export default function ResultsPage() {
               onClick={() => router.push("/")}
               className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors"
             >
-              Back to Analyzer
+              Back to Optimizer
             </button>
           </div>
         </div>
@@ -157,19 +157,26 @@ export default function ResultsPage() {
 
       <ShellNav
         rightSlot={
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Header */}
+      <header className="w-full bg-white border-b border-slate-200 px-6 lg:px-12 py-4">
+        <div className="flex items-center justify-between">
+          <Logo variant="dark" size="md" />
           <button
             onClick={() => {
               clearAnalysisSession();
-              router.push("/");
+              router.push("/optimize");
             }}
             className="px-3 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors shadow-sm"
+            className="px-4 py-2 text-sm font-medium rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
           >
             New Analysis
           </button>
-        }
-      />
+        </div>
+      </header>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-4 py-4 flex-1 min-h-0 w-full">
+      {/* Main Content */}
+      <main className="flex-1 w-full px-6 lg:px-12 py-8">
         <AnalysisResults
           results={payload.analysis as any}
           coverLetterTab={
@@ -494,6 +501,8 @@ export default function ResultsPage() {
             <div className="mb-4">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
                 <Download className="w-8 h-8 text-indigo-600" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Download className="w-8 h-8 text-emerald-600" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Sign in to Download</h3>
               <p className="text-slate-600">
@@ -503,6 +512,7 @@ export default function ResultsPage() {
             <div className="flex flex-col gap-3">
               <SignInButton mode="modal">
                 <button className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors">
+                <button className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors">
                   Sign In
                 </button>
               </SignInButton>

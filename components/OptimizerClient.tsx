@@ -166,7 +166,7 @@ export function OptimizerClient() {
         formData.append("summary", summary.trim());
       }
 
-      const response = await fetch("/api/analyze", { method: "POST", body: formData });
+      const response = await fetch("/api/optimize-with-skills", { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Analysis failed");
 
@@ -218,7 +218,7 @@ export function OptimizerClient() {
       {/* Header - Full Width */}
       <header className="w-full bg-white border-b border-slate-200 px-6 lg:px-12 py-4">
         <div className="flex items-center justify-between">
-          <Logo variant="dark" size="md" linkTo="/" />
+          <Logo variant="dark" size="md" />
           <div className="flex items-center gap-4">
             <Link 
               href="/builder" 

@@ -30,6 +30,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
+  // Note: /optimize and /results are now public for testing
 });
 
 export const config = {

@@ -42,6 +42,13 @@ interface AnalysisResult {
     suggested: string;
     reason: string;
   }[];
+  skillPlacementChanges?: {
+    id?: string;
+    section: string;
+    original: string;
+    suggested: string;
+    reason: string;
+  }[];
   keywords: {
     missing: string[];
     present: string[];
@@ -91,6 +98,8 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; pre
 
 export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle }: AnalysisResultsProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "changes" | "optimized" | "cover-letter" | "enhance">("overview");
+export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProps) {
+  const [activeTab, setActiveTab] = useState<"overview" | "changes" | "skills" | "optimized" | "cover-letter">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("modern-sidebar");
   const [isEditMode, setIsEditMode] = useState(false);
@@ -132,6 +141,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
   // Editable resume data state
   const [resumeData, setResumeData] = useState<ResumePreviewData>(initialParsedCV);
+
+  // Separate regular changes from skill placements
+  const regularChanges = results.suggestedChanges.filter(change => !change.id?.startsWith('skill_'));
+  const skillChanges = results.skillPlacementChanges || results.suggestedChanges.filter(change => change.id?.startsWith('skill_'));
 
   // Score color based on value
   const getScoreColor = (score: number) => {
@@ -192,6 +205,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   const tabs = [
     { id: "overview" as const, label: "Overview" },
     { id: "changes" as const, label: `Review Changes`, count: pendingChangesCount > 0 ? pendingChangesCount : undefined, badge: acceptedChangesCount > 0 ? `${acceptedChangesCount} accepted` : undefined },
+    { id: "changes" as const, label: `Suggested Changes`, count: regularChanges.length },
+    ...(skillChanges.length > 0 ? [{ id: "skills" as const, label: "Skills Added", count: skillChanges.length }] : []),
     { id: "optimized" as const, label: "Optimized CV" },
     ...(onEnhanceWithDeepDive ? [{ id: "enhance" as const, label: "✨ Enhance", highlight: true }] : []),
     ...(coverLetterTab ? [{ id: "cover-letter" as const, label: "Cover Letter" }] : []),
@@ -222,11 +237,15 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
       {/* Top Navigation - Pill-shaped Segmented Control */}
       <div className="p-3 bg-slate-50 border-b border-slate-100">
         <div className="inline-flex bg-white rounded-xl p-1 gap-1 shadow-sm border border-slate-100">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm max-w-6xl mx-auto">
+      {/* Top Navigation - Modern Tabs */}
+      <div className="px-6 py-4 bg-white border-b border-slate-200">
+        <div className="flex gap-2">
           {tabs.map((tab) => (
           <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 ${
                 activeTab === tab.id
                   ? (tab as any).highlight ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md" : "bg-indigo-600 text-white shadow-md"
                   : (tab as any).highlight ? "text-violet-600 hover:text-violet-700 hover:bg-violet-50 bg-violet-50/50" : "text-slate-600 hover:text-indigo-700 hover:bg-indigo-50"
@@ -236,6 +255,14 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
               {tab.count !== undefined && tab.count > 0 && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                   activeTab === tab.id ? "bg-white/20" : "bg-amber-100 text-amber-700"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+            >
+              {tab.label}
+              {tab.count !== undefined && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === tab.id ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                 }`}>
                   {tab.count}
                 </span>
@@ -307,6 +334,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-indigo-600" />
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   </div>
                 Strengths
               </h4>
@@ -314,6 +345,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 {results.strengths.map((strength, index) => (
                     <li key={index} className="flex items-start gap-3 text-slate-600">
                       <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                  {results.strengths.map((strength, index) => (
+                    <li key={index} className="flex items-start gap-3 text-slate-700">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <span>{strength}</span>
                   </li>
                 ))}
@@ -332,6 +366,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 {results.improvements.map((improvement, index) => (
                     <li key={index} className="flex items-start gap-3 text-slate-600">
                       <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  {results.improvements.map((improvement, index) => (
+                    <li key={index} className="flex items-start gap-3 text-slate-700">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <span>{improvement}</span>
                   </li>
                 ))}
@@ -346,6 +383,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <Check className="w-5 h-5 text-indigo-600" />
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <Check className="w-5 h-5 text-emerald-600" />
                   </div>
                   Keywords Found
                 </h4>
@@ -354,6 +395,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     <span 
                       key={index} 
                       className="px-3 py-1.5 bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-lg text-sm font-medium"
+                      className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium"
                     >
                       {keyword}
                     </span>
@@ -366,6 +408,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
               {/* Missing Keywords */}
               <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                 <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-rose-600" />
@@ -388,111 +431,64 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
               </div>
             </div>
 
+            {/* Skills Gap / Learning Path */}
+            {missingKeySkills.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-blue-600" />
+                  </div>
+                  Missing Skills to Learn
+                </h4>
+                <div className="space-y-3">
+                  {missingKeySkills.slice(0, 6).map((skill, index) => (
+                    <div 
+                      key={`${skill}-${index}`} 
+                      className="flex items-center justify-between gap-4 bg-slate-50 rounded-lg p-3 border border-slate-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Lightbulb className="w-4 h-4 text-amber-600" />
+                        <span className="font-medium text-slate-900">{skill}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {getLearningLinks(skill).map((link) => (
+                          <a
+                            key={link.label}
+                            href={link.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs px-3 py-1.5 rounded-lg border font-medium hover:opacity-80 transition-opacity flex items-center gap-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                          >
+                            {link.label}
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-sm text-slate-600 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  Tip: Only add skills to your CV if you genuinely have them or are actively learning.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === "changes" && (
-          <div className="space-y-4 flex-1 min-h-0 overflow-auto pr-1">
-            {/* Status Summary Bar */}
-            {results.suggestedChanges.length > 0 && (
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 mb-4">
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-amber-600">{pendingChangesCount}</span> pending
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-emerald-600">{acceptedChangesCount}</span> accepted
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-rose-600">{Object.values(changeStatuses).filter(s => s === "rejected").length}</span> rejected
-                  </span>
-                </div>
-                {pendingChangesCount > 0 && (
-                  <button
-                    onClick={() => {
-                      const newStatuses = { ...changeStatuses };
-                      Object.keys(newStatuses).forEach(k => {
-                        if (newStatuses[k] === "pending") newStatuses[k] = "accepted";
-                      });
-                      setChangeStatuses(newStatuses);
-                    }}
-                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                  >
-                    Accept All Pending
-                  </button>
-                )}
-              </div>
-            )}
-            
-            {results.suggestedChanges.length === 0 ? (
+          <div className="space-y-4">
+            {regularChanges.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle2 className="w-12 h-12 text-indigo-500 mx-auto mb-4" />
+                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
                 <p className="text-slate-500">No suggested changes - your CV looks great!</p>
               </div>
             ) : (
-              results.suggestedChanges.map((change, index) => {
-                const changeId = change.id || `chg_${index}`;
-                const status = changeStatuses[changeId] || "pending";
-                
-                return (
-                <div 
-                  key={changeId} 
-                  className={`bg-white border rounded-xl overflow-hidden shadow-sm transition-all ${
-                    status === "accepted" 
-                      ? "border-emerald-200 bg-emerald-50/30" 
-                      : status === "rejected" 
-                        ? "border-rose-200 bg-rose-50/30 opacity-60" 
-                        : "border-slate-100"
-                  }`}
-                >
-                  <div className={`px-5 py-3 border-b flex items-center justify-between ${
-                    status === "accepted" 
-                      ? "bg-emerald-50 border-emerald-100" 
-                      : status === "rejected" 
-                        ? "bg-rose-50 border-rose-100" 
-                        : "bg-slate-50 border-slate-100"
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <FileText className={`w-4 h-4 ${
-                        status === "accepted" ? "text-emerald-600" : status === "rejected" ? "text-rose-500" : "text-indigo-600"
-                      }`} />
-                      <span className="font-semibold text-slate-900">{change.section}</span>
-                      {status !== "pending" && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          status === "accepted" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                        }`}>
-                          {status === "accepted" ? "✓ Accepted" : "✗ Rejected"}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Accept/Reject Buttons */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setChangeStatuses(prev => ({ ...prev, [changeId]: "accepted" }))}
-                        className={`p-2 rounded-lg transition-all ${
-                          status === "accepted" 
-                            ? "bg-emerald-500 text-white" 
-                            : "bg-white border border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50"
-                        }`}
-                        title="Accept this change"
-                      >
-                        <ThumbsUp className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setChangeStatuses(prev => ({ ...prev, [changeId]: "rejected" }))}
-                        className={`p-2 rounded-lg transition-all ${
-                          status === "rejected" 
-                            ? "bg-rose-500 text-white" 
-                            : "bg-white border border-slate-200 text-slate-500 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50"
-                        }`}
-                        title="Reject this change"
-                      >
-                        <ThumbsDown className="w-4 h-4" />
-                      </button>
-                    </div>
+              regularChanges.map((change, index) => (
+                <div key={index} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    <span className="font-semibold text-slate-900">{change.section}</span>
                   </div>
                   
                   <div className="p-5 space-y-4">
