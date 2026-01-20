@@ -99,7 +99,7 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; pre
 ];
 
 export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle }: AnalysisResultsProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "changes" | "optimized" | "cover-letter" | "enhance">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "changes" | "skills" | "optimized" | "cover-letter" | "enhance">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("modern-sidebar");
   const [isEditMode, setIsEditMode] = useState(false);
@@ -228,7 +228,6 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   const tabs = [
     { id: "overview" as const, label: "Overview" },
     { id: "changes" as const, label: `Review Changes`, count: pendingChangesCount > 0 ? pendingChangesCount : undefined, badge: acceptedChangesCount > 0 ? `${acceptedChangesCount} accepted` : undefined },
-    { id: "changes" as const, label: `Suggested Changes`, count: regularChanges.length },
     ...(skillChanges.length > 0 ? [{ id: "skills" as const, label: "Skills Added", count: skillChanges.length }] : []),
     { id: "optimized" as const, label: "Optimized CV" },
     ...(onEnhanceWithDeepDive ? [{ id: "enhance" as const, label: "✨ Enhance", highlight: true }] : []),

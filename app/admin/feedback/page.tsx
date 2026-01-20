@@ -8,6 +8,16 @@ const ADMIN_EMAILS = [
   "idan.kars@gmail.com", // Add your email here
 ];
 
+type FeedbackWithUser = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  source: string | null;
+  createdAt: Date;
+  userId: string | null;
+  user: { email: string | null } | null;
+};
+
 async function isAdmin() {
   const { userId } = await auth();
   if (!userId) return false;
@@ -48,8 +58,7 @@ export default async function AdminFeedbackPage() {
   }
 
   // Fetch feedback data
-  const feedback: Awaited<ReturnType<typeof prisma.feedback.findMany>> =
-    await prisma.feedback.findMany({
+  const feedback: FeedbackWithUser[] = await prisma.feedback.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       user: {
@@ -58,26 +67,25 @@ export default async function AdminFeedbackPage() {
         },
       },
     },
-    });
+  });
 
   // Calculate stats
   const totalCount = feedback.length;
   const averageRating = totalCount > 0
-    ? feedback.reduce((sum: number, f: { rating: number }) => sum + f.rating, 0) /
-      totalCount
+    ? feedback.reduce((sum, f) => sum + f.rating, 0) / totalCount
     : 0;
   
   // Rating distribution
   const ratingDistribution = [1, 2, 3, 4, 5].map(rating => ({
     rating,
-    count: feedback.filter(f => f.rating === rating).length,
+    count: feedback.filter((f) => f.rating === rating).length,
     percentage: totalCount > 0 
-      ? (feedback.filter(f => f.rating === rating).length / totalCount) * 100 
+      ? (feedback.filter((f) => f.rating === rating).length / totalCount) * 100 
       : 0,
   }));
 
   // Recent feedback (with comments)
-  const feedbackWithComments = feedback.filter(f => f.comment);
+  const feedbackWithComments = feedback.filter((f) => f.comment);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -169,10 +177,10 @@ export default async function AdminFeedbackPage() {
               <span className="text-sm font-medium text-slate-600">Identified</span>
             </div>
             <div className="text-3xl font-bold text-slate-900">
-              {feedback.filter(f => f.userId).length}
+              {feedback.filter((f) => f.userId).length}
             </div>
             <p className="mt-1 text-sm text-slate-500">
-              {feedback.filter(f => !f.userId).length} anonymous
+              {feedback.filter((f) => !f.userId).length} anonymous
             </p>
           </div>
         </div>

@@ -20,6 +20,7 @@ export type AnalysisSessionPayload = {
     jobTitle: string;
     jobDescription: string;
     jobUrl: string;
+    summary?: string;
   };
 };
 

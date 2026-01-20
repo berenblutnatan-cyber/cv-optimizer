@@ -94,7 +94,7 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
         </header>
 
         {/* Two Column Layout */}
-        <A4Grid columns="1fr 200px" gap={24}>
+        <A4Grid columns="1fr 200px" gap="24px">
           {/* Left - Main Content */}
           <div>
             {/* Summary / Profile */}

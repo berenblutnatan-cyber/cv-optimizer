@@ -47,11 +47,12 @@ export function ContentFitAdvisor({
     // Convert ResumeData to the format expected by analyzeContentFit
     const analysisData = {
       summary: data.summary,
-      sections: data.sections?.map(s => ({
-        items: s.items?.map(item => ({
-          bullets: item.bullets || [],
-        })),
-      })),
+      sections: [
+        { items: data.experience.map((item) => ({ bullets: item.description })) },
+        { items: data.projects.map((item) => ({ bullets: item.bullets })) },
+        { items: data.education.map((item) => ({ bullets: item.achievements })) },
+        { items: data.customSections.map((item) => ({ bullets: [item.title, ...item.items.map((i) => i.text)] })) },
+      ],
       skills: data.skills,
       languages: data.languages,
     };

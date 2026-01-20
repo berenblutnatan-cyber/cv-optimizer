@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { Pool, neonConfig } from "@neondatabase/serverless";
+import { neonConfig } from "@neondatabase/serverless";
 import { config } from "dotenv";
 import { resolve } from "path";
 import ws from "ws";
@@ -33,12 +33,8 @@ function createPrismaClient(): PrismaClient {
   }
 
   try {
-    // Create Neon pool with explicit connection string
-    const pool = new Pool({ 
-      connectionString: connectionString,
-    });
-    
-    const adapter = new PrismaNeon(pool);
+    // Create Neon adapter with explicit connection string
+    const adapter = new PrismaNeon({ connectionString });
     
     console.log("✅ Prisma + Neon adapter initialized");
     

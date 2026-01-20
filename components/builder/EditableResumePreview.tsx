@@ -1586,7 +1586,7 @@ function ExecutiveEditable({
 
   return (
     <A4PageWrapper>
-      <div style={{ backgroundColor: "#ffffff", minHeight: "100%", fontFamily: FONTS.sans }}>
+      <div style={{ backgroundColor: "#ffffff", minHeight: "100%", fontFamily: FONTS.body.primary }}>
         {/* Dark Header Block */}
         <header style={{
           backgroundColor: "#111827",
@@ -1617,7 +1617,7 @@ function ExecutiveEditable({
               onChange={(v) => updateField("name", v)}
               placeholder="Your Full Name"
               className="text-[28px] font-bold text-white"
-              style={{ fontFamily: FONTS.heading }}
+              style={{ fontFamily: FONTS.heading.sans }}
               focusRingClass={ringClass}
               disabled={readOnly}
             />
@@ -1764,7 +1764,7 @@ function ExecutiveEditable({
                         key={idx}
                         id={`exec-skill-${idx}`}
                         value={skill}
-                        onChange={(v) => updateSkill(idx, v)}
+                        onChange={(v) => updateSkill?.(idx, v)}
                         placeholder="Skill"
                         className="text-[10px] font-medium text-slate-700"
                         style={{
@@ -1804,7 +1804,7 @@ function ExecutiveEditable({
                       <EditableField
                         id={`exec-lang-${idx}`}
                         value={lang}
-                        onChange={(v) => updateLanguage(idx, v)}
+                        onChange={(v) => updateLanguage?.(idx, v)}
                         placeholder="Language - Level"
                         className="text-[10px] text-slate-600"
                         focusRingClass={ringClass}
@@ -1841,7 +1841,7 @@ function TechieEditable({
 
   return (
     <A4PageWrapper>
-      <div style={{ backgroundColor: "#ffffff", minHeight: "100%", fontFamily: FONTS.sans }}>
+      <div style={{ backgroundColor: "#ffffff", minHeight: "100%", fontFamily: FONTS.body.primary }}>
         {/* Terminal-style Header */}
         <header style={{
           backgroundColor: "#1e293b",
@@ -1957,7 +1957,7 @@ function TechieEditable({
                     key={idx}
                     id={`tech-skill-${idx}`}
                     value={skill}
-                    onChange={(v) => updateSkill(idx, v)}
+                    onChange={(v) => updateSkill?.(idx, v)}
                     placeholder="Skill"
                     className="text-[10px] font-medium text-slate-700"
                     style={{
@@ -2123,7 +2123,7 @@ function StartupEditable({
       <div style={{
         backgroundColor: "#ffffff",
         minHeight: "100%",
-        fontFamily: FONTS.sans,
+        fontFamily: FONTS.body.primary,
         padding: "36px 44px",
       }}>
         {/* Big Bold Header */}
@@ -2153,7 +2153,7 @@ function StartupEditable({
             onChange={(v) => updateField("name", v)}
             placeholder="Your Name"
             className="text-[38px] font-extrabold text-slate-900 leading-none"
-            style={{ fontFamily: FONTS.heading, letterSpacing: "-0.02em" }}
+            style={{ fontFamily: FONTS.heading.sans, letterSpacing: "-0.02em" }}
             focusRingClass={ringClass}
             disabled={readOnly}
           />
@@ -2241,7 +2241,7 @@ function StartupEditable({
               fontWeight: 700,
               color: "#111827",
               marginBottom: "14px",
-              fontFamily: FONTS.heading,
+              fontFamily: FONTS.heading.sans,
               display: "flex",
               alignItems: "center",
               gap: "10px",
@@ -2276,7 +2276,7 @@ function StartupEditable({
                   <EditableField
                     id={`startup-skill-${idx}`}
                     value={skill}
-                    onChange={(v) => updateSkill(idx, v)}
+                    onChange={(v) => updateSkill?.(idx, v)}
                     placeholder="Skill"
                     className="text-[10px] font-semibold text-slate-700"
                     focusRingClass={ringClass}
@@ -2296,7 +2296,7 @@ function StartupEditable({
               fontWeight: 700,
               color: "#111827",
               marginBottom: "14px",
-              fontFamily: FONTS.heading,
+              fontFamily: FONTS.heading.sans,
               display: "flex",
               alignItems: "center",
               gap: "10px",
@@ -2323,7 +2323,7 @@ function StartupEditable({
                       onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
                       placeholder="Position"
                       className="text-[13px] font-bold text-slate-900"
-                      style={{ fontFamily: FONTS.heading }}
+                      style={{ fontFamily: FONTS.heading.sans }}
                       focusRingClass={ringClass}
                       disabled={readOnly}
                     />
@@ -2415,7 +2415,7 @@ function StartupEditable({
                   key={idx}
                   id={`startup-lang-${idx}`}
                   value={lang}
-                  onChange={(v) => updateLanguage(idx, v)}
+                  onChange={(v) => updateLanguage?.(idx, v)}
                   placeholder="Language"
                   className="text-[10px] text-slate-600"
                   focusRingClass={ringClass}
@@ -2453,7 +2453,7 @@ function InternationalEditable({
       <div style={{
         backgroundColor: "#ffffff",
         minHeight: "100%",
-        fontFamily: FONTS.clean,
+        fontFamily: FONTS.body.primary,
         padding: "32px 36px",
       }}>
         {/* Header with optional photo */}
@@ -2501,7 +2501,7 @@ function InternationalEditable({
               onChange={(v) => updateField("name", v)}
               placeholder="Full Name"
               className="text-[24px] font-bold text-slate-800"
-              style={{ fontFamily: FONTS.heading }}
+              style={{ fontFamily: FONTS.heading.sans }}
               focusRingClass={ringClass}
               disabled={readOnly}
             />
@@ -2570,7 +2570,7 @@ function InternationalEditable({
         </header>
 
         {/* Two Column Layout */}
-        <A4Grid columns="1fr 180px" gap={20}>
+        <A4Grid columns="1fr 180px" gap="20px">
           {/* Left - Main Content */}
           <div>
             {/* Summary */}
@@ -2699,7 +2699,7 @@ function InternationalEditable({
                     <EditableField
                       id={`intl-skill-${idx}`}
                       value={skill}
-                      onChange={(v) => updateSkill(idx, v)}
+                      onChange={(v) => updateSkill?.(idx, v)}
                       placeholder="Skill"
                       className="text-[10px] text-slate-600"
                       focusRingClass={ringClass}
@@ -2750,7 +2750,7 @@ function InternationalEditable({
                     <EditableField
                       id={`intl-lang-${idx}`}
                       value={lang}
-                      onChange={(v) => updateLanguage(idx, v)}
+                      onChange={(v) => updateLanguage?.(idx, v)}
                       placeholder="Language - Level"
                       className="text-[10px] text-slate-600"
                       focusRingClass={ringClass}
