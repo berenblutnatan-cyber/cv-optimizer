@@ -98,8 +98,6 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; pre
 
 export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle }: AnalysisResultsProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "changes" | "optimized" | "cover-letter" | "enhance">("overview");
-export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "changes" | "skills" | "optimized" | "cover-letter">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("modern-sidebar");
   const [isEditMode, setIsEditMode] = useState(false);
@@ -234,47 +232,39 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
         </div>
       </div>
       
-      {/* Top Navigation - Pill-shaped Segmented Control */}
-      <div className="p-3 bg-slate-50 border-b border-slate-100">
-        <div className="inline-flex bg-white rounded-xl p-1 gap-1 shadow-sm border border-slate-100">
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm max-w-6xl mx-auto">
       {/* Top Navigation - Modern Tabs */}
       <div className="px-6 py-4 bg-white border-b border-slate-200">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {tabs.map((tab) => (
-          <button
+            <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 ${
                 activeTab === tab.id
-                  ? (tab as any).highlight ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md" : "bg-indigo-600 text-white shadow-md"
-                  : (tab as any).highlight ? "text-violet-600 hover:text-violet-700 hover:bg-violet-50 bg-violet-50/50" : "text-slate-600 hover:text-indigo-700 hover:bg-indigo-50"
+                  ? (tab as any).highlight 
+                    ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md" 
+                    : "bg-indigo-600 text-white shadow-md"
+                  : (tab as any).highlight 
+                    ? "text-violet-600 hover:text-violet-700 hover:bg-violet-50 bg-violet-50/50" 
+                    : "text-slate-600 hover:text-indigo-700 hover:bg-indigo-50"
               }`}
             >
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                   activeTab === tab.id ? "bg-white/20" : "bg-amber-100 text-amber-700"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-              }`}
-            >
-              {tab.label}
-              {tab.count !== undefined && (
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === tab.id ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                 }`}>
                   {tab.count}
                 </span>
               )}
               {(tab as any).badge && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.id ? "bg-white/20" : "bg-emerald-100 text-emerald-700"
+                  activeTab === tab.id ? "bg-white/20" : "bg-indigo-100 text-indigo-700"
                 }`}>
                   {(tab as any).badge}
                 </span>
               )}
-          </button>
+            </button>
           ))}
         </div>
       </div>
@@ -334,10 +324,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                 <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-indigo-600" />
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   </div>
                 Strengths
               </h4>
@@ -345,9 +331,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                 {results.strengths.map((strength, index) => (
                     <li key={index} className="flex items-start gap-3 text-slate-600">
                       <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
-                  {results.strengths.map((strength, index) => (
-                    <li key={index} className="flex items-start gap-3 text-slate-700">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <span>{strength}</span>
                   </li>
                 ))}
@@ -366,9 +349,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                 {results.improvements.map((improvement, index) => (
                     <li key={index} className="flex items-start gap-3 text-slate-600">
                       <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                  {results.improvements.map((improvement, index) => (
-                    <li key={index} className="flex items-start gap-3 text-slate-700">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <span>{improvement}</span>
                   </li>
                 ))}
@@ -383,10 +363,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                 <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <Check className="w-5 h-5 text-indigo-600" />
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <Check className="w-5 h-5 text-emerald-600" />
                   </div>
                   Keywords Found
                 </h4>
@@ -395,7 +371,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                     <span 
                       key={index} 
                       className="px-3 py-1.5 bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-lg text-sm font-medium"
-                      className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium"
                     >
                       {keyword}
                     </span>
@@ -408,7 +383,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
 
               {/* Missing Keywords */}
               <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                 <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-rose-600" />
@@ -431,48 +405,6 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
               </div>
             </div>
 
-            {/* Skills Gap / Learning Path */}
-            {missingKeySkills.length > 0 && (
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-blue-600" />
-                  </div>
-                  Missing Skills to Learn
-                </h4>
-                <div className="space-y-3">
-                  {missingKeySkills.slice(0, 6).map((skill, index) => (
-                    <div 
-                      key={`${skill}-${index}`} 
-                      className="flex items-center justify-between gap-4 bg-slate-50 rounded-lg p-3 border border-slate-200"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Lightbulb className="w-4 h-4 text-amber-600" />
-                        <span className="font-medium text-slate-900">{skill}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        {getLearningLinks(skill).map((link) => (
-                          <a
-                            key={link.label}
-                            href={link.href}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs px-3 py-1.5 rounded-lg border font-medium hover:opacity-80 transition-opacity flex items-center gap-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                          >
-                            {link.label}
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-4 text-sm text-slate-600 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                  Tip: Only add skills to your CV if you genuinely have them or are actively learning.
-                </p>
-              </div>
-            )}
           </div>
         )}
 
@@ -489,19 +421,19 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                   <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-emerald-600" />
                     <span className="font-semibold text-slate-900">{change.section}</span>
-                  </div>
+                </div>
                   
                   <div className="p-5 space-y-4">
-                    <div>
+                  <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Original</p>
                       <p className={`p-4 rounded-lg border leading-relaxed ${
                         status === "rejected" ? "text-slate-800 bg-slate-50 border-slate-200" : "text-slate-600 bg-rose-50 border-rose-100 line-through"
                       }`}>
-                        {change.original}
-                      </p>
-                    </div>
+                      {change.original}
+                    </p>
+                  </div>
 
-                    <div>
+                  <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Suggested</p>
                       <p className={`p-4 rounded-lg border leading-relaxed ${
                         status === "accepted" 
@@ -510,18 +442,17 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                             ? "text-slate-400 bg-slate-50 border-slate-200 line-through" 
                             : "text-slate-800 bg-indigo-50 border-indigo-100"
                       }`}>
-                        {change.suggested}
-                      </p>
-                    </div>
+                      {change.suggested}
+                    </p>
+                  </div>
                     
                     <div className="flex items-start gap-3 text-sm text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
                       <Lightbulb className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                      <span>{change.reason}</span>
+                    <span>{change.reason}</span>
                     </div>
                   </div>
                 </div>
-                );
-              })
+              ))
             )}
           </div>
         )}
@@ -795,8 +726,8 @@ export function AnalysisResults({ results, coverLetterTab }: AnalysisResultsProp
                       className={`w-2 h-2 rounded-full ${
                         answer.trim() ? "bg-emerald-500" : "bg-slate-200"
                       }`}
-                    />
-                  ))}
+                />
+              ))}
                 </div>
                 
                 {deepDiveStep < 2 ? (

@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { saveAnalysisToSession } from "@/lib/analysisSession";
 import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
-import { AIDeepDive, DeepDiveAnswers } from "@/components/optimizer/AIDeepDive";
 
 export function OptimizerClient() {
   const router = useRouter();
@@ -49,10 +48,6 @@ export function OptimizerClient() {
   // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState("");
-  
-  // AI Deep Dive State
-  const [isDeepDiveOpen, setIsDeepDiveOpen] = useState(false);
-  const [deepDiveAnswers, setDeepDiveAnswers] = useState<DeepDiveAnswers | null>(null);
   
   // Auth modal for deferred authentication
   const { isOpen: isAuthModalOpen, trigger: authTrigger, openModal: openAuthModal, closeModal: closeAuthModal } = useAuthModal();
@@ -151,11 +146,6 @@ export function OptimizerClient() {
       const companyName = extractCompanyFromContext() || "Target Company";
       formData.append("companyName", companyName);
       
-      // Include AI Deep Dive answers if provided (for enhanced optimization)
-      if (deepDiveAnswers) {
-        formData.append("deepDiveAnswers", JSON.stringify(deepDiveAnswers));
-      }
-      
       // Include photo if provided
       if (photoFile) {
         formData.append("photo", photoFile);
@@ -166,7 +156,7 @@ export function OptimizerClient() {
         formData.append("summary", summary.trim());
       }
 
-      const response = await fetch("/api/optimize-with-skills", { method: "POST", body: formData });
+      const response = await fetch("/api/analyze", { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Analysis failed");
 
@@ -486,33 +476,6 @@ export function OptimizerClient() {
             </div>
           </div>
         </div>
-
-        {/* AI Deep Dive Section - Full Width */}
-        {hasResume && hasJobContext && (
-          <div className="mt-8">
-            <AIDeepDive
-              isOpen={isDeepDiveOpen}
-              onToggle={() => setIsDeepDiveOpen(!isDeepDiveOpen)}
-              onComplete={(answers) => {
-                setDeepDiveAnswers(answers);
-                setIsDeepDiveOpen(false);
-              }}
-              jobTitle={jobTitle}
-            />
-            {deepDiveAnswers && !isDeepDiveOpen && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
-                <Check className="w-4 h-4" />
-                <span>Deep Dive complete! Your answers will enhance the optimization.</span>
-                <button 
-                  onClick={() => setIsDeepDiveOpen(true)}
-                  className="ml-auto text-emerald-700 underline hover:no-underline"
-                >
-                  Edit
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Error Message */}
         {error && (
