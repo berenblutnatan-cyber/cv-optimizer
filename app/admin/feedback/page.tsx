@@ -48,7 +48,8 @@ export default async function AdminFeedbackPage() {
   }
 
   // Fetch feedback data
-  const feedback = await prisma.feedback.findMany({
+  const feedback: Awaited<ReturnType<typeof prisma.feedback.findMany>> =
+    await prisma.feedback.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       user: {
@@ -57,12 +58,12 @@ export default async function AdminFeedbackPage() {
         },
       },
     },
-  });
+    });
 
   // Calculate stats
   const totalCount = feedback.length;
   const averageRating = totalCount > 0
-    ? feedback.reduce((sum: number, f) => sum + f.rating, 0) / totalCount
+    ? feedback.reduce((sum, f) => sum + f.rating, 0) / totalCount
     : 0;
   
   // Rating distribution
