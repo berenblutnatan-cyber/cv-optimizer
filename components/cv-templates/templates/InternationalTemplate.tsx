@@ -84,7 +84,7 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
                 <IntlContactItem label="Address" value={data.contact.location!} />
               )}
               {hasContent(data.contact.linkedin) && (
-                <IntlContactItem label="LinkedIn" value={data.contact.linkedin!} />
+                <IntlContactItem label="LinkedIn" value={data.contact.linkedin!} isLinkedIn />
               )}
               {hasContent(data.contact.website) && (
                 <IntlContactItem label="Website" value={data.contact.website!} />
@@ -173,11 +173,25 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
 }
 
 // Helper Components
-function IntlContactItem({ label, value }: { label: string; value: string }) {
+function IntlContactItem({ label, value, isLinkedIn = false }: { label: string; value: string; isLinkedIn?: boolean }) {
+  const getLinkedInHref = (val: string) => val.startsWith("http") ? val : `https://${val}`;
+  const displayValue = isLinkedIn ? value.replace(/^https?:\/\//, "").replace(/\/$/, "") : value;
+  
   return (
     <div style={{ display: "flex", gap: "8px" }}>
       <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "55px" }}>{label}:</span>
-      <span style={{ fontSize: "10px", color: "#374151" }}>{value}</span>
+      {isLinkedIn ? (
+        <a 
+          href={getLinkedInHref(value)} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ fontSize: "10px", color: "#4f46e5", textDecoration: "none" }}
+        >
+          {displayValue}
+        </a>
+      ) : (
+        <span style={{ fontSize: "10px", color: "#374151" }}>{value}</span>
+      )}
     </div>
   );
 }

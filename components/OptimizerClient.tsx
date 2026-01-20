@@ -17,8 +17,6 @@ import {
   Link as LinkIcon,
   Type,
   FileSearch,
-  Camera,
-  User,
   FileEdit
 } from "lucide-react";
 import { saveAnalysisToSession } from "@/lib/analysisSession";
@@ -32,10 +30,6 @@ export function OptimizerClient() {
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvText, setCvText] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  
-  // Photo State
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   
   // Summary State
   const [summary, setSummary] = useState("");
@@ -78,25 +72,6 @@ export function OptimizerClient() {
     }
   };
 
-  // Handle photo upload
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      setPhotoFile(file);
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removePhoto = () => {
-    setPhotoFile(null);
-    setPhotoPreview(null);
-  };
-
   // Validation: Resume required + at least one context field
   const hasResume = cvText.trim() || cvFile;
   const hasJobContext = jobTitle.trim() || jobDescription.trim() || jobUrl.trim();
@@ -122,7 +97,6 @@ export function OptimizerClient() {
         jobDescription,
         jobUrl,
         summary,
-        photoPreview,
       }));
       openAuthModal("analyze");
       return;
@@ -146,11 +120,6 @@ export function OptimizerClient() {
       const companyName = extractCompanyFromContext() || "Target Company";
       formData.append("companyName", companyName);
       
-      // Include photo if provided
-      if (photoFile) {
-        formData.append("photo", photoFile);
-      }
-      
       // Include summary if provided
       if (summary.trim()) {
         formData.append("summary", summary.trim());
@@ -173,7 +142,6 @@ export function OptimizerClient() {
           jobDescription: jobDescription.trim(),
           jobUrl: jobUrl.trim(),
           summary: summary.trim(),
-          photo: photoPreview, // Include photo preview for results page
         }
       });
       
@@ -323,57 +291,6 @@ export function OptimizerClient() {
               placeholder="Paste your resume text here..."
               className="w-full h-48 p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
-
-            {/* Photo Upload Section */}
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-                  <Camera className="w-4 h-4 text-violet-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-slate-900 text-sm">Profile Photo</h3>
-                  <p className="text-xs text-slate-500">Optional - for templates with photo</p>
-                </div>
-              </div>
-              
-              {photoPreview ? (
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <img 
-                      src={photoPreview} 
-                      alt="Profile preview" 
-                      className="w-20 h-20 rounded-xl object-cover border-2 border-violet-200"
-                    />
-                    <button
-                      onClick={removePhoto}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    <p className="font-medium">{photoFile?.name}</p>
-                    <p className="text-slate-400 text-xs">Click X to remove</p>
-                  </div>
-                </div>
-              ) : (
-                <label className="flex items-center gap-3 p-4 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-violet-300 hover:bg-violet-50/50 transition-all">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
-                    <User className="w-6 h-6 text-slate-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">Upload a photo</p>
-                    <p className="text-xs text-slate-400">JPG, PNG up to 5MB</p>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
 
             {/* Summary Section */}
             <div className="mt-6 pt-6 border-t border-slate-100">

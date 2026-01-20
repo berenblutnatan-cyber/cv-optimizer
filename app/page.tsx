@@ -50,12 +50,6 @@ export default function LandingPage() {
               </SignUpButton>
             </SignedOut>
             <SignedIn>
-              <Link 
-                href="/optimize"
-                className="px-5 py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors shadow-sm"
-              >
-                Dashboard
-              </Link>
               <UserButton 
                 appearance={{
                   elements: {

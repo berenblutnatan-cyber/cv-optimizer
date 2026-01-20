@@ -27,7 +27,9 @@ import {
   ThumbsDown,
   Award,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Camera,
+  User
 } from "lucide-react";
 
 interface AnalysisResult {
@@ -112,6 +114,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadType, setDownloadType] = useState<"pdf" | "word" | null>(null);
   
+  // Photo state
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  
   // Ref for PDF capture - points to ONLY the CV content (no toolbar)
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
   
@@ -157,6 +162,26 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
     navigator.clipboard.writeText(results.optimizedCV);
     setCopiedOptimized(true);
     setTimeout(() => setCopiedOptimized(false), 2000);
+  };
+
+  // Handle photo upload
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const photoUrl = reader.result as string;
+        setPhotoPreview(photoUrl);
+        // Update resume data with photo
+        setResumeData(prev => ({ ...prev, photo: photoUrl }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoPreview(null);
+    setResumeData(prev => ({ ...prev, photo: undefined }));
   };
 
   // Direct PDF download (no print dialog)
@@ -564,6 +589,49 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   onSelect={setSelectedTemplate}
                   className="flex-shrink-0"
                 />
+                
+                {/* Photo Upload Section */}
+                <div className="flex-shrink-0 px-4 py-3 bg-slate-50/80 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                        <Camera className="w-4 h-4 text-violet-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-slate-900 text-sm">Profile Photo</h3>
+                        <p className="text-xs text-slate-500">Optional - for templates with photo support</p>
+                      </div>
+                    </div>
+                    
+                    {photoPreview ? (
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={photoPreview} 
+                          alt="Profile preview" 
+                          className="w-10 h-10 rounded-lg object-cover border-2 border-violet-200"
+                        />
+                        <button
+                          onClick={removePhoto}
+                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
+                          title="Remove photo"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 px-3 py-1.5 bg-violet-100 hover:bg-violet-200 text-violet-700 text-sm font-medium rounded-lg cursor-pointer transition-colors">
+                        <User className="w-4 h-4" />
+                        <span>Add Photo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
                 
                 {/* Resume Preview with auto-scaling */}
                 <div className="flex-1 min-h-0 rounded-xl border border-slate-200 overflow-hidden">

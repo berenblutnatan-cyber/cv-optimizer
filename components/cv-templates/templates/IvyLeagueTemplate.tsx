@@ -49,8 +49,20 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
               hasContent(data.contact.email) && data.contact.email,
               hasContent(data.contact.phone) && data.contact.phone,
               hasContent(data.contact.location) && data.contact.location,
-              hasContent(data.contact.linkedin) && data.contact.linkedin,
             ].filter(Boolean).join(" | ")}
+            {hasContent(data.contact.linkedin) && (
+              <>
+                {" | "}
+                <a 
+                  href={data.contact.linkedin!.startsWith("http") ? data.contact.linkedin! : `https://${data.contact.linkedin}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#4f46e5", textDecoration: "none" }}
+                >
+                  {data.contact.linkedin!.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                </a>
+              </>
+            )}
           </div>
         </header>
 

@@ -82,7 +82,7 @@ export function ModernSidebarTemplate({ data, themeColor, className }: TemplateP
               <ContactItem icon="📍" value={data.contact.location!} color={colors.primary} />
             )}
             {hasContent(data.contact.linkedin) && (
-              <ContactItem icon="in" value={data.contact.linkedin!} color={colors.primary} />
+              <ContactItem icon="in" value={data.contact.linkedin!} color={colors.primary} isLinkedIn />
             )}
           </SidebarSection>
 
@@ -184,7 +184,15 @@ function SidebarSection({ title, color, children }: { title: string; color: stri
   );
 }
 
-function ContactItem({ icon, value, color }: { icon: string; value: string; color: string }) {
+function ContactItem({ icon, value, color, isLinkedIn = false }: { icon: string; value: string; color: string; isLinkedIn?: boolean }) {
+  // Format LinkedIn URL for linking
+  const getLinkedInHref = (val: string) => {
+    if (!val) return "";
+    return val.startsWith("http") ? val : `https://${val}`;
+  };
+  
+  const displayValue = isLinkedIn ? value.replace(/^https?:\/\//, "").replace(/\/$/, "") : value;
+  
   return (
     <div style={{
       display: "flex",
@@ -206,7 +214,18 @@ function ContactItem({ icon, value, color }: { icon: string; value: string; colo
         backgroundColor: `${color}20`,
         borderRadius: "4px",
       }}>{icon}</span>
-      <span style={{ fontSize: "10px", color: "#cbd5e1" }}>{value}</span>
+      {isLinkedIn ? (
+        <a 
+          href={getLinkedInHref(value)} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ fontSize: "10px", color: "#93c5fd", textDecoration: "none" }}
+        >
+          {displayValue}
+        </a>
+      ) : (
+        <span style={{ fontSize: "10px", color: "#cbd5e1" }}>{value}</span>
+      )}
     </div>
   );
 }

@@ -112,9 +112,14 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
             </span>
           )}
           {hasContent(data.contact.linkedin) && (
-            <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: 500 }}>
-              in {data.contact.linkedin}
-            </span>
+            <a 
+              href={data.contact.linkedin!.startsWith("http") ? data.contact.linkedin! : `https://${data.contact.linkedin}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "11px", color: "#bfdbfe", fontWeight: 500, textDecoration: "none" }}
+            >
+              in {data.contact.linkedin!.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+            </a>
           )}
         </div>
 

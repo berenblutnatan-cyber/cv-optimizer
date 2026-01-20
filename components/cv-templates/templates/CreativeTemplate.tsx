@@ -104,7 +104,7 @@ export function CreativeTemplate({ data, themeColor, className }: TemplateProps)
             {hasContent(data.contact.email) && <CreativeContactItem icon="✉" value={data.contact.email!} />}
             {hasContent(data.contact.phone) && <CreativeContactItem icon="☎" value={data.contact.phone!} />}
             {hasContent(data.contact.location) && <CreativeContactItem icon="📍" value={data.contact.location!} />}
-            {hasContent(data.contact.linkedin) && <CreativeContactItem icon="in" value={data.contact.linkedin!} />}
+            {hasContent(data.contact.linkedin) && <CreativeContactItem icon="in" value={data.contact.linkedin!} isLinkedIn />}
             {hasContent(data.contact.website) && <CreativeContactItem icon="🌐" value={data.contact.website!} />}
           </CreativeSidebarSection>
 
@@ -200,7 +200,10 @@ function CreativeSidebarSection({ title, children }: { title: string; children: 
   );
 }
 
-function CreativeContactItem({ icon, value }: { icon: string; value: string }) {
+function CreativeContactItem({ icon, value, isLinkedIn = false }: { icon: string; value: string; isLinkedIn?: boolean }) {
+  const getLinkedInHref = (val: string) => val.startsWith("http") ? val : `https://${val}`;
+  const displayValue = isLinkedIn ? value.replace(/^https?:\/\//, "").replace(/\/$/, "") : value;
+  
   return (
     <div style={{
       display: "flex",
@@ -218,7 +221,18 @@ function CreativeContactItem({ icon, value }: { icon: string; value: string }) {
         justifyContent: "center",
         fontSize: "10px",
       }}>{icon}</span>
-      <span style={{ fontSize: "10px", color: "white" }}>{value}</span>
+      {isLinkedIn ? (
+        <a 
+          href={getLinkedInHref(value)} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ fontSize: "10px", color: "#bfdbfe", textDecoration: "none" }}
+        >
+          {displayValue}
+        </a>
+      ) : (
+        <span style={{ fontSize: "10px", color: "white" }}>{value}</span>
+      )}
     </div>
   );
 }

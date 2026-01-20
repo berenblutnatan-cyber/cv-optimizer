@@ -434,6 +434,7 @@ function ModernSidebarEditable({
                   color={colors.primary}
                   readOnly={readOnly}
                   ringClass={ringClass}
+                  isLinkedIn
                 />
               )}
             </SidebarSectionPremium>
@@ -1226,6 +1227,25 @@ function SidebarSectionPremium({ title, color, children }: { title: string; colo
   );
 }
 
+// Helper to format and detect LinkedIn URLs
+function formatLinkedInUrl(value: string): { displayText: string; href: string } | null {
+  if (!value) return null;
+  const lower = value.toLowerCase();
+  
+  // Check if it looks like a LinkedIn URL or profile
+  if (lower.includes("linkedin.com") || lower.startsWith("linkedin.com")) {
+    let href = value;
+    // Add https:// if missing
+    if (!href.startsWith("http://") && !href.startsWith("https://")) {
+      href = "https://" + href;
+    }
+    // Display text: show clean version without protocol
+    const displayText = value.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    return { displayText, href };
+  }
+  return null;
+}
+
 function ContactFieldPremium({
   icon,
   value,
@@ -1234,6 +1254,7 @@ function ContactFieldPremium({
   color,
   readOnly,
   ringClass,
+  isLinkedIn = false,
 }: {
   icon: React.ReactNode;
   value: string;
@@ -1242,8 +1263,12 @@ function ContactFieldPremium({
   color: string;
   readOnly: boolean;
   ringClass: string;
+  isLinkedIn?: boolean;
 }) {
   if (!value && readOnly) return null;
+  
+  // Check if this is a LinkedIn field and should be rendered as a link
+  const linkedInInfo = isLinkedIn ? formatLinkedInUrl(value) : null;
   
   return (
     <div style={{ 
@@ -1268,15 +1293,30 @@ function ContactFieldPremium({
         borderRadius: "4px",
         fontSize: "10px",
       }}>{icon}</span>
-      <EditableField
-        id={`contact-${placeholder}`}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="text-[10px] text-slate-300"
-        focusRingClass={ringClass}
-        disabled={readOnly}
-      />
+      {readOnly && linkedInInfo ? (
+        <a 
+          href={linkedInInfo.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ 
+            fontSize: "10px", 
+            color: "#93c5fd",
+            textDecoration: "none",
+          }}
+        >
+          {linkedInInfo.displayText}
+        </a>
+      ) : (
+        <EditableField
+          id={`contact-${placeholder}`}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="text-[10px] text-slate-300"
+          focusRingClass={ringClass}
+          disabled={readOnly}
+        />
+      )}
     </div>
   );
 }

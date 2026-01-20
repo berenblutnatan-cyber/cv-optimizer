@@ -1,77 +1,121 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractText } from "unpdf";
+import OpenAI from "openai";
 
-export const runtime = "nodejs";
-
-type SelectedChange = {
-  id?: string;
-  original: string;
-  suggested: string | null; // null => skip
-};
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
+    const body = await request.json();
 
-    let cvText = (formData.get("cvText") as string) || "";
-    const cvFile = formData.get("cv") as File | null;
-    const selectedChangesRaw = (formData.get("selectedChanges") as string) || "[]";
+    // ============================================================
+    // MODE A: Simple Text Improvement (For the Builder UI)
+    // ============================================================
+    if (body.text) {
+      const { text, context } = body;
+      
+      const builderSystemPrompt = `You are an expert resume writer. Improve the provided text while:
+      1. Keeping approximately the same length.
+      2. Using strong action verbs.
+      3. Making it ATS-friendly.
+      4. Removing filler words.
+      5. Correcting grammar/spelling.
+      
+      Context: ${context || "resume section"}
+      
+      IMPORTANT: Return ONLY the improved text. Do not add explanations or quotes.`;
 
-    // Extract text from PDF if provided and cvText not present
-    if (cvFile && !cvText) {
-      try {
-        const arrayBuffer = await cvFile.arrayBuffer();
-        const { text } = await extractText(arrayBuffer);
-        cvText = text.join("\n");
-      } catch (pdfError) {
-        console.error("PDF parsing error:", pdfError);
-        return NextResponse.json(
-          { error: "Failed to parse PDF. Please try pasting your CV text instead." },
-          { status: 400 }
-        );
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: builderSystemPrompt },
+          { role: "user", content: text },
+        ],
+        temperature: 0.7,
+      });
+
+      const improvedText = response.choices[0]?.message?.content?.trim();
+      return NextResponse.json({ improvedText });
+    }
+
+    // ============================================================
+    // MODE B: Full Optimizer & Job Matcher (The "Money Maker")
+    // ============================================================
+    if (body.resumeData) {
+      const { resumeData, jobDescription } = body;
+      
+      // Determine if this is a targeted optimization or a general polish
+      const isTargeted = !!jobDescription && jobDescription.length > 50;
+
+      const optimizerSystemPrompt = `
+      You are a ruthlessly efficient Senior Technical Recruiter. Your job is to filter candidates, not to be nice.
+      
+      ${isTargeted 
+        ? `TASK: Critically evaluate the RESUME against the JOB DESCRIPTION (JD).
+           
+           SCORING RUBRIC (Strict Enforcement):
+           - 90-100: "Unicorn". Perfect match on Job Title + All Hard Skills + Years of Experience.
+           - 75-89: "Strong Contender". Matches Core Tech Stack, but maybe lacks 1 minor skill or has a slightly different title (e.g., Backend vs Fullstack).
+           - 60-74: "Transferable". Has relevant domain knowledge but LACKS critical hard skills (e.g., Product Analyst applying for Dev, or Python dev applying for Java role).
+           - 0-59: "Reject". Mismatched Role (e.g., Marketing applying for Engineering) or missing ALL core requirements.
+
+           CRITICAL SCORING RULES:
+           1. **Role Mismatch Penalty:** If the candidate's current job title is fundamentally different from the target role (e.g., "Analyst" vs "Engineer"), CAP the score at 70, regardless of keywords.
+           2. **Tech Stack Gap:** If the JD requires a specific language (e.g., React/Node) and the CV does not mention it, deduct 20 points immediately.
+           3. **Do not hallucinate matches:** If a skill is implied but not written, do not count it.
+
+           OUTPUT GENERATION:
+           1. Calculate the strict "score" based on the rubric above.
+           2. Identify "Missing Keywords" (Critical hard skills found in JD but absent in CV).
+           3. Rewrite the "Professional Summary" to bridge the gap (if possible) or highlight the pivot.
+           4. Provide 3 brutally honest improvements.` 
+        : `TASK: Audit and elevate this RESUME to an executive standard.
+           1. Focus on impact, quantification, and clarity.
+           2. Provide a general "Readiness Score" (0-100).
+           3. Polish the Professional Summary.
+           4. Provide 3 general improvement tips.`
       }
-    }
 
-    if (!cvText) {
-      return NextResponse.json({ error: "No CV content provided" }, { status: 400 });
-    }
-
-    let selectedChanges: SelectedChange[] = [];
-    try {
-      selectedChanges = JSON.parse(selectedChangesRaw);
-      if (!Array.isArray(selectedChanges)) throw new Error("selectedChanges must be an array");
-    } catch {
-      return NextResponse.json({ error: "Invalid selectedChanges payload" }, { status: 400 });
-    }
-
-    const warnings: { id?: string; original: string; reason: string }[] = [];
-    let optimizedCV = cvText;
-
-    for (const ch of selectedChanges) {
-      if (!ch || typeof ch.original !== "string") continue;
-      if (!ch.suggested) continue; // skipped
-
-      const idx = optimizedCV.indexOf(ch.original);
-      if (idx === -1) {
-        warnings.push({
-          id: ch.id,
-          original: ch.original,
-          reason: "Original text not found in CV (may have changed or appears differently).",
-        });
-        continue;
+      OUTPUT FORMAT:
+      You must respond with a STRICTLY VALID JSON object:
+      {
+        "score": number, // Integer 0-100
+        "headline": "string (A punchy 1-sentence analysis of the fit)",
+        "tailoredSummary": "string (The rewritten, optimized bio)",
+        "missingKeywords": ["string", "string", "string"], 
+        "keyImprovements": ["string", "string", "string"]
       }
+      `;
 
-      optimizedCV = optimizedCV.slice(0, idx) + ch.suggested + optimizedCV.slice(idx + ch.original.length);
+      const userMessage = `
+      RESUME DATA: 
+      ${JSON.stringify(resumeData)}
+
+      ${isTargeted ? `TARGET JOB DESCRIPTION: \n${jobDescription}` : ''}
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: optimizerSystemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        response_format: { type: "json_object" }, // Crucial for frontend stability
+        temperature: 0.7,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      return NextResponse.json(result);
     }
 
-    return NextResponse.json({ success: true, optimizedCV, warnings });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+
   } catch (error) {
-    console.error("Optimize error:", error);
+    console.error("AI Optimization Error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Optimize failed" },
+      { error: error instanceof Error ? error.message : "Optimization failed" },
       { status: 500 }
     );
   }
 }
-
-

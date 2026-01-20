@@ -80,7 +80,7 @@ export interface ResumeData {
 }
 
 /**
- * Initial empty state for the resume builder
+ * Initial state for the resume builder with helpful defaults
  */
 export const initialResumeState: ResumeData = {
   personalInfo: {
@@ -92,7 +92,7 @@ export const initialResumeState: ResumeData = {
     location: "",
     title: "",
   },
-  summary: "",
+  summary: "Results-driven professional with [X] years of experience in [industry/field]. Proven track record of [key achievement]. Passionate about [relevant skill/area] and committed to [value proposition]. Seeking to leverage expertise in [target role/company].",
   experience: [],
   education: [],
   skills: [],
