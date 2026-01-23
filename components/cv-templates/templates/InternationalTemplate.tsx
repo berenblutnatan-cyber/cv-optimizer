@@ -122,28 +122,23 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
 
           {/* Right - Sidebar */}
           <div>
-            {/* Skills */}
+            {/* Skills - Tag Cloud */}
             {data.skills && data.skills.length > 0 && (
               <IntlSection title="Skills" color={colors.primary}>
-                {data.skills.filter(hasContent).map((skill, idx) => (
-                  <div key={idx} style={{
-                    marginBottom: "8px",
-                  }}>
-                    <p style={{ fontSize: "10px", color: "#374151", marginBottom: "4px" }}>{skill}</p>
-                    <div style={{
-                      height: "4px",
-                      backgroundColor: "#e5e7eb",
-                      borderRadius: "2px",
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {data.skills.filter(hasContent).map((skill, idx) => (
+                    <span key={idx} style={{
+                      fontSize: "9px",
+                      fontWeight: 500,
+                      color: colors.dark,
+                      backgroundColor: `${colors.primary}15`,
+                      padding: "4px 10px",
+                      borderRadius: "10px",
                     }}>
-                      <div style={{
-                        height: "100%",
-                        width: `${70 + ((skill.length * 5) % 30)}%`,
-                        backgroundColor: colors.primary,
-                        borderRadius: "2px",
-                      }} />
-                    </div>
-                  </div>
-                ))}
+                      {skill}
+                    </span>
+                  ))}
+                </div>
               </IntlSection>
             )}
 

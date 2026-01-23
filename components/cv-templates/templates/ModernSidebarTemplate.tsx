@@ -86,22 +86,23 @@ export function ModernSidebarTemplate({ data, themeColor, className }: TemplateP
             )}
           </SidebarSection>
 
-          {/* Skills */}
+          {/* Skills - Tag Cloud */}
           {data.skills && data.skills.length > 0 && (
             <SidebarSection title="Skills" color={colors.primary}>
-              {data.skills.filter(hasContent).map((skill, idx) => (
-                <div key={idx} style={{ marginBottom: "10px" }}>
-                  <p style={{ fontSize: "10px", color: "#cbd5e1", marginBottom: "4px" }}>{skill}</p>
-                  <div style={{ height: "5px", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: "3px" }}>
-                    <div style={{
-                      height: "100%",
-                      width: `${75 + ((skill.length * 3) % 25)}%`,
-                      backgroundColor: colors.primary,
-                      borderRadius: "3px",
-                    }} />
-                  </div>
-                </div>
-              ))}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {data.skills.filter(hasContent).map((skill, idx) => (
+                  <span key={idx} style={{
+                    fontSize: "9px",
+                    fontWeight: 500,
+                    color: colors.primary,
+                    backgroundColor: `${colors.primary}20`,
+                    padding: "4px 10px",
+                    borderRadius: "12px",
+                  }}>
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </SidebarSection>
           )}
 

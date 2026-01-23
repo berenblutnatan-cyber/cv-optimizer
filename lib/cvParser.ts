@@ -104,39 +104,75 @@ export function parseRawCV(text: string): ResumePreviewData {
 function extractContact(lines: string[]): ResumeContact {
   const contact: ResumeContact = {};
   
+  // First, split lines by common delimiters (|, •, /) to handle single-line contact info
+  const allParts: string[] = [];
   for (const line of lines) {
-    const lower = line.toLowerCase();
+    const parts = line.split(/\s*[|•]\s*/).map(p => p.trim()).filter(p => p.length > 0);
+    allParts.push(...parts);
+  }
+  
+  for (const part of allParts) {
+    const lower = part.toLowerCase();
     
-    // Email
-    if (line.includes("@") && !contact.email) {
-      const emailMatch = line.match(/[\w.-]+@[\w.-]+\.\w+/);
+    // Email - extract just the email address
+    if (part.includes("@") && !contact.email) {
+      const emailMatch = part.match(/[\w.-]+@[\w.-]+\.\w+/);
       if (emailMatch) contact.email = emailMatch[0];
     }
     
-    // Phone
-    if (!contact.phone && /(\+?\d[\d\s\-()]{8,})/.test(line)) {
-      const phoneMatch = line.match(/(\+?\d[\d\s\-()]{8,})/);
+    // Phone - extract just the phone number
+    if (!contact.phone && /(\+?\d[\d\s\-()]{8,})/.test(part)) {
+      const phoneMatch = part.match(/(\+?\d[\d\s\-()]{8,})/);
       if (phoneMatch) contact.phone = phoneMatch[1].trim();
     }
     
-    // LinkedIn
+    // LinkedIn - extract URL specifically
     if (lower.includes("linkedin") && !contact.linkedin) {
-      contact.linkedin = line.replace(/linkedin:?\s*/i, "").trim();
+      // Try to match a full LinkedIn URL first
+      const urlMatch = part.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w-]+\/?/i);
+      if (urlMatch) {
+        contact.linkedin = urlMatch[0];
+      } else {
+        // Try to match just "linkedin.com/in/username" pattern
+        const shortMatch = part.match(/linkedin\.com\/in\/[\w-]+/i);
+        if (shortMatch) {
+          contact.linkedin = shortMatch[0];
+        } else {
+          // Last resort: just get the part after "linkedin:" but clean it
+          const cleaned = part.replace(/^.*linkedin:?\s*/i, "").split(/\s/)[0].trim();
+          if (cleaned && cleaned.length > 2) {
+            contact.linkedin = cleaned.includes("linkedin.com") ? cleaned : `linkedin.com/in/${cleaned}`;
+          }
+        }
+      }
     }
     
-    // GitHub
+    // GitHub - extract URL specifically
     if (lower.includes("github") && !contact.github) {
-      contact.github = line.replace(/github:?\s*/i, "").trim();
+      const urlMatch = part.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+\/?/i);
+      if (urlMatch) {
+        contact.github = urlMatch[0];
+      } else {
+        const cleaned = part.replace(/^.*github:?\s*/i, "").split(/\s/)[0].trim();
+        if (cleaned && cleaned.length > 2) {
+          contact.github = cleaned.includes("github.com") ? cleaned : `github.com/${cleaned}`;
+        }
+      }
     }
     
-    // Website
+    // Website - only if it's a URL
     if ((lower.includes("http") || lower.includes("www.")) && !contact.website && !lower.includes("linkedin") && !lower.includes("github")) {
-      contact.website = line.trim();
+      const urlMatch = part.match(/(?:https?:\/\/)?(?:www\.)?[\w.-]+\.\w+[\/\w.-]*/);
+      if (urlMatch) contact.website = urlMatch[0];
     }
     
-    // Location (city, country pattern)
-    if (!contact.location && /^[A-Z][a-zA-Z\s]+,\s*[A-Z]/.test(line) && !line.includes("@")) {
-      contact.location = line.trim();
+    // Location (city, country pattern) - skip if it contains other contact info
+    if (!contact.location && !part.includes("@") && !lower.includes("linkedin") && !lower.includes("github")) {
+      // Match "City, State" or "City, Country" patterns
+      const locationMatch = part.match(/^[A-Z][a-zA-Z\s]+,\s*[A-Z][a-zA-Z\s]+$/);
+      if (locationMatch) {
+        contact.location = locationMatch[0].trim();
+      }
     }
   }
   

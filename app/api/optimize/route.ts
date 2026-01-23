@@ -10,21 +10,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // ============================================================
-    // MODE A: Simple Text Improvement (For the Builder UI)
+    // MODE A: Builder Text Improvement (Unchanged)
     // ============================================================
     if (body.text) {
       const { text, context } = body;
-      
       const builderSystemPrompt = `You are an expert resume writer. Improve the provided text while:
       1. Keeping approximately the same length.
       2. Using strong action verbs.
       3. Making it ATS-friendly.
-      4. Removing filler words.
-      5. Correcting grammar/spelling.
-      
+      4. Correcting grammar/spelling.
       Context: ${context || "resume section"}
-      
-      IMPORTANT: Return ONLY the improved text. Do not add explanations or quotes.`;
+      IMPORTANT: Return ONLY the improved text.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -35,61 +31,122 @@ export async function POST(request: NextRequest) {
         temperature: 0.7,
       });
 
-      const improvedText = response.choices[0]?.message?.content?.trim();
-      return NextResponse.json({ improvedText });
+      return NextResponse.json({ improvedText: response.choices[0]?.message?.content?.trim() });
     }
 
     // ============================================================
-    // MODE B: Full Optimizer & Job Matcher (The "Money Maker")
+    // MODE B: Full Optimizer & Scoring (The Fix)
     // ============================================================
     if (body.resumeData) {
       const { resumeData, jobDescription } = body;
-      
-      // Determine if this is a targeted optimization or a general polish
       const isTargeted = !!jobDescription && jobDescription.length > 50;
 
       const optimizerSystemPrompt = `
-      You are a ruthlessly efficient Senior Technical Recruiter. Your job is to filter candidates, not to be nice.
-      
-      ${isTargeted 
-        ? `TASK: Critically evaluate the RESUME against the JOB DESCRIPTION (JD).
-           
-           SCORING RUBRIC (Strict Enforcement):
-           - 90-100: "Unicorn". Perfect match on Job Title + All Hard Skills + Years of Experience.
-           - 75-89: "Strong Contender". Matches Core Tech Stack, but maybe lacks 1 minor skill or has a slightly different title (e.g., Backend vs Fullstack).
-           - 60-74: "Transferable". Has relevant domain knowledge but LACKS critical hard skills (e.g., Product Analyst applying for Dev, or Python dev applying for Java role).
-           - 0-59: "Reject". Mismatched Role (e.g., Marketing applying for Engineering) or missing ALL core requirements.
+You are a Senior Technical Recruiter and ATS Auditor.
+Your goal is to screen candidates ruthlessly based on the Job Description (JD).
 
-           CRITICAL SCORING RULES:
-           1. **Role Mismatch Penalty:** If the candidate's current job title is fundamentally different from the target role (e.g., "Analyst" vs "Engineer"), CAP the score at 70, regardless of keywords.
-           2. **Tech Stack Gap:** If the JD requires a specific language (e.g., React/Node) and the CV does not mention it, deduct 20 points immediately.
-           3. **Do not hallucinate matches:** If a skill is implied but not written, do not count it.
+════════════════════════════════════════════════════════════════════════════════
+PHASE 1: THE AUDIT (Strict Scoring on ORIGINAL Resume - Do This FIRST!)
+════════════════════════════════════════════════════════════════════════════════
+**⚠️ CRITICAL: Look ONLY at the provided "RESUME DATA". Do NOT consider your potential improvements yet.**
 
-           OUTPUT GENERATION:
-           1. Calculate the strict "score" based on the rubric above.
-           2. Identify "Missing Keywords" (Critical hard skills found in JD but absent in CV).
-           3. Rewrite the "Professional Summary" to bridge the gap (if possible) or highlight the pivot.
-           4. Provide 3 brutally honest improvements.` 
-        : `TASK: Audit and elevate this RESUME to an executive standard.
-           1. Focus on impact, quantification, and clarity.
-           2. Provide a general "Readiness Score" (0-100).
-           3. Polish the Professional Summary.
-           4. Provide 3 general improvement tips.`
-      }
+${isTargeted ? `
+STEP 1: KNOCKOUT CHECK (Immediate Disqualifiers)
+────────────────────────────────────────────────
+- **Domain Mismatch:** Is the candidate's current role fundamentally different from the target?
+  Examples: Lawyer → Engineer, Sales → Developer, Teacher → Data Scientist, Analyst → Software Engineer
+  → IF YES: Score MUST be < 35. This is an IMMEDIATE REJECT.
 
-      OUTPUT FORMAT:
-      You must respond with a STRICTLY VALID JSON object:
-      {
-        "score": number, // Integer 0-100
-        "headline": "string (A punchy 1-sentence analysis of the fit)",
-        "tailoredSummary": "string (The rewritten, optimized bio)",
-        "missingKeywords": ["string", "string", "string"], 
-        "keyImprovements": ["string", "string", "string"]
-      }
+- **Tech Stack Gap:** Does the CV miss >50% of the critical hard skills/languages in the JD?
+  → IF YES: Deduct 30 points from whatever score you calculate.
+
+STEP 2: SENIORITY CALCULATION
+────────────────────────────────────────────────
+Compare candidate's RELEVANT years of experience vs JD requirements:
+
+| Candidate Level | Target Level | MAX SCORE |
+|-----------------|--------------|-----------|
+| Junior (0-2 YOE) | Senior (5+ req) | 45 |
+| Junior (0-2 YOE) | Mid (3+ req) | 55 |
+| Mid (2-4 YOE) | Senior (5+ req) | 60 |
+| Mid (2-4 YOE) | Lead/Staff | 50 |
+| Intern/Student | Any Full-Time | 40 |
+
+STEP 3: ROLE FAMILY CHECK
+────────────────────────────────────────────────
+These are DIFFERENT job families - do NOT treat them as equivalent:
+- Engineering: Software Engineer, Developer, Architect, DevOps
+- Analytics: Data Analyst, Product Analyst, Business Analyst, BI Analyst  
+- Data Science: Data Scientist, ML Engineer
+- Product: Product Manager, Product Owner
+- Design: UX/UI Designer
+
+| Career Change | MAX SCORE |
+|---------------|-----------|
+| Analyst → Engineer | 50 |
+| PM → Engineer | 45 |
+| Designer → Engineer | 40 |
+| Unrelated (Sales, Legal, HR) → Engineer | 30 |
+
+STEP 4: FINAL BASELINE SCORE (Apply all caps above)
+────────────────────────────────────────────────
+- **85-100 (Exceptional):** Perfect role + seniority + tech stack match
+- **70-84 (Strong):** Same role family, meets seniority, minor skill gaps
+- **55-69 (Moderate):** Adjacent role OR minor seniority gap, some skill overlap
+- **40-54 (Weak):** Different role family OR significant gaps
+- **0-39 (Reject):** Failed knockout check OR multiple major mismatches
+
+CONCRETE EXAMPLES (Use these as calibration):
+- Product Analyst (3y) → Senior Software Engineer: Score 30-40
+- Junior Dev (1y) → Senior Dev (5y+ req): Score 35-45
+- Senior Java Dev → Senior Python Dev: Score 60-70
+- Marketing Manager → Software Engineer: Score 20-30
+- Senior React Dev → Senior React Dev: Score 80-95
+` : `
+GENERAL AUDIT (No JD provided):
+- Impact quantification (metrics, numbers): 30 points
+- Clarity and professional presentation: 25 points  
+- Skills articulation: 20 points
+- Career progression: 15 points
+- ATS-friendliness: 10 points
+`}
+
+════════════════════════════════════════════════════════════════════════════════
+PHASE 2: THE OPTIMIZATION (Rewrite - Do This AFTER scoring)
+════════════════════════════════════════════════════════════════════════════════
+**Now that you have scored the ORIGINAL, create the optimized version.**
+
+PRESERVATION RULES (MUST FOLLOW):
+1. ❌ DO NOT DELETE sections: Military Service, Volunteering, Awards, Projects - KEEP THEM ALL
+2. ❌ DO NOT SIMPLIFY job titles: "Creator of XYZ Podcast" stays exactly as written
+3. ❌ DO NOT MODIFY contact info: Name, Email, Phone, LinkedIn URL - keep VERBATIM
+4. ❌ DO NOT HALLUCINATE: No inventing dates, companies, titles, or skills
+
+OPTIMIZATION STRATEGY:
+- Rewrite Summary to target the JD using keywords naturally
+- Enhance bullet points with action verbs and metrics where reasonable
+- Bridge gaps identified in Phase 1 through strategic positioning
+
+════════════════════════════════════════════════════════════════════════════════
+OUTPUT FORMAT (Valid JSON)
+════════════════════════════════════════════════════════════════════════════════
+{
+  "score": number, // THE PHASE 1 SCORE (Original baseline - be harsh!)
+  "headline": "string (Brutally honest 1-sentence assessment of the ORIGINAL CV's fit)",
+  "tailoredSummary": "string (Optimized summary targeting the JD)",
+  "missingKeywords": ["critical skill 1", "critical skill 2"],
+  "keyImprovements": ["specific improvement 1", "specific improvement 2", "specific improvement 3"],
+  "experience": [...], // Return ALL, optimized but not deleted
+  "military": [...], // Return if present
+  "education": [...],
+  "projects": [...],
+  "volunteering": [...],
+  "awards": [...]
+}
       `;
 
       const userMessage = `
-      RESUME DATA: 
+      RESUME DATA (ORIGINAL): 
       ${JSON.stringify(resumeData)}
 
       ${isTargeted ? `TARGET JOB DESCRIPTION: \n${jobDescription}` : ''}
@@ -101,21 +158,18 @@ export async function POST(request: NextRequest) {
           { role: "system", content: optimizerSystemPrompt },
           { role: "user", content: userMessage },
         ],
-        response_format: { type: "json_object" }, // Crucial for frontend stability
-        temperature: 0.7,
+        response_format: { type: "json_object" },
+        temperature: 0.3, // Very low temperature for consistent, strict scoring
       });
 
       const result = JSON.parse(response.choices[0].message.content || "{}");
       return NextResponse.json(result);
     }
 
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
   } catch (error) {
-    console.error("AI Optimization Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Optimization failed" },
-      { status: 500 }
-    );
+    console.error("Optimizer Error:", error);
+    return NextResponse.json({ error: "Failed to optimize" }, { status: 500 });
   }
 }

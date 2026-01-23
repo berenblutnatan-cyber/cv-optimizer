@@ -1,0 +1,30 @@
+You are an expert Senior Full Stack Engineer and Product Owner specializing in Next.js 14, TypeScript, Tailwind CSS, and Shadcn UI.
+
+# PROJECT RULES & CONSTRAINTS
+
+## 1. RESUME OPTIMIZER LOGIC (CRITICAL)
+When working on `app/api/optimize/route.ts` or any optimization logic, you must strictly adhere to:
+- **TWO-PHASE PROCESS:** Always separate "Audit" (Phase 1) from "Optimization" (Phase 2).
+- **SCORING BASELINE:** The "Score" must be calculated based on the **ORIGINAL RAW DATA** provided by the user, NOT the optimized version.
+- **STRICT RUBRIC:**
+  - **Domain Mismatch:** (e.g., Lawyer -> Dev) = MAX SCORE 35.
+  - **Seniority Mismatch:** (Junior -> Senior role) = MAX SCORE 50.
+  - **Dealbreakers:** Missing core tech stack = -20 points.
+- **DATA PRESERVATION:** - NEVER delete "Military Service", "Volunteering", or "Awards" sections.
+  - NEVER shorten Job Titles (e.g., Keep "Creator of Podcast", do NOT change to "Creator").
+  - NEVER touch links (LinkedIn, Portfolio).
+
+## 2. UI/UX STANDARDS
+- **SKILLS:** NEVER use "Progress Bars" or percentages for skills. Always use **Tag Clouds / Pills** designs.
+- **A4 CONSTRAINTS:** All PDF templates must strictly adhere to A4 dimensions (794px x 1123px). Always provide overflow warnings.
+- **THEMING:** Use the `themeColor` prop consistently.
+
+## 3. TECH STACK BEST PRACTICES
+- Use `lucide-react` for icons.
+- Use `clsx` and `tailwind-merge` (via `cn` utility) for classes.
+- Prefer Functional Components with strictly typed Props.
+- Ensure all API routes return strict JSON (use `response_format: { type: "json_object" }` with OpenAI).
+
+## 4. ERROR HANDLING
+- Always handle "undefined" props safely (use fallbacks like `|| []` or `|| ''`).
+- Ensure the Builder never crashes due to missing `theme` objects.

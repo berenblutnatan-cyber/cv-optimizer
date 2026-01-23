@@ -440,24 +440,33 @@ function ModernSidebarEditable({
             </SidebarSectionPremium>
           </div>
 
-          {/* Skills Section with Premium Bars */}
+          {/* Skills Section - Tag Cloud */}
           {(data.skills && data.skills.length > 0) && (
             <div style={{ padding: "0 20px 16px 24px" }}>
               <SidebarSectionPremium title="Expertise" color={colors.primary}>
-                {data.skills.map((skill, idx) => (
-                  <div key={idx} style={{ marginBottom: "10px" }}>
-                    <EditableField
-                      id={`skill-${idx}`}
-                      value={skill}
-                      onChange={(v) => updateSkill?.(idx, v)}
-                      placeholder="Add skill..."
-                      className="text-[10px] text-slate-300 font-medium"
-                      focusRingClass={ringClass}
-                      disabled={readOnly}
-                    />
-                    <SkillBarPremium color={colors.primary} level={75 + ((skill.length * 5) % 25)} />
-                  </div>
-                ))}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {data.skills.map((skill, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        backgroundColor: `${colors.primary}20`,
+                        borderRadius: "12px",
+                        padding: "4px 10px",
+                      }}
+                    >
+                      <EditableField
+                        id={`skill-${idx}`}
+                        value={skill}
+                        onChange={(v) => updateSkill?.(idx, v)}
+                        placeholder="Skill"
+                        className="text-[9px] font-medium"
+                        style={{ color: colors.primary }}
+                        focusRingClass={ringClass}
+                        disabled={readOnly}
+                      />
+                    </div>
+                  ))}
+                </div>
               </SidebarSectionPremium>
             </div>
           )}
@@ -1188,14 +1197,6 @@ function ContactField({
   );
 }
 
-function SkillBar({ color, level }: { color: string; level: number }) {
-  return (
-    <div style={{ height: "4px", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: "2px", overflow: "hidden", marginTop: "4px" }}>
-      <div style={{ height: "100%", width: `${level}%`, backgroundColor: color, borderRadius: "2px" }} />
-    </div>
-  );
-}
-
 // ==========================================
 // PREMIUM HELPER COMPONENTS
 // ==========================================
@@ -1317,26 +1318,6 @@ function ContactFieldPremium({
           disabled={readOnly}
         />
       )}
-    </div>
-  );
-}
-
-function SkillBarPremium({ color, level }: { color: string; level: number }) {
-  return (
-    <div style={{ 
-      height: "6px", 
-      backgroundColor: "rgba(255,255,255,0.08)", 
-      borderRadius: "3px", 
-      overflow: "hidden", 
-      marginTop: "6px",
-    }}>
-      <div style={{ 
-        height: "100%", 
-        width: `${level}%`, 
-        background: `linear-gradient(90deg, ${color} 0%, ${color}cc 100%)`,
-        borderRadius: "3px",
-        boxShadow: `0 0 8px ${color}40`,
-      }} />
     </div>
   );
 }

@@ -164,19 +164,19 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
             <div>
               {data.skills && data.skills.length > 0 && (
                 <ExecSection title="Core Competencies" color={colors.primary}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {data.skills.filter(hasContent).map((skill, idx) => (
-                      <div key={idx} style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "8px 12px",
-                        backgroundColor: "#f9fafb",
-                        borderRadius: "6px",
-                        borderLeft: `3px solid ${colors.primary}`,
+                      <span key={idx} style={{
+                        fontSize: "10px",
+                        fontWeight: 500,
+                        color: colors.dark,
+                        backgroundColor: `${colors.primary}15`,
+                        padding: "6px 12px",
+                        borderRadius: "16px",
+                        border: `1px solid ${colors.primary}30`,
                       }}>
-                        <span style={{ fontSize: "10px", fontWeight: 500, color: "#374151" }}>{skill}</span>
-                      </div>
+                        {skill}
+                      </span>
                     ))}
                   </div>
                 </ExecSection>
