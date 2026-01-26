@@ -58,8 +58,12 @@ export async function POST(request: NextRequest) {
     if (deepDiveRaw) {
       try {
         deepDiveAnswers = JSON.parse(deepDiveRaw);
-      } catch {
-        // Ignore parse errors
+        console.log("=== DEEP DIVE ANSWERS RECEIVED ===");
+        console.log("Raw:", deepDiveRaw);
+        console.log("Parsed:", JSON.stringify(deepDiveAnswers, null, 2));
+        console.log("Hidden Skills:", deepDiveAnswers?.hiddenSkills);
+      } catch (e) {
+        console.error("Failed to parse deepDiveAnswers:", e);
       }
     }
     
@@ -149,101 +153,9 @@ export async function POST(request: NextRequest) {
       "Role";
 
     // Analyze CV against job description using OpenAI - COMPREHENSIVE OPTIMIZATION
-    const analysisPrompt = `You are a Senior Technical Recruiter and ATS Auditor who also transforms resumes.
-You must FIRST score the original CV, THEN optimize it.
+    const analysisPrompt = `You are a WORLD-CLASS Executive Resume Writer with 20+ years of experience at McKinsey, Goldman Sachs, and top Silicon Valley companies. You transform average resumes into interview-winning documents.
 
-════════════════════════════════════════════════════════════════════════════════
-PHASE 1: SCORE THE ORIGINAL CV (Before Any Optimization!)
-════════════════════════════════════════════════════════════════════════════════
-⚠️ Score based ONLY on the original CV. Do NOT score your improvements.
-
-### SCORING PHILOSOPHY
-- **80+ is HARD to achieve** - Reserved for near-perfect matches
-- **60-79 is the "Good Fit" zone** - Same role family, reasonable experience
-- **40-59 is "Needs Work"** - Gaps exist but potential is there  
-- **Below 40 is "Mismatch"** - Career change or fundamental gaps
-
-### STEP 1: KNOCKOUT CHECK (Apply ONLY if there's a FUNDAMENTAL mismatch)
-────────────────────────────────────────────────────
-These caps apply ONLY when the career track is completely different:
-
-| Current Background | Target Role | MAX SCORE |
-|--------------------|-------------|-----------|
-| Analyst (any type) | Software Engineer/Developer | MAX 45 |
-| Product Manager | Software Engineer | MAX 40 |
-| Marketing/Sales/BD | Technical Engineering Role | MAX 35 |
-| Legal/HR/Finance | Technical Role | MAX 30 |
-| Completely unrelated field | Any role | MAX 35 |
-
-⚠️ If roles ARE in the same family (e.g., Dev→Dev, Analyst→Analyst, PM→PM), skip this step!
-
-### STEP 2: SENIORITY CHECK (Apply when there's a level gap)
-────────────────────────────────────────────────────
-| Candidate Level | Target Level | MAX SCORE |
-|-----------------|--------------|-----------|
-| Junior (0-2 YOE) | Senior (5+ req) | MAX 45 |
-| Junior (0-2 YOE) | Mid (3+ req) | MAX 60 |
-| Mid (2-4 YOE) | Senior (5+ req) | MAX 65 |
-| Mid (2-4 YOE) | Lead/Staff | MAX 55 |
-
-⚠️ If seniority MATCHES or EXCEEDS requirements, skip this step!
-
-### STEP 3: TECH STACK CHECK (Deductions for missing skills)
-────────────────────────────────────────────────────
-- If candidate has <50% of required tech stack: -10 points
-- If candidate has <25% of required tech stack: -20 points
-
-### STEP 4: CALCULATE FINAL SCORE
-────────────────────────────────────────────────────
-**FOR GOOD MATCHES (same role family + right seniority):**
-- Start at 75 (baseline for a match)
-- +5 to +15 for exceeding requirements
-- -5 to -15 for minor gaps (some missing skills, slightly less experience)
-- Result: Typically 60-85 range
-
-**FOR MISMATCHES (different career track OR major seniority gap):**
-- Apply the MAX SCORE cap from Steps 1-2
-- Then adjust within that cap based on transferable skills
-
-### SCORE BANDS
-────────────────────────────────────────────────────
-| Score | Who Gets This |
-|-------|---------------|
-| 85-100 | RARE: Perfect role match + exceeds seniority + 90%+ tech stack |
-| 75-84 | STRONG: Same role, right seniority, 70%+ tech stack |
-| 65-74 | GOOD: Same role family, minor experience gap OR some skill gaps |
-| 55-64 | MODERATE: Related role, noticeable gaps but has potential |
-| 45-54 | WEAK: Adjacent field OR significant seniority gap |
-| 30-44 | POOR: Career change scenario, limited transferable skills |
-| 0-29 | REJECT: Completely unrelated, no relevant experience |
-
-### CALIBRATION EXAMPLES
-────────────────────────────────────────────────────
-**MISMATCHES (Use low scores):**
-- Product Analyst → Senior Software Engineer: **35-45** (different track)
-- Marketing Manager → Developer: **28-35** (different field)
-- Lawyer → Software Engineer: **25-32** (completely different)
-- Junior Dev (1y) → Senior Dev (5+ req): **40-48** (huge seniority gap)
-
-**GOOD MATCHES (Use 60-80 range):**
-- Senior Python Dev → Senior Python Dev: **80-90** (great match!)
-- Senior Java Dev → Senior Python Dev: **68-76** (same role, tech gap)
-- Mid React Dev → Mid React Dev: **75-82** (solid match)
-- Senior Dev → Senior Dev (different stack): **65-75** (role match, skill gap)
-- Data Analyst → Data Analyst (same level): **72-80** (good match!)
-- Product Manager → Product Manager: **75-85** (same role!)
-
-**BORDERLINE (Use 50-65 range):**
-- Mid Dev → Senior Dev: **55-65** (close but seniority gap)
-- Junior Dev → Mid Dev: **55-62** (reasonable stretch)
-- Data Scientist → ML Engineer: **60-70** (related but different)
-
-════════════════════════════════════════════════════════════════════════════════
-PHASE 2: OPTIMIZE THE CV (Do This AFTER Scoring)
-════════════════════════════════════════════════════════════════════════════════
-Now transform the CV to maximize interview chances (but the score stays based on ORIGINAL).
-
-## CANDIDATE'S CURRENT CV (Score THIS version, not your improvements):
+## CANDIDATE'S CURRENT CV:
 ${cvText}
 
 ## TARGET ROLE: ${effectiveJobTitle}
@@ -264,73 +176,74 @@ IMPORTANT: The user has provided their own summary. Use this as a base and DRAMA
 ` : ""}
 
 ${deepDiveAnswers ? `
-## CANDIDATE'S ADDITIONAL CONTEXT (FROM AI DEEP DIVE - USE THIS TO ENHANCE THE CV!):
+## ⚠️ PRIORITY TASK: ADD THE FOLLOWING SKILLS TO THE CV! ⚠️
 
-### Hidden Achievements the candidate wants highlighted:
+The candidate has confirmed they have these skills. Your PRIMARY job is to add them to the optimizedCV.
+
+### Additional Achievements to highlight:
 ${deepDiveAnswers.achievements || "Not provided"}
 
-### Skills & Tools NOT currently on CV (ADD THESE!):
-${deepDiveAnswers.hiddenSkills || "Not provided"}
+### 🎯 SKILLS TO ADD (MANDATORY!):
+${(() => {
+  try {
+    const skillsData = JSON.parse(deepDiveAnswers.hiddenSkills || "[]");
+    if (Array.isArray(skillsData) && skillsData.length > 0) {
+      return skillsData.map((s: { skill: string; context: string; placement: string; sectionId: string; roleTitle: string; company: string }) => {
+        const contextInfo = s.context ? `\n   Candidate's experience: "${s.context}"` : "";
+        const locationInfo = s.roleTitle && s.company ? ` (under ${s.roleTitle} @ ${s.company})` : "";
+        return `- "${s.skill}" → Add to: ${s.placement}${locationInfo}${s.sectionId === "skills" ? " (add as a skill)" : s.sectionId === "summary" ? " (weave into summary)" : " (add as a bullet point)"}${contextInfo}`;
+      }).join("\n\n");
+    }
+    return deepDiveAnswers.hiddenSkills || "Not provided";
+  } catch {
+    return deepDiveAnswers.hiddenSkills || "Not provided";
+  }
+})()}
 
-### Candidate's Unique Value Proposition:
+### Skills the candidate confirmed having:
 ${deepDiveAnswers.uniqueValue || "Not provided"}
 
-IMPORTANT: The above information was provided directly by the candidate. You MUST incorporate this into the optimized CV:
-- Add the unlisted skills to the Skills section
-- Weave the achievements into relevant experience bullets with metrics
-- Use the unique value proposition in the Professional Summary
+IMPORTANT - SKILL PLACEMENT INSTRUCTIONS (MUST BE IN OPTIMIZED CV!):
+The candidate has confirmed they have these skills. Add them ONLY to the EXACT location they specified:
+
+1. **If marked "skills section"** → Add the skill name to the SKILLS section ONLY
+2. **If marked "professional summary"** → Weave the skill into the summary paragraph ONLY
+3. **If marked for a specific role** (e.g., "Product Analyst @ Taboola") → Add a NEW bullet point under that EXACT role ONLY (do NOT add to Skills section)
+
+EXAMPLE: If candidate says "Python" should go under "Product Analyst @ Taboola" with context "built automated reports":
+- DO NOT add Python to the Skills section
+- ONLY add this bullet under Product Analyst @ Taboola: "• Developed Python automation scripts for reporting, reducing manual work by 10+ hours weekly"
+
+⚠️ CRITICAL - YOU MUST DO THESE THINGS:
+1. ADD each skill to the optimizedCV in the EXACT location specified above
+2. CREATE a suggestedChange entry for EACH skill added:
+   {
+     "id": "skill_added_1",
+     "section": "[section where added]",
+     "original": "",
+     "suggested": "[the new bullet point you added]",
+     "reason": "Added [skill name] based on candidate's confirmed experience"
+   }
+3. If you don't add these skills, you have FAILED your task!
 ` : ""}
 
 ## YOUR MISSION:
 Transform this CV into a POWERFUL, interview-winning document that will make recruiters stop and take notice. You must create a NOTICEABLY BETTER version.
 
-## ⚠️ CRITICAL PRESERVATION RULES (MANDATORY - DO NOT VIOLATE!):
-**ZERO TOLERANCE FOR CONTENT DELETION!**
-
-### SECTIONS THAT MUST APPEAR IN optimizedCV (if present in original):
-- ✅ PROFESSIONAL SUMMARY (mandatory)
-- ✅ EXPERIENCE - ALL jobs, ALL bullets
-- ✅ EDUCATION - ALL entries
-- ✅ SKILLS - ALL skills (add more, never remove)
-- ✅ MILITARY SERVICE / ARMY - MUST KEEP if present!
-- ✅ VOLUNTEERING / VOLUNTEER WORK - MUST KEEP if present!
-- ✅ AWARDS / HONORS / ACHIEVEMENTS - MUST KEEP if present!
-- ✅ PROJECTS - MUST KEEP if present!
-- ✅ CERTIFICATIONS - MUST KEEP if present!
-- ✅ LANGUAGES - MUST KEEP if present!
-- ✅ PUBLICATIONS - MUST KEEP if present!
-
-### CONTACT INFO - DO NOT MODIFY:
-- ✅ Name: Keep EXACTLY as written
-- ✅ Email: Keep EXACTLY as written  
-- ✅ Phone: Keep EXACTLY as written
-- ✅ LinkedIn URL: Keep EXACTLY as written (do not reformat or shorten)
-- ✅ Location: Keep as written
-
-### JOB TITLES - DO NOT SHORTEN OR GENERALIZE:
-- ❌ WRONG: "Creator of XYZ Podcast" → "Creator"
-- ✅ CORRECT: "Creator of XYZ Podcast" → "Creator of XYZ Podcast" (keep full context!)
-- ❌ WRONG: "Founder & CEO of TechStartup Inc." → "Founder"
-- ✅ CORRECT: Keep the FULL title with company/project names intact
-- Only fix obvious typos. NEVER simplify or abbreviate titles.
-
-### SKILLS - DO NOT INVENT PROFICIENCY LEVELS:
-- ❌ WRONG: Adding random skill levels like "Python: 85%" or "JavaScript: Level 7"
-- ✅ CORRECT: List skills as plain text without arbitrary percentages
-- If the original CV has skill levels, keep them as-is
-- If the original has NO levels, do NOT add any - just list the skill names
-- Do NOT invent "Expert/Intermediate/Beginner" labels unless the user wrote them
-
-### VERIFICATION CHECKLIST (Apply before output):
-1. Count sections in ORIGINAL → Count sections in OUTPUT → Must be EQUAL or MORE
-2. Count jobs in ORIGINAL → Count jobs in OUTPUT → Must be EQUAL
-3. Count education entries in ORIGINAL → OUTPUT → Must be EQUAL
-4. If original has Military/Volunteering/Awards → OUTPUT MUST have them
+## ⚠️ CRITICAL PRESERVATION RULES (READ FIRST!):
+**NEVER DELETE OR REMOVE ANY CONTENT FROM THE ORIGINAL CV!**
+- ✅ KEEP every job position, company, date, bullet point
+- ✅ KEEP every education entry, certification, project
+- ✅ KEEP every skill, language, achievement mentioned
+- ✅ ENHANCE the wording, add metrics, improve language
+- ❌ NEVER remove a job, education, or section that exists in the original
+- ❌ NEVER shorten bullet lists or reduce the number of achievements
+- ❌ NEVER omit skills or certifications that were in the original
 
 If the original has 5 bullet points for a job → the optimized version must have AT LEAST 5 bullets (can add more)
 If the original has 3 skills → the optimized version must have AT LEAST 3 skills (can add more)
 
-You are REFINING and ENHANCING, never reducing or summarizing!
+You are REFINING and ENHANCING, not editing down!
 
 ## TRANSFORMATION GOALS:
 1. **AMPLIFIES IMPACT** - Turn passive descriptions into achievement stories
@@ -367,17 +280,28 @@ Replace weak verbs with POWER VERBS:
 - "Made" → "Engineered/Delivered/Launched"
 - "Did" → "Executed/Implemented/Transformed"
 
-### 5. PROFESSIONAL SUMMARY REWRITE
-Create a COMPELLING 3-4 sentence summary that:
-- Opens with years of experience + core expertise
-- Highlights 2-3 key achievements with metrics
-- Aligns perfectly with the target role
-- Includes 3-5 critical keywords
+### 5. SUMMARY SECTION (REQUIRED!)
+**If the original CV HAS a summary:**
+- KEEP the candidate's unique background (e.g., "Former IAF Officer", military experience, unique career path)
+- KEEP the same tone and narrative style as the original
+- ENHANCE with metrics and quantifiable achievements
+- ADD relevant keywords from the target role naturally
+- Make it MORE compelling but still sounds like the SAME person
+- 3-4 sentences maximum
+
+**If the original CV has NO summary:**
+- CREATE a compelling summary based on:
+  1. The candidate's most recent/relevant experience
+  2. Their key achievements and skills from the CV
+  3. Keywords and requirements from the target job description
+  4. Their career trajectory and unique value proposition
+- Format: 3-4 sentences highlighting years of experience, key skills, notable achievements, and career focus
+- Place it right after the contact info, before Experience section
 
 ## OUTPUT FORMAT (JSON):
 {
-  "overallScore": <PHASE 1 SCORE using calibration above. 80+ is RARE. Good matches=65-79. Mismatches=below 45>,
-  "summary": "<Honest assessment. For good matches: highlight strengths. For mismatches: acknowledge the gap>",
+  "overallScore": <0-100 based on match to target role>,
+  "summary": "<compelling 1-sentence assessment highlighting the candidate's potential for THIS role>",
   "strengths": [
     "<specific strength #1 with evidence>",
     "<specific strength #2 with evidence>",
@@ -417,63 +341,52 @@ Create a COMPELLING 3-4 sentence summary that:
     "missing": ["<critical missing keywords - TOP PRIORITY>"],
     "added": ["<keywords you added in optimization>"]
   },
-  "optimizedCV": "<THE COMPLETE TRANSFORMED CV in this EXACT format:
+  "optimizedCV": "<THE COMPLETE TRANSFORMED CV as plain text. Structure it EXACTLY like this (but use ACTUAL values, not placeholders):
 
-[Full Name - EXACT as original]
-[Professional Title]
-[email - EXACT] | [phone - EXACT] | [location] | [linkedin URL - EXACT, no reformatting]
+John Smith
+Senior Software Engineer
+john@email.com | +1-555-123-4567 | New York, NY | linkedin.com/in/johnsmith
 
-PROFESSIONAL SUMMARY
-[A compelling 3-4 sentence summary highlighting years of experience, key achievements with metrics, and career focus aligned to target role]
+SUMMARY
+A compelling 3-4 sentence summary paragraph here... (Can also use "PROFESSIONAL SUMMARY" - match the original CV's header)
 
 EXPERIENCE
-[Job Title] | [Company] | [Date Range]
-• [Achievement bullet with metrics]
-• [Achievement bullet with metrics]
-[...ALL jobs from original, enhanced but not removed...]
+Software Engineer | Google | 2020 - Present
+• Achievement bullet with metrics
+• Achievement bullet with metrics
+
+Senior Developer | Meta | 2018 - 2020
+• Achievement bullet with metrics
 
 EDUCATION
-[Degree] | [Institution] | [Date]
-[...ALL education entries from original...]
+B.S. Computer Science | MIT | 2018
 
 SKILLS
-[Skill 1], [Skill 2], [Skill 3]... [...ALL skills from original plus additions...]
+Python, JavaScript, React, Node.js, AWS
 
-MILITARY SERVICE (if in original - MANDATORY to include!)
-[Role] | [Unit] | [Date Range]
-• [Enhanced bullet]
-
-VOLUNTEERING (if in original - MANDATORY to include!)
-[Role] | [Organization] | [Date Range]
-• [Enhanced bullet]
-
-AWARDS & HONORS (if in original - MANDATORY to include!)
-• [Award name - Year]
-
-CERTIFICATIONS (if in original - MANDATORY to include!)
-• [Certification name]
-
-LANGUAGES (if in original - MANDATORY to include!)
-• [Language - Level]
-
-IMPORTANT: 
-1. PROFESSIONAL SUMMARY is MANDATORY
-2. ALL sections from the original MUST appear in output
-3. Contact info (email, phone, linkedin) must be VERBATIM from original>"
+CRITICAL FORMAT RULES:
+1. Use the ACTUAL candidate name, title, contact info - NOT placeholders
+2. Include ALL sections from the original CV (Experience, Education, Skills, Awards, Community Activities, Languages, etc.)
+3. Use section headers in ALL CAPS
+4. Use pipe | separators for job lines: Job Title | Company | Date
+5. Use bullet points (•) for achievements
+6. SUMMARY section must be a paragraph, not bullets (use same header as original: SUMMARY or PROFESSIONAL SUMMARY)>"
 }
 
 ## CRITICAL REMINDERS:
-1. **PRESERVE EVERYTHING** - The optimizedCV must contain ALL content from the original. NEVER delete jobs, education, skills, or bullets!
-2. The "optimizedCV" must be NOTICEABLY better - enhanced wording, added metrics, stronger verbs
+1. **PRESERVE ALL SECTIONS** - Include EVERY section from the original CV: Experience, Education, Skills, Awards, Honors, Community Activities, Languages, Projects, Certifications, etc.
+2. **PRESERVE ALL CONTENT** - NEVER delete jobs, education entries, skills, or bullet points!
+3. **NO PLACEHOLDERS** - Use actual values (name, email, etc.) NOT placeholder text like [Full Name]
+4. **USE LINE BREAKS** - Each section header, job entry, and bullet point should be on its own line
+5. The "optimizedCV" must be NOTICEABLY better - enhanced wording, added metrics, stronger verbs
+6. **SKILL ADDITIONS MUST BE IN optimizedCV** - If the candidate provided skills to add, they MUST appear in the optimizedCV output text, not just in suggestedChanges!
 3. Add reasonable metrics even if not explicit in original (use industry benchmarks)
 4. Every bullet should start with a power verb
-5. The PROFESSIONAL SUMMARY section is MANDATORY - it MUST appear in the optimizedCV as a complete paragraph (3-4 sentences)
+5. The SUMMARY section is MANDATORY - if original has no summary, CREATE one based on their experience and target job. Must be 3-4 sentences as a paragraph
 6. Provide 6-10 suggestedChanges covering ALL major sections
 7. Keywords in "missing" should be added to the optimizedCV where natural
-8. The optimizedCV must start with: Name, Title, Contact, then "PROFESSIONAL SUMMARY" header followed by the summary paragraph
+8. The optimizedCV must start with: Name, Title, Contact, then SUMMARY section (as a paragraph)
 9. **VERIFICATION**: Before finalizing, count sections in original vs optimized - optimized should have EQUAL OR MORE content
-10. **MILITARY/VOLUNTEERING/AWARDS**: If the original CV has these sections, they MUST appear in optimizedCV - this is NON-NEGOTIABLE!
-11. **CONTACT INFO**: Email, phone, and LinkedIn URL must be copied EXACTLY - do not modify or reformat URLs!
 
 Return ONLY the JSON object.`;
 
@@ -495,6 +408,13 @@ Return ONLY the JSON object.`;
     });
 
     const content = response.choices[0]?.message?.content || "";
+    
+    // Log for debugging skill additions
+    if (deepDiveAnswers?.hiddenSkills) {
+      console.log("=== CHECKING SKILL ADDITIONS IN RESPONSE ===");
+      console.log("Expected skills:", deepDiveAnswers.hiddenSkills);
+      console.log("Response includes 'suggestedChanges':", content.includes("suggestedChanges"));
+    }
     
     // Parse the JSON response
     let analysis;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
-import { X, Lock, Sparkles, FileDown, BarChart3 } from "lucide-react";
+import { X, FileDown, BarChart3, Shield, Check } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,10 +13,8 @@ interface AuthModalProps {
 }
 
 /**
- * AuthModal - A beautiful modal that prompts users to sign up/sign in
- * when they try to perform premium actions (download, analyze, save)
- * 
- * This enables "try before you sign up" experience
+ * AuthModal - Premium modal that prompts users to sign up/sign in
+ * Redesigned to match the classy, upper-class website aesthetic
  */
 export function AuthModal({ 
   isOpen, 
@@ -47,124 +45,113 @@ export function AuthModal({
   // Default content based on trigger type
   const content = {
     download: {
-      icon: <FileDown className="w-8 h-8 text-indigo-600" />,
+      icon: <FileDown className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
       title: title || "Download Your Resume",
-      description: description || "Create a free account to download your beautifully formatted resume as a PDF.",
+      description: description || "Create a free account to download your beautifully formatted resume.",
       benefits: [
         "Download unlimited PDFs",
-        "Save multiple resume versions",
-        "Access premium templates",
+        "Save multiple versions",
+        "Access all templates",
       ],
     },
     analyze: {
-      icon: <BarChart3 className="w-8 h-8 text-violet-600" />,
+      icon: <BarChart3 className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
       title: title || "See Your Full Analysis",
-      description: description || "Create a free account to see your detailed resume score and AI-powered improvement suggestions.",
+      description: description || "Create a free account to see your detailed resume score and suggestions.",
       benefits: [
-        "Get detailed ATS compatibility score",
-        "Receive personalized suggestions",
-        "Track your improvement over time",
+        "Detailed ATS compatibility score",
+        "Personalized improvements",
+        "Track your progress",
       ],
     },
     save: {
-      icon: <Lock className="w-8 h-8 text-blue-600" />,
+      icon: <Shield className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
       title: title || "Save Your Progress",
-      description: description || "Create a free account to save your resume and access it from anywhere.",
+      description: description || "Create a free account to save your resume and access it anywhere.",
       benefits: [
-        "Save your work in the cloud",
+        "Cloud-synced storage",
         "Access from any device",
-        "Never lose your progress",
+        "Never lose your work",
       ],
     },
   };
 
   const currentContent = content[trigger];
-  const accentColor = trigger === "download" ? "indigo" : trigger === "analyze" ? "violet" : "blue";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-[#1a1a1a]/50 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-[#FAFAF8] rounded-sm shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-stone-200">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+          className="absolute top-5 right-5 p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-sm transition-colors z-10"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5" strokeWidth={1.5} />
         </button>
 
-        {/* Header with gradient */}
-        <div className={`px-8 pt-10 pb-6 bg-gradient-to-br ${
-          accentColor === "indigo" ? "from-indigo-50 to-violet-50" :
-          accentColor === "violet" ? "from-violet-50 to-purple-50" :
-          "from-blue-50 to-indigo-50"
-        }`}>
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${
-            accentColor === "indigo" ? "bg-indigo-100" :
-            accentColor === "violet" ? "bg-violet-100" :
-            "bg-blue-100"
-          }`}>
+        {/* Content */}
+        <div className="px-10 pt-12 pb-10">
+          {/* Icon */}
+          <div className="w-14 h-14 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-6">
             {currentContent.icon}
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+          
+          {/* Title */}
+          <h2 className="font-serif text-2xl font-light text-[#1a1a1a] mb-3">
             {currentContent.title}
           </h2>
-          <p className="text-slate-600">
+          
+          {/* Description */}
+          <p className="text-stone-500 font-light leading-relaxed mb-8">
             {currentContent.description}
           </p>
-        </div>
+          
+          {/* Divider */}
+          <div className="w-12 h-px bg-[#B8860B] mb-8" />
 
-        {/* Benefits */}
-        <div className="px-8 py-6 space-y-3">
-          {currentContent.benefits.map((benefit, index) => (
-            <div key={index} className="flex items-center gap-3">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                accentColor === "indigo" ? "bg-indigo-100 text-indigo-600" :
-                accentColor === "violet" ? "bg-violet-100 text-violet-600" :
-                "bg-blue-100 text-blue-600"
-              }`}>
-                <Sparkles className="w-3 h-3" />
+          {/* Benefits */}
+          <div className="space-y-4 mb-10">
+            {currentContent.benefits.map((benefit, index) => (
+              <div key={index} className="flex items-center gap-4">
+                <div className="w-5 h-5 rounded-full bg-[#0A2647]/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
+                </div>
+                <span className="text-sm text-stone-600 font-light">{benefit}</span>
               </div>
-              <span className="text-slate-700">{benefit}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="px-8 pb-8 space-y-3">
-          <SignUpButton mode="modal">
-            <button className={`w-full py-3.5 rounded-xl font-semibold text-white transition-all shadow-lg ${
-              accentColor === "indigo" 
-                ? "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20" 
-                : accentColor === "violet"
-                ? "bg-violet-600 hover:bg-violet-700 shadow-violet-600/20"
-                : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
-            }`}>
-              Create Free Account
-            </button>
-          </SignUpButton>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-sm text-slate-400">or</span>
-            <div className="flex-1 h-px bg-slate-200" />
+            ))}
           </div>
-          
-          <SignInButton mode="modal">
-            <button className="w-full py-3 rounded-xl font-medium text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors">
-              Sign In
-            </button>
-          </SignInButton>
-          
-          <p className="text-center text-xs text-slate-400 pt-2">
-            No credit card required • Free forever plan
-          </p>
+
+          {/* Actions */}
+          <div className="space-y-4">
+            <SignUpButton mode="modal">
+              <button className="w-full py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all tracking-wide">
+                Create Free Account
+              </button>
+            </SignUpButton>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex-1 h-px bg-stone-200" />
+              <span className="text-xs text-stone-400 font-light tracking-wide">or</span>
+              <div className="flex-1 h-px bg-stone-200" />
+            </div>
+            
+            <SignInButton mode="modal">
+              <button className="w-full py-4 rounded-sm font-medium text-[#1a1a1a] border border-stone-300 hover:bg-white hover:border-stone-400 transition-all tracking-wide">
+                Sign In
+              </button>
+            </SignInButton>
+            
+            <p className="text-center text-xs text-stone-400 font-light pt-2 tracking-wide">
+              No credit card required
+            </p>
+          </div>
         </div>
       </div>
     </div>

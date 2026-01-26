@@ -75,15 +75,24 @@ interface AnalysisResultsProps {
     error?: string | null;
     onDismissError?: () => void;
   };
-  onEnhanceWithDeepDive?: (answers: DeepDiveAnswers) => void;
+  onEnhanceWithDeepDive?: (answers: DeepDiveAnswers) => Promise<void>;
   isEnhancing?: boolean;
   jobTitle?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 interface DeepDiveAnswers {
   achievements: string;
   hiddenSkills: string;
   uniqueValue: string;
+}
+
+interface SkillPlacement {
+  skill: string;
+  hasSkill: boolean;
+  sectionId: string | null;
+  itemId: string | null;
+  context: string; // How/where they acquired this skill
 }
 
 // Template options for the switcher - All 8 templates
@@ -98,7 +107,7 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; pre
   { id: "international", name: "Intl", icon: "🌐", preview: "Photo support" },
 ];
 
-export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle }: AnalysisResultsProps) {
+export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle, onTabChange }: AnalysisResultsProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "changes" | "skills" | "optimized" | "cover-letter" | "enhance">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("modern-sidebar");
@@ -136,6 +145,18 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
     hiddenSkills: "",
     uniqueValue: ""
   });
+  
+  // Skill placement state for Enhance tab
+  const [skillPlacements, setSkillPlacements] = useState<SkillPlacement[]>(() => {
+    const missingSkills = results.missingKeySkills || [];
+    return missingSkills.map(skill => ({
+      skill,
+      hasSkill: false,
+      sectionId: null,
+      itemId: null,
+      context: ""
+    }));
+  });
 
   // Parse optimized CV text into structured data (initial parse)
   const initialParsedCV = useMemo(() => {
@@ -149,11 +170,11 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   const regularChanges = results.suggestedChanges.filter(change => !change.id?.startsWith('skill_'));
   const skillChanges = results.skillPlacementChanges || results.suggestedChanges.filter(change => change.id?.startsWith('skill_'));
 
-  // Score color based on value
+  // Score color based on value - Premium palette
   const getScoreColor = (score: number) => {
-    if (score >= 80) return { ring: "stroke-indigo-500", text: "text-indigo-600", bg: "bg-indigo-50" };
-    if (score >= 60) return { ring: "stroke-amber-500", text: "text-amber-600", bg: "bg-amber-50" };
-    return { ring: "stroke-rose-500", text: "text-rose-600", bg: "bg-rose-50" };
+    if (score >= 80) return { ring: "stroke-[#0A2647]", text: "text-[#0A2647]", bg: "bg-[#0A2647]/5" };
+    if (score >= 60) return { ring: "stroke-amber-600", text: "text-amber-700", bg: "bg-amber-50" };
+    return { ring: "stroke-rose-600", text: "text-rose-700", bg: "bg-rose-50" };
   };
 
   const scoreColors = getScoreColor(results.overallScore);
@@ -226,16 +247,15 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   const acceptedChangesCount = Object.values(changeStatuses).filter(s => s === "accepted").length;
   
   const tabs = [
-    { id: "overview" as const, label: "Overview" },
-    { id: "changes" as const, label: `Review Changes`, count: pendingChangesCount > 0 ? pendingChangesCount : undefined, badge: acceptedChangesCount > 0 ? `${acceptedChangesCount} accepted` : undefined },
-    ...(skillChanges.length > 0 ? [{ id: "skills" as const, label: "Skills Added", count: skillChanges.length }] : []),
-    { id: "optimized" as const, label: "Optimized CV" },
-    ...(onEnhanceWithDeepDive ? [{ id: "enhance" as const, label: "✨ Enhance", highlight: true }] : []),
-    ...(coverLetterTab ? [{ id: "cover-letter" as const, label: "Cover Letter" }] : []),
+    { id: "overview" as const, label: "Overview", step: 1 },
+    ...(onEnhanceWithDeepDive ? [{ id: "enhance" as const, label: "Enhance", step: 2, highlight: true }] : []),
+    { id: "changes" as const, label: `Review Changes`, step: 3, count: pendingChangesCount > 0 ? pendingChangesCount : undefined, badge: acceptedChangesCount > 0 ? `${acceptedChangesCount} accepted` : undefined },
+    { id: "optimized" as const, label: "Optimized CV", step: 4 },
+    ...(coverLetterTab ? [{ id: "cover-letter" as const, label: "Cover Letter", step: 5 }] : []),
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-xl h-full flex flex-col min-h-0">
+    <div className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col min-h-0">
       {/* Hidden PDF Capture Element - ONLY the CV, no toolbar */}
       <div className="absolute left-[-9999px] top-0 pointer-events-none">
         <div 
@@ -256,56 +276,59 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
         </div>
       </div>
       
-      {/* Top Navigation - Modern Tabs */}
-      <div className="px-6 py-4 bg-white border-b border-slate-200">
-        <div className="flex gap-2 flex-wrap">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? (tab as any).highlight 
-                    ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md" 
-                    : "bg-indigo-600 text-white shadow-md"
-                  : (tab as any).highlight 
-                    ? "text-violet-600 hover:text-violet-700 hover:bg-violet-50 bg-violet-50/50" 
-                    : "text-slate-600 hover:text-indigo-700 hover:bg-indigo-50"
-              }`}
-            >
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.id ? "bg-white/20" : "bg-amber-100 text-amber-700"
+      {/* Top Navigation - Premium Step Flow */}
+      <div className="px-8 py-5 bg-white border-b border-stone-100">
+        <div className="flex items-center gap-2 flex-wrap">
+          {tabs.map((tab, idx) => (
+            <div key={tab.id} className="flex items-center">
+              <button
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-3 px-5 py-3 text-sm font-medium tracking-wide rounded-sm transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? "bg-[#0A2647] text-white" 
+                    : (tab as any).highlight 
+                      ? "text-[#0A2647] hover:bg-[#0A2647]/5 bg-[#0A2647]/5" 
+                      : "text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+                }`}
+              >
+                <span className={`w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center ${
+                  activeTab === tab.id
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-200 text-stone-600"
                 }`}>
-                  {tab.count}
+                  {(tab as any).step || idx + 1}
                 </span>
+                {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span className={`text-xs px-2 py-0.5 rounded-sm ${
+                    activeTab === tab.id ? "bg-white/20" : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+              {/* Connector between tabs */}
+              {idx < tabs.length - 1 && (
+                <div className="w-8 h-px bg-stone-200 mx-2 flex-shrink-0" />
               )}
-              {(tab as any).badge && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.id ? "bg-white/20" : "bg-indigo-100 text-indigo-700"
-                }`}>
-                  {(tab as any).badge}
-                </span>
-              )}
-            </button>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Tab Content */}
-      <div className="p-6 flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="p-8 flex-1 min-h-0 overflow-hidden flex flex-col">
         {activeTab === "overview" && (
-          <div className="space-y-6 flex-1 min-h-0 overflow-auto pr-1">
-            {/* Hero Score Card - Light Gradient Banner */}
-            <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-6 border border-indigo-100">
-              <div className="flex items-center justify-between gap-6">
+          <div className="space-y-8 flex-1 min-h-0 overflow-auto pr-1">
+            {/* Hero Score Card - Premium Style */}
+            <div className="bg-[#FAFAF8] rounded-sm p-8 border border-stone-100">
+              <div className="flex items-center justify-between gap-8">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-lg font-bold text-slate-900">Match Analysis</h3>
+                  <div className="flex items-center gap-3 mb-3">
+                    <Target className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+                    <h3 className="font-serif text-xl text-[#1a1a1a]">Match Analysis</h3>
                   </div>
-                  <p className="text-slate-600 leading-relaxed">{results.summary}</p>
+                  <p className="text-stone-600 leading-relaxed font-light">{results.summary}</p>
                 </div>
                 
                 {/* Large Score Circle */}
@@ -429,11 +452,24 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
               </div>
             </div>
 
+            {/* Continue Button */}
+            {onEnhanceWithDeepDive && (
+              <div className="flex justify-end pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => setActiveTab("enhance")}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg"
+                >
+                  Continue to Enhance
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
           </div>
         )}
 
         {activeTab === "changes" && (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 min-h-0 overflow-auto">
             {regularChanges.length === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
@@ -450,22 +486,14 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <div className="p-5 space-y-4">
                   <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Original</p>
-                      <p className={`p-4 rounded-lg border leading-relaxed ${
-                        status === "rejected" ? "text-slate-800 bg-slate-50 border-slate-200" : "text-slate-600 bg-rose-50 border-rose-100 line-through"
-                      }`}>
+                      <p className="p-4 rounded-lg border leading-relaxed text-slate-600 bg-rose-50 border-rose-100 line-through">
                       {change.original}
                     </p>
                   </div>
 
                   <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Suggested</p>
-                      <p className={`p-4 rounded-lg border leading-relaxed ${
-                        status === "accepted" 
-                          ? "text-slate-800 bg-emerald-50 border-emerald-200 font-medium" 
-                          : status === "rejected" 
-                            ? "text-slate-400 bg-slate-50 border-slate-200 line-through" 
-                            : "text-slate-800 bg-indigo-50 border-indigo-100"
-                      }`}>
+                      <p className="p-4 rounded-lg border leading-relaxed text-slate-800 bg-indigo-50 border-indigo-100">
                       {change.suggested}
                     </p>
                   </div>
@@ -478,6 +506,17 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 </div>
               ))
             )}
+
+            {/* Continue Button */}
+            <div className="flex justify-end pt-4 border-t border-slate-100 mt-4">
+              <button
+                onClick={() => setActiveTab("optimized")}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg"
+              >
+                View Optimized CV
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -646,192 +685,282 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     maxScale={0.9}
                   />
                 </div>
+
+                {/* Continue to Cover Letter Button */}
+                {coverLetterTab && (
+                  <div className="flex justify-end pt-4 border-t border-slate-100 mt-4">
+                    <button
+                      onClick={() => setActiveTab("cover-letter")}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg"
+                    >
+                      Generate Cover Letter
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* Enhance Tab - AI Deep Dive */}
+        {/* Enhance Tab - Missing Skills Placement */}
         {activeTab === "enhance" && onEnhanceWithDeepDive && (
-          <div className="flex-1 min-h-0 flex flex-col">
-            <div className="bg-gradient-to-r from-violet-500 to-indigo-600 rounded-xl p-6 text-white mb-6">
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-violet-500 to-indigo-600 rounded-xl p-6 text-white mb-6 flex-shrink-0">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6" />
+                  <Target className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold">AI Career Deep Dive</h3>
+                  <h3 className="text-xl font-bold">Add Missing Skills</h3>
                   <p className="text-violet-100">
-                    {jobTitle ? `Enhancing for: ${jobTitle}` : "Help us understand you better"}
+                    {jobTitle ? `Enhancing for: ${jobTitle}` : "Tell us which skills you have"}
                   </p>
                 </div>
               </div>
               <p className="text-violet-100 text-sm">
-                Answer 3 quick questions to unlock <strong>hidden potential</strong> in your CV. 
-                Our AI will incorporate your answers to create an even more impactful resume.
-              </p>
-              {/* Progress Bar */}
-              <div className="mt-4 flex items-center gap-2">
-                {[0, 1, 2].map((idx) => (
-                  <div 
-                    key={idx}
-                    className={`h-1.5 flex-1 rounded-full transition-all ${
-                      idx < deepDiveStep 
-                        ? "bg-white" 
-                        : idx === deepDiveStep 
-                          ? "bg-white/80" 
-                          : "bg-white/30"
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-violet-200 text-xs mt-2">
-                Question {deepDiveStep + 1} of 3
+                We identified skills the job requires that weren't in your CV. 
+                <strong> Select the ones you have</strong> and choose where to add them in your resume.
               </p>
             </div>
             
-            {/* Question Cards */}
-            <div className="flex-1 overflow-auto">
-              {deepDiveStep === 0 && (
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
-                      <Award className="w-5 h-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-1">Hidden Achievements</h4>
-                      <p className="text-slate-600 text-sm leading-relaxed">
-                        What accomplishments from your career are you most proud of that might not be fully reflected in your CV? 
-                        Think about: projects you led, problems you solved, metrics you improved, or recognition you received.
-                      </p>
-                    </div>
-                  </div>
-                  <textarea
-                    value={deepDiveAnswers.achievements}
-                    onChange={(e) => setDeepDiveAnswers(prev => ({ ...prev, achievements: e.target.value }))}
-                    placeholder="Example: I led a team migration to cloud that saved $200K annually, but I only mentioned 'managed cloud infrastructure' on my CV..."
-                    className="w-full h-32 p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-slate-400"
-                  />
-                  <p className="text-xs text-violet-600 mt-2 flex items-center gap-1.5">
-                    <Lightbulb className="w-3.5 h-3.5" />
-                    Be specific! Include numbers, team sizes, timelines, and impact.
-                  </p>
+            {/* Skills List */}
+            <div className="flex-1 overflow-auto space-y-3">
+              {skillPlacements.length === 0 ? (
+                <div className="text-center py-12 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+                  <p className="text-emerald-800 font-medium">Great news!</p>
+                  <p className="text-emerald-600 text-sm">Your CV already covers all the key skills for this role.</p>
                 </div>
+              ) : (
+                skillPlacements.map((placement, idx) => (
+                  <div 
+                    key={placement.skill}
+                    className={`bg-white rounded-xl border-2 transition-all overflow-hidden ${
+                      placement.hasSkill 
+                        ? "border-indigo-300 shadow-md" 
+                        : "border-slate-200"
+                    }`}
+                  >
+                    {/* Skill Header with Checkbox */}
+                    <div className="flex items-center gap-4 p-4">
+                      <button
+                        onClick={() => {
+                          setSkillPlacements(prev => prev.map((p, i) => 
+                            i === idx ? { ...p, hasSkill: !p.hasSkill, sectionId: null, itemId: null, context: "" } : p
+                          ));
+                        }}
+                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                          placement.hasSkill
+                            ? "border-indigo-500 bg-indigo-500"
+                            : "border-slate-300 hover:border-indigo-400"
+                        }`}
+                      >
+                        {placement.hasSkill && <Check className="w-4 h-4 text-white" />}
+                      </button>
+                      <div className="flex-1">
+                        <span className={`font-semibold ${placement.hasSkill ? "text-indigo-700" : "text-slate-700"}`}>
+                          {placement.skill}
+                        </span>
+                        {!placement.hasSkill && (
+                          <p className="text-xs text-slate-400 mt-0.5">Click if you have experience with this skill</p>
+                        )}
+                      </div>
+                      {placement.hasSkill && placement.sectionId && (
+                        <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full">
+                          ✓ Placement set
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Placement Selection - Only shows when skill is selected */}
+                    {placement.hasSkill && (
+                      <div className="px-4 pb-4 pt-2 border-t border-slate-100 bg-slate-50/50 space-y-4">
+                        {/* Context - How/where they acquired the skill */}
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1.5 block flex items-center gap-1.5">
+                            <Edit3 className="w-3.5 h-3.5" />
+                            Briefly describe your experience with <strong>{placement.skill}</strong>
+                          </label>
+                          <textarea
+                            value={placement.context}
+                            onChange={(e) => {
+                              setSkillPlacements(prev => prev.map((p, i) => 
+                                i === idx ? { ...p, context: e.target.value } : p
+                              ));
+                            }}
+                            placeholder={`e.g., "Used ${placement.skill} to build automated reports, reducing manual work by 40%..." or "3+ years experience with ${placement.skill} in production environments..."`}
+                            className="w-full h-16 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none placeholder:text-slate-400"
+                          />
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-3">
+                          {/* Section Dropdown - Only main sections */}
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 mb-1.5 block">Add to section</label>
+                            <select
+                              value={placement.sectionId || ""}
+                              onChange={(e) => {
+                                setSkillPlacements(prev => prev.map((p, i) => 
+                                  i === idx ? { ...p, sectionId: e.target.value || null, itemId: null } : p
+                                ));
+                              }}
+                              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            >
+                              <option value="">Select section...</option>
+                              <option value="skills">Skills</option>
+                              <option value="summary">Summary</option>
+                              {/* Only show Experience and Education sections */}
+                              {resumeData.sections
+                                .filter(section => 
+                                  section.type === "experience" || 
+                                  section.type === "education" ||
+                                  section.title.toLowerCase().includes("experience") ||
+                                  section.title.toLowerCase().includes("education") ||
+                                  section.title.toLowerCase().includes("employment") ||
+                                  section.title.toLowerCase().includes("work history")
+                                )
+                                .map(section => (
+                                  <option key={section.id} value={section.id}>
+                                    {section.title}
+                                  </option>
+                                ))
+                              }
+                            </select>
+                          </div>
+                          
+                          {/* Subsection Dropdown - Only for sections with items */}
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 mb-1.5 block">
+                              {placement.sectionId === "skills" ? "How to add" : "Under which role/entry?"}
+                            </label>
+                            {placement.sectionId === "skills" ? (
+                              <div className="px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-700">
+                                Will be added to your Skills section
+                              </div>
+                            ) : placement.sectionId === "summary" ? (
+                              <div className="px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-700">
+                                Will be woven into your summary
+                              </div>
+                            ) : placement.sectionId ? (
+                              <select
+                                value={placement.itemId || ""}
+                                onChange={(e) => {
+                                  setSkillPlacements(prev => prev.map((p, i) => 
+                                    i === idx ? { ...p, itemId: e.target.value || null } : p
+                                  ));
+                                }}
+                                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              >
+                                <option value="">Select entry...</option>
+                                {resumeData.sections
+                                  .find(s => s.id === placement.sectionId)
+                                  ?.items.map(item => (
+                                    <option key={item.id} value={item.id}>
+                                      {/* Show Title @ Company format, or just title, or subtitle */}
+                                      {item.title && item.subtitle 
+                                        ? `${item.title} @ ${item.subtitle}`
+                                        : item.title || item.subtitle || "Entry"
+                                      }
+                                    </option>
+                                  ))
+                                }
+                              </select>
+                            ) : (
+                              <div className="px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-400">
+                                First select a section
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
               )}
               
-              {deepDiveStep === 1 && (
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
-                      <Target className="w-5 h-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-1">Unlisted Skills & Tools</h4>
-                      <p className="text-slate-600 text-sm leading-relaxed">
-                        What skills, tools, certifications, or technologies do you use regularly that aren't mentioned in your CV? 
-                        Include soft skills like leadership, communication, or cross-functional collaboration.
-                      </p>
-                    </div>
+              {/* Additional Info Section */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5 mt-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="w-4 h-4 text-amber-600" />
                   </div>
-                  <textarea
-                    value={deepDiveAnswers.hiddenSkills}
-                    onChange={(e) => setDeepDiveAnswers(prev => ({ ...prev, hiddenSkills: e.target.value }))}
-                    placeholder="Example: I'm proficient in Python, Tableau, and SQL but only listed Excel. I also led weekly stakeholder meetings and trained 5 new team members..."
-                    className="w-full h-32 p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-slate-400"
-                  />
-                  <p className="text-xs text-violet-600 mt-2 flex items-center gap-1.5">
-                    <Lightbulb className="w-3.5 h-3.5" />
-                    List everything! Technical tools, methodologies (Agile, Scrum), languages, certifications.
-                  </p>
-                </div>
-              )}
-              
-              {deepDiveStep === 2 && (
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
-                      <Lightbulb className="w-5 h-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-1">Your Unique Value</h4>
-                      <p className="text-slate-600 text-sm leading-relaxed">
-                        What makes you different from other candidates? What's your 'superpower' or unique combination 
-                        of experience that would make you perfect for this role?
-                      </p>
-                    </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900 text-sm">Any other achievements to highlight?</h4>
+                    <p className="text-xs text-slate-500">Add accomplishments that strengthen your application</p>
                   </div>
-                  <textarea
-                    value={deepDiveAnswers.uniqueValue}
-                    onChange={(e) => setDeepDiveAnswers(prev => ({ ...prev, uniqueValue: e.target.value }))}
-                    placeholder="Example: I bridge the gap between technical and business teams - I can code AND present to C-suite executives. I also have experience in both startups and Fortune 500..."
-                    className="w-full h-32 p-4 border border-slate-200 rounded-xl text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-slate-400"
-                  />
-                  <p className="text-xs text-violet-600 mt-2 flex items-center gap-1.5">
-                    <Lightbulb className="w-3.5 h-3.5" />
-                    Think about: unique background, rare skill combinations, industry knowledge, or perspectives.
-                  </p>
                 </div>
-              )}
+                <textarea
+                  value={deepDiveAnswers.achievements}
+                  onChange={(e) => setDeepDiveAnswers(prev => ({ ...prev, achievements: e.target.value }))}
+                  placeholder="e.g. Led a team of 5 engineers, Increased revenue by 30%, AWS certified..."
+                  className="w-full h-20 p-3 border border-slate-200 rounded-lg text-slate-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-slate-400"
+                />
+              </div>
             </div>
             
             {/* Navigation */}
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 flex-shrink-0">
               <button
-                onClick={() => setDeepDiveStep(prev => Math.max(0, prev - 1))}
-                disabled={deepDiveStep === 0}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setActiveTab("changes")}
+                className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700"
               >
-                ← Previous
+                Skip to Review Changes →
               </button>
               
               <div className="flex items-center gap-3">
-                {/* Quick completion indicator */}
-                <div className="flex items-center gap-1 mr-2">
-                  {[deepDiveAnswers.achievements, deepDiveAnswers.hiddenSkills, deepDiveAnswers.uniqueValue].map((answer, idx) => (
-                    <div 
-                      key={idx}
-                      className={`w-2 h-2 rounded-full ${
-                        answer.trim() ? "bg-emerald-500" : "bg-slate-200"
-                      }`}
-                />
-              ))}
-                </div>
+                {/* Selection indicator */}
+                <span className="text-sm text-slate-500">
+                  {skillPlacements.filter(p => p.hasSkill).length} of {skillPlacements.length} skills selected
+                </span>
                 
-                {deepDiveStep < 2 ? (
-                  <button
-                    onClick={() => setDeepDiveStep(prev => prev + 1)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-violet-200"
-                  >
-                    Next
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => onEnhanceWithDeepDive(deepDiveAnswers)}
-                    disabled={isEnhancing}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 disabled:from-slate-300 disabled:to-slate-400 text-white font-medium rounded-xl transition-all shadow-lg shadow-violet-200 disabled:shadow-none"
-                  >
-                    {isEnhancing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Re-optimizing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Enhance My CV
-                      </>
-                    )}
-                  </button>
-                )}
+                <button
+                  onClick={async () => {
+                    if (onEnhanceWithDeepDive) {
+                      // Combine skill placements with deep dive answers
+                      const selectedSkills = skillPlacements.filter(p => p.hasSkill);
+                      const skillsInfo = selectedSkills.map(p => {
+                        const section = resumeData.sections.find(s => s.id === p.sectionId);
+                        const item = section?.items.find(i => i.id === p.itemId);
+                        return {
+                          skill: p.skill,
+                          context: p.context, // User's explanation of their experience
+                          placement: p.sectionId === "skills" ? "skills section" 
+                            : p.sectionId === "summary" ? "professional summary"
+                            : `${section?.title || ""} - ${item?.title || ""}${item?.subtitle ? ` @ ${item.subtitle}` : ""}`,
+                          sectionId: p.sectionId,
+                          itemId: p.itemId,
+                          roleTitle: item?.title || "",
+                          company: item?.subtitle || ""
+                        };
+                      });
+                      
+                      await onEnhanceWithDeepDive({
+                        ...deepDiveAnswers,
+                        hiddenSkills: JSON.stringify(skillsInfo),
+                        uniqueValue: selectedSkills.map(s => s.skill).join(", ")
+                      });
+                      setActiveTab("changes");
+                      onTabChange?.("changes");
+                    }
+                  }}
+                  disabled={isEnhancing || skillPlacements.filter(p => p.hasSkill).length === 0}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 disabled:from-slate-300 disabled:to-slate-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-200 disabled:shadow-none"
+                >
+                  {isEnhancing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Re-optimizing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Enhance with {skillPlacements.filter(p => p.hasSkill).length} Skills
+                    </>
+                  )}
+                </button>
               </div>
-            </div>
-            
-            {/* What we'll do */}
-            <div className="bg-slate-50 rounded-xl p-4 mt-4 border border-slate-100">
-              <p className="text-xs text-slate-500 text-center">
-                🎯 Your answers will be used to: <strong>add missing skills</strong>, <strong>quantify achievements</strong>, and <strong>highlight your unique value</strong>
-              </p>
             </div>
           </div>
         )}

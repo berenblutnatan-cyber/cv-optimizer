@@ -18,28 +18,28 @@ export function Logo({ variant = "dark", size = "md" }: LogoProps) {
     lg: "text-3xl",
   };
 
-  const textColorClass = variant === "dark" ? "text-[#2c3e7d]" : "text-white";
+  const textColorClass = variant === "dark" ? "text-[#0A2647]" : "text-white";
 
   return (
-    <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-all duration-200 cursor-pointer group">
+    <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-all duration-200 cursor-pointer group">
       <div className={`${sizeClasses[size]} flex items-center justify-center relative`}>
         <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
-          {/* Left vertical bar (dark blue) */}
-          <rect x="15" y="20" width="15" height="60" fill="#2c3e7d" rx="2"/>
+          {/* Left vertical bar (navy) */}
+          <rect x="15" y="20" width="14" height="60" fill="#0A2647" rx="1"/>
           
-          {/* Right vertical bar (dark blue) */}
-          <rect x="70" y="20" width="15" height="60" fill="#2c3e7d" rx="2"/>
+          {/* Right vertical bar (navy) */}
+          <rect x="71" y="20" width="14" height="60" fill="#0A2647" rx="1"/>
           
-          {/* Middle horizontal bar (yellow/orange) */}
+          {/* Middle diagonal bar (gold accent) */}
           <path 
-            d="M 30 45 L 70 55 L 70 65 L 30 55 Z" 
-            fill="#f59e0b"
+            d="M 29 45 L 71 55 L 71 63 L 29 53 Z" 
+            fill="#B8860B"
           />
         </svg>
       </div>
       <div className="flex flex-col leading-none">
         <span 
-          className={`${textSizeClasses[size]} font-bold ${textColorClass} tracking-tight`}
+          className={`${textSizeClasses[size]} font-serif font-semibold ${textColorClass} tracking-tight`}
         >
           Hired
         </span>

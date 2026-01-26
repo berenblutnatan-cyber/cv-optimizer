@@ -20,6 +20,14 @@ const config: Config = {
           "Apple Color Emoji",
           "Segoe UI Emoji",
         ],
+        serif: [
+          "var(--font-playfair)",
+          "Playfair Display",
+          "Georgia",
+          "Cambria",
+          "Times New Roman",
+          "serif",
+        ],
         mono: [
           "var(--font-mono)",
           "ui-monospace",

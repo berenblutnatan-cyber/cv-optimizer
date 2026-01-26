@@ -9,25 +9,25 @@ type ShellNavProps = {
 
 export function ShellNav({ rightSlot }: ShellNavProps) {
   return (
-    <header className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-5">
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Logo variant="dark" size="md" />
+    <header className="w-full bg-white/80 backdrop-blur-sm border-b border-stone-200/60 px-8 lg:px-16 py-5">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <Logo variant="dark" size="md" />
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600">
-              <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
-              Data privacy
-            </span>
-            {rightSlot}
-          </div>
+        <div className="flex items-center gap-6">
+          <Link 
+            href="/builder" 
+            className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors tracking-wide"
+          >
+            Resume Builder
+          </Link>
+          <span className="w-px h-4 bg-stone-300" />
+          <Link 
+            href="/optimize" 
+            className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors tracking-wide"
+          >
+            Optimizer
+          </Link>
+          {rightSlot}
         </div>
       </div>
     </header>

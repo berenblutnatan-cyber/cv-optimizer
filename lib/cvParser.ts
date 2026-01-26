@@ -253,6 +253,16 @@ function parseContent(lines: string[]): {
       }
     }
     
+    // Skip lines that look like headers but are actually metadata (GPA, Dean's List, etc.)
+    if (isNotASectionHeader(line)) {
+      if (currentItem) {
+        // Add as a bullet or description
+        if (!currentItem.bullets) currentItem.bullets = [];
+        currentItem.bullets.push(line.trim());
+      }
+      continue;
+    }
+    
     if (isAllCaps || isSectionKeyword) {
       // Save current section
       if (currentSection && currentItem) {
@@ -324,6 +334,15 @@ function parseContent(lines: string[]): {
       const isBullet = /^[•\-*]\s/.test(line);
       const isJobTitleLine = isDateLine(line) || (i === 0 || isNewEntry(line, lines[i - 1]));
       
+      // Skip metadata lines (GPA, standalone years, etc.) - don't create items for them
+      if (isMetadataLine(line)) {
+        // If we have a current item, append to description
+        if (currentItem) {
+          currentItem.description = (currentItem.description || "") + " " + line;
+        }
+        continue;
+      }
+      
       if (isBullet) {
         // Add bullet to current item
         if (currentItem) {
@@ -381,6 +400,56 @@ function isNewEntry(line: string, prevLine: string): boolean {
   if (/^[•\-*]\s/.test(prevLine)) return true;
   // New entry if line contains a pipe or date
   if (line.includes("|") || isDateLine(line)) return true;
+  return false;
+}
+
+/**
+ * Check if line is metadata that shouldn't be a section item
+ * (GPA, standalone years, short numeric entries, etc.)
+ */
+function isMetadataLine(line: string): boolean {
+  const lower = line.toLowerCase().trim();
+  
+  // GPA lines (any format)
+  if (/gpa/i.test(line)) return true;
+  
+  // CGPA lines
+  if (/cgpa/i.test(line)) return true;
+  
+  // Standalone year or year range only (e.g., "2023-2026", "2024")
+  if (/^\d{4}(\s*[-–]\s*\d{4})?$/.test(line.trim())) return true;
+  
+  // Very short lines that are likely metadata
+  if (line.length < 10 && /^\d/.test(line)) return true;
+  
+  // Lines that are just percentages or scores
+  if (/^\d+%?$/.test(line.trim())) return true;
+  
+  // Lines that start with common metadata prefixes
+  if (/^(score|grade|rank|percentage|current gpa|cumulative)[:\s\-–]/i.test(line)) return true;
+  
+  // Psychometric or test scores
+  if (/psychometric|exam|test score/i.test(lower) && line.length < 30) return true;
+  
+  return false;
+}
+
+/**
+ * Check if this line should NOT be treated as a section header
+ * (metadata that looks like a header because it's short or ALL CAPS)
+ */
+function isNotASectionHeader(line: string): boolean {
+  const lower = line.toLowerCase().trim();
+  
+  // GPA, CGPA - these are NOT sections
+  if (/^(gpa|cgpa)(\s|$|:|-|–)/i.test(line)) return true;
+  
+  // Dean's list, honors - part of education, not separate sections
+  if (/^dean'?s?\s*list/i.test(line)) return true;
+  
+  // Current/Cumulative - usually followed by GPA
+  if (/^(current|cumulative)\s/i.test(line)) return true;
+  
   return false;
 }
 

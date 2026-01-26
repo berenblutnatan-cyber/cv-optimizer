@@ -92,32 +92,32 @@ export default function BuilderPage() {
   const progressPercent = ((currentStep + 1) / TOTAL_STEPS) * 100;
 
   return (
-    <div className="h-screen bg-slate-50 text-slate-900 flex flex-col overflow-hidden">
-      {/* Header with Progress Bar */}
-      <header className="flex-shrink-0 w-full border-b border-slate-200 bg-white z-20">
-        <div className="px-6 py-4">
+    <div className="h-screen bg-[#FAFAF8] text-[#1a1a1a] flex flex-col overflow-hidden">
+      {/* Premium Header */}
+      <header className="flex-shrink-0 w-full border-b border-stone-200/60 bg-white/80 backdrop-blur-sm z-20">
+        <div className="px-8 lg:px-16 py-5">
           <div className="max-w-[1800px] mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <Logo variant="dark" size="md" />
-              <span className="px-3 py-1 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-medium">
+              <span className="px-4 py-1.5 rounded-sm bg-[#0A2647]/5 text-[#0A2647] text-xs font-medium tracking-wide">
                 Resume Builder
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <Link 
                 href="/"
-                className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors"
+                className="flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm tracking-wide"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
                 Back to Home
               </Link>
-              <UserButton appearance={{ elements: { avatarBox: "w-9 h-9" } }} />
+              <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 ring-2 ring-stone-200" } }} />
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="px-6 pb-4">
+        <div className="px-8 lg:px-16 pb-5">
           <div className="max-w-[1800px] mx-auto">
             <ProgressBar 
               currentStep={currentStep} 
@@ -133,41 +133,41 @@ export default function BuilderPage() {
       <main className="flex-1 flex overflow-hidden relative">
         {/* Left Panel - Step Editor */}
         <div 
-          className={`bg-white flex flex-col overflow-hidden border-r border-slate-200 transition-all duration-300 ease-in-out ${
+          className={`bg-white flex flex-col overflow-hidden border-r border-stone-100 transition-all duration-300 ease-in-out ${
             isPreviewOpen ? "w-full lg:w-1/2" : "w-full"
           }`}
         >
           {/* Step Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-8">
             <StepContent step={currentStep} />
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex-shrink-0 px-6 py-4 border-t border-slate-200 bg-slate-50">
+          <div className="flex-shrink-0 px-8 py-5 border-t border-stone-100 bg-[#FAFAF8]">
             <div className="flex items-center justify-between">
               <button
                 onClick={prevStep}
                 disabled={currentStep === 0}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed border border-slate-200 text-slate-700 rounded-xl transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed border border-stone-300 text-stone-700 rounded-sm transition-colors tracking-wide"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
                 Back
               </button>
               
-              <span className="text-slate-400 text-sm">
+              <span className="text-stone-400 text-sm font-light tracking-wide">
                 Step {currentStep + 1} of {TOTAL_STEPS}
               </span>
 
               {currentStep < TOTAL_STEPS - 1 ? (
                 <button
                   onClick={nextStep}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide"
                 >
                   Next
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
                 </button>
               ) : (
-                <div className="w-24" /> // Spacer for final step
+                <div className="w-24" />
               )}
             </div>
           </div>
@@ -175,35 +175,35 @@ export default function BuilderPage() {
 
         {/* Right Panel - Live Preview (Collapsible) */}
         <div 
-          className={`bg-slate-100 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`bg-stone-100 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
             isPreviewOpen ? "w-full lg:w-1/2 absolute lg:relative inset-0 lg:inset-auto z-30" : "w-0"
           }`}
         >
           {isPreviewOpen && (
             <>
               {/* Preview Header */}
-              <div className="flex-shrink-0 px-4 py-3 border-b border-slate-200 bg-white">
+              <div className="flex-shrink-0 px-5 py-4 border-b border-stone-200 bg-white">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                      <Eye className="w-4 h-4 text-indigo-600" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+                      <Eye className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
                     </div>
                     <div>
-                      <h2 className="font-semibold text-slate-900">Live Preview</h2>
-                      <p className="text-xs text-slate-500">Auto-scales to fit</p>
+                      <h2 className="font-serif text-lg text-[#1a1a1a]">Live Preview</h2>
+                      <p className="text-xs text-stone-400 font-light">Auto-scales to fit</p>
                     </div>
                   </div>
                   <Link 
                     href="/builder/demo"
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white text-xs font-medium rounded-lg transition-all shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs font-medium rounded-sm transition-all tracking-wide"
                   >
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
                     Pro Editor
                   </Link>
                 </div>
               </div>
 
-              {/* Preview Content - SmartResumePreview handles scaling */}
+              {/* Preview Content */}
               <SmartResumePreview
                 data={previewData}
                 templateId={selectedTemplate}
@@ -212,22 +212,22 @@ export default function BuilderPage() {
                 onTemplateChange={setSelectedTemplate}
                 onColorChange={setSelectedColor}
                 onClose={() => setIsPreviewOpen(false)}
-                className="flex-1 rounded-b-xl overflow-hidden"
+                className="flex-1 overflow-hidden"
               />
             </>
           )}
         </div>
 
-        {/* Toggle Preview Button - Floating tab on right edge */}
+        {/* Toggle Preview Button */}
         {!isPreviewOpen && (
           <button
             onClick={() => setIsPreviewOpen(true)}
-            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 pl-4 pr-3 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-l-2xl shadow-xl hover:shadow-2xl transition-all duration-300 group"
+            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-3 pl-5 pr-4 py-5 bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-l-sm shadow-xl hover:shadow-2xl transition-all duration-300 group"
             title="Show Preview"
           >
-            <Eye className="w-5 h-5" />
-            <span className="text-sm font-semibold writing-vertical">Preview</span>
-            <PanelRightOpen className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <Eye className="w-5 h-5" strokeWidth={1.5} />
+            <span className="text-sm font-medium tracking-wide writing-vertical">Preview</span>
+            <PanelRightOpen className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.5} />
           </button>
         )}
       </main>
@@ -258,17 +258,17 @@ function ProgressBar({
   onStepClick: (step: number) => void;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Progress percentage */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-500">Progress</span>
-        <span className="text-indigo-600 font-medium">{Math.round(progressPercent)}% Complete</span>
+        <span className="text-stone-400 font-light tracking-wide">Progress</span>
+        <span className="text-[#0A2647] font-medium tracking-wide">{Math.round(progressPercent)}% Complete</span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-stone-200 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all duration-300"
+          className="h-full bg-[#0A2647] rounded-full transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -279,28 +279,28 @@ function ProgressBar({
           <button
             key={step.id}
             onClick={() => onStepClick(index)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-sm transition-all ${
               index === currentStep
-                ? "bg-indigo-100 text-indigo-700"
+                ? "bg-[#0A2647]/5 text-[#0A2647]"
                 : index < currentStep
-                ? "text-indigo-600 hover:bg-slate-100"
-                : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                ? "text-[#0A2647] hover:bg-stone-100"
+                : "text-stone-400 hover:bg-stone-100 hover:text-stone-600"
             }`}
           >
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
               index < currentStep 
-                ? "bg-indigo-100 text-indigo-600" 
+                ? "bg-[#0A2647]/10 text-[#0A2647]" 
                 : index === currentStep 
-                ? "bg-indigo-600 text-white" 
-                : "bg-slate-200 text-slate-500"
+                ? "bg-[#0A2647] text-white" 
+                : "bg-stone-200 text-stone-500"
             }`}>
               {index < currentStep ? (
-                <Check className="w-3 h-3" />
+                <Check className="w-3.5 h-3.5" strokeWidth={1.5} />
               ) : (
                 STEP_ICONS[index]
               )}
             </span>
-            <span className="text-xs font-medium hidden lg:block">{step.title}</span>
+            <span className="text-xs font-medium hidden lg:block tracking-wide">{step.title}</span>
           </button>
         ))}
       </div>
@@ -961,16 +961,16 @@ function ReviewStep() {
 
 function StepHeader({ title, description }: { title: string; description: string }) {
   return (
-    <div className="space-y-1">
-      <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-      <p className="text-slate-500">{description}</p>
+    <div className="space-y-2 mb-2">
+      <h2 className="font-serif text-2xl text-[#1a1a1a]">{title}</h2>
+      <p className="text-stone-500 font-light">{description}</p>
     </div>
   );
 }
 
 function FormLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+    <label className="block text-sm font-medium text-[#1a1a1a] mb-2 tracking-wide">
       {children}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
@@ -984,29 +984,29 @@ function FormInput({
   return (
     <input
       {...props}
-      className={`w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all ${className}`}
+      className={`w-full px-4 py-3 bg-white border-b border-stone-200 text-[#1a1a1a] placeholder:text-stone-300 focus:outline-none focus:border-[#0A2647] transition-all font-light ${className}`}
     />
   );
 }
 
 function EmptyState({ text, subtext }: { text: string; subtext?: string }) {
   return (
-    <div className="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
-      <p className="text-slate-500">{text}</p>
-      {subtext && <p className="text-slate-400 text-sm mt-1">{subtext}</p>}
+    <div className="text-center py-12 bg-stone-50 border border-dashed border-stone-200 rounded-sm">
+      <p className="text-stone-500 font-light">{text}</p>
+      {subtext && <p className="text-stone-400 text-sm mt-2 font-light">{subtext}</p>}
     </div>
   );
 }
 
 function SkillTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="group flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg text-sm hover:border-indigo-300 transition-colors">
+    <span className="group flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 border border-[#0A2647]/20 text-[#0A2647] rounded-sm text-sm hover:border-[#0A2647]/40 transition-colors">
       {label}
       <button
         onClick={onRemove}
-        className="text-indigo-400 hover:text-red-500 transition-colors"
+        className="text-[#0A2647]/50 hover:text-red-500 transition-colors"
       >
-        <X className="w-3.5 h-3.5" />
+        <X className="w-3.5 h-3.5" strokeWidth={1.5} />
       </button>
     </span>
   );
@@ -1014,9 +1014,9 @@ function SkillTag({ label, onRemove }: { label: string; onRemove: () => void }) 
 
 function CompletionItem({ label, completed }: { label: string; completed: boolean }) {
   return (
-    <div className={`flex items-center gap-2 ${completed ? 'text-indigo-600' : 'text-slate-400'}`}>
-      {completed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-      <span>{label}</span>
+    <div className={`flex items-center gap-2 ${completed ? 'text-[#0A2647]' : 'text-stone-400'}`}>
+      {completed ? <Check className="w-4 h-4" strokeWidth={1.5} /> : <X className="w-4 h-4" strokeWidth={1.5} />}
+      <span className="font-light">{label}</span>
     </div>
   );
 }

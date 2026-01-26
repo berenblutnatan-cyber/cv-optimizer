@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Merriweather, Lato, Montserrat } from "next/font/google";
+import { Inter, JetBrains_Mono, Merriweather, Lato, Montserrat, Playfair_Display } from "next/font/google";
 import {
   ClerkProvider,
   SignInButton,
@@ -44,6 +44,13 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
+// Premium serif for elegant headings
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-playfair",
+});
+
 export const metadata: Metadata = {
   title: "Hired - AI Resume Builder & Optimizer",
   description: "Don't just apply. Get Hired. Build a resume that gets you hired with our AI-powered resume builder and optimizer.",
@@ -57,7 +64,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="scroll-smooth">
-        <body className={`${inter.variable} ${jetbrainsMono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable} font-sans`}>
+        <body className={`${inter.variable} ${jetbrainsMono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable} ${playfair.variable} font-sans`}>
           {children}
           {/* Global Feedback Widget */}
           <RatingWidget source="global" />

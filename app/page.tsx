@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Star, Zap, Shield, Sparkles, ArrowRight, FileText, Target, Lock, Bot, BarChart3, Plus, Wand2 } from "lucide-react";
+import { Check, Star, Zap, Shield, ArrowRight, FileText, Target, Lock, Bot, BarChart3, Plus, Wand2, ArrowUp } from "lucide-react";
 import {
   SignInButton,
   SignUpButton,
@@ -9,43 +9,40 @@ import {
 } from "@clerk/nextjs";
 import { Logo } from "@/components/Logo";
 import { HeroResumeVisual } from "@/components/landing/HeroResumeVisual";
+import { ActiveNavLinks } from "@/components/landing/ActiveNavLinks";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a] snap-y snap-mandatory overflow-y-auto h-screen scroll-smooth">
       {/* Header - Premium Full Width Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="w-full px-6 md:px-10 h-20 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
+        <div className="w-full px-8 md:px-16 h-20 flex items-center justify-between">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
           
           {/* Navigation Links - Center */}
-          <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-            <a href="#features" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Features</a>
-            <a href="#testimonials" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Testimonials</a>
-            <a href="#templates" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Templates</a>
-          </nav>
+          <ActiveNavLinks />
           
           {/* Score Button + Auth Buttons - Far Right */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {/* Lead Magnet: Check Score */}
             <Link 
               href="/score"
-              className="hidden md:inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+              className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide"
             >
-              <BarChart3 className="w-4 h-4" />
-              Check My Score
+              <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
+              CV Score Check
             </Link>
             
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                <button className="px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide">
                   Sign In
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-5 py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors shadow-sm">
-                  Get Started Free
+                <button className="px-6 py-2.5 text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide">
+                  Get Started
                 </button>
               </SignUpButton>
             </SignedOut>
@@ -53,7 +50,7 @@ export default function LandingPage() {
               <UserButton 
                 appearance={{
                   elements: {
-                    avatarBox: "w-10 h-10"
+                    avatarBox: "w-10 h-10 ring-2 ring-stone-200"
                   }
                 }}
               />
@@ -62,80 +59,64 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section - Full Width Background, Centered Content */}
-      <section className="relative w-full pt-32 pb-16 lg:pt-40 lg:pb-24 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50/50" />
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-50/30 to-transparent" />
+      {/* Hero Section */}
+      <section id="hero" className="relative w-full min-h-screen flex flex-col pt-28 pb-8 snap-start snap-always">
+        {/* Subtle background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#FAFAF8] via-white to-stone-50" />
         
-        <div className="relative max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left Content - Limited Max Width for Readability */}
+        <div className="relative flex-1 flex items-center max-w-7xl mx-auto px-8 lg:px-16 w-full">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center w-full">
+            {/* Left Content */}
             <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-6">
-                <Sparkles className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-8 tracking-wide">
+                <Wand2 className="w-4 h-4" strokeWidth={1.5} />
                 AI-Powered Resume Builder
-        </div>
+              </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-slate-900 mb-6 leading-[1.1]">
+              <h1 className="font-serif text-5xl sm:text-6xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-8 leading-[1.1]">
                 Elevate your resume.{" "}
                 <span className="text-indigo-600">Maximize your potential.</span>
               </h1>
               
-              <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-                Craft professional, ATS-friendly resumes in minutes with the power of AI. 
-                Don't just apply. <em>Get Hired.</em>
+              <p className="text-lg text-stone-500 mb-12 leading-relaxed font-light">
+                Create or optimize resumes with AI, tailored for every job you apply to. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
               </p>
               
-              {/* Power Duo Cards - Equal Visual Weight */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              {/* Power Duo Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
                 {/* Create New Resume Card */}
                 <Link 
                   href="/builder"
-                  className="group relative flex flex-col p-6 bg-gradient-to-br from-indigo-50 to-violet-50 hover:from-indigo-100 hover:to-violet-100 border-2 border-indigo-200 hover:border-indigo-400 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-indigo-500/10"
+                  className="group relative flex flex-col p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)]"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Plus className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                    <Plus className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-1">Create New Resume</h3>
-                  <p className="text-sm text-slate-600 mb-4">Start fresh with our guided builder</p>
-                  <div className="flex items-center gap-2 text-indigo-600 font-semibold text-sm mt-auto">
+                  <h3 className="font-serif text-xl text-[#1a1a1a] mb-2">Create New Resume</h3>
+                  <p className="text-sm text-stone-500 font-light mb-5">Start fresh with our guided builder</p>
+                  <div className="flex items-center gap-2 text-[#0A2647] font-medium text-sm mt-auto tracking-wide">
                     Get Started
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </div>
                 </Link>
 
                 {/* Optimize Existing Card */}
                 <Link 
                   href="/optimize"
-                  className="group relative flex flex-col p-6 bg-gradient-to-br from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 border-2 border-violet-200 hover:border-violet-400 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-violet-500/10"
+                  className="group relative flex flex-col p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)]"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Wand2 className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                    <Wand2 className="w-5 h-5 text-[#B8860B]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-1">Optimize Existing</h3>
-                  <p className="text-sm text-slate-600 mb-4">Upload & enhance with AI magic</p>
-                  <div className="flex items-center gap-2 text-violet-600 font-semibold text-sm mt-auto">
+                  <h3 className="font-serif text-xl text-[#1a1a1a] mb-2">Optimize Existing</h3>
+                  <p className="text-sm text-stone-500 font-light mb-5">Upload & enhance with AI magic</p>
+                  <div className="flex items-center gap-2 text-[#0A2647] font-medium text-sm mt-auto tracking-wide">
                     Upload Resume
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </div>
                 </Link>
               </div>
               
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600" />
-                  <span>No signup required</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600" />
-                  <span>ATS-optimized</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600" />
-                  <span>AI-powered</span>
-                </div>
-              </div>
             </div>
             
             {/* Right Visual - 3D Floating Resume */}
@@ -143,188 +124,183 @@ export default function LandingPage() {
               <HeroResumeVisual />
             </div>
           </div>
+          
         </div>
-      </section>
-
-      {/* Trust Bar - Premium Design Element */}
-      <section className="w-full bg-white border-y border-slate-100">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {/* Privacy First */}
-            <div className="flex flex-col items-center text-center">
-              <div className="bg-indigo-100 p-3 rounded-full mb-3">
-                <Lock className="w-6 h-6 text-indigo-600" />
+        
+        {/* Trust Bar - Full width at bottom of hero content */}
+        <div className="relative z-10 w-full mt-auto pt-8 border-t border-stone-200/60 px-8 lg:px-16">
+          <div className="flex items-center justify-between max-w-5xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <h3 className="font-bold text-slate-900 text-lg mb-1">Privacy First</h3>
-              <p className="text-sm text-slate-500">Your data stays secure</p>
+              <span className="text-sm text-[#1a1a1a] font-semibold">Privacy First</span>
             </div>
             
-            {/* AI Powered */}
-            <div className="flex flex-col items-center text-center">
-              <div className="bg-indigo-100 p-3 rounded-full mb-3">
-                <Bot className="w-6 h-6 text-indigo-600" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <h3 className="font-bold text-slate-900 text-lg mb-1">AI Powered</h3>
-              <p className="text-sm text-slate-500">Smart optimization engine</p>
+              <span className="text-sm text-[#1a1a1a] font-semibold">AI Powered</span>
             </div>
             
-            {/* ATS Optimized */}
-            <div className="flex flex-col items-center text-center">
-              <div className="bg-indigo-100 p-3 rounded-full mb-3">
-                <Target className="w-6 h-6 text-indigo-600" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+                <Target className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <h3 className="font-bold text-slate-900 text-lg mb-1">ATS Optimized</h3>
-              <p className="text-sm text-slate-500">Pass the screening filters</p>
+              <span className="text-sm text-[#1a1a1a] font-semibold">ATS Optimized</span>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              
-            {/* Instant Feedback */}
-            <div className="flex flex-col items-center text-center">
-              <div className="bg-indigo-100 p-3 rounded-full mb-3">
-                <Zap className="w-6 h-6 text-indigo-600" />
-              </div>
-              <h3 className="font-bold text-slate-900 text-lg mb-1">Instant Feedback</h3>
-              <p className="text-sm text-slate-500">Real-time analysis results</p>
+              <span className="text-sm text-[#1a1a1a] font-semibold">Instant Feedback</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section - Centered Content */}
-      <section id="features" className="w-full py-20 lg:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
+      {/* Features Section - ATS */}
+      <section id="features" className="w-full min-h-screen flex items-center py-16 bg-[#FAFAF8] snap-start snap-always">
+        <div className="max-w-7xl mx-auto px-8 lg:px-16">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
               Everything you need to land the job
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
+            <p className="text-lg text-stone-500 max-w-2xl mx-auto font-light">
               Our AI-powered tools give you an unfair advantage in the job market
             </p>
-              </div>
+          </div>
               
           {/* Feature A: Text Left / Visual Right */}
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-20 lg:mb-28">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="max-w-lg">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-4">
-                <Shield className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-5 tracking-wide">
+                <Shield className="w-4 h-4" strokeWidth={1.5} />
                 ATS Optimization
               </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">
+              <h3 className="font-serif text-3xl sm:text-4xl font-light text-[#1a1a1a] mb-5">
                 Beat the ATS Robots
               </h3>
-              <p className="text-base text-slate-600 mb-6 leading-relaxed">
+              <p className="text-base text-stone-500 mb-8 leading-relaxed font-light">
                 Over 75% of resumes are rejected by Applicant Tracking Systems before a human ever sees them. 
                 Our AI analyzes your resume against the job description and optimizes it to pass through ATS filters.
               </p>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+              <ul className="space-y-4">
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   Real-time ATS compatibility score
                 </li>
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   Keyword optimization suggestions
                 </li>
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   Format and structure analysis
                 </li>
               </ul>
-              </div>
+            </div>
 
             {/* ATS Score Visual */}
             <div className="relative lg:justify-self-end">
-              <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl p-6 border border-slate-200 max-w-md">
-                <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-                  <div className="flex items-center justify-between mb-5">
-                    <span className="text-sm font-medium text-slate-600">Resume Score</span>
-                    <span className="text-xl font-bold text-indigo-600">98/100</span>
+              <div className="bg-white rounded-sm p-8 border border-stone-200 shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] max-w-md">
+                {/* Score Header */}
+                <div className="text-center mb-8 pb-6 border-b border-stone-100">
+                  <p className="text-sm text-stone-400 font-light tracking-wide mb-2">Resume Score</p>
+                  <p className="font-serif text-5xl text-[#0A2647]">98<span className="text-2xl text-stone-400">/100</span></p>
+                </div>
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-stone-500 font-light">Keywords Match</span>
+                      <span className="font-medium text-[#0A2647]">92%</span>
+                    </div>
+                    <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: "92%" }} />
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-600">Keywords Match</span>
-                        <span className="font-medium text-indigo-600">92%</span>
-                      </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: "92%" }} />
-                      </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-stone-500 font-light">Format Score</span>
+                      <span className="font-medium text-[#0A2647]">98%</span>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-600">Format Score</span>
-                        <span className="font-medium text-indigo-600">98%</span>
-                      </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: "98%" }} />
-                      </div>
+                    <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: "98%" }} />
                     </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-600">Skills Coverage</span>
-                        <span className="font-medium text-indigo-600">88%</span>
-                      </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: "88%" }} />
-                      </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-stone-500 font-light">Skills Coverage</span>
+                      <span className="font-medium text-[#0A2647]">88%</span>
+                    </div>
+                    <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: "88%" }} />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            </div>
+          </div>
+        </div>
+      </section>
 
-          {/* Feature B: Text Left / Visual Right */}
+      {/* Features Section - AI Writer */}
+      <section className="w-full min-h-screen flex items-center py-16 bg-white snap-start snap-always">
+        <div className="max-w-7xl mx-auto px-8 lg:px-16">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="max-w-lg">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-4">
-                <Zap className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-5 tracking-wide">
+                <Zap className="w-4 h-4" strokeWidth={1.5} />
                 AI Writer
               </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">
+              <h3 className="font-serif text-3xl sm:text-4xl font-light text-[#1a1a1a] mb-5">
                 Real-time AI Content Writer
               </h3>
-              <p className="text-base text-slate-600 mb-6 leading-relaxed">
+              <p className="text-base text-stone-500 mb-8 leading-relaxed font-light">
                 Stuck on what to write? Our AI generates compelling bullet points, summaries, 
                 and cover letters tailored to your experience and the job you're applying for.
               </p>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+              <ul className="space-y-4">
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   Generate achievement-focused bullets
                 </li>
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   AI-crafted professional summaries
                 </li>
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   Matching cover letter generation
                 </li>
               </ul>
-              </div>
+            </div>
               
             {/* AI Writer Visual */}
             <div className="relative lg:justify-self-end">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white max-w-md">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
-                  <span className="text-sm font-medium text-indigo-400">AI Writing...</span>
+              <div className="bg-[#0A2647] rounded-sm p-6 text-white max-w-md">
+                <div className="flex items-center gap-2 mb-4">
+                  <Wand2 className="w-4 h-4 text-[#B8860B]" strokeWidth={1.5} />
+                  <span className="text-sm font-medium text-[#B8860B] tracking-wide">AI Writing...</span>
                 </div>
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                  <p className="text-sm text-slate-300 mb-3">
-                    <span className="text-indigo-400">Role:</span> Senior Software Engineer
+                <div className="bg-white/10 rounded-sm p-5 border border-white/10">
+                  <p className="text-sm text-white/60 mb-4 font-light">
+                    <span className="text-[#B8860B]">Role:</span> Senior Software Engineer
                   </p>
-                  <div className="space-y-2">
-                    <p className="text-sm text-white leading-relaxed">
+                  <div className="space-y-3">
+                    <p className="text-sm text-white leading-relaxed font-light">
                       • Led cross-functional team of 8 engineers to deliver real-time data pipeline, 
                       reducing latency by 40%
                     </p>
-                    <p className="text-sm text-white leading-relaxed">
+                    <p className="text-sm text-white leading-relaxed font-light">
                       • Architected microservices migration reducing costs by $500K annually
                     </p>
-                    <div className="flex items-center gap-2 pt-2">
-                      <div className="w-2 h-4 bg-indigo-400 animate-pulse rounded" />
-                      <span className="text-slate-400 text-sm">Generating more...</span>
+                    <div className="flex items-center gap-2 pt-3">
+                      <div className="w-1.5 h-4 bg-[#B8860B] animate-pulse rounded-sm" />
+                      <span className="text-white/50 text-sm font-light">Generating more...</span>
                     </div>
                   </div>
                 </div>
@@ -334,175 +310,138 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials Section - Centered Content */}
-      <section id="testimonials" className="w-full py-20 lg:py-28 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-              Loved by job seekers worldwide
-            </h2>
-            <p className="text-lg text-slate-600">
-              See what our users have to say
-            </p>
-              </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Testimonial 1 */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-              <p className="text-slate-700 mb-5 leading-relaxed text-sm">
-                "I was applying to jobs for months with no luck. After optimizing my resume with Hired, 
-                I got 3 interviews in the first week. Now I'm working at my dream company!"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-                  MG
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Maya G.</p>
-                  <p className="text-xs text-slate-500">Product Manager</p>
-                </div>
-              </div>
-              </div>
-
-            {/* Testimonial 2 */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-              <p className="text-slate-700 mb-5 leading-relaxed text-sm">
-                "The AI suggestions were incredibly helpful. It highlighted skills I didn't even think 
-                to include. My resume score went from 45% to 98%!"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
-                  AR
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Amit R.</p>
-                  <p className="text-xs text-slate-500">Software Engineer</p>
-                </div>
-            </div>
-        </div>
-
-            {/* Testimonial 3 */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-              <p className="text-slate-700 mb-5 leading-relaxed text-sm">
-                "As a career changer, I struggled to present my transferable skills. 
-                Hired's AI helped me reframe my experience perfectly. Got hired within 3 weeks!"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                  SA
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Shaked A.</p>
-                  <p className="text-xs text-slate-500">Data Analyst</p>
-            </div>
-            </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Templates Section - After Testimonials */}
-      <section id="templates" className="w-full py-20 lg:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      {/* Templates Section */}
+      <section id="templates" className="w-full min-h-screen flex items-center py-16 bg-white snap-start snap-always">
+        <div className="max-w-7xl mx-auto px-8 lg:px-16">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
             {/* Template Grid Visual */}
             <div className="order-2 lg:order-1">
-              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto lg:mx-0">
+              <div className="grid grid-cols-2 gap-5 max-w-md mx-auto lg:mx-0">
                 {/* Template 1: The Ivy */}
-                <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg mb-2 flex items-center justify-center">
-                    <div className="w-3/4 space-y-1.5">
-                      <div className="h-2.5 w-full bg-slate-300 rounded" />
-                      <div className="h-1.5 w-2/3 bg-slate-200 rounded" />
-                      <div className="h-1.5 w-3/4 bg-slate-200 rounded" />
+                <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 p-3 overflow-hidden">
+                    <div className="space-y-2">
+                      <div className="text-center border-b border-stone-100 pb-2 mb-2">
+                        <div className="h-2 w-16 bg-stone-800 rounded-sm mx-auto mb-1" />
+                        <div className="h-1 w-20 bg-stone-300 rounded-sm mx-auto" />
+                      </div>
+                      <div className="h-1 w-8 bg-stone-400 rounded-sm" />
+                      <div className="space-y-1">
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
+                      </div>
+                      <div className="h-1 w-10 bg-stone-400 rounded-sm mt-2" />
+                      <div className="space-y-1">
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-4/5 bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-slate-900">The Ivy</p>
-                  <p className="text-xs text-slate-500">Classic & Professional</p>
+                  <p className="font-serif text-sm text-[#1a1a1a]">The Ivy</p>
+                  <p className="text-xs text-stone-400 font-light">Classic & Professional</p>
                 </div>
                 {/* Template 2: The Modern (Popular) */}
-                <div className="bg-white rounded-xl border border-indigo-200 p-3 shadow-sm hover:shadow-md transition-shadow ring-2 ring-indigo-500">
-                  <div className="aspect-[3/4] bg-gradient-to-br from-indigo-50 to-slate-50 rounded-lg mb-2 flex items-center justify-center">
-                    <div className="w-3/4 space-y-1.5">
-                      <div className="h-2.5 w-full bg-indigo-300 rounded" />
-                      <div className="h-1.5 w-2/3 bg-slate-200 rounded" />
-                      <div className="h-1.5 w-3/4 bg-slate-200 rounded" />
+                <div className="bg-white rounded-sm border-2 border-indigo-500 p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 overflow-hidden flex">
+                    <div className="w-1/3 bg-indigo-600 p-2">
+                      <div className="w-6 h-6 rounded-full bg-white/30 mx-auto mb-2" />
+                      <div className="space-y-1">
+                        <div className="h-0.5 w-full bg-white/40 rounded-sm" />
+                        <div className="h-0.5 w-4/5 bg-white/30 rounded-sm" />
+                      </div>
+                    </div>
+                    <div className="flex-1 p-2">
+                      <div className="h-1.5 w-12 bg-stone-700 rounded-sm mb-2" />
+                      <div className="space-y-1 mb-2">
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
+                      </div>
+                      <div className="h-1 w-8 bg-stone-400 rounded-sm mb-1" />
+                      <div className="space-y-0.5">
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-4/5 bg-stone-200 rounded-sm" />
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-900">The Modern</p>
-                      <p className="text-xs text-slate-500">Bold & Contemporary</p>
+                      <p className="font-serif text-sm text-[#1a1a1a]">The Modern</p>
+                      <p className="text-xs text-stone-400 font-light">Bold & Contemporary</p>
                     </div>
-                    <span className="text-[10px] font-medium text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded">Popular</span>
+                    <span className="text-[10px] font-medium text-indigo-600 bg-indigo-100 px-2 py-1 rounded-sm">Popular</span>
                   </div>
                 </div>
                 {/* Template 3: Executive */}
-                <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] bg-gradient-to-br from-amber-50 to-slate-50 rounded-lg mb-2 flex items-center justify-center">
-                    <div className="w-3/4 space-y-1.5">
-                      <div className="h-2.5 w-full bg-amber-300 rounded" />
-                      <div className="h-1.5 w-2/3 bg-slate-200 rounded" />
-                      <div className="h-1.5 w-3/4 bg-slate-200 rounded" />
+                <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 p-3 overflow-hidden">
+                    <div className="border-b-2 border-[#B8860B] pb-2 mb-2">
+                      <div className="h-2 w-20 bg-stone-800 rounded-sm mb-1" />
+                      <div className="h-1 w-24 bg-stone-300 rounded-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-1 w-10 bg-[#B8860B] rounded-sm" />
+                      <div className="space-y-1">
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
+                      </div>
+                      <div className="h-1 w-8 bg-[#B8860B] rounded-sm mt-2" />
+                      <div className="space-y-1">
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-4/5 bg-stone-200 rounded-sm" />
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-slate-900">Executive</p>
-                  <p className="text-xs text-slate-500">Senior Leadership</p>
+                  <p className="font-serif text-sm text-[#1a1a1a]">Executive</p>
+                  <p className="text-xs text-stone-400 font-light">Senior Leadership</p>
                 </div>
                 {/* Template 4: Creative */}
-                <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg mb-2 flex items-center justify-center">
-                    <div className="w-3/4 space-y-1.5">
-                      <div className="h-2.5 w-full bg-blue-300 rounded" />
-                      <div className="h-1.5 w-2/3 bg-slate-200 rounded" />
-                      <div className="h-1.5 w-3/4 bg-slate-200 rounded" />
+                <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 overflow-hidden">
+                    <div className="h-8 bg-gradient-to-r from-violet-500 to-purple-600 mb-2" />
+                    <div className="px-3 space-y-2">
+                      <div className="h-1.5 w-16 bg-stone-700 rounded-sm" />
+                      <div className="space-y-1">
+                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
+                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
+                      </div>
+                      <div className="flex gap-1 mt-2">
+                        <div className="h-3 w-8 bg-violet-100 rounded-sm" />
+                        <div className="h-3 w-6 bg-purple-100 rounded-sm" />
+                        <div className="h-3 w-7 bg-violet-100 rounded-sm" />
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-slate-900">Creative</p>
-                  <p className="text-xs text-slate-500">Design & Marketing</p>
+                  <p className="font-serif text-sm text-[#1a1a1a]">Creative</p>
+                  <p className="text-xs text-stone-400 font-light">Design & Marketing</p>
                 </div>
               </div>
             </div>
 
             {/* Text Content */}
             <div className="order-1 lg:order-2 max-w-lg lg:justify-self-end">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-4">
-                <FileText className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-5 tracking-wide">
+                <FileText className="w-4 h-4" strokeWidth={1.5} />
                 Premium Templates
-            </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">
-                Ivy League Approved Designs
+              </div>
+              <h3 className="font-serif text-3xl sm:text-4xl font-light text-[#1a1a1a] mb-5">
+                Designed to Get You Hired
               </h3>
-              <p className="text-base text-slate-600 mb-6 leading-relaxed">
+              <p className="text-base text-stone-500 mb-8 leading-relaxed font-light">
                 Our templates are designed by hiring experts from top companies. 
                 Each template is optimized for both human recruiters and ATS systems.
               </p>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+              <ul className="space-y-4">
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   Designed by HR professionals
                 </li>
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   ATS-friendly formatting
                 </li>
-                <li className="flex items-center gap-3 text-slate-700">
-                  <Check className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <li className="flex items-center gap-4 text-stone-600 font-light">
+                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
                   Multiple industry styles
                 </li>
               </ul>
@@ -511,42 +450,125 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="w-full py-20 lg:py-24 bg-gradient-to-br from-indigo-600 to-indigo-700">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-5">
-            Ready to get Hired?
-          </h2>
-          <p className="text-lg text-indigo-100 mb-8">
-            Transform your job search with AI-powered resume optimization. Start for free today.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              href="/builder"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-indigo-700 font-bold rounded-xl hover:bg-indigo-50 transition-all shadow-lg"
-            >
-              Start for Free
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <p className="text-indigo-200 text-sm">No credit card required</p>
+      {/* Testimonials Section */}
+      <section id="testimonials" className="w-full min-h-screen flex items-center py-16 bg-[#FAFAF8] snap-start snap-always">
+        <div className="max-w-7xl mx-auto px-8 lg:px-16">
+          <div className="text-center mb-16">
+            <h2 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
+              Loved by job seekers worldwide
+            </h2>
+            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
+            <p className="text-lg text-stone-500 font-light">
+              See what our users have to say
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Testimonial 1 */}
+            <div className="bg-white rounded-sm p-8 border border-stone-100 shadow-sm">
+              <div className="flex items-center gap-1 mb-5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-[#B8860B] text-[#B8860B]" />
+                ))}
+              </div>
+              <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
+                "I was applying to jobs for months with no luck. After optimizing my resume with Hired, 
+                I got 3 interviews in the first week. Now I'm working at my dream company!"
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
+                  MG
+                </div>
+                <div>
+                  <p className="font-medium text-[#1a1a1a] text-sm">Maya G.</p>
+                  <p className="text-xs text-stone-400 font-light">Product Manager</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-white rounded-sm p-8 border border-stone-100 shadow-sm">
+              <div className="flex items-center gap-1 mb-5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-[#B8860B] text-[#B8860B]" />
+                ))}
+              </div>
+              <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
+                "The AI suggestions were incredibly helpful. It highlighted skills I didn't even think 
+                to include. My resume score went from 45% to 98%!"
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
+                  AR
+                </div>
+                <div>
+                  <p className="font-medium text-[#1a1a1a] text-sm">Amit R.</p>
+                  <p className="text-xs text-stone-400 font-light">Software Engineer</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-white rounded-sm p-8 border border-stone-100 shadow-sm">
+              <div className="flex items-center gap-1 mb-5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-[#B8860B] text-[#B8860B]" />
+                ))}
+              </div>
+              <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
+                "As a career changer, I struggled to present my transferable skills. 
+                Hired's AI helped me reframe my experience perfectly. Got hired within 3 weeks!"
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
+                  SA
+                </div>
+                <div>
+                  <p className="font-medium text-[#1a1a1a] text-sm">Shaked A.</p>
+                  <p className="text-xs text-stone-400 font-light">Data Analyst</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer - Centered Content */}
-      <footer className="w-full bg-slate-900 text-slate-400 py-10">
-        <div className="max-w-7xl mx-auto px-6">
+      {/* Final CTA Section */}
+      <section className="w-full min-h-screen flex items-center py-16 bg-[#0A2647] snap-start snap-always">
+        <div className="max-w-3xl mx-auto px-8 lg:px-16 text-center">
+          <h2 className="font-serif text-4xl sm:text-5xl font-light text-white mb-6">
+            Ready to get Hired?
+          </h2>
+          <div className="w-16 h-px bg-[#B8860B] mx-auto mb-6" />
+          <p className="text-lg text-white/70 mb-10 font-light">
+            Transform your job search with AI-powered resume optimization. Start for free today.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+            <Link 
+              href="/builder"
+              className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 transition-all tracking-wide"
+            >
+              Start for Free
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+            </Link>
+            <p className="text-white/50 text-sm font-light">No credit card required</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="w-full bg-[#0A2647] border-t border-white/10 text-white/60 py-10 snap-start">
+        <div className="max-w-7xl mx-auto px-8 lg:px-16">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Logo variant="light" size="md" />
-              <span className="text-sm">— Don't just apply. Get Hired.</span>
             </div>
-            <div className="flex items-center gap-8 text-sm">
+            <div className="flex items-center gap-10 text-sm font-light tracking-wide">
               <a href="#" className="hover:text-white transition-colors">Privacy</a>
               <a href="#" className="hover:text-white transition-colors">Terms</a>
               <a href="#" className="hover:text-white transition-colors">Contact</a>
             </div>
-            <p className="text-sm">© 2024 Hired. All rights reserved.</p>
+            <p className="text-sm font-light">© 2024 Hired. All rights reserved.</p>
           </div>
         </div>
       </footer>

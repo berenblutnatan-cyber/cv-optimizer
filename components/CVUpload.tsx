@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { Upload, FileText, Check, X } from "lucide-react";
 
 interface CVUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -47,34 +48,32 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
   };
 
   return (
-    <div className="bg-white/4 rounded-2xl border border-white/10 p-6 backdrop-blur-md">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-          <svg className="w-6 h-6 text-white/85" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+    <div className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] p-8">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-11 h-11 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+          <FileText className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
         </div>
-        <h3 className="text-xl font-semibold text-white">Your CV</h3>
+        <h3 className="font-serif text-xl text-[#1a1a1a]">Your Resume</h3>
       </div>
 
       {/* Toggle between upload and paste */}
-      <div className="flex gap-2 mb-4 bg-white/5 p-1 rounded-xl border border-white/10">
+      <div className="flex border-b border-stone-200 mb-6">
         <button
           onClick={() => setInputMode("upload")}
-          className={`flex-1 py-3 px-5 rounded-lg text-base font-medium transition-colors ${
+          className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
             inputMode === "upload"
-              ? "bg-indigo-500 text-white shadow-sm"
-              : "text-white/70 hover:bg-white/5"
+              ? "border-[#0A2647] text-[#0A2647]"
+              : "border-transparent text-stone-400 hover:text-stone-600"
           }`}
         >
           Upload PDF
         </button>
         <button
           onClick={() => setInputMode("paste")}
-          className={`flex-1 py-3 px-5 rounded-lg text-base font-medium transition-colors ${
+          className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
             inputMode === "paste"
-              ? "bg-indigo-500 text-white shadow-sm"
-              : "text-white/70 hover:bg-white/5"
+              ? "border-[#0A2647] text-[#0A2647]"
+              : "border-transparent text-stone-400 hover:text-stone-600"
           }`}
         >
           Paste Text
@@ -84,28 +83,24 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
       {inputMode === "upload" ? (
         <>
           {selectedFile ? (
-            <div className="border border-indigo-400/30 bg-indigo-500/10 rounded-xl p-4">
+            <div className="border border-[#0A2647]/20 bg-[#0A2647]/5 rounded-sm p-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-indigo-500/15 rounded-lg flex items-center justify-center border border-indigo-400/20">
-                    <svg className="w-6 h-6 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[#0A2647]/10 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <p className="font-medium text-white text-base">{selectedFile.name}</p>
-                    <p className="text-base text-white/60">
+                    <p className="font-medium text-[#1a1a1a]">{selectedFile.name}</p>
+                    <p className="text-sm text-stone-400 font-light">
                       {(selectedFile.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleRemoveFile}
-                  className="p-2 text-white/60 hover:text-red-200 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-5 h-5" strokeWidth={1.5} />
                 </button>
               </div>
             </div>
@@ -114,10 +109,10 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border border-dashed rounded-xl p-6 text-center transition-colors ${
+              className={`border rounded-sm p-10 text-center transition-all ${
                 isDragging
-                  ? "border-indigo-300/70 bg-white/5"
-                  : "border-white/20 hover:border-indigo-300/70 hover:bg-white/5"
+                  ? "border-[#0A2647] bg-[#0A2647]/5"
+                  : "border-stone-200 hover:border-stone-300 bg-stone-50/50"
               }`}
             >
               <input
@@ -128,15 +123,12 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
                 id="cv-upload"
               />
               <label htmlFor="cv-upload" className="cursor-pointer">
-                <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/10">
-                  <svg className="w-8 h-8 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                </div>
-                <p className="text-white font-medium mb-1 text-base">
-                  Drag & drop PDF or <span className="text-indigo-200">browse</span>
+                <Upload className="w-8 h-8 text-stone-300 mx-auto mb-4" strokeWidth={1.5} />
+                <p className="text-stone-500 mb-2 font-light">
+                  Drag and drop your PDF or{" "}
+                  <span className="text-[#0A2647] font-medium">browse</span>
                 </p>
-                <p className="text-white/60 text-sm">PDF only • Max 10MB</p>
+                <p className="text-stone-400 text-sm font-light">PDF only • Max 10MB</p>
               </label>
             </div>
           )}
@@ -148,8 +140,8 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
             onTextChange(e.target.value);
             onFileSelect(null);
           }}
-          placeholder="Paste your CV text here..."
-          className="w-full h-56 px-5 py-4 bg-white/5 text-white border border-white/10 rounded-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none resize-none placeholder-white/40 text-base"
+          placeholder="Please paste your resume contents here..."
+          className="w-full h-48 p-0 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light leading-relaxed"
         />
       )}
     </div>
