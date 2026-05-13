@@ -10,7 +10,7 @@ import {
 } from "@clerk/nextjs";
 import { Logo } from "@/components/Logo";
 import { CreditBalance } from "@/components/CreditBalance";
-import { PayPalButton } from '@/components/PayPalButton';
+import { PolarCheckoutButton } from '@/components/PolarCheckoutButton';
 import { CouponRedeem } from '@/components/CouponRedeem';
 
 export default function PricingPage() {
@@ -185,9 +185,8 @@ export default function PricingPage() {
                 </ul>
               </div>
 
-              {/* CTA Button - PayPal */}
               <div className="mt-auto">
-                <PayPalButton amount={3} planName="Starter" />
+                <PolarCheckoutButton plan="starter" planName="Starter" amount={3} />
               </div>
             </div>
 
@@ -242,9 +241,8 @@ export default function PricingPage() {
                 </ul>
               </div>
 
-              {/* CTA Button - PayPal */}
               <div className="mt-auto">
-                <PayPalButton amount={9} planName="Pro" />
+                <PolarCheckoutButton plan="pro" planName="Pro" amount={9} />
               </div>
             </div>
 
@@ -303,9 +301,8 @@ export default function PricingPage() {
                 </ul>
               </div>
 
-              {/* CTA Button - PayPal */}
               <div className="mt-auto">
-                <PayPalButton amount={20} planName="Ultimate" />
+                <PolarCheckoutButton plan="ultimate" planName="Ultimate" amount={20} variant="gold" />
               </div>
             </div>
 

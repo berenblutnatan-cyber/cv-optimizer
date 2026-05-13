@@ -49,15 +49,15 @@ model Feedback {
 }
 
 model Purchase {
-  id            String   @id @default(cuid())
-  userId        String
-  amount        Float
-  plan          String
-  paypalOrderId String?
-  status        String   @default("completed")
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  amount       Float
+  plan         String
+  polarOrderId String?  @unique
+  status       String   @default("completed")
+  createdAt    DateTime @default(now())
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Coupon {

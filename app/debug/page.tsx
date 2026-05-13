@@ -93,7 +93,7 @@ export default function DebugPage() {
             Database Connection Debug Tool
           </h1>
           <p className="text-black">
-            This page tests database connectivity and credit operations directly, bypassing PayPal.
+            This page tests database connectivity and credit operations directly, bypassing checkout.
           </p>
         </div>
 

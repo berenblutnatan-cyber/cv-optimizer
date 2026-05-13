@@ -131,7 +131,7 @@ export default function RefundPolicy() {
               </p>
               <ul className="list-disc list-outside ml-5 space-y-2">
                 <li>Your account email address</li>
-                <li>Transaction ID or PayPal receipt</li>
+                <li>Polar order ID or receipt email</li>
                 <li>Date of purchase</li>
                 <li>Brief reason for refund (optional for requests within 14 days)</li>
               </ul>
