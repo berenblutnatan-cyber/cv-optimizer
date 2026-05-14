@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { extractText } from "unpdf";
+import { fetchJobDescription } from "@/lib/jobFetcher";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -88,115 +89,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get job description from URL if provided
     let finalJobDescription = jobDescription;
     if (jobUrl && !jobDescription) {
-      try {
-        // Normalize LinkedIn URL - ensure we're using the full job page URL
-        let normalizedUrl = jobUrl.trim();
-
-        // Try to fetch the job posting page content with comprehensive headers
-        const pageResponse = await fetch(normalizedUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"Windows"',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1',
-          },
-          redirect: 'follow',
-        });
-
-        if (!pageResponse.ok) {
-          console.error(`LinkedIn fetch failed with status: ${pageResponse.status}`);
-          throw new Error(`HTTP ${pageResponse.status}`);
-        }
-
-        const html = await pageResponse.text();
-
-        // Check if we got a login wall or authwall
-        const isBlocked = html.includes('authwall') ||
-                          html.includes('login-required') ||
-                          html.includes('sign-in-modal') ||
-                          html.includes('uas/login') ||
-                          (html.includes('LinkedIn') && html.length < 5000 && !html.includes('job-details'));
-
-        if (isBlocked) {
-          console.error("LinkedIn returned auth wall or blocked response");
-          throw new Error("LinkedIn requires login");
-        }
-
-        // Extract text content (basic extraction)
-        const textContent = html
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/&nbsp;/gi, ' ')
-          .replace(/&amp;/gi, '&')
-          .replace(/&lt;/gi, '<')
-          .replace(/&gt;/gi, '>')
-          .replace(/&quot;/gi, '"')
-          .replace(/&#39;/gi, "'")
-          .replace(/\s+/g, ' ')
-          .trim()
-          .slice(0, 15000); // Limit content length
-
-        // Check if we got meaningful content
-        if (textContent.length < 500) {
-          console.error("LinkedIn returned too little content:", textContent.length);
-          throw new Error("Insufficient content");
-        }
-
-        // Use Anthropic to extract the job description from the page content
-        const extractResponse = await anthropic.messages.create({
-          model: "claude-sonnet-4-6",
-          max_tokens: 2048,
-          messages: [
-            {
-              role: "user",
-              content: `Extract the job description from this webpage content. Include job title, company, requirements, qualifications, and responsibilities. If this appears to be a login page or doesn't contain a job description, respond with exactly "NO_JOB_FOUND". Return only the extracted job description, no other commentary.\n\nWebpage content:\n${textContent}`
-            }
-          ],
-          temperature: 0.3,
-        });
-
-        const extractedContent = extractResponse.content[0].type === 'text' ? extractResponse.content[0].text : "";
-
-        if (extractedContent === "NO_JOB_FOUND" || extractedContent.length < 100) {
-          throw new Error("Could not extract job description");
-        }
-
-        finalJobDescription = extractedContent;
-      } catch (urlError) {
-        console.error("Error fetching job URL:", urlError);
-
-        // Check if it's a LinkedIn URL to give specific guidance
-        const isLinkedIn = jobUrl.toLowerCase().includes('linkedin.com');
-
-        if (isLinkedIn) {
-          return NextResponse.json(
-            {
-              error: "LinkedIn blocks automated access. Please copy the job description from the LinkedIn page and paste it in the 'Paste Description' tab instead.",
-              hint: "Open the job on LinkedIn → Select all the job description text → Copy → Paste here"
-            },
-            { status: 400 }
-          );
-        }
-
+      const result = await fetchJobDescription(jobUrl, anthropic);
+      if (!result.ok) {
         return NextResponse.json(
-          { error: "Failed to fetch job description from URL. Please paste the job description manually." },
-          { status: 400 }
+          result.hint ? { error: result.error, hint: result.hint } : { error: result.error },
+          { status: result.status }
         );
       }
+      finalJobDescription = result.description;
     }
 
     // Validation: Need at least jobDescription OR jobTitle to proceed
