@@ -183,34 +183,20 @@ export default function ScoreTeaserPage() {
         <div className="max-w-3xl mx-auto">
           {/* Title */}
           <div className="text-center mb-12">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-8 tracking-wide"
-            >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-8 tracking-wide">
               <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               Free Resume Analysis
-            </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5"
-            >
+            </div>
+            <h1 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
               Get Your Resume Score
-            </motion.h1>
+            </h1>
             <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-lg text-stone-500 max-w-xl mx-auto font-light"
-            >
+            <p className="text-lg text-stone-500 max-w-xl mx-auto font-light">
               See how your resume stacks up for your target role. No sign-up required.
-            </motion.p>
+            </p>
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             {/* Step 1: Input */}
             {step === "input" && (
               <motion.div

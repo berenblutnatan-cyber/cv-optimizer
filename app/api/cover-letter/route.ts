@@ -152,7 +152,7 @@ Return ONLY the cover letter text, ready to send. No headers, no explanations, j
 Start with "Dear Hiring Manager," or "Dear [Company] Team," if appropriate.`;
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5-20250929",
+      model: "claude-sonnet-4-6",
       max_tokens: 2048,
       system: "You are an expert cover letter writer who creates personalized, compelling letters that get interviews. Your letters are: 1) Highly specific to the role and company, 2) Full of concrete achievements with metrics, 3) Show genuine company research, 4) Sound authentically human, 5) 250-350 words, 4 paragraphs. Never use clichés like 'team player', 'passionate', or 'I believe I would be a great fit'. Every letter should be impossible to reuse for another application.",
       messages: [{ role: "user", content: prompt }],
