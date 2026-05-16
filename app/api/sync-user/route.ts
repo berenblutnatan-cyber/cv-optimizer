@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export async function POST() {
       create: {
         id: userId,
         email: userEmail,
-        credits: 3,
+        credits: FREE_CREDITS_FOR_NEW_USER,
       },
     });
 

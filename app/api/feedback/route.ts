@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
+import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
 // In-memory storage for when database is unavailable (dev only)
 const localFeedback: Array<{
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
         create: {
           id: user.id,
           email: user.emailAddresses[0]?.emailAddress || "no-email",
-          credits: 1, // New users start with 1 free credit
+          credits: FREE_CREDITS_FOR_NEW_USER,
         },
       });
 

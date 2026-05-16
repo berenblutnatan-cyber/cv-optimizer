@@ -1,6 +1,7 @@
 import { Webhooks } from "@polar-sh/nextjs";
 import { prisma } from "@/lib/prisma";
 import { findPlanByProductId } from "@/lib/polar";
+import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
@@ -42,7 +43,7 @@ export const POST = Webhooks({
     await prisma.user.upsert({
       where: { id: userId },
       update: { credits: { increment: plan.credits } },
-      create: { id: userId, email, credits: 1 + plan.credits },
+      create: { id: userId, email, credits: FREE_CREDITS_FOR_NEW_USER + plan.credits },
     });
 
     await prisma.purchase.create({

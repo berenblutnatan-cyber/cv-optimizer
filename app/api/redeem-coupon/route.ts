@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
 export async function POST(request: Request) {
   try {
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
           create: {
             id: userId,
             email: userEmail,
-            credits: 1, // New users start with 1 free credit
+            credits: FREE_CREDITS_FOR_NEW_USER,
           },
       });
 

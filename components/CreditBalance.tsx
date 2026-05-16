@@ -64,29 +64,39 @@ export function CreditBalance() {
   const baseClass = "inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-medium transition-all";
   const minWidth = "min-w-[7rem]";
   
-  // Only show placeholder on initial load, not during refreshes
   if (!isLoaded || (isInitialLoading && credits === null) || !userId) {
-    // Render invisible placeholder to maintain layout
     return (
       <div className={`${baseClass} ${minWidth} bg-transparent pointer-events-none`} aria-hidden="true">
         <Coins className="w-4 h-4 opacity-0" strokeWidth={2} />
-        <span className="opacity-0">0 Tokens</span>
+        <span className="opacity-0">0 Credits</span>
       </div>
     );
   }
 
-  // Show current value even if it's 0 (user has no tokens)
   const displayCredits = credits ?? 0;
+  const isEmpty = displayCredits === 0;
+  const label = displayCredits === 1 ? "Credit" : "Credits";
+
+  // When credits are 0, switch to a red/urgent style with "Add credits" hint.
+  const styleClasses = isEmpty
+    ? "bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 border border-red-200 hover:border-red-300"
+    : "bg-[#B8860B]/10 hover:bg-[#B8860B]/20 text-[#B8860B] hover:text-[#0A2647] border border-[#B8860B]/30 hover:border-[#B8860B]/50";
 
   return (
     <Link
       href="/pricing"
-      className={`${baseClass} ${minWidth} bg-[#B8860B]/10 hover:bg-[#B8860B]/20 text-[#B8860B] hover:text-[#0A2647] border border-[#B8860B]/30 hover:border-[#B8860B]/50`}
-      title="View your token balance and pricing"
+      className={`${baseClass} ${minWidth} ${styleClasses}`}
+      title={isEmpty ? "Out of credits — view pricing" : "Credit balance — view pricing"}
     >
       <Coins className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
-      <span className="tabular-nums font-semibold">{displayCredits}</span>
-      <span className="text-xs font-light">Tokens</span>
+      {isEmpty ? (
+        <span className="text-xs font-medium">Add credits</span>
+      ) : (
+        <>
+          <span className="tabular-nums font-semibold">{displayCredits}</span>
+          <span className="text-xs font-light">{label}</span>
+        </>
+      )}
     </Link>
   );
 }
