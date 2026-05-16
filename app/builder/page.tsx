@@ -45,6 +45,7 @@ import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { Logo } from "@/components/Logo";
 import { UserButton } from "@clerk/nextjs";
 import { CreditBalance } from "@/components/CreditBalance";
+import { BuilderWelcomeBanner } from "@/components/BuilderWelcomeBanner";
 import { FreeCreditToast } from "@/components/FreeCreditToast";
 
 // Month options for date picker
@@ -131,6 +132,8 @@ export default function BuilderPage() {
           </div>
         </div>
       </header>
+
+      <BuilderWelcomeBanner />
 
       {/* Main Content - Split Screen */}
       <main className="flex-1 flex overflow-hidden relative">
