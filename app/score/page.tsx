@@ -445,7 +445,7 @@ export default function ScoreTeaserPage() {
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                        <span className="text-stone-700 text-sm font-light">3 free credits to start</span>
+                        <span className="text-stone-700 text-sm font-light">2 free credits to start</span>
                       </li>
                     </ul>
 
