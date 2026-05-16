@@ -4,6 +4,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
 import posthog from "posthog-js";
 import { trackConversion } from "@/lib/gtag";
+import { identifyUser } from "@/lib/analytics";
 
 export function UserSyncProvider({ children }: { children: React.ReactNode }) {
   const { userId, isLoaded } = useAuth();
@@ -12,11 +13,11 @@ export function UserSyncProvider({ children }: { children: React.ReactNode }) {
   const hasIdentified = useRef(false);
 
   useEffect(() => {
-    // Identify in PostHog as soon as we have a Clerk userId, even before sync.
-    if (isLoaded && userId && !hasIdentified.current && typeof posthog?.identify === "function") {
+    // Identify in PostHog + Clarity as soon as we have a Clerk userId, even before sync.
+    if (isLoaded && userId && !hasIdentified.current) {
       hasIdentified.current = true;
       const email = user?.emailAddresses?.[0]?.emailAddress;
-      posthog.identify(userId, email ? { email } : undefined);
+      identifyUser(userId, { email });
     }
 
     const syncUser = async () => {
@@ -35,13 +36,9 @@ export function UserSyncProvider({ children }: { children: React.ReactNode }) {
         if (res.ok) {
           const data = await res.json();
           if (data?.isNewUser) {
-            trackConversion("signup", {
-              user_email: user?.emailAddresses[0]?.emailAddress,
-            });
-            // PostHog signup event (separate from gtag).
-            posthog.capture?.("signup_completed", {
-              email: user?.emailAddresses?.[0]?.emailAddress,
-            });
+            const email = user?.emailAddresses?.[0]?.emailAddress;
+            trackConversion("signup", { user_email: email });
+            posthog.capture?.("signup_completed", { email });
           }
         }
       } catch (error) {

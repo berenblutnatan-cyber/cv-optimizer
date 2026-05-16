@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { extractText } from "unpdf";
 import { fetchJobDescription } from "@/lib/jobFetcher";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { sendOptimizeNotification } from "@/lib/email";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -794,6 +797,64 @@ Return ONLY the JSON object.`;
         { status: 500 }
       );
     }
+
+    // Read auth inside the request context so we can fire notifications after responding.
+    let userId: string | null = null;
+    let userEmail = "anonymous";
+    try {
+      const a = await auth();
+      userId = a.userId;
+      if (userId) {
+        const u = await currentUser();
+        userEmail = u?.emailAddresses[0]?.emailAddress || userEmail;
+      }
+    } catch (authErr) {
+      console.warn("[analyze] could not read auth context for notification:", authErr);
+    }
+
+    const matchScore =
+      typeof analysis?.matchScore === "number"
+        ? analysis.matchScore
+        : typeof analysis?.overall_score === "number"
+          ? analysis.overall_score
+          : undefined;
+
+    // Fire-and-forget admin notification + server-side PostHog event.
+    // No await so user-facing latency is unaffected.
+    void (async () => {
+      try {
+        await sendOptimizeNotification({
+          userEmail,
+          userId: userId || undefined,
+          jobTitle: effectiveJobTitle,
+          companyName,
+          hasJobUrl: !!jobUrl,
+          cvTextLength: cvText.length,
+          jobDescriptionLength: (finalJobDescription || "").length,
+          matchScore,
+        });
+
+        const ph = getPostHogClient();
+        if (ph && userId) {
+          ph.capture({
+            distinctId: userId,
+            event: "optimize_succeeded_server",
+            properties: {
+              email: userEmail,
+              jobTitle: effectiveJobTitle,
+              companyName,
+              hasJobUrl: !!jobUrl,
+              cvTextLength: cvText.length,
+              jobDescriptionLength: (finalJobDescription || "").length,
+              matchScore,
+            },
+          });
+          await ph.shutdown();
+        }
+      } catch (notifyError) {
+        console.error("[analyze] post-success notification failed:", notifyError);
+      }
+    })();
 
     return NextResponse.json({
       success: true,

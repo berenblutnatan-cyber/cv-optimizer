@@ -24,6 +24,7 @@ import {
 import { saveAnalysisToSession } from "@/lib/analysisSession";
 import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
 import { FreeCreditToast } from "@/components/FreeCreditToast";
+import { track } from "@/lib/analytics";
 
 const DRAFT_KEY = "optimizer_draft";
 
@@ -80,13 +81,51 @@ export function OptimizerClient() {
   // Track if we've already restored from draft
   const hasRestoredDraft = useRef(false);
   const wasAuthModalOpen = useRef(false);
-  
+  const hasFiredCvEvent = useRef(false);
+  const hasFiredJobEvent = useRef(false);
+  const hasFiredPageView = useRef(false);
+
+  // Fire one-time page view event
+  useEffect(() => {
+    if (hasFiredPageView.current) return;
+    hasFiredPageView.current = true;
+    track("optimize_page_viewed", { signed_in: !!isSignedIn });
+  }, [isSignedIn]);
+
+  // Fire one-time CV-added event the first time the user supplies a CV
+  useEffect(() => {
+    if (hasFiredCvEvent.current) return;
+    if (cvFile || cvText.trim().length > 0) {
+      hasFiredCvEvent.current = true;
+      track("cv_added", {
+        source: cvFile ? "file" : "paste",
+        size: cvFile ? cvFile.size : cvText.length,
+        file_type: cvFile?.type || null,
+      });
+    }
+  }, [cvFile, cvText]);
+
+  // Fire one-time job-context-added event the first time any job field is filled
+  useEffect(() => {
+    if (hasFiredJobEvent.current) return;
+    if (jobTitle.trim() || jobDescription.trim() || jobUrl.trim()) {
+      hasFiredJobEvent.current = true;
+      track("job_context_added", {
+        has_title: !!jobTitle.trim(),
+        has_description: !!jobDescription.trim(),
+        has_url: !!jobUrl.trim(),
+        input_mode: jobInputMode,
+      });
+    }
+  }, [jobTitle, jobDescription, jobUrl, jobInputMode]);
+
   // Track when auth modal opens
   useEffect(() => {
     if (isAuthModalOpen) {
       wasAuthModalOpen.current = true;
+      track("auth_modal_shown", { trigger: authTrigger, source: "optimize" });
     }
-  }, [isAuthModalOpen]);
+  }, [isAuthModalOpen, authTrigger]);
   
   // Restore draft from localStorage when component loads
   useEffect(() => {
@@ -173,6 +212,13 @@ export function OptimizerClient() {
   const canAnalyze = hasResume && hasJobContext;
 
   const handleAnalyze = async () => {
+    track("analyze_clicked", {
+      signed_in: !!isSignedIn,
+      has_resume: !!hasResume,
+      has_job_context: !!hasJobContext,
+      job_input_mode: jobInputMode,
+    });
+
     if (!hasResume) {
       toast.error("Missing Resume", {
         description: "Please upload or paste your resume",
@@ -185,7 +231,7 @@ export function OptimizerClient() {
       });
       return;
     }
-    
+
     if (!isSignedIn) {
       // Show free credit toast before auth modal
       setShowFreeCreditToast(true);
@@ -231,23 +277,32 @@ export function OptimizerClient() {
       const creditResult = await creditCheck.json();
 
       if (!creditResult.success) {
+        track("credit_check_failed", { reason: "insufficient_credits" });
         toast.error("You need credits to continue", {
           description: "Get our Starter Pack for just $3!",
           action: {
             label: "View Pricing",
-            onClick: () => router.push("/pricing"),
+            onClick: () => {
+              track("pricing_clicked", { source: "credit_toast" });
+              router.push("/pricing");
+            },
           },
         });
         return;
       }
     } catch (creditError) {
       console.error("Credit check failed:", creditError);
+      track("credit_check_failed", { reason: "exception" });
       toast.error("Failed to check credits", {
         description: "Please try again.",
       });
       return;
     }
 
+    track("optimize_started", {
+      job_input_mode: jobInputMode,
+      cv_size: cvText.length || (cvFile?.size ?? 0),
+    });
     setIsAnalyzing(true);
 
     try {
@@ -289,10 +344,23 @@ export function OptimizerClient() {
       } catch {
         // ignore
       }
-      
+
+      track("optimize_succeeded", {
+        job_title: jobTitle.trim() || null,
+        match_score:
+          typeof data?.analysis?.matchScore === "number"
+            ? data.analysis.matchScore
+            : typeof data?.analysis?.overall_score === "number"
+              ? data.analysis.overall_score
+              : null,
+      });
+
       router.push("/results");
 
     } catch (err) {
+      track("optimize_failed", {
+        message: err instanceof Error ? err.message : "unknown",
+      });
       toast.error("Analysis Failed", {
         description: err instanceof Error ? err.message : "Something went wrong. Please try again.",
       });
@@ -612,6 +680,12 @@ export function OptimizerClient() {
           </p>
         </div>
       </main>
+
+      {/* Free Credit incentive shown before the auth modal */}
+      <FreeCreditToast
+        isOpen={showFreeCreditToast}
+        onClose={() => setShowFreeCreditToast(false)}
+      />
 
       {/* Auth Modal */}
       <AuthModal
