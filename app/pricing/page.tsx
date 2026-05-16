@@ -12,10 +12,12 @@ import { Logo } from "@/components/Logo";
 import { CreditBalance } from "@/components/CreditBalance";
 import { PolarCheckoutButton } from '@/components/PolarCheckoutButton';
 import { CouponRedeem } from '@/components/CouponRedeem';
+import { PurchaseConversionTracker } from '@/components/PurchaseConversionTracker';
 
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
+      <PurchaseConversionTracker />
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="w-full px-8 md:px-16 h-20 flex items-center justify-between">

@@ -9,12 +9,6 @@ const baseUrl =
   process.env.NEXT_PUBLIC_APP_URL ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
-const handler = Checkout({
-  accessToken: process.env.POLAR_ACCESS_TOKEN!,
-  successUrl: `${baseUrl}/pricing?purchase=success&checkout_id={CHECKOUT_ID}`,
-  server: POLAR_SERVER,
-});
-
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
@@ -29,6 +23,12 @@ export async function GET(req: NextRequest) {
 
   const user = await currentUser();
   const email = user?.emailAddresses[0]?.emailAddress;
+
+  const handler = Checkout({
+    accessToken: process.env.POLAR_ACCESS_TOKEN!,
+    successUrl: `${baseUrl}/pricing?purchase=success&checkout_id={CHECKOUT_ID}&plan=${plan}`,
+    server: POLAR_SERVER,
+  });
 
   const url = new URL(req.url);
   url.searchParams.set("products", planConfig.productId);

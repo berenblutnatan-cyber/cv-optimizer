@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, JetBrains_Mono, Merriweather, Lato, Montserrat, Playfair_Display } from "next/font/google";
 import {
   ClerkProvider,
@@ -13,6 +14,8 @@ import { Toaster } from "sonner";
 import { UserSyncProvider } from "@/components/UserSyncProvider";
 import { InAppBrowserAlert } from "@/components/InAppBrowserAlert";
 import "./globals.css";
+
+const GOOGLE_ADS_ID = "AW-18163039044";
 
 // Primary UI font
 const inter = Inter({
@@ -68,6 +71,18 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="scroll-smooth">
         <body className={`${inter.variable} ${jetbrainsMono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable} ${playfair.variable} font-sans`}>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="google-ads-gtag" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GOOGLE_ADS_ID}');
+            `}
+          </Script>
           <InAppBrowserAlert />
           <UserSyncProvider>
             {children}

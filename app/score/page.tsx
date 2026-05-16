@@ -25,6 +25,7 @@ import { Logo } from "@/components/Logo";
 import { GoalSelector } from "@/components/teaser/GoalSelector";
 import { useTeaserStore } from "@/stores/teaserStore";
 import { isValidJobTitle } from "@/constants/jobTitles";
+import { trackConversion } from "@/lib/gtag";
 
 type Step = "input" | "processing" | "result";
 
@@ -135,6 +136,7 @@ export default function ScoreTeaserPage() {
         analyzedAt: data.analyzedAt,
       });
       setStep("result");
+      trackConversion("score_generated");
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

@@ -1,14 +1,12 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
+import { trackConversion } from "@/lib/gtag";
 
-/**
- * Syncs authenticated users to Prisma database on first load
- * Add this component to your root layout
- */
 export function UserSyncProvider({ children }: { children: React.ReactNode }) {
   const { userId, isLoaded } = useAuth();
+  const { user } = useUser();
   const hasSynced = useRef(false);
 
   useEffect(() => {
@@ -18,19 +16,28 @@ export function UserSyncProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        hasSynced.current = true; // Prevent multiple syncs
-        
-        await fetch('/api/sync-user', {
+        hasSynced.current = true;
+
+        const res = await fetch('/api/sync-user', {
           method: 'POST',
           cache: 'no-store',
         });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.isNewUser) {
+            trackConversion("signup", {
+              user_email: user?.emailAddresses[0]?.emailAddress,
+            });
+          }
+        }
       } catch (error) {
         console.error("Failed to sync user:", error);
       }
     };
 
     syncUser();
-  }, [userId, isLoaded]);
+  }, [userId, isLoaded, user]);
 
   return <>{children}</>;
 }
