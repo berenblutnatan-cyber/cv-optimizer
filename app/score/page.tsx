@@ -2,19 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Upload, 
-  FileText, 
-  Sparkles, 
-  X, 
-  Check, 
-  AlertCircle, 
-  Lock,
+import {
+  Upload,
+  Sparkles,
+  X,
+  Check,
+  AlertCircle,
   ArrowRight,
   Loader2,
   Target,
   FileCheck,
-  TrendingUp,
   Zap,
   RotateCcw,
   ArrowLeft
@@ -26,6 +23,7 @@ import { GoalSelector } from "@/components/teaser/GoalSelector";
 import { SiteFooter } from "@/components/shared/SiteFooter";
 import { useTeaserStore } from "@/stores/teaserStore";
 import { isValidJobTitle } from "@/constants/jobTitles";
+import { trackConversion } from "@/lib/gtag";
 
 type Step = "input" | "processing" | "result";
 
@@ -136,6 +134,7 @@ export default function ScoreTeaserPage() {
         analyzedAt: data.analyzedAt,
       });
       setStep("result");
+      trackConversion("score_generated");
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -421,99 +420,53 @@ export default function ScoreTeaserPage() {
                   </div>
                 </div>
 
-                {/* Blurred Analysis Preview */}
-                <div className="relative bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] overflow-hidden">
-                  {/* Blurred content */}
-                  <div className="p-6 filter blur-md select-none pointer-events-none opacity-60">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
-                      </div>
-                      <div>
-                        <h3 className="font-serif text-lg text-[#1a1a1a]">Detailed Analysis</h3>
-                        <p className="text-stone-500 text-sm font-light">Strengths, weaknesses, and recommendations</p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid md:grid-cols-2 gap-4 mb-6">
-                      <div className="bg-stone-50 border border-stone-200 rounded-sm p-5">
-                        <h4 className="font-medium text-[#1a1a1a] mb-4 flex items-center gap-2">
-                          <Check className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
-                          Strengths
-                        </h4>
-                        <ul className="space-y-2 text-stone-600 text-sm font-light">
-                          <li>• Strong technical skills alignment</li>
-                          <li>• Clear work history progression</li>
-                          <li>• Good use of action verbs</li>
-                        </ul>
-                      </div>
-                      
-                      <div className="bg-stone-50 border border-stone-200 rounded-sm p-5">
-                        <h4 className="font-medium text-[#1a1a1a] mb-4 flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-[#B8860B]" strokeWidth={1.5} />
-                          Areas to Improve
-                        </h4>
-                        <ul className="space-y-2 text-stone-600 text-sm font-light">
-                          <li>• Add quantified achievements</li>
-                          <li>• Include more keywords</li>
-                          <li>• Strengthen summary section</li>
-                        </ul>
-                      </div>
-                    </div>
+                {/* Next Step: Optimize */}
+                <div className="bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] p-8 md:p-10">
+                  <div className="text-center max-w-2xl mx-auto">
+                    <h3 className="font-serif text-2xl md:text-3xl font-light text-[#1a1a1a] mb-3">
+                      Now let's actually fix it.
+                    </h3>
+                    <p className="text-stone-600 font-light mb-8">
+                      Hired-CV rewrites your resume with AI — tailored to the job you want, ATS-optimized, and ready to download in minutes.
+                    </p>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-stone-50 border border-stone-200 rounded-sm p-4">
-                        <h4 className="font-medium text-[#1a1a1a] mb-2">Keywords Found</h4>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-2 py-1 bg-[#0A2647]/10 text-[#0A2647] rounded-sm text-xs font-light">Leadership</span>
-                          <span className="px-2 py-1 bg-[#0A2647]/10 text-[#0A2647] rounded-sm text-xs font-light">Strategy</span>
-                          <span className="px-2 py-1 bg-[#0A2647]/10 text-[#0A2647] rounded-sm text-xs font-light">Management</span>
-                        </div>
-                      </div>
-                      <div className="bg-stone-50 border border-stone-200 rounded-sm p-4">
-                        <h4 className="font-medium text-[#1a1a1a] mb-2">Missing Keywords</h4>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-sm text-xs font-light">Agile</span>
-                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-sm text-xs font-light">ROI</span>
-                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-sm text-xs font-light">KPIs</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    <ul className="text-left grid sm:grid-cols-2 gap-x-8 gap-y-3 mb-8 max-w-lg mx-auto">
+                      <li className="flex items-start gap-2">
+                        <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <span className="text-stone-700 text-sm font-light">AI rewrite, tailored per job</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <span className="text-stone-700 text-sm font-light">ATS keyword optimization</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <span className="text-stone-700 text-sm font-light">Modern templates, PDF & DOCX</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <span className="text-stone-700 text-sm font-light">3 free credits to start</span>
+                      </li>
+                    </ul>
 
-                  {/* Lock Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-white via-white/95 to-white/80">
-                    <div className="text-center px-6 max-w-md">
-                      <div className="w-16 h-16 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center mx-auto mb-5">
-                        <Lock className="w-8 h-8 text-stone-500" strokeWidth={1.5} />
-                      </div>
-                      
-                      <h3 className="font-serif text-xl text-[#1a1a1a] mb-2">
-                        Unlock Full Analysis
-                      </h3>
-                      <p className="text-stone-600 mb-6 font-light">
-                        See exactly what's holding your resume back and get AI-powered suggestions to fix it.
-                      </p>
-                      
-                      <SignUpButton mode="modal">
-                        <button className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide">
-                          <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                          Create Free Account
-                          <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
-                        </button>
-                      </SignUpButton>
-                      
-                      <p className="text-sm text-stone-500 mt-4 flex items-center justify-center gap-4 font-light">
-                        <span className="flex items-center gap-1">
-                          <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
-                          Free forever
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
-                          No credit card
-                        </span>
-                      </p>
-                    </div>
+                    <SignUpButton mode="modal" forceRedirectUrl="/builder">
+                      <button className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide">
+                        <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+                        Optimize My Resume — Free
+                        <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
+                      </button>
+                    </SignUpButton>
+
+                    <p className="text-sm text-stone-500 mt-4 flex items-center justify-center gap-4 font-light flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
+                        No credit card
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
+                        14-day money-back
+                      </span>
+                    </p>
                   </div>
                 </div>
               </motion.div>

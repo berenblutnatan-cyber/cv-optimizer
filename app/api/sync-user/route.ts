@@ -19,24 +19,26 @@ export async function POST() {
     const clerkUser = await currentUser();
     const userEmail = clerkUser?.emailAddresses[0]?.emailAddress || "no-email";
 
-    // Upsert user to ensure they exist in database
+    const existing = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    const isNewUser = !existing;
+
     const user = await prisma.user.upsert({
       where: { id: userId },
-      update: { 
+      update: {
         email: userEmail,
-        // Don't update credits on sync, only on actual actions
       },
       create: {
         id: userId,
         email: userEmail,
-        credits: 1, // New users start with 1 free credit
+        credits: 3,
       },
     });
 
-    console.log(`✅ User synced: ${userId} (${userEmail})`);
+    console.log(`✅ User synced: ${userId} (${userEmail})${isNewUser ? " [new]" : ""}`);
 
     return NextResponse.json({
       success: true,
+      isNewUser,
       user: {
         id: user.id,
         email: user.email,
