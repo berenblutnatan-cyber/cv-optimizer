@@ -12,12 +12,11 @@ import { Logo } from "@/components/Logo";
 import { CreditBalance } from "@/components/CreditBalance";
 import { PolarCheckoutButton } from '@/components/PolarCheckoutButton';
 import { CouponRedeem } from '@/components/CouponRedeem';
-import { PurchaseConversionTracker } from '@/components/PurchaseConversionTracker';
+import { ShieldCheck, Lock, RefreshCcw } from 'lucide-react';
 
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
-      <PurchaseConversionTracker />
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="w-full px-8 md:px-16 h-20 flex items-center justify-between">
@@ -310,16 +309,36 @@ export default function PricingPage() {
 
           </div>
 
-          {/* Coupon Redeem Section */}
-          <div className="mt-16 max-w-2xl mx-auto">
-            <CouponRedeem />
+          {/* Trust Signals */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-center gap-4 p-5 bg-white border border-stone-200 rounded-sm">
+                <RefreshCcw className="w-6 h-6 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
+                <div>
+                  <p className="font-medium text-[#1a1a1a] text-sm">14-day money-back</p>
+                  <p className="text-stone-500 text-xs font-light">Not satisfied? Full refund, no questions.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-5 bg-white border border-stone-200 rounded-sm">
+                <Lock className="w-6 h-6 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
+                <div>
+                  <p className="font-medium text-[#1a1a1a] text-sm">Secure checkout</p>
+                  <p className="text-stone-500 text-xs font-light">Powered by Polar. Cards, Apple Pay, Google Pay.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-5 bg-white border border-stone-200 rounded-sm">
+                <ShieldCheck className="w-6 h-6 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
+                <div>
+                  <p className="font-medium text-[#1a1a1a] text-sm">No subscription</p>
+                  <p className="text-stone-500 text-xs font-light">One-time purchase. Credits never expire.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Additional Info */}
-          <div className="mt-12 text-center">
-            <p className="text-sm text-stone-500 font-light">
-              All plans include secure processing and instant results. No hidden fees.
-            </p>
+          {/* Coupon Redeem Section */}
+          <div className="mt-12 max-w-2xl mx-auto">
+            <CouponRedeem />
           </div>
         </div>
       </div>

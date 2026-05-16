@@ -30,7 +30,7 @@ export async function POST() {
       create: {
         id: userId,
         email: userEmail,
-        credits: 1,
+        credits: 3,
       },
     });
 
