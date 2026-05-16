@@ -23,6 +23,7 @@ import { GoalSelector } from "@/components/teaser/GoalSelector";
 import { SiteFooter } from "@/components/shared/SiteFooter";
 import { useTeaserStore } from "@/stores/teaserStore";
 import { isValidJobTitle } from "@/constants/jobTitles";
+import posthog from "posthog-js";
 import { trackConversion } from "@/lib/gtag";
 
 type Step = "input" | "processing" | "result";
@@ -135,6 +136,8 @@ export default function ScoreTeaserPage() {
       });
       setStep("result");
       trackConversion("score_generated");
+      const scoreBand = data.score < 65 ? "low" : data.score < 80 ? "mid" : "high";
+      posthog.capture?.("score_generated", { score: data.score, band: scoreBand, target_role: targetRole });
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -449,19 +452,42 @@ export default function ScoreTeaserPage() {
                       </li>
                     </ul>
 
-                    <SignUpButton mode="modal" forceRedirectUrl="/builder">
-                      <button className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide">
-                        <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                        Optimize My Resume — Free
-                        <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
-                      </button>
-                    </SignUpButton>
-
-                    <div className="mt-3">
-                      <Link href="/pricing" className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light">
-                        Or see all plans →
-                      </Link>
-                    </div>
+                    {result.score < 65 ? (
+                      <>
+                        {/* Low score = high paid intent. Lead with pricing. */}
+                        <Link
+                          href="/pricing?utm_source=score&utm_medium=cta&utm_score=low"
+                          className="inline-flex items-center gap-2 px-8 py-4 bg-[#B8860B] hover:bg-[#9c7409] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
+                        >
+                          <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+                          Fix My Resume — Plans from $3
+                          <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
+                        </Link>
+                        <div className="mt-3">
+                          <SignUpButton mode="modal" forceRedirectUrl="/builder">
+                            <button className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light">
+                              Or try 2 credits free →
+                            </button>
+                          </SignUpButton>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* High score = lower intent. Lead with free signup. */}
+                        <SignUpButton mode="modal" forceRedirectUrl="/builder">
+                          <button className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide">
+                            <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+                            Optimize My Resume — Free
+                            <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
+                          </button>
+                        </SignUpButton>
+                        <div className="mt-3">
+                          <Link href="/pricing" className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light">
+                            Or see all plans →
+                          </Link>
+                        </div>
+                      </>
+                    )}
 
                     <p className="text-sm text-stone-500 mt-4 flex items-center justify-center gap-4 font-light flex-wrap">
                       <span className="flex items-center gap-1">

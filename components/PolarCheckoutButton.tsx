@@ -1,6 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import posthog from "posthog-js";
 import type { PolarPlanKey } from "@/lib/polar";
 
 interface PolarCheckoutButtonProps {
@@ -16,21 +18,39 @@ export function PolarCheckoutButton({
   amount,
   variant = "primary",
 }: PolarCheckoutButtonProps) {
+  const [loading, setLoading] = useState(false);
+
   const baseClasses =
-    "w-full inline-flex items-center justify-center px-6 py-3 font-medium rounded-sm transition-all tracking-wide text-center";
+    "w-full inline-flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-sm transition-all tracking-wide text-center disabled:opacity-80 disabled:cursor-wait";
   const colorClasses =
     variant === "gold"
       ? "bg-[#B8860B] hover:bg-[#9c7409] text-white"
       : "bg-[#0A2647] hover:bg-[#0d3259] text-white";
 
+  const handleClick = () => {
+    posthog.capture?.("checkout_clicked", { plan, amount, planName });
+    setLoading(true);
+    // Hard-navigate so Clerk redirect + Polar handoff work; the loading state
+    // keeps the button locked until the new page paints.
+    window.location.href = `/api/checkout/polar?plan=${plan}`;
+  };
+
   return (
-    <Link
-      href={`/api/checkout/polar?plan=${plan}`}
-      prefetch={false}
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
       className={`${baseClasses} ${colorClasses}`}
     >
-      Buy {planName} — ${amount}
-    </Link>
+      {loading ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
+          Redirecting to checkout…
+        </>
+      ) : (
+        <>Buy {planName} — ${amount}</>
+      )}
+    </button>
   );
 }
 
