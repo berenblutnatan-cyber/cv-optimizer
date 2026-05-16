@@ -47,9 +47,9 @@ export function JobInput({
           value={jobTitle}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="e.g., Senior Product Manager"
-          className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light"
+          className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-500 bg-transparent font-light"
         />
-        <p className="mt-2 text-xs text-stone-400 font-light">
+        <p className="mt-2 text-xs text-stone-500 font-light">
           {mode === "title_only"
             ? "General optimization based on role title."
             : "Optional — we can infer from the job description."}
@@ -66,7 +66,7 @@ export function JobInput({
             value={companyName}
             onChange={(e) => onCompanyNameChange(e.target.value)}
             placeholder="e.g., Stripe"
-            className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light"
+            className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-500 bg-transparent font-light"
           />
         </div>
       )}
@@ -83,7 +83,7 @@ export function JobInput({
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
                 inputMode === "paste"
                   ? "border-[#0A2647] text-[#0A2647]"
-                  : "border-transparent text-stone-400 hover:text-stone-600"
+                  : "border-transparent text-stone-500 hover:text-stone-600"
               }`}
             >
               <FileSearch className="w-4 h-4" strokeWidth={1.5} />
@@ -94,7 +94,7 @@ export function JobInput({
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
                 inputMode === "url"
                   ? "border-[#0A2647] text-[#0A2647]"
-                  : "border-transparent text-stone-400 hover:text-stone-600"
+                  : "border-transparent text-stone-500 hover:text-stone-600"
               }`}
             >
               <LinkIcon className="w-4 h-4" strokeWidth={1.5} />
@@ -111,9 +111,9 @@ export function JobInput({
             value={jobUrl}
             onChange={(e) => onUrlChange(e.target.value)}
             placeholder="https://linkedin.com/jobs/view/..."
-            className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light"
+            className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-500 bg-transparent font-light"
           />
-          <p className="mt-3 text-xs text-stone-400 font-light">
+          <p className="mt-3 text-xs text-stone-500 font-light">
             We'll extract the job details automatically.
             <span className="block mt-1 text-stone-500">
               Note: Use the job's full page URL (click on the job title first, not just the listing).
@@ -126,9 +126,9 @@ export function JobInput({
             value={jobDescription}
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="Please paste the complete job description here..."
-            className="w-full h-40 p-0 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light leading-relaxed"
+            className="w-full h-40 p-0 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-500 bg-transparent font-light leading-relaxed"
           />
-          <div className="text-xs text-stone-400 font-light flex flex-wrap gap-x-4 gap-y-2">
+          <div className="text-xs text-stone-500 font-light flex flex-wrap gap-x-4 gap-y-2">
             <span className="inline-flex items-center gap-2">
               <span className="h-1 w-1 rounded-full bg-stone-300" />
               Title & company

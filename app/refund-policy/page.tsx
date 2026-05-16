@@ -1,16 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { SiteFooter } from '@/components/shared/SiteFooter';
 
 export default function RefundPolicy() {
-  const lastUpdated = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const lastUpdated = "May 11, 2026";
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col"><div className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
         <div className="px-6 py-8 sm:p-10">
           {/* Back Button */}
@@ -31,7 +28,7 @@ export default function RefundPolicy() {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-3">1. Introduction</h2>
               <p className="mb-4">
-                At Hired CV, we strive to provide high-quality resume optimization services. 
+                At Hired, we strive to provide high-quality resume optimization services. 
                 This Refund Policy outlines the terms and conditions under which refunds may be issued 
                 for our services.
               </p>
@@ -194,6 +191,8 @@ export default function RefundPolicy() {
           </div>
         </div>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

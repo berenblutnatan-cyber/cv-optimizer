@@ -121,8 +121,8 @@ function BuilderContent() {
             </Link>
             <div className="w-px h-6 bg-slate-200" />
             <h1 className="text-lg font-bold text-slate-900">Resume Builder</h1>
-            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-              Pro
+            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+              Demo
             </span>
           </div>
 

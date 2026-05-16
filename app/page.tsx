@@ -11,45 +11,46 @@ import { Logo } from "@/components/Logo";
 import { HeroResumeVisual } from "@/components/landing/HeroResumeVisual";
 import { ActiveNavLinks } from "@/components/landing/ActiveNavLinks";
 import { CreditBalance } from "@/components/CreditBalance";
+import { SiteFooter } from "@/components/shared/SiteFooter";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
-        <div className="w-full px-8 md:px-16 h-20 flex items-center justify-between">
+        <div className="w-full px-4 md:px-16 h-20 flex items-center justify-between gap-3">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
-          
+
           {/* Navigation Links - Center */}
           <ActiveNavLinks />
-          
+
           {/* Score Button + Auth Buttons - Far Right */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             {/* Lead Magnet: Check Score */}
-            <Link 
+            <Link
               href="/score"
               className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide"
             >
               <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
               CV Score Check
             </Link>
-            
+
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide">
+                <button className="hidden sm:inline-flex px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide">
                   Sign In
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-6 py-2.5 text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide">
+                <button className="px-4 sm:px-6 py-2.5 text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide whitespace-nowrap">
                   Get Started
                 </button>
               </SignUpButton>
             </SignedOut>
             <SignedIn>
               <CreditBalance />
-              <UserButton 
+              <UserButton
                 appearance={{
                   elements: {
                     avatarBox: "w-10 h-10 ring-2 ring-stone-200"
@@ -192,7 +193,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <p className="font-serif text-sm text-[#1a1a1a]">The Ivy</p>
-                  <p className="text-xs text-stone-400 font-light">Classic & Professional</p>
+                  <p className="text-xs text-stone-500 font-light">Classic & Professional</p>
                 </div>
                 {/* Template 2: The Modern (Popular) */}
                 <div className="bg-white rounded-sm border-2 border-indigo-500 p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -220,7 +221,7 @@ export default function LandingPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-serif text-sm text-[#1a1a1a]">The Modern</p>
-                      <p className="text-xs text-stone-400 font-light">Bold & Contemporary</p>
+                      <p className="text-xs text-stone-500 font-light">Bold & Contemporary</p>
                     </div>
                     <span className="text-[10px] font-medium text-indigo-600 bg-indigo-100 px-2 py-1 rounded-sm">Popular</span>
                   </div>
@@ -246,7 +247,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <p className="font-serif text-sm text-[#1a1a1a]">Executive</p>
-                  <p className="text-xs text-stone-400 font-light">Senior Leadership</p>
+                  <p className="text-xs text-stone-500 font-light">Senior Leadership</p>
                 </div>
                 {/* Template 4: Creative */}
                 <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -266,7 +267,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <p className="font-serif text-sm text-[#1a1a1a]">Creative</p>
-                  <p className="text-xs text-stone-400 font-light">Design & Marketing</p>
+                  <p className="text-xs text-stone-500 font-light">Design & Marketing</p>
                 </div>
               </div>
             </div>
@@ -308,11 +309,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-8 lg:px-16">
           <div className="text-center mb-16">
             <h2 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
-              Loved by job seekers worldwide
+              What job seekers are telling us
             </h2>
             <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
             <p className="text-lg text-stone-500 font-light">
-              See what our users have to say
+              A few quotes from early user feedback
             </p>
           </div>
 
@@ -325,8 +326,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
-                "I was applying to jobs for months with no luck. After optimizing my resume with Hired, 
-                I got 3 interviews in the first week. Now I'm working at my dream company!"
+                "I'd been tweaking my resume for weeks without making real progress. Hired pointed out keyword gaps I never would've spotted on my own — and the rewrite suggestions were ones I actually wanted to use."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
@@ -334,7 +334,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="font-medium text-[#1a1a1a] text-sm">Maya G.</p>
-                  <p className="text-xs text-stone-400 font-light">Product Manager</p>
+                  <p className="text-xs text-stone-500 font-light">Product Manager</p>
                 </div>
               </div>
             </div>
@@ -347,8 +347,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
-                "The AI suggestions were incredibly helpful. It highlighted skills I didn't even think 
-                to include. My resume score went from 45% to 98%!"
+                "Most resume tools spit out generic templates. The feedback here was specific to the job I was applying for and called out things I'd actually missed."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
@@ -356,7 +355,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="font-medium text-[#1a1a1a] text-sm">Amit R.</p>
-                  <p className="text-xs text-stone-400 font-light">Software Engineer</p>
+                  <p className="text-xs text-stone-500 font-light">Software Engineer</p>
                 </div>
               </div>
             </div>
@@ -369,8 +368,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
-                "As a career changer, I struggled to present my transferable skills. 
-                Hired's AI helped me reframe my experience perfectly. Got hired within 3 weeks!"
+                "Coming from a non-traditional background, presenting transferable skills was the hardest part. The AI gave me language I'd been struggling to find myself."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
@@ -378,57 +376,59 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="font-medium text-[#1a1a1a] text-sm">Shaked A.</p>
-                  <p className="text-xs text-stone-400 font-light">Data Analyst</p>
+                  <p className="text-xs text-stone-500 font-light">Data Analyst</p>
                 </div>
               </div>
             </div>
           </div>
+          <p className="text-center text-xs text-stone-500 font-light mt-8 tracking-wide">
+            Quotes from anonymized user interviews. Outcomes vary.
+          </p>
         </div>
       </section>
 
       {/* Final CTA Section */}
-      <section className="w-full min-h-screen flex items-center py-16 bg-[#0A2647]">
+      <section className="w-full py-24 sm:py-28 bg-[#0A2647]">
         <div className="max-w-3xl mx-auto px-8 lg:px-16 text-center">
           <h2 className="font-serif text-4xl sm:text-5xl font-light text-white mb-6">
             Ready to get Hired?
           </h2>
           <div className="w-16 h-px bg-[#B8860B] mx-auto mb-6" />
-          <p className="text-lg text-white/70 mb-10 font-light">
-            Transform your job search with AI-powered resume optimization. Start for free today.
+          <p className="text-lg text-white/80 mb-10 font-light">
+            See where your resume stands in 60 seconds — no signup, no card.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-            <Link 
-              href="/builder"
-              className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 transition-all tracking-wide"
-            >
-              Start for Free
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
-            </Link>
-            <p className="text-white/50 text-sm font-light">No credit card required</p>
+            <SignedOut>
+              <Link
+                href="/score"
+                className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 transition-all tracking-wide"
+              >
+                Check Your Score — Free
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+              </Link>
+              <SignUpButton mode="modal">
+                <button className="text-white/80 hover:text-white text-sm font-light underline-offset-4 hover:underline tracking-wide">
+                  or create an account
+                </button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                href="/builder"
+                className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 transition-all tracking-wide"
+              >
+                Continue Building
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+              </Link>
+            </SignedIn>
           </div>
+          <p className="text-white/60 text-xs font-light mt-6 tracking-wide">
+            "The feedback here was specific to the job I was applying for and called out things I'd actually missed." — Amit R., Software Engineer
+          </p>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="w-full bg-[#0A2647] border-t border-white/10 text-white/60 py-10">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <Logo variant="light" size="md" />
-            </div>
-            <div className="flex items-center gap-10 text-sm font-light tracking-wide">
-              <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-              <Link href="/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">
-                Contact
-              </Link>
-            </div>
-            <p className="text-sm font-light">© 2026 Hired. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

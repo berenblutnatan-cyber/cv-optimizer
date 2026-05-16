@@ -23,6 +23,7 @@ import { SignUpButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { GoalSelector } from "@/components/teaser/GoalSelector";
+import { SiteFooter } from "@/components/shared/SiteFooter";
 import { useTeaserStore } from "@/stores/teaserStore";
 import { isValidJobTitle } from "@/constants/jobTitles";
 
@@ -194,6 +195,31 @@ export default function ScoreTeaserPage() {
             <p className="text-lg text-stone-500 max-w-xl mx-auto font-light">
               See how your resume stacks up for your target role. No sign-up required.
             </p>
+
+            {/* Sample-report preview — answers "what will I actually get?" before I upload */}
+            <details className="mt-8 max-w-md mx-auto text-left group">
+              <summary className="cursor-pointer text-sm font-medium text-[#0A2647] hover:text-[#0d3259] tracking-wide flex items-center gap-2 justify-center">
+                <span className="group-open:hidden">Preview a sample report</span>
+                <span className="hidden group-open:inline">Hide sample report</span>
+                <ArrowRight className="w-3 h-3 transition-transform group-open:rotate-90" strokeWidth={2} />
+              </summary>
+              <div className="mt-4 p-5 bg-white rounded-sm border border-stone-200 shadow-sm">
+                <div className="flex items-baseline justify-between mb-3">
+                  <span className="text-xs text-stone-500 uppercase tracking-wider font-medium">Match Score</span>
+                  <span className="font-serif text-3xl text-[#0A2647]">72<span className="text-base text-stone-500">/100</span></span>
+                </div>
+                <div className="space-y-2 text-xs text-stone-600 font-light">
+                  <div className="flex items-center justify-between"><span>Keyword coverage</span><span className="font-medium text-[#1a1a1a]">68%</span></div>
+                  <div className="flex items-center justify-between"><span>ATS readability</span><span className="font-medium text-[#1a1a1a]">85%</span></div>
+                  <div className="flex items-center justify-between"><span>Impact phrasing</span><span className="font-medium text-[#1a1a1a]">63%</span></div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-stone-100">
+                  <p className="text-xs text-stone-500 font-light leading-relaxed">
+                    + a free list of the top missing keywords for your target role.
+                  </p>
+                </div>
+              </div>
+            </details>
           </div>
 
           <AnimatePresence mode="wait" initial={false}>
@@ -234,12 +260,12 @@ export default function ScoreTeaserPage() {
                         onClick={() => setFile(null)}
                         className="p-2 hover:bg-stone-100 rounded-sm transition-colors ml-4"
                       >
-                        <X className="w-5 h-5 text-stone-400" strokeWidth={1.5} />
+                        <X className="w-5 h-5 text-stone-500" strokeWidth={1.5} />
                       </button>
                     </div>
                   ) : (
                     <>
-                      <Upload className="w-12 h-12 text-stone-400 mx-auto mb-4" strokeWidth={1.5} />
+                      <Upload className="w-12 h-12 text-stone-500 mx-auto mb-4" strokeWidth={1.5} />
                       <p className="font-serif text-lg text-[#1a1a1a] mb-2">
                         Drop your resume here
                       </p>
@@ -281,7 +307,7 @@ export default function ScoreTeaserPage() {
                 <button
                   onClick={handleAnalyze}
                   disabled={!file || !targetRole || isAnalyzing}
-                  className="w-full py-4 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-400 text-white font-medium rounded-sm transition-all flex items-center justify-center gap-3 text-lg shadow-sm hover:shadow-md disabled:shadow-none tracking-wide"
+                  className="w-full py-4 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-500 text-white font-medium rounded-sm transition-all flex items-center justify-center gap-3 text-lg shadow-sm hover:shadow-md disabled:shadow-none tracking-wide"
                 >
                   <Sparkles className="w-5 h-5" strokeWidth={1.5} />
                   Calculate My Score
@@ -459,7 +485,7 @@ export default function ScoreTeaserPage() {
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-white via-white/95 to-white/80">
                     <div className="text-center px-6 max-w-md">
                       <div className="w-16 h-16 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center mx-auto mb-5">
-                        <Lock className="w-8 h-8 text-stone-400" strokeWidth={1.5} />
+                        <Lock className="w-8 h-8 text-stone-500" strokeWidth={1.5} />
                       </div>
                       
                       <h3 className="font-serif text-xl text-[#1a1a1a] mb-2">
@@ -496,29 +522,7 @@ export default function ScoreTeaserPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full bg-[#0A2647] border-t border-white/10 text-white/60 py-10">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <Logo variant="light" size="md" />
-            </div>
-            <div className="flex items-center gap-10 text-sm font-light tracking-wide">
-              <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-              <Link href="/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">
-                Contact
-              </Link>
-            </div>
-            <p className="text-sm font-light">© 2026 Hired. All rights reserved.</p>
-          </div>
-          <div className="mt-6 text-center text-sm font-light text-white/50">
-            <p>Your resume is analyzed securely and never stored without your permission.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

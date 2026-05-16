@@ -370,7 +370,7 @@ export function OptimizerClient() {
                 </div>
                 <div>
                   <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">Your Resume</h2>
-                  <p className="text-sm text-stone-400 font-light">PDF, DOCX, or plain text</p>
+                  <p className="text-sm text-stone-500 font-light">PDF, DOCX, or plain text</p>
                 </div>
               </div>
 
@@ -394,20 +394,20 @@ export function OptimizerClient() {
                     </div>
                     <div className="text-left">
                       <p className="font-medium text-[#1a1a1a]">{cvFile.name}</p>
-                      <p className="text-sm text-stone-400">{(cvFile.size / 1024).toFixed(1)} KB</p>
+                      <p className="text-sm text-stone-500">{(cvFile.size / 1024).toFixed(1)} KB</p>
                     </div>
                     <button
                       onClick={() => { setCvFile(null); setCvText(""); }}
                       className="p-2 hover:bg-stone-100 rounded-full ml-2 transition-colors"
                     >
-                      <X className="w-4 h-4 text-stone-400" />
+                      <X className="w-4 h-4 text-stone-500" />
                     </button>
                   </div>
                 ) : (
                   <>
-                    <Upload className="w-8 h-8 text-stone-300 mx-auto mb-4" strokeWidth={1.5} />
+                    <Upload className="w-8 h-8 text-stone-500 mx-auto mb-4" strokeWidth={1.5} />
                     <p className="text-stone-500 mb-2 font-light">Drag and drop your resume here</p>
-                    <p className="text-sm text-stone-300 mb-5">or</p>
+                    <p className="text-sm text-stone-500 mb-5">or</p>
                     <label className="inline-flex items-center gap-2 px-6 py-3 bg-transparent border border-[#0A2647] text-[#0A2647] font-medium rounded-sm cursor-pointer hover:bg-[#0A2647] hover:text-white transition-all tracking-wide text-sm">
                       <span>Select File</span>
                       <input
@@ -424,33 +424,36 @@ export function OptimizerClient() {
               {/* Divider */}
               <div className="relative my-8">
                 <div className="absolute inset-x-0 top-1/2 h-px bg-stone-200" />
-                <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-white px-4 text-sm text-stone-400 font-light">
+                <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-white px-4 text-sm text-stone-500 font-light">
                   or paste text
                 </span>
               </div>
 
               {/* Text Area */}
+              <label htmlFor="cv-text" className="sr-only">Resume content</label>
               <textarea
+                id="cv-text"
                 value={cvText}
                 onChange={(e) => { setCvText(e.target.value); if (e.target.value) setCvFile(null); }}
                 placeholder="Please paste your resume contents here..."
-                className="w-full h-40 p-5 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light leading-relaxed"
+                className="w-full h-40 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
               />
 
               {/* Summary Section */}
               <div className="mt-8 pt-8 border-t border-stone-100">
                 <div className="flex items-center gap-3 mb-4">
-                  <Pen className="w-4 h-4 text-stone-400" strokeWidth={1.5} />
+                  <Pen className="w-4 h-4 text-stone-500" strokeWidth={1.5} />
                   <div>
-                    <h3 className="font-medium text-[#1a1a1a] text-sm tracking-wide">Professional Summary</h3>
-                    <p className="text-xs text-stone-400 font-light">Optional — AI will enhance it</p>
+                    <label htmlFor="summary" className="font-medium text-[#1a1a1a] text-sm tracking-wide block">Professional Summary</label>
+                    <p className="text-xs text-stone-500 font-light">Optional — AI will enhance it</p>
                   </div>
                 </div>
                 <textarea
+                  id="summary"
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
                   placeholder="A brief 2-4 sentence summary of your experience and goals..."
-                  className="w-full h-24 p-4 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light leading-relaxed"
+                  className="w-full h-24 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                 />
               </div>
             </div>
@@ -463,7 +466,7 @@ export function OptimizerClient() {
                 </div>
                 <div>
                   <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">Target Role</h2>
-                  <p className="text-sm text-stone-400 font-light">Role details for tailored optimization</p>
+                  <p className="text-sm text-stone-500 font-light">Role details for tailored optimization</p>
                 </div>
               </div>
 
@@ -488,23 +491,24 @@ export function OptimizerClient() {
 
               {/* Job Title Input */}
               <div className="mb-8">
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-3 tracking-wide">
+                <label htmlFor="job-title" className="block text-sm font-medium text-[#1a1a1a] mb-3 tracking-wide">
                   Target Job Title
                 </label>
                 <input
+                  id="job-title"
                   type="text"
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
                   placeholder="e.g. Senior Software Engineer"
-                  className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                 />
               </div>
 
               {/* Toggle: URL vs Description */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-4 tracking-wide">
+                <span className="block text-sm font-medium text-[#1a1a1a] mb-4 tracking-wide">
                   Job Details
-                </label>
+                </span>
                 <div className="flex border-b border-stone-200 mb-6">
                   <button
                     type="button"
@@ -512,7 +516,7 @@ export function OptimizerClient() {
                     className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
                       jobInputMode === "description"
                         ? "border-[#0A2647] text-[#0A2647]"
-                        : "border-transparent text-stone-400 hover:text-stone-600"
+                        : "border-transparent text-stone-500 hover:text-stone-600"
                     }`}
                   >
                     <FileSearch className="w-4 h-4" strokeWidth={1.5} />
@@ -524,7 +528,7 @@ export function OptimizerClient() {
                     className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
                       jobInputMode === "url"
                         ? "border-[#0A2647] text-[#0A2647]"
-                        : "border-transparent text-stone-400 hover:text-stone-600"
+                        : "border-transparent text-stone-500 hover:text-stone-600"
                     }`}
                   >
                     <LinkIcon className="w-4 h-4" strokeWidth={1.5} />
@@ -534,26 +538,30 @@ export function OptimizerClient() {
 
                 {jobInputMode === "url" ? (
                   <div>
+                    <label htmlFor="job-url" className="sr-only">LinkedIn job URL</label>
                     <input
+                      id="job-url"
                       type="url"
                       value={jobUrl}
                       onChange={(e) => setJobUrl(e.target.value)}
                       placeholder="https://linkedin.com/jobs/view/..."
-                      className="w-full px-0 py-3 border-b border-stone-200 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                     />
-                    <p className="text-xs text-stone-400 mt-3 font-light">
+                    <p className="text-xs text-stone-500 mt-3 font-light">
                       We'll extract the job details automatically
                     </p>
                   </div>
                 ) : (
                   <div>
+                    <label htmlFor="job-description" className="sr-only">Job description</label>
                     <textarea
+                      id="job-description"
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
                       placeholder="Please paste the complete job description here..."
-                      className="w-full h-[180px] p-0 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light leading-relaxed"
+                      className="w-full h-[180px] p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                     />
-                    <p className="text-xs text-stone-400 mt-3 font-light">
+                    <p className="text-xs text-stone-500 mt-3 font-light">
                       Include requirements, responsibilities, and qualifications
                     </p>
                   </div>
@@ -568,7 +576,7 @@ export function OptimizerClient() {
             <button
               onClick={handleAnalyze}
               disabled={!canAnalyze || isAnalyzing}
-              className="group inline-flex items-center gap-4 px-12 py-5 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-400 text-white font-medium rounded-sm transition-all text-base tracking-wide"
+              className="group inline-flex items-center gap-4 px-12 py-5 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-500 text-white font-medium rounded-sm transition-all text-base tracking-wide"
             >
               {isAnalyzing ? (
                 <>
@@ -583,11 +591,11 @@ export function OptimizerClient() {
               )}
             </button>
             
-            {/* Token Cost Info */}
+            {/* Credit Cost Info */}
             <div className="flex items-center gap-2 px-4 py-2 bg-[#B8860B]/5 border border-[#B8860B]/20 rounded-sm">
               <Coins className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
               <span className="text-sm text-stone-600 font-light">
-                <span className="font-medium text-[#B8860B]">1 Token</span> per optimization
+                <span className="font-medium text-[#B8860B]">1 Credit</span> per optimization
               </span>
               <Link 
                 href="/pricing"
@@ -599,7 +607,7 @@ export function OptimizerClient() {
           </div>
 
           {/* Helper Text */}
-          <p className="text-center text-sm text-stone-400 mt-6 font-light tracking-wide">
+          <p className="text-center text-sm text-stone-500 mt-6 font-light tracking-wide">
             For best results, provide the complete job description
           </p>
         </div>

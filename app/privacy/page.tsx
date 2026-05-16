@@ -1,16 +1,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { SiteFooter } from '@/components/shared/SiteFooter';
+
+const LAST_UPDATED = "May 11, 2026";
 
 export default function PrivacyPolicy() {
-  const lastUpdated = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const lastUpdated = LAST_UPDATED;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col"><div className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
         <div className="px-6 py-8 sm:p-10">
           {/* Back Button */}
@@ -31,7 +30,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-3">1. Introduction</h2>
               <p>
-                At Hired CV ("we," "our," or "the Service"), we are committed to protecting your privacy. 
+                At Hired ("we," "our," or "the Service"), we are committed to protecting your privacy. 
                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you 
                 use our website and services.
               </p>
@@ -158,6 +157,8 @@ export default function PrivacyPolicy() {
           </div>
         </div>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

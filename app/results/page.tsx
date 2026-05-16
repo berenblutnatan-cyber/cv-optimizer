@@ -226,7 +226,7 @@ export default function ResultsPage() {
       </main>
 
       <footer className="w-full border-t border-stone-200/60 py-5 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16 text-center text-stone-400 text-xs font-light tracking-wide">
+        <div className="max-w-7xl mx-auto px-8 lg:px-16 text-center text-stone-500 text-xs font-light tracking-wide">
           Powered by AI • Your data is secure and never stored
         </div>
       </footer>
@@ -245,7 +245,7 @@ export default function ResultsPage() {
               onClick={() => setShowSignInPrompt(false)}
               className="absolute top-5 right-5 p-2 hover:bg-stone-100 rounded-full transition-colors"
             >
-              <X className="w-5 h-5 text-stone-400" strokeWidth={1.5} />
+              <X className="w-5 h-5 text-stone-500" strokeWidth={1.5} />
             </button>
             <div className="mb-6">
               <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[#0A2647]/10 flex items-center justify-center">

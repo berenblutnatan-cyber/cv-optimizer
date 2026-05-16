@@ -1107,7 +1107,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <button
               onClick={coverLetterTab.onGenerate}
               disabled={coverLetterTab.isGenerating || !!coverLetterTab.text}
-              className="w-full px-6 py-4 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-400 text-white text-base font-medium rounded-sm transition-all shadow-sm hover:shadow-md disabled:shadow-none flex items-center justify-center gap-2 tracking-wide"
+              className="w-full px-6 py-4 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-500 text-white text-base font-medium rounded-sm transition-all shadow-sm hover:shadow-md disabled:shadow-none flex items-center justify-center gap-2 tracking-wide"
             >
               {coverLetterTab.isGenerating ? (
                 <>
@@ -1155,7 +1155,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <textarea
                   value={coverLetterTab.text}
                   onChange={(e) => coverLetterTab.onTextChange(e.target.value)}
-                  className="w-full flex-1 min-h-[320px] px-5 py-4 bg-white text-[#1a1a1a] border border-stone-200 rounded-sm focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] outline-none resize-none placeholder:text-stone-400 leading-relaxed shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] font-light"
+                  className="w-full flex-1 min-h-[320px] px-5 py-4 bg-white text-[#1a1a1a] border border-stone-200 rounded-sm focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] outline-none resize-none placeholder:text-stone-500 leading-relaxed shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] font-light"
                 />
               </div>
             )}

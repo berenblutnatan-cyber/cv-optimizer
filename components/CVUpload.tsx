@@ -63,7 +63,7 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
           className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
             inputMode === "upload"
               ? "border-[#0A2647] text-[#0A2647]"
-              : "border-transparent text-stone-400 hover:text-stone-600"
+              : "border-transparent text-stone-500 hover:text-stone-600"
           }`}
         >
           Upload PDF
@@ -73,7 +73,7 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
           className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
             inputMode === "paste"
               ? "border-[#0A2647] text-[#0A2647]"
-              : "border-transparent text-stone-400 hover:text-stone-600"
+              : "border-transparent text-stone-500 hover:text-stone-600"
           }`}
         >
           Paste Text
@@ -91,14 +91,14 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
                   </div>
                   <div>
                     <p className="font-medium text-[#1a1a1a]">{selectedFile.name}</p>
-                    <p className="text-sm text-stone-400 font-light">
+                    <p className="text-sm text-stone-500 font-light">
                       {(selectedFile.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleRemoveFile}
-                  className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                  className="p-2 text-stone-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
                 >
                   <X className="w-5 h-5" strokeWidth={1.5} />
                 </button>
@@ -123,12 +123,12 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
                 id="cv-upload"
               />
               <label htmlFor="cv-upload" className="cursor-pointer">
-                <Upload className="w-8 h-8 text-stone-300 mx-auto mb-4" strokeWidth={1.5} />
+                <Upload className="w-8 h-8 text-stone-500 mx-auto mb-4" strokeWidth={1.5} />
                 <p className="text-stone-500 mb-2 font-light">
                   Drag and drop your PDF or{" "}
                   <span className="text-[#0A2647] font-medium">browse</span>
                 </p>
-                <p className="text-stone-400 text-sm font-light">PDF only • Max 10MB</p>
+                <p className="text-stone-500 text-sm font-light">PDF only • Max 10MB</p>
               </label>
             </div>
           )}
@@ -141,7 +141,7 @@ export function CVUpload({ onFileSelect, onTextChange, selectedFile, cvText }: C
             onFileSelect(null);
           }}
           placeholder="Please paste your resume contents here..."
-          className="w-full h-48 p-0 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-300 bg-transparent font-light leading-relaxed"
+          className="w-full h-48 p-0 border-b border-stone-200 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] transition-colors placeholder:text-stone-500 bg-transparent font-light leading-relaxed"
         />
       )}
     </div>

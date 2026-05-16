@@ -29,7 +29,7 @@ export function PolarCheckoutButton({
 
   if (!isLoaded) {
     return (
-      <div className={`${baseClasses} bg-stone-100 text-stone-400`}>
+      <div className={`${baseClasses} bg-stone-100 text-stone-500`}>
         Loading…
       </div>
     );

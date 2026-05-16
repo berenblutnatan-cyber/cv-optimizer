@@ -157,7 +157,7 @@ export default function BuilderPage() {
                 Back
               </button>
               
-              <span className="text-stone-400 text-sm font-light tracking-wide">
+              <span className="text-stone-500 text-sm font-light tracking-wide">
                 Step {currentStep + 1} of {TOTAL_STEPS}
               </span>
 
@@ -193,7 +193,7 @@ export default function BuilderPage() {
                     </div>
                     <div>
                       <h2 className="font-serif text-lg text-[#1a1a1a]">Live Preview</h2>
-                      <p className="text-xs text-stone-400 font-light">Auto-scales to fit</p>
+                      <p className="text-xs text-stone-500 font-light">Auto-scales to fit</p>
                     </div>
                   </div>
                   <Link 
@@ -264,7 +264,7 @@ function ProgressBar({
     <div className="space-y-4">
       {/* Progress percentage */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-stone-400 font-light tracking-wide">Progress</span>
+        <span className="text-stone-500 font-light tracking-wide">Progress</span>
         <span className="text-[#0A2647] font-medium tracking-wide">{Math.round(progressPercent)}% Complete</span>
       </div>
 
@@ -287,7 +287,7 @@ function ProgressBar({
                 ? "bg-[#0A2647]/5 text-[#0A2647]"
                 : index < currentStep
                 ? "text-[#0A2647] hover:bg-stone-100"
-                : "text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+                : "text-stone-500 hover:bg-stone-100 hover:text-stone-600"
             }`}
           >
             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
@@ -1000,7 +1000,7 @@ function FormInput({
   return (
     <input
       {...props}
-      className={`w-full px-4 py-3 bg-white border-b border-stone-200 text-[#1a1a1a] placeholder:text-stone-300 focus:outline-none focus:border-[#0A2647] transition-all font-light ${className}`}
+      className={`w-full px-4 py-3 bg-white border-b border-stone-200 text-[#1a1a1a] placeholder:text-stone-500 focus:outline-none focus:border-[#0A2647] transition-all font-light ${className}`}
     />
   );
 }
@@ -1009,7 +1009,7 @@ function EmptyState({ text, subtext }: { text: string; subtext?: string }) {
   return (
     <div className="text-center py-12 bg-stone-50 border border-dashed border-stone-200 rounded-sm">
       <p className="text-stone-500 font-light">{text}</p>
-      {subtext && <p className="text-stone-400 text-sm mt-2 font-light">{subtext}</p>}
+      {subtext && <p className="text-stone-500 text-sm mt-2 font-light">{subtext}</p>}
     </div>
   );
 }
@@ -1030,7 +1030,7 @@ function SkillTag({ label, onRemove }: { label: string; onRemove: () => void }) 
 
 function CompletionItem({ label, completed }: { label: string; completed: boolean }) {
   return (
-    <div className={`flex items-center gap-2 ${completed ? 'text-[#0A2647]' : 'text-stone-400'}`}>
+    <div className={`flex items-center gap-2 ${completed ? 'text-[#0A2647]' : 'text-stone-500'}`}>
       {completed ? <Check className="w-4 h-4" strokeWidth={1.5} /> : <X className="w-4 h-4" strokeWidth={1.5} />}
       <span className="font-light">{label}</span>
     </div>

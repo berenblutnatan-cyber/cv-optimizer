@@ -45,9 +45,9 @@ html {
 }
 
 body {
-  /* Black base across the entire app */
-  background-color: #000000;
-  color: #ffffff;
+  /* Cream base — sections override with their own bg as needed */
+  background-color: #FAFAF8;
+  color: #1a1a1a;
   @apply antialiased;
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
     "Apple Color Emoji", "Segoe UI Emoji";

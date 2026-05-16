@@ -1,16 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { SiteFooter } from '@/components/shared/SiteFooter';
 
 export default function TermsOfService() {
-  const lastUpdated = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const lastUpdated = "May 11, 2026";
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col"><div className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
         <div className="px-6 py-8 sm:p-10">
           {/* Back Button */}
@@ -31,7 +28,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-3">1. Introduction</h2>
               <p>
-                Welcome to the CV Optimizer, operated by <strong>hired-cv</strong> ("we," "our," or "us") ("the Service"). 
+                Welcome to Hired, operated by <strong>Hired</strong> ("we," "our," or "us") ("the Service"). 
                 By accessing or using our website and services, you agree to be bound by these Terms of Service. 
                 If you do not agree to these terms, please do not use the Service.
               </p>
@@ -108,6 +105,8 @@ export default function TermsOfService() {
           </div>
         </div>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function Watermark({ className = "" }: WatermarkProps) {
           userSelect: "none",
         }}
       >
-        Hired CV - Preview
+        Hired - Preview
       </div>
     </div>
   );

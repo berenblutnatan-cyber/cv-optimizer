@@ -12,6 +12,7 @@ import { Logo } from "@/components/Logo";
 import { CreditBalance } from "@/components/CreditBalance";
 import { PolarCheckoutButton } from '@/components/PolarCheckoutButton';
 import { CouponRedeem } from '@/components/CouponRedeem';
+import { SiteFooter } from '@/components/shared/SiteFooter';
 
 export default function PricingPage() {
   return (
@@ -122,16 +123,16 @@ export default function PricingPage() {
                     <span className="text-stone-600 font-light">Keyword Gap Detection</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <X className="w-5 h-5 text-stone-300 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-400 line-through font-light">Full AI Rewrite (Preview Only)</span>
+                    <X className="w-5 h-5 text-stone-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <span className="text-stone-500 line-through font-light">Full AI Rewrite (Preview Only)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <X className="w-5 h-5 text-stone-300 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-400 line-through font-light">File Download (PDF/Docx)</span>
+                    <X className="w-5 h-5 text-stone-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <span className="text-stone-500 line-through font-light">File Download (PDF/Docx)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <X className="w-5 h-5 text-stone-300 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-400 line-through font-light">Cover Letter</span>
+                    <X className="w-5 h-5 text-stone-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <span className="text-stone-500 line-through font-light">Cover Letter</span>
                   </li>
                 </ul>
               </div>
@@ -190,14 +191,8 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Tier 3: Pro - MOST POPULAR (Elevated) */}
-            <div className="bg-white rounded-sm border-2 border-[#0A2647] shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_50px_-12px_rgba(0,0,0,0.15)] transition-all duration-300 p-8 flex flex-col relative">
-              {/* Most Popular Badge */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-[#0A2647] text-white text-xs font-medium px-4 py-1.5 rounded-sm shadow-sm tracking-wide whitespace-nowrap">
-                  MOST POPULAR
-                </span>
-              </div>
+            {/* Tier 3: Pro */}
+            <div className="bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-8px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] transition-all duration-300 p-8 flex flex-col relative">
 
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -246,12 +241,12 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Tier 4: Ultimate - BEST VALUE (Elevated) */}
-            <div className="bg-white rounded-sm border-2 border-[#B8860B] shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_50px_-12px_rgba(0,0,0,0.15)] transition-all duration-300 p-8 flex flex-col relative">
-              {/* Best Value Badge */}
+            {/* Tier 4: Ultimate - MOST POPULAR (Elevated) */}
+            <div className="bg-white rounded-sm border-2 border-[#B8860B] shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_50px_-12px_rgba(0,0,0,0.15)] transition-all duration-300 p-8 flex flex-col relative scale-105">
+              {/* Most Popular Badge */}
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                 <span className="bg-[#B8860B] text-white text-xs font-medium px-4 py-1.5 rounded-sm shadow-sm tracking-wide whitespace-nowrap">
-                  BEST VALUE
+                  MOST POPULAR · BEST VALUE
                 </span>
               </div>
 
@@ -269,7 +264,8 @@ export default function PricingPage() {
                     <span className="font-serif text-4xl font-light text-[#1a1a1a]">$20</span>
                     <span className="text-sm text-stone-500 font-light">One-time</span>
                   </div>
-                  <p className="text-xs text-[#B8860B] font-medium mt-1">60 Credits</p>
+                  <p className="text-xs text-[#B8860B] font-medium mt-1">60 Credits · $0.33 each</p>
+                  <p className="text-xs text-stone-500 font-light mt-1">Save 26% per credit vs Pro</p>
                 </div>
 
                 {/* Features List */}
@@ -322,26 +318,7 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="w-full bg-[#0A2647] border-t border-white/10 text-white/60 py-10">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <Logo variant="light" size="md" />
-            </div>
-            <div className="flex items-center gap-10 text-sm font-light tracking-wide">
-              <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-              <Link href="/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">
-                Contact
-              </Link>
-            </div>
-            <p className="text-sm font-light">© 2026 Hired. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

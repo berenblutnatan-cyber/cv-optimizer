@@ -91,7 +91,7 @@ export function AuthModal({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-sm transition-colors z-10"
+          className="absolute top-5 right-5 p-2 text-stone-500 hover:text-stone-600 hover:bg-stone-100 rounded-sm transition-colors z-10"
         >
           <X className="w-5 h-5" strokeWidth={1.5} />
         </button>
@@ -138,7 +138,7 @@ export function AuthModal({
             
             <div className="flex items-center gap-4">
               <div className="flex-1 h-px bg-stone-200" />
-              <span className="text-xs text-stone-400 font-light tracking-wide">or</span>
+              <span className="text-xs text-stone-500 font-light tracking-wide">or</span>
               <div className="flex-1 h-px bg-stone-200" />
             </div>
             
@@ -148,7 +148,7 @@ export function AuthModal({
               </button>
             </SignInButton>
             
-            <p className="text-center text-xs text-stone-400 font-light pt-2 tracking-wide">
+            <p className="text-center text-xs text-stone-500 font-light pt-2 tracking-wide">
               No credit card required
             </p>
           </div>

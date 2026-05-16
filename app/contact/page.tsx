@@ -1,10 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail, MessageSquare, HelpCircle } from 'lucide-react';
+import { SiteFooter } from '@/components/shared/SiteFooter';
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col"><div className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
         <div className="px-6 py-8 sm:p-10">
           {/* Back Button */}
@@ -46,7 +47,7 @@ export default function ContactPage() {
                 What We Can Help With
               </h2>
               <ul className="list-disc list-outside ml-5 space-y-2 text-gray-700">
-                <li>Questions about using Hired CV</li>
+                <li>Questions about using Hired</li>
                 <li>Technical issues or bugs</li>
                 <li>Account and billing inquiries</li>
                 <li>Feature requests and feedback</li>
@@ -79,6 +80,8 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }
