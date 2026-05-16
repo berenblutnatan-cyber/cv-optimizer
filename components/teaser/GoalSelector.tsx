@@ -148,7 +148,7 @@ export function GoalSelector({ value, onChange, error }: GoalSelectorProps) {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="What is your target role?"
-          className="flex-1 bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
+          className="flex-1 bg-transparent outline-none text-slate-800 text-base placeholder:text-slate-400"
         />
 
         {/* Clear / Chevron */}

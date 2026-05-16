@@ -163,7 +163,7 @@ export default function ScoreTeaserPage() {
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
-        <div className="w-full px-8 md:px-16 h-20 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-8 md:px-16 h-20 flex items-center justify-between">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
           
@@ -179,7 +179,7 @@ export default function ScoreTeaserPage() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full px-8 lg:px-16 pt-28 pb-16">
+      <main className="w-full px-4 sm:px-8 lg:px-16 pt-28 pb-16">
         <div className="max-w-3xl mx-auto">
           {/* Title */}
           <div className="text-center mb-12">
@@ -456,6 +456,12 @@ export default function ScoreTeaserPage() {
                         <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
                       </button>
                     </SignUpButton>
+
+                    <div className="mt-3">
+                      <Link href="/pricing" className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light">
+                        Or see all plans →
+                      </Link>
+                    </div>
 
                     <p className="text-sm text-stone-500 mt-4 flex items-center justify-center gap-4 font-light flex-wrap">
                       <span className="flex items-center gap-1">

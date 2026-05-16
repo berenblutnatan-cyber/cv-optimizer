@@ -30,10 +30,11 @@ export default function LandingPage() {
             {/* Lead Magnet: Check Score */}
             <Link
               href="/score"
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap"
             >
               <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
-              CV Score Check
+              <span className="sm:hidden">Score</span>
+              <span className="hidden sm:inline">CV Score Check</span>
             </Link>
 
             <SignedOut>

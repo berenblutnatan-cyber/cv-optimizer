@@ -79,7 +79,7 @@ export function CouponRedeem() {
               setMessage(null); // Clear message when typing
             }}
             placeholder="Enter promo code (e.g., LAUNCH2024)"
-            className="flex-1 px-4 py-2.5 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] text-sm font-light text-[#1a1a1a] placeholder:text-stone-500"
+            className="flex-1 px-4 py-2.5 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] text-base sm:text-sm font-light text-[#1a1a1a] placeholder:text-stone-500"
             disabled={isRedeeming}
           />
           <button

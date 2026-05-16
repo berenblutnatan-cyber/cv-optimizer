@@ -20,7 +20,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
-        <div className="w-full px-8 md:px-16 h-20 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-8 md:px-16 h-20 flex items-center justify-between">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
           
@@ -40,12 +40,13 @@ export default function PricingPage() {
           {/* Score Button + Auth Buttons - Far Right */}
           <div className="flex items-center gap-6">
             {/* Lead Magnet: Check Score */}
-            <Link 
+            <Link
               href="/score"
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap"
             >
               <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
-              CV Score Check
+              <span className="sm:hidden">Score</span>
+              <span className="hidden sm:inline">CV Score Check</span>
             </Link>
             
             <SignedOut>
@@ -75,7 +76,7 @@ export default function PricingPage() {
       </header>
 
       {/* Main Content */}
-      <div className="pt-28 pb-16 px-8 lg:px-16">
+      <div className="pt-28 pb-16 px-4 sm:px-8 lg:px-16">
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
           <div className="text-center mb-16">
@@ -96,7 +97,7 @@ export default function PricingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             
             {/* Tier 1: Free Audit */}
-            <div className="bg-white rounded-sm border border-stone-200 hover:border-stone-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)] transition-all duration-300 p-8 flex flex-col">
+            <div className="bg-white rounded-sm border border-stone-200 hover:border-stone-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)] transition-all duration-300 p-6 md:p-8 flex flex-col">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
@@ -148,7 +149,7 @@ export default function PricingPage() {
             </div>
 
             {/* Tier 2: Starter */}
-            <div className="bg-white rounded-sm border border-stone-200 hover:border-stone-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)] transition-all duration-300 p-8 flex flex-col">
+            <div className="bg-white rounded-sm border border-stone-200 hover:border-stone-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)] transition-all duration-300 p-6 md:p-8 flex flex-col">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
@@ -193,7 +194,7 @@ export default function PricingPage() {
             </div>
 
             {/* Tier 3: Pro */}
-            <div className="bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-8px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] transition-all duration-300 p-8 flex flex-col relative">
+            <div className="bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-8px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] transition-all duration-300 p-6 md:p-8 flex flex-col relative">
 
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -243,7 +244,7 @@ export default function PricingPage() {
             </div>
 
             {/* Tier 4: Ultimate - MOST POPULAR (Elevated) */}
-            <div className="bg-white rounded-sm border-2 border-[#B8860B] shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_50px_-12px_rgba(0,0,0,0.15)] transition-all duration-300 p-8 flex flex-col relative scale-105">
+            <div className="bg-white rounded-sm border-2 border-[#B8860B] shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_50px_-12px_rgba(0,0,0,0.15)] transition-all duration-300 p-6 md:p-8 flex flex-col relative md:scale-105 md:order-none -order-1">
               {/* Most Popular Badge */}
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                 <span className="bg-[#B8860B] text-white text-xs font-medium px-4 py-1.5 rounded-sm shadow-sm tracking-wide whitespace-nowrap">

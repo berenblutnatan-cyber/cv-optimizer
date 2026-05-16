@@ -63,6 +63,13 @@ export const metadata: Metadata = {
   description: "Don't just apply. Get Hired. Build a resume that gets you hired with our AI-powered resume builder and optimizer.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#0A2647",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
