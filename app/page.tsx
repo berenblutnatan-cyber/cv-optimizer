@@ -81,13 +81,13 @@ export default function LandingPage() {
                 AI-Powered Resume Builder
               </div>
 
-              <h1 className="font-serif text-3xl sm:text-5xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-4 sm:mb-8 leading-[1.1]">
-                Elevate your resume.{" "}
-                <span className="text-indigo-600">Maximize your potential.</span>
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-[4rem] font-normal tracking-tight text-[#1a1a1a] mb-4 sm:mb-8 leading-[1.1]">
+                Beat the bots.{" "}
+                <span className="text-indigo-600">Land the interview.</span>
               </h1>
 
               <p className="text-sm sm:text-lg text-stone-500 mb-6 sm:mb-12 leading-relaxed font-light">
-                Create or optimize resumes with AI, tailored for every job you apply to. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
+                AI tailors your resume for every job posting — ATS-ready in under 60 seconds. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
               </p>
 
               {/* Power Duo Cards — always 2-col so both fit above the fold on
@@ -105,7 +105,7 @@ export default function LandingPage() {
                   <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Create New Resume</h3>
                   <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Start fresh with our guided builder</p>
                   <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
-                    Get Started
+                    Build my resume
                     <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </div>
                 </Link>
@@ -121,7 +121,7 @@ export default function LandingPage() {
                   <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Optimize Existing</h3>
                   <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Upload & enhance with AI magic</p>
                   <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
-                    Upload Resume
+                    Optimize mine
                     <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </div>
                 </Link>
@@ -165,7 +165,7 @@ export default function LandingPage() {
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">Instant Feedback</span>
+              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">60-Second Score</span>
             </div>
           </div>
         </div>
