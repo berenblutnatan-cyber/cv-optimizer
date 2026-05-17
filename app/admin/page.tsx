@@ -43,6 +43,15 @@ function fmtMoney(n: number) {
   return `$${n.toFixed(2)}`;
 }
 
+async function safe<T>(p: Promise<T>, fallback: T, label: string): Promise<T> {
+  try {
+    return await p;
+  } catch (err) {
+    console.error(`[admin] query failed (${label}):`, err);
+    return fallback;
+  }
+}
+
 export default async function AdminPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/admin");
@@ -68,6 +77,8 @@ export default async function AdminPage() {
   const d7 = daysAgo(7);
   const d30 = daysAgo(30);
 
+  // Each query is independently fault-tolerant: a single Neon hiccup or schema
+  // drift on one query won't take down the whole dashboard.
   const [
     signupsToday,
     signups7d,
@@ -88,89 +99,154 @@ export default async function AdminPage() {
     recentUsers,
     recentPurchases,
     recentOpts,
-    funnelRowsRaw,
+    cohortUsers,
+    cohortOptUserIds,
+    cohortPurchaseUserIds,
   ] = await Promise.all([
-    prisma.user.count({ where: { createdAt: { gte: today } } }),
-    prisma.user.count({ where: { createdAt: { gte: d7 } } }),
-    prisma.user.count({ where: { createdAt: { gte: d30 } } }),
-    prisma.user.count(),
+    safe(prisma.user.count({ where: { createdAt: { gte: today } } }), 0, "signupsToday"),
+    safe(prisma.user.count({ where: { createdAt: { gte: d7 } } }), 0, "signups7d"),
+    safe(prisma.user.count({ where: { createdAt: { gte: d30 } } }), 0, "signups30d"),
+    safe(prisma.user.count(), 0, "signupsAll"),
 
-    prisma.optimizationLog.count({ where: { createdAt: { gte: today } } }),
-    prisma.optimizationLog.count({ where: { createdAt: { gte: d7 } } }),
-    prisma.optimizationLog.count({ where: { createdAt: { gte: d30 } } }),
-    prisma.optimizationLog.count(),
+    safe(prisma.optimizationLog.count({ where: { createdAt: { gte: today } } }), 0, "optsToday"),
+    safe(prisma.optimizationLog.count({ where: { createdAt: { gte: d7 } } }), 0, "opts7d"),
+    safe(prisma.optimizationLog.count({ where: { createdAt: { gte: d30 } } }), 0, "opts30d"),
+    safe(prisma.optimizationLog.count(), 0, "optsAll"),
 
-    prisma.purchase.count({ where: { createdAt: { gte: today } } }),
-    prisma.purchase.count({ where: { createdAt: { gte: d7 } } }),
-    prisma.purchase.count({ where: { createdAt: { gte: d30 } } }),
-    prisma.purchase.count(),
+    safe(prisma.purchase.count({ where: { createdAt: { gte: today } } }), 0, "purchasesToday"),
+    safe(prisma.purchase.count({ where: { createdAt: { gte: d7 } } }), 0, "purchases7d"),
+    safe(prisma.purchase.count({ where: { createdAt: { gte: d30 } } }), 0, "purchases30d"),
+    safe(prisma.purchase.count(), 0, "purchasesAll"),
 
-    prisma.purchase.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: today } } }),
-    prisma.purchase.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: d7 } } }),
-    prisma.purchase.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: d30 } } }),
-    prisma.purchase.aggregate({ _sum: { amount: true } }),
+    safe(
+      prisma.purchase.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: today } } }),
+      { _sum: { amount: 0 } },
+      "revToday"
+    ),
+    safe(
+      prisma.purchase.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: d7 } } }),
+      { _sum: { amount: 0 } },
+      "rev7d"
+    ),
+    safe(
+      prisma.purchase.aggregate({ _sum: { amount: true }, where: { createdAt: { gte: d30 } } }),
+      { _sum: { amount: 0 } },
+      "rev30d"
+    ),
+    safe(
+      prisma.purchase.aggregate({ _sum: { amount: true } }),
+      { _sum: { amount: 0 } },
+      "revAll"
+    ),
 
-    prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: { id: true, email: true, credits: true, createdAt: true },
-    }),
-    prisma.purchase.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      include: { user: { select: { email: true } } },
-    }),
-    prisma.optimizationLog.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: {
-        id: true,
-        userEmail: true,
-        jobTitle: true,
-        companyName: true,
-        matchScore: true,
-        createdAt: true,
-      },
-    }),
+    safe(
+      prisma.user.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: { id: true, email: true, credits: true, createdAt: true },
+      }),
+      [] as Array<{ id: string; email: string; credits: number; createdAt: Date }>,
+      "recentUsers"
+    ),
+    safe(
+      prisma.purchase.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        include: { user: { select: { email: true } } },
+      }),
+      [] as Array<{
+        id: string;
+        amount: number;
+        plan: string;
+        createdAt: Date;
+        user: { email: string | null } | null;
+      }>,
+      "recentPurchases"
+    ),
+    safe(
+      prisma.optimizationLog.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          userEmail: true,
+          jobTitle: true,
+          companyName: true,
+          matchScore: true,
+          createdAt: true,
+        },
+      }),
+      [] as Array<{
+        id: string;
+        userEmail: string;
+        jobTitle: string | null;
+        companyName: string | null;
+        matchScore: number | null;
+        createdAt: Date;
+      }>,
+      "recentOpts"
+    ),
 
-    // Funnel: signup → first optimize → first purchase, by signup-day cohort (last 30d).
-    prisma.$queryRaw<
-      Array<{
-        cohort_day: Date;
-        signups: bigint;
-        optimized: bigint;
-        purchased: bigint;
-      }>
-    >`
-      SELECT
-        DATE_TRUNC('day', u."createdAt")::date AS cohort_day,
-        COUNT(DISTINCT u.id)::bigint                                       AS signups,
-        COUNT(DISTINCT o."userId")::bigint                                 AS optimized,
-        COUNT(DISTINCT p."userId")::bigint                                 AS purchased
-      FROM "User" u
-      LEFT JOIN "OptimizationLog" o ON o."userId" = u.id
-      LEFT JOIN "Purchase"        p ON p."userId" = u.id
-      WHERE u."createdAt" >= ${d30}
-      GROUP BY 1
-      ORDER BY 1 DESC
-      LIMIT 30
-    `,
+    // Funnel data: pull last-30d signups + the userIds that have optimized + the
+    // userIds that have purchased. Compute the cohort table in JS (no $queryRaw,
+    // no BigInt serialization risk).
+    safe(
+      prisma.user.findMany({
+        where: { createdAt: { gte: d30 } },
+        select: { id: true, createdAt: true },
+      }),
+      [] as Array<{ id: string; createdAt: Date }>,
+      "cohortUsers"
+    ),
+    safe(
+      prisma.optimizationLog
+        .findMany({ select: { userId: true }, distinct: ["userId"] })
+        .then((rows) => new Set(rows.map((r) => r.userId))),
+      new Set<string>(),
+      "cohortOptUserIds"
+    ),
+    safe(
+      prisma.purchase
+        .findMany({ select: { userId: true }, distinct: ["userId"] })
+        .then((rows) => new Set(rows.map((r) => r.userId))),
+      new Set<string>(),
+      "cohortPurchaseUserIds"
+    ),
   ]);
 
-  const revenueToday = revenueAggToday._sum.amount ?? 0;
-  const revenue7d = revenueAgg7d._sum.amount ?? 0;
-  const revenue30d = revenueAgg30d._sum.amount ?? 0;
-  const revenueAll = revenueAggAll._sum.amount ?? 0;
+  const revenueToday = Number(revenueAggToday._sum.amount ?? 0);
+  const revenue7d = Number(revenueAgg7d._sum.amount ?? 0);
+  const revenue30d = Number(revenueAgg30d._sum.amount ?? 0);
+  const revenueAll = Number(revenueAggAll._sum.amount ?? 0);
 
-  const funnelRows = funnelRowsRaw.map((r) => ({
-    day: new Date(r.cohort_day).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
-    signups: Number(r.signups),
-    optimized: Number(r.optimized),
-    purchased: Number(r.purchased),
-  }));
+  // Group cohortUsers by signup day, then compute optimized/purchased counts
+  // by checking each user against the two Sets above. Pure JS, no DB hop.
+  const byDay = new Map<
+    string,
+    { signups: number; optimized: number; purchased: number }
+  >();
+  for (const u of cohortUsers) {
+    const day = new Date(u.createdAt);
+    day.setUTCHours(0, 0, 0, 0);
+    const key = day.toISOString().slice(0, 10);
+    const row = byDay.get(key) ?? { signups: 0, optimized: 0, purchased: 0 };
+    row.signups += 1;
+    if (cohortOptUserIds.has(u.id)) row.optimized += 1;
+    if (cohortPurchaseUserIds.has(u.id)) row.purchased += 1;
+    byDay.set(key, row);
+  }
+
+  const funnelRows = Array.from(byDay.entries())
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([key, r]) => ({
+      day: new Date(key).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      signups: r.signups,
+      optimized: r.optimized,
+      purchased: r.purchased,
+    }));
 
   const totals = {
     signups: funnelRows.reduce((s, r) => s + r.signups, 0),
@@ -348,7 +424,7 @@ export default async function AdminPage() {
                       </div>
                     </div>
                     <div className="text-sm font-semibold text-slate-900 shrink-0">
-                      {fmtMoney(p.amount)}
+                      {fmtMoney(Number(p.amount))}
                     </div>
                   </li>
                 ))}
@@ -360,7 +436,7 @@ export default async function AdminPage() {
         {/* Latest optimizations */}
         <Panel title="Latest optimizations" subtitle="Most recent 20 resume optimizations">
           {recentOpts.length === 0 ? (
-            <EmptyState text="No optimizations logged yet. New ones will appear here after the DB migration is applied." />
+            <EmptyState text="No optimizations logged yet. They'll appear here as soon as users run an analyze." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
