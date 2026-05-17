@@ -20,53 +20,53 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
-        <div className="w-full px-4 sm:px-8 md:px-16 h-20 flex items-center justify-between">
+        <div className="relative w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between gap-2">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
-          
+
           {/* Navigation Links - Center */}
-          <nav className="hidden md:flex items-center gap-12 absolute left-1/2 -translate-x-1/2">
-            <Link href="/#hero" className="font-serif text-sm text-stone-500 hover:text-[#0A2647] transition-colors">
+          <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
+            <Link href="/#hero" className="font-serif text-sm text-stone-500 hover:text-[#0A2647] transition-colors focus-visible:outline-none">
               Home
             </Link>
-            <Link href="/#templates" className="font-serif text-sm text-stone-500 hover:text-[#0A2647] transition-colors">
+            <Link href="/#templates" className="font-serif text-sm text-stone-500 hover:text-[#0A2647] transition-colors focus-visible:outline-none">
               Templates
             </Link>
-            <Link href="/#testimonials" className="font-serif text-sm text-stone-500 hover:text-[#0A2647] transition-colors">
+            <Link href="/#testimonials" className="font-serif text-sm text-stone-500 hover:text-[#0A2647] transition-colors focus-visible:outline-none">
               Testimonials
             </Link>
           </nav>
-          
+
           {/* Score Button + Auth Buttons - Far Right */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-5">
             {/* Lead Magnet: Check Score */}
             <Link
               href="/score"
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none"
             >
               <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
               <span className="sm:hidden">Score</span>
               <span className="hidden sm:inline">CV Score Check</span>
             </Link>
-            
+
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide">
+                <button className="hidden md:inline-flex px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none">
                   Sign In
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-6 py-2.5 text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide">
+                <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-white text-[#0A2647] border border-[#0A2647] hover:bg-[#0A2647] hover:text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
                   Get Started
                 </button>
               </SignUpButton>
             </SignedOut>
             <SignedIn>
               <CreditBalance />
-              <UserButton 
+              <UserButton
                 appearance={{
                   elements: {
-                    avatarBox: "w-10 h-10 ring-2 ring-stone-200"
+                    avatarBox: "w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-stone-200"
                   }
                 }}
               />
@@ -94,7 +94,7 @@ export default function PricingPage() {
           </div>
 
           {/* Pricing Cards - 4 Column Layout (Free + 3 Paid Tiers) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 items-stretch">
             
             {/* Tier 1: Free Audit */}
             <div className="bg-white rounded-sm border border-stone-200 hover:border-stone-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)] transition-all duration-300 p-6 md:p-8 flex flex-col">

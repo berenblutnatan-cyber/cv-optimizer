@@ -41,7 +41,16 @@ const config: Config = {
         ],
       },
       colors: {
-        // Hired brand colors - Professional Indigo palette
+        // Brand palette — Navy / Gold / Cream
+        brand: {
+          navy: "#0A2647",
+          "navy-hover": "#0d3259",
+          gold: "#B8860B",
+          "gold-hover": "#9c7409",
+          cream: "#FAFAF8",
+          ink: "#1a1a1a",
+        },
+        // Legacy indigo (kept so existing utilities resolve)
         primary: {
           50: "#eef2ff",
           100: "#e0e7ff",
@@ -49,15 +58,33 @@ const config: Config = {
           300: "#a5b4fc",
           400: "#818cf8",
           500: "#6366f1",
-          600: "#4f46e5",  // Main brand color
-          700: "#4338ca",  // Hover state
+          600: "#4f46e5",
+          700: "#4338ca",
           800: "#3730a3",
           900: "#312e81",
           950: "#1e1b4b",
         },
       },
+      boxShadow: {
+        soft: "0 2px 20px -6px rgba(0, 0, 0, 0.06)",
+        card: "0 4px 40px -12px rgba(0, 0, 0, 0.08)",
+        lift: "0 8px 30px -8px rgba(0, 0, 0, 0.10)",
+        modal: "0 8px 60px -12px rgba(0, 0, 0, 0.25)",
+      },
       animation: {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "fade-in": "fadeIn 0.4s ease-out both",
+        "reveal-up": "revealUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        revealUp: {
+          "0%": { opacity: "0", transform: "translate3d(0, 14px, 0)" },
+          "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
+        },
       },
     },
   },

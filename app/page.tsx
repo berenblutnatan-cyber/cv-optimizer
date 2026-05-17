@@ -18,7 +18,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
-        <div className="w-full px-4 md:px-16 h-20 flex items-center justify-between gap-3">
+        <div className="w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
 
@@ -26,11 +26,11 @@ export default function LandingPage() {
           <ActiveNavLinks />
 
           {/* Score Button + Auth Buttons - Far Right */}
-          <div className="flex items-center gap-3 md:gap-6">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-5">
             {/* Lead Magnet: Check Score */}
             <Link
               href="/score"
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none"
             >
               <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
               <span className="sm:hidden">Score</span>
@@ -39,12 +39,12 @@ export default function LandingPage() {
 
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="hidden sm:inline-flex px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide">
+                <button className="hidden md:inline-flex px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none">
                   Sign In
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-4 sm:px-6 py-2.5 text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide whitespace-nowrap">
+                <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-white text-[#0A2647] border border-[#0A2647] hover:bg-[#0A2647] hover:text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
                   Get Started
                 </button>
               </SignUpButton>
@@ -54,7 +54,7 @@ export default function LandingPage() {
               <UserButton
                 appearance={{
                   elements: {
-                    avatarBox: "w-10 h-10 ring-2 ring-stone-200"
+                    avatarBox: "w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-stone-200"
                   }
                 }}
               />
@@ -64,34 +64,34 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section id="hero" className="relative w-full min-h-screen flex flex-col pt-28 pb-8">
+      <section id="hero" className="relative w-full lg:min-h-screen flex flex-col pt-24 sm:pt-28 pb-12 sm:pb-8">
         {/* Subtle background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#FAFAF8] via-white to-stone-50" />
-        
-        <div className="relative flex-1 flex items-center max-w-7xl mx-auto px-8 lg:px-16 w-full">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center w-full">
+
+        <div className="relative flex-1 flex items-center max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full">
             {/* Left Content */}
             <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-8 tracking-wide">
+              <div className="reveal-up inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
                 <Wand2 className="w-4 h-4" strokeWidth={1.5} />
                 AI-Powered Resume Builder
               </div>
 
-              <h1 className="font-serif text-5xl sm:text-6xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-8 leading-[1.1]">
+              <h1 className="reveal-up-delayed font-serif text-4xl sm:text-5xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-6 sm:mb-8 leading-[1.1]">
                 Elevate your resume.{" "}
-                <span className="text-indigo-600">Maximize your potential.</span>
+                <span className="text-[#B8860B]">Maximize your potential.</span>
               </h1>
-              
-              <p className="text-lg text-stone-500 mb-12 leading-relaxed font-light">
+
+              <p className="reveal-up-delayed text-base sm:text-lg text-stone-500 mb-10 sm:mb-12 leading-relaxed font-light">
                 Create or optimize resumes with AI, tailored for every job you apply to. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
               </p>
               
               {/* Power Duo Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
+              <div className="reveal-up-2 grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
                 {/* Create New Resume Card */}
-                <Link 
+                <Link
                   href="/builder"
-                  className="group relative flex flex-col p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)]"
+                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-[#0A2647]/30 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30"
                 >
                   <div className="w-12 h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
                     <Plus className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
@@ -105,9 +105,9 @@ export default function LandingPage() {
                 </Link>
 
                 {/* Optimize Existing Card */}
-                <Link 
+                <Link
                   href="/optimize"
-                  className="group relative flex flex-col p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)]"
+                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-[#B8860B]/40 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8860B]/40"
                 >
                   <div className="w-12 h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
                     <Wand2 className="w-5 h-5 text-[#B8860B]" strokeWidth={1.5} />
@@ -132,46 +132,46 @@ export default function LandingPage() {
         </div>
         
         {/* Trust Bar - Full width at bottom of hero content */}
-        <div className="relative z-10 w-full mt-auto pt-8 border-t border-stone-200/60 px-8 lg:px-16">
-          <div className="flex items-center justify-between max-w-5xl mx-auto">
+        <div className="relative z-10 w-full mt-12 lg:mt-auto pt-8 border-t border-stone-200/60 px-4 sm:px-8 lg:px-16">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                <Lock className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
+                <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <span className="text-sm text-[#1a1a1a] font-semibold">Privacy First</span>
+              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">Privacy First</span>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <span className="text-sm text-[#1a1a1a] font-semibold">AI Powered</span>
+              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">AI Powered</span>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                <Target className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
+                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <span className="text-sm text-[#1a1a1a] font-semibold">ATS Optimized</span>
+              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">ATS Optimized</span>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <span className="text-sm text-[#1a1a1a] font-semibold">Instant Feedback</span>
+              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">Instant Feedback</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Templates Section */}
-      <section id="templates" className="w-full min-h-screen flex items-center py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+      <section id="templates" className="w-full lg:min-h-screen flex items-center py-16 sm:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
+          <div className="grid lg:grid-cols-2 gap-12 sm:gap-16 lg:gap-20 items-center">
             {/* Template Grid Visual */}
             <div className="order-2 lg:order-1">
-              <div className="grid grid-cols-2 gap-5 max-w-md mx-auto lg:mx-0">
+              <div className="grid grid-cols-2 gap-4 sm:gap-5 max-w-md mx-auto lg:mx-0">
                 {/* Template 1: The Ivy */}
                 <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 p-3 overflow-hidden">
@@ -306,8 +306,8 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="w-full min-h-screen flex items-center py-16 bg-[#FAFAF8]">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16">
+      <section id="testimonials" className="w-full lg:min-h-screen flex items-center py-16 sm:py-24 bg-[#FAFAF8]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
           <div className="text-center mb-16">
             <h2 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
               What job seekers are telling us
@@ -389,8 +389,8 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="w-full py-24 sm:py-28 bg-[#0A2647]">
-        <div className="max-w-3xl mx-auto px-8 lg:px-16 text-center">
+      <section className="w-full py-20 sm:py-28 bg-[#0A2647]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-8 lg:px-16 text-center">
           <h2 className="font-serif text-4xl sm:text-5xl font-light text-white mb-6">
             Ready to get Hired?
           </h2>
@@ -402,13 +402,13 @@ export default function LandingPage() {
             <SignedOut>
               <Link
                 href="/score"
-                className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 transition-all tracking-wide"
+                className="group inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 shadow-sm hover:shadow-md transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               >
                 Check Your Score — Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
               </Link>
               <SignUpButton mode="modal">
-                <button className="text-white/80 hover:text-white text-sm font-light underline-offset-4 hover:underline tracking-wide">
+                <button className="text-white/80 hover:text-white text-sm font-light underline-offset-4 hover:underline tracking-wide focus-visible:outline-none">
                   or create an account
                 </button>
               </SignUpButton>
@@ -416,7 +416,7 @@ export default function LandingPage() {
             <SignedIn>
               <Link
                 href="/builder"
-                className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 transition-all tracking-wide"
+                className="group inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 shadow-sm hover:shadow-md transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               >
                 Continue Building
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />

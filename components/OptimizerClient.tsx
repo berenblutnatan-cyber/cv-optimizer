@@ -400,21 +400,23 @@ export function OptimizerClient() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
       {/* Premium Header */}
-      <header className="w-full bg-white/80 backdrop-blur-sm border-b border-stone-200/60 px-8 lg:px-16 py-5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <header className="w-full bg-white/85 backdrop-blur-md border-b border-stone-200/60">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 h-16 sm:h-20 flex items-center justify-between gap-3">
           <Logo variant="dark" size="md" />
-          <nav className="flex items-center gap-8">
-            <Link 
-              href="/builder" 
-              className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors tracking-wide"
+          <nav className="flex items-center gap-3 sm:gap-5">
+            <Link
+              href="/builder"
+              className="hidden sm:inline-flex text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none"
             >
               Resume Builder
             </Link>
-            <span className="w-px h-4 bg-stone-300" />
-            <span className="text-sm font-medium text-[#0A2647] tracking-wide">Optimizer</span>
+            <span className="hidden sm:inline-block w-px h-4 bg-stone-300" />
+            <span className="hidden sm:inline-flex text-sm font-medium text-[#0A2647] tracking-wide" aria-current="page">
+              Optimizer
+            </span>
             <SignedIn>
               <CreditBalance />
-              <UserButton 
+              <UserButton
                 appearance={{
                   elements: {
                     avatarBox: "w-9 h-9 ring-2 ring-stone-200"
@@ -424,7 +426,7 @@ export function OptimizerClient() {
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-400 rounded transition-colors tracking-wide">
+                <button className="px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-400 rounded-sm transition-colors tracking-wide focus-visible:outline-none">
                   Sign In
                 </button>
               </SignInButton>
@@ -434,24 +436,24 @@ export function OptimizerClient() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full px-8 lg:px-16 py-12">
+      <main className="flex-1 w-full px-4 sm:px-8 lg:px-16 py-10 sm:py-12">
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <h1 className="font-serif text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
+          <div className="text-center mb-10 sm:mb-14">
+            <h1 className="reveal-up font-serif text-3xl sm:text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
               Optimize Your Resume
             </h1>
-            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-5" />
-            <p className="text-stone-500 text-lg font-light tracking-wide max-w-xl mx-auto">
+            <div className="reveal-up-delayed w-16 h-px bg-[#0A2647] mx-auto mb-5" />
+            <p className="reveal-up-delayed text-stone-500 text-base sm:text-lg font-light tracking-wide max-w-xl mx-auto">
               Upload your resume and provide the target role — we'll tailor it for maximum impact
             </p>
           </div>
 
           {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-6 sm:gap-10 max-w-6xl mx-auto">
             
             {/* Left Panel - Resume Upload */}
-            <div className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] p-8 lg:p-10">
+            <div className="bg-white rounded-sm shadow-card p-6 sm:p-8 lg:p-10">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-11 h-11 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
                   <FileText className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
@@ -547,7 +549,7 @@ export function OptimizerClient() {
             </div>
 
             {/* Right Panel - Job Context */}
-            <div className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] p-8 lg:p-10">
+            <div className="bg-white rounded-sm shadow-card p-6 sm:p-8 lg:p-10">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-11 h-11 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
                   <Briefcase className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
@@ -660,12 +662,12 @@ export function OptimizerClient() {
 
 
           {/* CTA Button */}
-          <div className="mt-14 flex flex-col items-center gap-4">
+          <div className="mt-10 sm:mt-14 flex flex-col items-center gap-4">
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing}
               aria-disabled={!canAnalyze}
-              className="group inline-flex items-center gap-4 px-12 py-5 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-300 disabled:cursor-wait text-white font-medium rounded-sm transition-all text-base tracking-wide"
+              className="group inline-flex items-center gap-3 sm:gap-4 px-8 sm:px-12 py-4 sm:py-5 bg-[#0A2647] hover:bg-[#0d3259] disabled:opacity-70 disabled:cursor-wait text-white font-medium rounded-sm shadow-sm hover:shadow-md transition-all text-base tracking-wide focus-visible:outline-none"
             >
               {isAnalyzing ? (
                 <>

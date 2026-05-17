@@ -61,14 +61,15 @@ export function CreditBalance() {
   }, [userId, isLoaded, fetchCredits]);
 
   // Always render a container with fixed dimensions to prevent layout shift
-  const baseClass = "inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-medium transition-all";
-  const minWidth = "min-w-[7rem]";
-  
+  const baseClass =
+    "inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm font-medium transition-all focus-visible:outline-none";
+  const minWidth = "min-w-[3.5rem] sm:min-w-[7rem]";
+
   if (!isLoaded || (isInitialLoading && credits === null) || !userId) {
     return (
       <div className={`${baseClass} ${minWidth} bg-transparent pointer-events-none`} aria-hidden="true">
         <Coins className="w-4 h-4 opacity-0" strokeWidth={2} />
-        <span className="opacity-0">0 Credits</span>
+        <span className="opacity-0">0</span>
       </div>
     );
   }
@@ -86,15 +87,23 @@ export function CreditBalance() {
     <Link
       href="/pricing"
       className={`${baseClass} ${minWidth} ${styleClasses}`}
+      aria-label={
+        isEmpty
+          ? "Out of credits — open pricing"
+          : `${displayCredits} ${label} — view pricing`
+      }
       title={isEmpty ? "Out of credits — view pricing" : "Credit balance — view pricing"}
     >
       <Coins className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
       {isEmpty ? (
-        <span className="text-xs font-medium">Add credits</span>
+        <>
+          <span className="hidden sm:inline text-xs font-medium">Add credits</span>
+          <span className="sm:hidden text-xs font-semibold">Add</span>
+        </>
       ) : (
         <>
           <span className="tabular-nums font-semibold">{displayCredits}</span>
-          <span className="text-xs font-light">{label}</span>
+          <span className="hidden sm:inline text-xs font-light">{label}</span>
         </>
       )}
     </Link>

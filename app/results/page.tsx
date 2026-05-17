@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import { Download, X, ArrowLeft } from "lucide-react";
@@ -26,24 +26,42 @@ export default function ResultsPage() {
     setCoverLetter(stored?.coverLetter || "");
   }, []);
 
+  const closeSignInPrompt = useCallback(() => setShowSignInPrompt(false), []);
+
+  // ESC closes the sign-in prompt
+  useEffect(() => {
+    if (!showSignInPrompt) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeSignInPrompt();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showSignInPrompt, closeSignInPrompt]);
+
   const cleanTitleForUi = (raw: string) => raw.replace(/[*_`~]/g, "").replace(/\s+/g, " ").trim();
 
   if (!payload) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <div className="max-w-lg mx-auto px-8">
-          <div className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] p-10 text-center">
-            <h1 className="font-serif text-2xl text-[#1a1a1a] mb-3">No analysis found</h1>
-            <p className="text-stone-500 font-light mb-8">
-              Please run an analysis first to see your results.
-            </p>
-            <button
-              onClick={() => router.push("/optimize")}
-              className="inline-flex items-center gap-3 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide"
-            >
-              <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-              Back to Optimizer
-            </button>
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
+        <ShellNav active="optimizer" />
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="max-w-lg w-full">
+            <div className="bg-white rounded-sm shadow-card border border-stone-100 p-8 sm:p-10 text-center reveal-up">
+              <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+                <ArrowLeft className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />
+              </div>
+              <h1 className="font-serif text-2xl text-[#1a1a1a] mb-3">No analysis yet</h1>
+              <p className="text-stone-500 font-light mb-8">
+                Run an analysis first to see your tailored results, suggested
+                changes, and downloadable resume.
+              </p>
+              <button
+                onClick={() => router.push("/optimize")}
+                className="inline-flex items-center gap-3 px-8 py-3.5 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
+              >
+                Start an Analysis
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -53,13 +71,14 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex flex-col overflow-hidden">
       <ShellNav
+        active="optimizer"
         rightSlot={
           <button
             onClick={() => {
               clearAnalysisSession();
               router.push("/optimize");
             }}
-            className="px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-400 rounded-sm transition-colors tracking-wide"
+            className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-[#0A2647] hover:text-white hover:bg-[#0A2647] border border-[#0A2647]/30 hover:border-[#0A2647] rounded-sm transition-colors tracking-wide focus-visible:outline-none"
           >
             New Analysis
           </button>
@@ -233,38 +252,44 @@ export default function ResultsPage() {
 
       {/* Sign In Prompt Modal */}
       {showSignInPrompt && (
-        <div 
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          onClick={() => setShowSignInPrompt(false)}
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={closeSignInPrompt}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="signin-prompt-title"
         >
-          <div 
-            className="relative bg-white rounded-sm shadow-[0_8px_60px_-12px_rgba(0,0,0,0.25)] p-10 max-w-md text-center"
+          <div
+            className="relative bg-white rounded-sm shadow-modal border border-stone-200/80 p-8 sm:p-10 max-w-md w-full text-center reveal-up"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setShowSignInPrompt(false)}
-              className="absolute top-5 right-5 p-2 hover:bg-stone-100 rounded-full transition-colors"
+              onClick={closeSignInPrompt}
+              aria-label="Close"
+              className="absolute top-4 right-4 p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors focus-visible:outline-none"
             >
-              <X className="w-5 h-5 text-stone-500" strokeWidth={1.5} />
+              <X className="w-5 h-5" strokeWidth={1.5} />
             </button>
             <div className="mb-6">
               <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[#0A2647]/10 flex items-center justify-center">
                 <Download className="w-7 h-7 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <h3 className="font-serif text-2xl text-[#1a1a1a] mb-3">Sign in to Download</h3>
+              <h3 id="signin-prompt-title" className="font-serif text-2xl text-[#1a1a1a] mb-3">
+                Sign in to Download
+              </h3>
               <p className="text-stone-500 font-light">
                 Create a free account to download your cover letter as a PDF.
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <SignInButton mode="modal">
-                <button className="w-full px-6 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide">
+                <button className="w-full px-6 py-3.5 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none">
                   Sign In
                 </button>
               </SignInButton>
               <button
-                onClick={() => setShowSignInPrompt(false)}
-                className="w-full px-6 py-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium rounded-sm transition-colors"
+                onClick={closeSignInPrompt}
+                className="w-full px-6 py-3.5 text-stone-600 hover:text-stone-900 hover:bg-stone-50 font-medium rounded-sm transition-colors focus-visible:outline-none"
               >
                 Maybe Later
               </button>

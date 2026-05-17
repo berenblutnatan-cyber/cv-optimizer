@@ -166,35 +166,36 @@ export default function ScoreTeaserPage() {
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
-        <div className="w-full px-4 sm:px-8 md:px-16 h-20 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
-          
+
           {/* Back Button - Far Right */}
-          <Link 
+          <Link
             href="/"
-            className="flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900 transition-colors tracking-wide"
+            className="flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none"
           >
             <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-            Back to Home
+            <span className="hidden sm:inline">Back to Home</span>
+            <span className="sm:hidden">Home</span>
           </Link>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="w-full px-4 sm:px-8 lg:px-16 pt-28 pb-16">
+      <main className="w-full px-4 sm:px-8 lg:px-16 pt-24 sm:pt-28 pb-16">
         <div className="max-w-3xl mx-auto">
           {/* Title */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-8 tracking-wide">
+          <div className="text-center mb-10 sm:mb-12">
+            <div className="reveal-up inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
               <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               Free Resume Analysis
             </div>
-            <h1 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
+            <h1 className="reveal-up-delayed font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
               Get Your Resume Score
             </h1>
-            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
-            <p className="text-lg text-stone-500 max-w-xl mx-auto font-light">
+            <div className="reveal-up-delayed w-16 h-px bg-[#0A2647] mx-auto mb-6" />
+            <p className="reveal-up-delayed text-base sm:text-lg text-stone-500 max-w-xl mx-auto font-light">
               See how your resume stacks up for your target role. No sign-up required.
             </p>
 
@@ -309,10 +310,19 @@ export default function ScoreTeaserPage() {
                 <button
                   onClick={handleAnalyze}
                   disabled={!file || !targetRole || isAnalyzing}
-                  className="w-full py-4 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-500 text-white font-medium rounded-sm transition-all flex items-center justify-center gap-3 text-lg shadow-sm hover:shadow-md disabled:shadow-none tracking-wide"
+                  className="w-full py-4 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-medium rounded-sm transition-all flex items-center justify-center gap-3 text-base sm:text-lg shadow-sm hover:shadow-md disabled:shadow-none tracking-wide focus-visible:outline-none"
                 >
-                  <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                  Calculate My Score
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.5} />
+                      Calculating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+                      Calculate My Score
+                    </>
+                  )}
                 </button>
               </motion.div>
             )}
