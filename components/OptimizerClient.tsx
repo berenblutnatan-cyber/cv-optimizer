@@ -440,11 +440,11 @@ export function OptimizerClient() {
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10 sm:mb-14">
-            <h1 className="reveal-up font-serif text-3xl sm:text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
               Optimize Your Resume
             </h1>
-            <div className="reveal-up-delayed w-16 h-px bg-[#0A2647] mx-auto mb-5" />
-            <p className="reveal-up-delayed text-stone-500 text-base sm:text-lg font-light tracking-wide max-w-xl mx-auto">
+            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-5" />
+            <p className="text-stone-500 text-base sm:text-lg font-light tracking-wide max-w-xl mx-auto">
               Upload your resume and provide the target role — we'll tailor it for maximum impact
             </p>
           </div>

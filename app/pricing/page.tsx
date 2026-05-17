@@ -56,7 +56,7 @@ export default function PricingPage() {
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-white text-[#0A2647] border border-[#0A2647] hover:bg-[#0A2647] hover:text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
+                <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
                   Get Started
                 </button>
               </SignUpButton>

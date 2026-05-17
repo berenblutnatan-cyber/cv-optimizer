@@ -44,7 +44,7 @@ export default function LandingPage() {
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-white text-[#0A2647] border border-[#0A2647] hover:bg-[#0A2647] hover:text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
+                <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
                   Get Started
                 </button>
               </SignUpButton>
@@ -72,26 +72,26 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full">
             {/* Left Content */}
             <div className="max-w-xl">
-              <div className="reveal-up inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
                 <Wand2 className="w-4 h-4" strokeWidth={1.5} />
                 AI-Powered Resume Builder
               </div>
 
-              <h1 className="reveal-up-delayed font-serif text-4xl sm:text-5xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-6 sm:mb-8 leading-[1.1]">
+              <h1 className="font-serif text-4xl sm:text-5xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-6 sm:mb-8 leading-[1.1]">
                 Elevate your resume.{" "}
-                <span className="text-[#B8860B]">Maximize your potential.</span>
+                <span className="text-indigo-600">Maximize your potential.</span>
               </h1>
 
-              <p className="reveal-up-delayed text-base sm:text-lg text-stone-500 mb-10 sm:mb-12 leading-relaxed font-light">
+              <p className="text-base sm:text-lg text-stone-500 mb-10 sm:mb-12 leading-relaxed font-light">
                 Create or optimize resumes with AI, tailored for every job you apply to. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
               </p>
               
               {/* Power Duo Cards */}
-              <div className="reveal-up-2 grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
                 {/* Create New Resume Card */}
                 <Link
                   href="/builder"
-                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-[#0A2647]/30 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30"
+                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
                 >
                   <div className="w-12 h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
                     <Plus className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
@@ -107,7 +107,7 @@ export default function LandingPage() {
                 {/* Optimize Existing Card */}
                 <Link
                   href="/optimize"
-                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-[#B8860B]/40 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8860B]/40"
+                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
                 >
                   <div className="w-12 h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
                     <Wand2 className="w-5 h-5 text-[#B8860B]" strokeWidth={1.5} />

@@ -41,16 +41,7 @@ const config: Config = {
         ],
       },
       colors: {
-        // Brand palette — Navy / Gold / Cream
-        brand: {
-          navy: "#0A2647",
-          "navy-hover": "#0d3259",
-          gold: "#B8860B",
-          "gold-hover": "#9c7409",
-          cream: "#FAFAF8",
-          ink: "#1a1a1a",
-        },
-        // Legacy indigo (kept so existing utilities resolve)
+        // Hired brand colors - Professional Indigo palette
         primary: {
           50: "#eef2ff",
           100: "#e0e7ff",
@@ -58,8 +49,8 @@ const config: Config = {
           300: "#a5b4fc",
           400: "#818cf8",
           500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
+          600: "#4f46e5",  // Main brand color
+          700: "#4338ca",  // Hover state
           800: "#3730a3",
           900: "#312e81",
           950: "#1e1b4b",
@@ -73,17 +64,12 @@ const config: Config = {
       },
       animation: {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "fade-in": "fadeIn 0.4s ease-out both",
-        "reveal-up": "revealUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "fade-in": "fadeIn 0.25s ease-out both",
       },
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
-        },
-        revealUp: {
-          "0%": { opacity: "0", transform: "translate3d(0, 14px, 0)" },
-          "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
         },
       },
     },

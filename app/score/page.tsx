@@ -187,15 +187,15 @@ export default function ScoreTeaserPage() {
         <div className="max-w-3xl mx-auto">
           {/* Title */}
           <div className="text-center mb-10 sm:mb-12">
-            <div className="reveal-up inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
               <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               Free Resume Analysis
             </div>
-            <h1 className="reveal-up-delayed font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
+            <h1 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
               Get Your Resume Score
             </h1>
-            <div className="reveal-up-delayed w-16 h-px bg-[#0A2647] mx-auto mb-6" />
-            <p className="reveal-up-delayed text-base sm:text-lg text-stone-500 max-w-xl mx-auto font-light">
+            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
+            <p className="text-base sm:text-lg text-stone-500 max-w-xl mx-auto font-light">
               See how your resume stacks up for your target role. No sign-up required.
             </p>
 
