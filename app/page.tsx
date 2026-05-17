@@ -12,10 +12,12 @@ import { HeroResumeVisual } from "@/components/landing/HeroResumeVisual";
 import { ActiveNavLinks } from "@/components/landing/ActiveNavLinks";
 import { CreditBalance } from "@/components/CreditBalance";
 import { SiteFooter } from "@/components/shared/SiteFooter";
+import { ScrollDepthTracker } from "@/components/ScrollDepthTracker";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
+      <ScrollDepthTracker page="landing" />
       {/* Header - Premium Full Width Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
@@ -63,8 +65,10 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section id="hero" className="relative w-full lg:min-h-screen flex flex-col pt-24 sm:pt-28 pb-12 sm:pb-8">
+      {/* Hero Section. Heights/margins are tight on mobile because Clarity
+          shows scroll-depth dies at ~25% on prod — the duo cards must be
+          visible without scrolling. */}
+      <section id="hero" className="relative w-full lg:min-h-screen flex flex-col pt-20 sm:pt-28 pb-10 sm:pb-8">
         {/* Subtle background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#FAFAF8] via-white to-stone-50" />
 
@@ -72,55 +76,57 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full">
             {/* Left Content */}
             <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
-                <Wand2 className="w-4 h-4" strokeWidth={1.5} />
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-xs sm:text-sm font-medium mb-4 sm:mb-8 tracking-wide">
+                <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
                 AI-Powered Resume Builder
               </div>
 
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-6 sm:mb-8 leading-[1.1]">
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-[4rem] font-light tracking-tight text-[#1a1a1a] mb-4 sm:mb-8 leading-[1.1]">
                 Elevate your resume.{" "}
                 <span className="text-indigo-600">Maximize your potential.</span>
               </h1>
 
-              <p className="text-base sm:text-lg text-stone-500 mb-10 sm:mb-12 leading-relaxed font-light">
+              <p className="text-sm sm:text-lg text-stone-500 mb-6 sm:mb-12 leading-relaxed font-light">
                 Create or optimize resumes with AI, tailored for every job you apply to. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
               </p>
-              
-              {/* Power Duo Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
+
+              {/* Power Duo Cards — always 2-col so both fit above the fold on
+                  mobile. Card padding shrinks on small to keep the pair
+                  visible without scrolling. */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-10">
                 {/* Create New Resume Card */}
                 <Link
                   href="/builder"
-                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
+                  className="group relative flex flex-col p-4 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
                 >
-                  <div className="w-12 h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                    <Plus className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-105 transition-transform">
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-serif text-xl text-[#1a1a1a] mb-2">Create New Resume</h3>
-                  <p className="text-sm text-stone-500 font-light mb-5">Start fresh with our guided builder</p>
-                  <div className="flex items-center gap-2 text-[#0A2647] font-medium text-sm mt-auto tracking-wide">
+                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Create New Resume</h3>
+                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Start fresh with our guided builder</p>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
                     Get Started
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </div>
                 </Link>
 
                 {/* Optimize Existing Card */}
                 <Link
                   href="/optimize"
-                  className="group relative flex flex-col p-6 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
+                  className="group relative flex flex-col p-4 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
                 >
-                  <div className="w-12 h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                    <Wand2 className="w-5 h-5 text-[#B8860B]" strokeWidth={1.5} />
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-105 transition-transform">
+                    <Wand2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#B8860B]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-serif text-xl text-[#1a1a1a] mb-2">Optimize Existing</h3>
-                  <p className="text-sm text-stone-500 font-light mb-5">Upload & enhance with AI magic</p>
-                  <div className="flex items-center gap-2 text-[#0A2647] font-medium text-sm mt-auto tracking-wide">
+                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Optimize Existing</h3>
+                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Upload & enhance with AI magic</p>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
                     Upload Resume
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </div>
                 </Link>
               </div>
-              
+
             </div>
             
             {/* Right Visual - 3D Floating Resume */}

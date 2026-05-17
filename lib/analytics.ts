@@ -21,7 +21,8 @@ export type EventName =
   | "optimize_failed"
   | "credit_check_failed"
   | "results_viewed"
-  | "pricing_clicked";
+  | "pricing_clicked"
+  | "scroll_depth";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

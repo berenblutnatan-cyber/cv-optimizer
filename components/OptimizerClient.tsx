@@ -84,6 +84,7 @@ export function OptimizerClient() {
   const hasFiredCvEvent = useRef(false);
   const hasFiredJobEvent = useRef(false);
   const hasFiredPageView = useRef(false);
+  const cvFileInputRef = useRef<HTMLInputElement>(null);
 
   // Fire one-time page view event
   useEffect(() => {
@@ -204,6 +205,8 @@ export function OptimizerClient() {
         setCvText(text);
       }
     }
+    // Reset so the same file can be re-selected if user removes & re-picks.
+    if (cvFileInputRef.current) cvFileInputRef.current.value = "";
   };
 
   // Validation
@@ -498,15 +501,26 @@ export function OptimizerClient() {
                     <Upload className="w-8 h-8 text-stone-500 mx-auto mb-4" strokeWidth={1.5} />
                     <p className="text-stone-500 mb-2 font-light">Drag and drop your resume here</p>
                     <p className="text-sm text-stone-500 mb-5">or</p>
-                    <label className="inline-flex items-center gap-2 px-6 py-3 bg-transparent border border-[#0A2647] text-[#0A2647] font-medium rounded-sm cursor-pointer hover:bg-[#0A2647] hover:text-white transition-all tracking-wide text-sm">
+                    {/* Programmatic file-picker open. `<label>` wrapping a
+                        `display:none` input doesn't dispatch on iOS Safari
+                        + in-app webviews (LinkedIn/Instagram/Meta). */}
+                    <button
+                      type="button"
+                      onClick={() => cvFileInputRef.current?.click()}
+                      aria-label="Select resume file"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-transparent border border-[#0A2647] text-[#0A2647] font-medium rounded-sm hover:bg-[#0A2647] hover:text-white transition-all tracking-wide text-sm focus-visible:outline-none"
+                    >
                       <span>Select File</span>
-                      <input
-                        type="file"
-                        accept=".pdf,.docx,.txt"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-                    </label>
+                    </button>
+                    <input
+                      ref={cvFileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,.txt"
+                      onChange={handleFileSelect}
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      className="absolute -left-[9999px] w-px h-px opacity-0"
+                    />
                   </>
                 )}
               </div>

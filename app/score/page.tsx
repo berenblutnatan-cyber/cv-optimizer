@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -48,6 +48,7 @@ export default function ScoreTeaserPage() {
   } = useTeaserStore();
 
   const [displayScore, setDisplayScore] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check for previous result
   useEffect(() => {
@@ -96,6 +97,7 @@ export default function ScoreTeaserPage() {
     } else {
       setError("Please upload a PDF file");
     }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleAnalyze = async () => {
@@ -273,15 +275,25 @@ export default function ScoreTeaserPage() {
                         Drop your resume here
                       </p>
                       <p className="text-stone-500 mb-4 font-light">PDF format only (max 5MB)</p>
-                      <label className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm cursor-pointer transition-colors tracking-wide">
+                      {/* Programmatic file picker — `<label>` + `display:none`
+                          file inputs are dead on iOS Safari / in-app browsers. */}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        aria-label="Browse for resume PDF"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
+                      >
                         <span>Browse Files</span>
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={handleFileSelect}
-                          className="hidden"
-                        />
-                      </label>
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleFileSelect}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        className="absolute -left-[9999px] w-px h-px opacity-0"
+                      />
                     </>
                   )}
                 </div>
