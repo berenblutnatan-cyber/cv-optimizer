@@ -155,6 +155,18 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   
   // Ref for PDF capture - points to ONLY the CV content (no toolbar)
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
+  // Top of the results container — used to scroll into view on tab change.
+  // Clarity flagged dead clicks on "View Optimized CV" because switching tabs
+  // didn't move the viewport, so the user thought nothing happened.
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const goToTab = (next: typeof activeTab) => {
+    setActiveTab(next);
+    // Defer so the new tab's DOM is mounted before we scroll.
+    requestAnimationFrame(() => {
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
   
   // Suggested changes acceptance state: "pending" | "accepted" | "rejected"
   const [changeStatuses, setChangeStatuses] = useState<Record<string, "pending" | "accepted" | "rejected">>(() => {
@@ -206,10 +218,32 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
   const scoreColors = getScoreColor(results.overallScore);
 
-  const handleCopyOptimized = () => {
-    navigator.clipboard.writeText(results.optimizedCV);
-    setCopiedOptimized(true);
-    setTimeout(() => setCopiedOptimized(false), 2000);
+  const handleCopyOptimized = async () => {
+    // Clarity flagged dead clicks on "Copy" — `navigator.clipboard.writeText`
+    // can throw in insecure contexts, cross-origin iframes, and some
+    // in-app browsers. Wrap with a fallback and explicit user feedback so
+    // clicks always have a visible outcome.
+    const text = results.optimizedCV;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Legacy fallback for browsers without async clipboard.
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopiedOptimized(true);
+      toast.success("Copied to clipboard");
+      setTimeout(() => setCopiedOptimized(false), 2000);
+    } catch (err) {
+      toast.error("Couldn't copy — please long-press the resume and copy manually");
+    }
   };
 
   // Handle photo upload
@@ -291,7 +325,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   ];
 
   return (
-    <div className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col min-h-0">
+    <div ref={rootRef} className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col min-h-0 scroll-mt-20">
       {/* Hidden PDF Capture Element - ONLY the CV, no toolbar */}
       <div className="absolute left-[-9999px] top-0 pointer-events-none">
         <div 
@@ -319,7 +353,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
           {tabs.map((tab, idx) => (
             <div key={tab.id} className="flex items-center flex-shrink-0">
               <button
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => goToTab(tab.id)}
                 aria-current={activeTab === tab.id ? "step" : undefined}
                 className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 text-sm font-medium tracking-wide rounded-sm transition-all duration-200 focus-visible:outline-none whitespace-nowrap ${
                   activeTab === tab.id
@@ -625,8 +659,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {/* Continue Button */}
             <div className="flex justify-end pt-4 border-t border-slate-100 mt-4">
               <button
-                onClick={() => setActiveTab("optimized")}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg"
+                onClick={() => goToTab("optimized")}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg focus-visible:outline-none"
               >
                 View Optimized CV
                 <ChevronRight className="w-5 h-5" />
@@ -810,8 +844,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 {coverLetterTab && (
                   <div className="flex justify-end pt-4 border-t border-stone-100 mt-4">
                     <button
-                      onClick={() => setActiveTab("cover-letter")}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
+                      onClick={() => goToTab("cover-letter")}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide focus-visible:outline-none"
                     >
                       Generate Cover Letter
                       <ChevronRight className="w-5 h-5" strokeWidth={1.5} />
@@ -1023,8 +1057,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {/* Navigation */}
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 flex-shrink-0">
               <button
-                onClick={() => setActiveTab("changes")}
-                className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700"
+                onClick={() => goToTab("changes")}
+                className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 focus-visible:outline-none"
               >
                 Skip to Review Changes →
               </button>
@@ -1061,7 +1095,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         hiddenSkills: JSON.stringify(skillsInfo),
                         uniqueValue: selectedSkills.map(s => s.skill).join(", ")
                       });
-                      setActiveTab("changes");
+                      goToTab("changes");
                       onTabChange?.("changes");
                     }
                   }}

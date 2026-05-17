@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { 
@@ -353,31 +353,40 @@ function StepContent({ step }: { step: number }) {
 
 function PersonalInfoStep() {
   const { resumeData, updatePersonalInfo } = useResumeStore();
+  // Programmatic file-picker open. Wrapping `<label>` around a hidden
+  // `<input className="hidden">` (display:none) is the documented cause of
+  // dead clicks on iOS Safari and in-app browsers (LinkedIn/Instagram/Meta) —
+  // those engines don't dispatch the click into a `display:none` input.
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please upload an image file');
         return;
       }
-      // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         alert('Image size should be less than 2MB');
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         updatePersonalInfo({ photo: reader.result as string });
       };
       reader.readAsDataURL(file);
     }
+    // Reset so picking the same file twice still fires `change`.
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemovePhoto = () => {
     updatePersonalInfo({ photo: undefined });
+  };
+
+  const openPhotoPicker = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -426,16 +435,27 @@ function PersonalInfoStep() {
             <p className="text-sm text-amber-700 mt-1">
               Some templates (like "Executive") include a photo placeholder. Upload your professional headshot to personalize it.
             </p>
-            <label className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 text-sm font-medium rounded-lg cursor-pointer transition-colors">
+            <button
+              type="button"
+              onClick={openPhotoPicker}
+              aria-label={resumeData.personalInfo.photo ? "Change profile photo" : "Upload profile photo"}
+              className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none"
+            >
               <Upload className="w-4 h-4" />
               {resumeData.personalInfo.photo ? 'Change Photo' : 'Upload Photo'}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-            </label>
+            </button>
+            {/* Positioned off-screen with `sr-only`-style CSS instead of
+                `display:none` so iOS Safari + in-app browsers will dispatch
+                the programmatic .click() into it. */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              tabIndex={-1}
+              aria-hidden="true"
+              className="absolute -left-[9999px] w-px h-px opacity-0"
+            />
           </div>
         </div>
       </div>
