@@ -211,6 +211,17 @@ export function OptimizerClient() {
   const hasJobContext = jobTitle.trim() || jobDescription.trim() || jobUrl.trim();
   const canAnalyze = hasResume && hasJobContext;
 
+  const focusEmptyField = (id: string) => {
+    if (typeof document === "undefined") return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Delay focus to let the scroll settle on mobile.
+    setTimeout(() => {
+      (el as HTMLInputElement | HTMLTextAreaElement).focus();
+    }, 250);
+  };
+
   const handleAnalyze = async () => {
     track("analyze_clicked", {
       signed_in: !!isSignedIn,
@@ -220,15 +231,17 @@ export function OptimizerClient() {
     });
 
     if (!hasResume) {
-      toast.error("Missing Resume", {
-        description: "Please upload or paste your resume",
+      toast.error("Add your resume to continue", {
+        description: "Upload a PDF/DOCX or paste your CV text",
       });
+      focusEmptyField("cv-text");
       return;
     }
     if (!hasJobContext) {
-      toast.error("Missing Job Context", {
-        description: "Please provide a job title or description",
+      toast.error("Add the target role to continue", {
+        description: "A job title, description, or LinkedIn URL works",
       });
+      focusEmptyField(jobInputMode === "url" ? "job-url" : "job-title");
       return;
     }
 
@@ -358,10 +371,17 @@ export function OptimizerClient() {
       router.push("/results");
 
     } catch (err) {
+      // Credit was already deducted before the analyze call — refund it so the
+      // user isn't charged for a failure that isn't their fault.
+      try {
+        await fetch("/api/refund-credit", { method: "POST" });
+      } catch {
+        // best-effort; don't block the error toast
+      }
       track("optimize_failed", {
         message: err instanceof Error ? err.message : "unknown",
       });
-      toast.error("Analysis Failed", {
+      toast.error("Analysis failed — credit refunded", {
         description: err instanceof Error ? err.message : "Something went wrong. Please try again.",
       });
     } finally {
@@ -643,8 +663,9 @@ export function OptimizerClient() {
           <div className="mt-14 flex flex-col items-center gap-4">
             <button
               onClick={handleAnalyze}
-              disabled={!canAnalyze || isAnalyzing}
-              className="group inline-flex items-center gap-4 px-12 py-5 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-500 text-white font-medium rounded-sm transition-all text-base tracking-wide"
+              disabled={isAnalyzing}
+              aria-disabled={!canAnalyze}
+              className="group inline-flex items-center gap-4 px-12 py-5 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-300 disabled:cursor-wait text-white font-medium rounded-sm transition-all text-base tracking-wide"
             >
               {isAnalyzing ? (
                 <>
