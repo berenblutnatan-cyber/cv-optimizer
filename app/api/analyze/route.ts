@@ -5,6 +5,7 @@ import { fetchJobDescription } from "@/lib/jobFetcher";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { sendOptimizeNotification } from "@/lib/email";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { prisma } from "@/lib/prisma";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -819,10 +820,26 @@ Return ONLY the JSON object.`;
           ? analysis.overall_score
           : undefined;
 
-    // Fire-and-forget admin notification + server-side PostHog event.
+    // Fire-and-forget admin notification + server-side PostHog event + DB log.
     // No await so user-facing latency is unaffected.
     void (async () => {
       try {
+        if (userId) {
+          try {
+            await prisma.optimizationLog.create({
+              data: {
+                userId,
+                userEmail,
+                jobTitle: effectiveJobTitle,
+                companyName: companyName && companyName !== "Target Company" ? companyName : null,
+                matchScore: typeof matchScore === "number" ? Math.round(matchScore) : null,
+              },
+            });
+          } catch (logErr) {
+            console.error("[analyze] optimizationLog write failed:", logErr);
+          }
+        }
+
         await sendOptimizeNotification({
           userEmail,
           userId: userId || undefined,

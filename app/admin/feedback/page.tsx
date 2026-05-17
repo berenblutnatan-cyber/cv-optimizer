@@ -2,11 +2,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Star, MessageSquare, Users, TrendingUp, Calendar, Mail, Globe } from "lucide-react";
-
-// Admin emails that can access this page
-const ADMIN_EMAILS = [
-  "idan.kars@gmail.com", // Add your email here
-];
+import { getAdminUser } from "@/lib/admin";
 
 type FeedbackWithUser = {
   id: string;
@@ -18,30 +14,16 @@ type FeedbackWithUser = {
   user: { email: string | null } | null;
 };
 
-async function isAdmin() {
-  const { userId } = await auth();
-  if (!userId) return false;
-  
-  // For now, we'll check if the user exists and has admin email
-  // In production, you'd want a proper role system
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { email: true },
-  });
-  
-  return user && ADMIN_EMAILS.includes(user.email);
-}
-
 export default async function AdminFeedbackPage() {
   // Check authentication
   const { userId } = await auth();
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/sign-in?redirect_url=/admin/feedback");
   }
 
   // Check admin access
-  const adminAccess = await isAdmin();
-  if (!adminAccess) {
+  const admin = await getAdminUser();
+  if (!admin) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 max-w-md text-center">

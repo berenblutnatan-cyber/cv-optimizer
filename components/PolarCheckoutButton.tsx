@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import posthog from "posthog-js";
 import type { PolarPlanKey } from "@/lib/polar";
+import { trackMetaEvent } from "@/lib/fbq";
 
 interface PolarCheckoutButtonProps {
   plan: PolarPlanKey;
@@ -29,6 +30,13 @@ export function PolarCheckoutButton({
 
   const handleClick = () => {
     posthog.capture?.("checkout_clicked", { plan, amount, planName });
+    trackMetaEvent("InitiateCheckout", {
+      value: amount,
+      currency: "USD",
+      content_name: planName,
+      content_ids: [plan],
+      num_items: 1,
+    });
     setLoading(true);
     // Hard-navigate so Clerk redirect + Polar handoff work; the loading state
     // keeps the button locked until the new page paints.

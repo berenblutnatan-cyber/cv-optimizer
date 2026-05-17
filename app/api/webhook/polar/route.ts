@@ -2,6 +2,7 @@ import { Webhooks } from "@polar-sh/nextjs";
 import { prisma } from "@/lib/prisma";
 import { findPlanByProductId } from "@/lib/polar";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
+import { sendPurchaseNotification } from "@/lib/email";
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
@@ -57,5 +58,17 @@ export const POST = Webhooks({
     });
 
     console.log(`[polar webhook] +${plan.credits} credits to ${userId} (order ${orderId})`);
+
+    void sendPurchaseNotification({
+      userEmail: email,
+      userId,
+      planName: plan.name,
+      amount,
+      currency: order.currency?.toUpperCase() ?? "USD",
+      credits: plan.credits,
+      orderId,
+    }).catch((err) =>
+      console.error("[polar webhook] purchase notification failed:", err)
+    );
   },
 });

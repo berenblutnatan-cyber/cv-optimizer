@@ -15,11 +15,29 @@ model User {
   credits   Int      @default(1) // New users get 1 free credit
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   resumes          Resume[]
   feedbacks        Feedback[]
   purchases        Purchase[]
   couponRedemptions CouponRedemption[]
+  optimizations    OptimizationLog[]
+
+  @@index([createdAt])
+}
+
+model OptimizationLog {
+  id          String   @id @default(cuid())
+  userId      String
+  userEmail   String
+  jobTitle    String?
+  companyName String?
+  matchScore  Int?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Resume {
@@ -58,6 +76,8 @@ model Purchase {
   createdAt    DateTime @default(now())
 
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }
 
 model Coupon {

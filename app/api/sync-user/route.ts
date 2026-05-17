@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
+import { sendSignupNotification } from "@/lib/email";
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,12 @@ export async function POST() {
     });
 
     console.log(`✅ User synced: ${userId} (${userEmail})${isNewUser ? " [new]" : ""}`);
+
+    if (isNewUser) {
+      void sendSignupNotification({ userEmail, userId }).catch((err) =>
+        console.error("[sync-user] signup notification failed:", err)
+      );
+    }
 
     return NextResponse.json({
       success: true,

@@ -8,6 +8,7 @@ import { Check, ArrowRight, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { POLAR_PLANS, type PolarPlanKey } from "@/lib/polar";
 import { trackConversion } from "@/lib/gtag";
+import { trackMetaEvent } from "@/lib/fbq";
 
 function PurchaseSuccessContent() {
   const searchParams = useSearchParams();
@@ -27,7 +28,14 @@ function PurchaseSuccessContent() {
       transaction_id: checkoutId,
       user_email: user?.emailAddresses[0]?.emailAddress,
     });
-  }, [planConfig, checkoutId, user]);
+    trackMetaEvent("Purchase", {
+      value: planConfig.amount,
+      currency: "USD",
+      content_name: planConfig.name,
+      content_ids: [plan ?? "unknown"],
+      num_items: 1,
+    });
+  }, [planConfig, plan, checkoutId, user]);
 
   return (
     <div className="max-w-xl w-full text-center">

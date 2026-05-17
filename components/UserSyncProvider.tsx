@@ -4,6 +4,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
 import posthog from "posthog-js";
 import { trackConversion } from "@/lib/gtag";
+import { trackMetaEvent } from "@/lib/fbq";
 import { identifyUser } from "@/lib/analytics";
 
 export function UserSyncProvider({ children }: { children: React.ReactNode }) {
@@ -38,6 +39,8 @@ export function UserSyncProvider({ children }: { children: React.ReactNode }) {
           if (data?.isNewUser) {
             const email = user?.emailAddresses?.[0]?.emailAddress;
             trackConversion("signup", { user_email: email });
+            trackMetaEvent("CompleteRegistration", { content_name: "signup" });
+            trackMetaEvent("Lead", { content_name: "signup" });
             posthog.capture?.("signup_completed", { email });
           }
         }
