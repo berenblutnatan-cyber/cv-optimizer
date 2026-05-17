@@ -149,6 +149,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   
   // Photo state
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Score-breakdown tooltip: click-toggle so touch users can open it
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
   
   // Ref for PDF capture - points to ONLY the CV content (no toolbar)
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
@@ -310,21 +313,23 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
       </div>
       
       {/* Top Navigation - Premium Step Flow */}
-      <div className="px-8 py-5 bg-white border-b border-stone-100">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 bg-white border-b border-stone-100">
+        {/* Horizontally scrollable on mobile; wrapping flex on larger screens */}
+        <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible -mx-1 px-1 scroll-smooth">
           {tabs.map((tab, idx) => (
-            <div key={tab.id} className="flex items-center">
+            <div key={tab.id} className="flex items-center flex-shrink-0">
               <button
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-5 py-3 text-sm font-medium tracking-wide rounded-sm transition-all duration-200 ${
+                aria-current={activeTab === tab.id ? "step" : undefined}
+                className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 text-sm font-medium tracking-wide rounded-sm transition-all duration-200 focus-visible:outline-none whitespace-nowrap ${
                   activeTab === tab.id
-                    ? "bg-[#0A2647] text-white" 
-                    : (tab as any).highlight 
-                      ? "text-[#0A2647] hover:bg-[#0A2647]/5 bg-[#0A2647]/5" 
+                    ? "bg-[#0A2647] text-white"
+                    : (tab as any).highlight
+                      ? "text-[#0A2647] hover:bg-[#0A2647]/5 bg-[#0A2647]/5"
                       : "text-stone-500 hover:text-stone-700 hover:bg-stone-50"
                 }`}
               >
-                <span className={`w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center ${
+                <span className={`w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center flex-shrink-0 ${
                   activeTab === tab.id
                     ? "bg-white/20 text-white"
                     : "bg-stone-200 text-stone-600"
@@ -340,9 +345,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   </span>
                 )}
               </button>
-              {/* Connector between tabs */}
+              {/* Connector between tabs — hidden on small screens to save space */}
               {idx < tabs.length - 1 && (
-                <div className="w-8 h-px bg-stone-200 mx-2 flex-shrink-0" />
+                <div className="hidden sm:block w-8 h-px bg-stone-200 mx-2 flex-shrink-0" />
               )}
             </div>
           ))}
@@ -350,11 +355,11 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
       </div>
 
       {/* Tab Content */}
-      <div className="p-8 flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 flex-1 min-h-0 overflow-hidden flex flex-col">
         {activeTab === "overview" && (
           <div className="space-y-8 flex-1 min-h-0 overflow-auto pr-1">
             {/* Hero Score Card - Premium Style */}
-            <div className="bg-[#FAFAF8] rounded-sm p-8 border border-stone-100">
+            <div className="bg-[#FAFAF8] rounded-sm p-5 sm:p-8 border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <Target className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
                 <h3 className="font-serif text-xl text-[#1a1a1a]">Match Analysis</h3>
@@ -364,26 +369,33 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
             {/* Score Comparison Card - Shows improvement after optimization */}
             {results.scoreComparison && (
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 sm:p-6 border border-emerald-200">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
                       <TrendingUp className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-semibold text-slate-900">Score Improvement</h3>
-                      <p className="text-sm text-slate-600">How your CV improved after optimization</p>
+                      <p className="text-xs sm:text-sm text-slate-600 truncate">How your CV improved after optimization</p>
                     </div>
                   </div>
                   
-                  {/* Tooltip Trigger */}
-                  <div className="relative group">
-                    <button className="w-6 h-6 rounded-full bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                  {/* Tooltip Trigger — click-toggle so touch users can open it */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowScoreBreakdown((v) => !v)}
+                      aria-expanded={showScoreBreakdown}
+                      aria-label="Show score breakdown"
+                      className="w-8 h-8 rounded-full bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors focus-visible:outline-none"
+                    >
                       <Info className="w-4 h-4 text-emerald-600" />
                     </button>
-                    
+
                     {/* Tooltip Content */}
-                    <div className="absolute right-0 top-8 w-64 bg-white rounded-lg shadow-lg border border-slate-200 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className={`absolute right-0 top-10 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-slate-200 p-4 transition-all duration-200 z-50 ${
+                      showScoreBreakdown ? "opacity-100 visible" : "opacity-0 invisible"
+                    }`}>
                       <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-slate-200 transform rotate-45"></div>
                       <h4 className="font-semibold text-slate-900 text-sm mb-3">Detailed Breakdown</h4>
                       <div className="space-y-3">
@@ -440,28 +452,28 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 </div>
 
                 {/* Before/After Score Comparison */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
                   {/* Original Score */}
-                  <div className="bg-white rounded-lg p-4 text-center border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Original</p>
-                    <p className="text-3xl font-bold text-slate-400">{results.scoreComparison.original.total}</p>
+                  <div className="bg-white rounded-lg p-3 sm:p-4 text-center border border-slate-200">
+                    <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider mb-1">Original</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-slate-400">{results.scoreComparison.original.total}</p>
                   </div>
 
                   {/* Arrow & Improvement */}
                   <div className="flex flex-col items-center justify-center">
-                    <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center mb-1">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-500 rounded-full flex items-center justify-center mb-1">
                       <TrendingUp className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-lg font-bold text-emerald-600">
+                    <span className="text-base sm:text-lg font-bold text-emerald-600">
                       +{results.scoreComparison.improvement}
                     </span>
-                    <span className="text-xs text-emerald-600">points</span>
+                    <span className="text-[10px] sm:text-xs text-emerald-600">points</span>
                   </div>
 
                   {/* Optimized Score */}
-                  <div className="bg-emerald-500 rounded-lg p-4 text-center">
-                    <p className="text-xs text-emerald-100 uppercase tracking-wider mb-1">Optimized</p>
-                    <p className="text-3xl font-bold text-white">{results.scoreComparison.optimized.total}</p>
+                  <div className="bg-emerald-500 rounded-lg p-3 sm:p-4 text-center">
+                    <p className="text-[10px] sm:text-xs text-emerald-100 uppercase tracking-wider mb-1">Optimized</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-white">{results.scoreComparison.optimized.total}</p>
                   </div>
                 </div>
               </div>
@@ -627,19 +639,20 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* Header with Actions */}
             <div className="flex-shrink-0 mb-4">
-              <div className="flex justify-between items-center">
-              <div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div>
                   <h3 className="text-slate-900 font-semibold mb-1">Your Optimized Resume</h3>
                   <p className="text-slate-500 text-sm">
                     {isEditMode ? "Click any text to edit directly" : "Adjust font & spacing from the toolbar below"}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {/* Edit/Preview Toggle */}
                   <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
                     <button
                       onClick={() => setIsEditMode(false)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      aria-pressed={!isEditMode}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors focus-visible:outline-none ${
                         !isEditMode ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
@@ -648,27 +661,30 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     </button>
                     <button
                       onClick={() => setIsEditMode(true)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      aria-pressed={isEditMode}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors focus-visible:outline-none ${
                         isEditMode ? "bg-indigo-500 shadow-sm text-white" : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       Edit
                     </button>
-              </div>
-              <button
-                onClick={handleCopyOptimized}
-                    className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium shadow-sm"
+                  </div>
+                  <button
+                    onClick={handleCopyOptimized}
+                    aria-label={copiedOptimized ? "Copied" : "Copy optimized resume text"}
+                    className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
                   >
                     {copiedOptimized ? <Check className="w-4 h-4 text-indigo-500" /> : <Copy className="w-4 h-4" />}
                     {copiedOptimized ? "Copied!" : "Copy"}
                   </button>
-                  
+
                   {/* PDF Download */}
                   <button
                     onClick={handleDownloadPdf}
                     disabled={isDownloading}
-                    className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg transition-colors text-sm font-medium shadow-sm"
+                    aria-label="Download as PDF"
+                    className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
                   >
                     {isDownloading && downloadType === "pdf" ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -677,12 +693,13 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     )}
                     PDF
                   </button>
-                  
+
                   {/* Word Download */}
                   <button
                     onClick={handleDownloadWord}
                     disabled={isDownloading}
-                    className="flex items-center gap-2 px-3 py-2 border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 rounded-lg transition-colors text-sm font-medium"
+                    aria-label="Download as Word document"
+                    className="flex items-center gap-2 px-3 py-2 border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 rounded-lg transition-colors text-sm font-medium focus-visible:outline-none"
                   >
                     {isDownloading && downloadType === "word" ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -690,8 +707,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       <FileEdit className="w-4 h-4" />
                     )}
                     Word
-              </button>
-            </div>
+                  </button>
+                </div>
               </div>
 
               {/* Edit Mode Banner */}
@@ -708,9 +725,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {/* Resume Preview - SmartResumePreview with auto-scaling */}
             {isEditMode ? (
               // Editable mode - use old EditableResumePreview
-              <div className="flex-1 min-h-0 overflow-auto rounded-xl bg-indigo-50/50 p-4">
+              <div className="flex-1 min-h-0 overflow-auto rounded-xl bg-indigo-50/50 p-2 sm:p-4">
                 <div className="flex justify-center">
-                  <div className="transform scale-[0.65] origin-top">
+                  <div className="transform scale-[0.38] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.65] origin-top">
                     <EditableResumePreview
                       data={resumeData}
                       onChange={setResumeData}

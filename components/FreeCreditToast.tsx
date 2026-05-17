@@ -27,15 +27,17 @@ export function FreeCreditToast({ isOpen, onClose }: FreeCreditToastProps) {
 
   return (
     <div
-      className={`fixed top-4 right-4 z-[100] transition-all duration-300 ${
+      role="status"
+      aria-live="polite"
+      className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-[100] transition-all duration-300 ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
       }`}
     >
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow-2xl p-4 flex items-center gap-3 min-w-[320px] max-w-md">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow-2xl p-4 flex items-center gap-3 sm:min-w-[320px] sm:max-w-md mx-auto">
         <div className="flex-shrink-0">
           <Gift className="w-6 h-6" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm">🎁 Sign up now & get 2 FREE Credits!</p>
           <p className="text-xs text-indigo-100 mt-0.5">
             Use them to download or optimize your resume
@@ -46,7 +48,8 @@ export function FreeCreditToast({ isOpen, onClose }: FreeCreditToastProps) {
             setIsVisible(false);
             setTimeout(onClose, 300);
           }}
-          className="flex-shrink-0 p-1 hover:bg-white/20 rounded transition-colors"
+          aria-label="Dismiss"
+          className="flex-shrink-0 p-2 hover:bg-white/20 rounded transition-colors focus-visible:outline-none"
         >
           <X className="w-4 h-4" />
         </button>

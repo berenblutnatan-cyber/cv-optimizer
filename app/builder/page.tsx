@@ -95,24 +95,25 @@ export default function BuilderPage() {
   const progressPercent = ((currentStep + 1) / TOTAL_STEPS) * 100;
 
   return (
-    <div className="h-screen bg-[#FAFAF8] text-[#1a1a1a] flex flex-col overflow-hidden">
+    <div className="min-h-[100dvh] bg-[#FAFAF8] text-[#1a1a1a] flex flex-col">
       {/* Premium Header */}
-      <header className="flex-shrink-0 w-full border-b border-stone-200/60 bg-white/80 backdrop-blur-sm z-20">
-        <div className="px-8 lg:px-16 py-5">
-          <div className="max-w-[1800px] mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-6">
+      <header className="flex-shrink-0 w-full border-b border-stone-200/60 bg-white/85 backdrop-blur-md z-20">
+        <div className="px-4 sm:px-8 lg:px-16 py-4 sm:py-5">
+          <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0">
               <Logo variant="dark" size="md" />
-              <span className="px-4 py-1.5 rounded-sm bg-[#0A2647]/5 text-[#0A2647] text-xs font-medium tracking-wide">
+              <span className="hidden md:inline-flex px-4 py-1.5 rounded-sm bg-[#0A2647]/5 text-[#0A2647] text-xs font-medium tracking-wide whitespace-nowrap">
                 Resume Builder
               </span>
             </div>
-            <div className="flex items-center gap-6">
-              <Link 
+            <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
+              <Link
                 href="/"
-                className="flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm tracking-wide"
+                aria-label="Back to Home"
+                className="flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm tracking-wide focus-visible:outline-none"
               >
                 <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-                Back to Home
+                <span className="hidden sm:inline">Back to Home</span>
               </Link>
               <CreditBalance />
               <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 ring-2 ring-stone-200" } }} />
@@ -121,11 +122,11 @@ export default function BuilderPage() {
         </div>
 
         {/* Progress Bar */}
-        <div className="px-8 lg:px-16 pb-5">
+        <div className="px-4 sm:px-8 lg:px-16 pb-4 sm:pb-5">
           <div className="max-w-[1800px] mx-auto">
-            <ProgressBar 
-              currentStep={currentStep} 
-              totalSteps={TOTAL_STEPS} 
+            <ProgressBar
+              currentStep={currentStep}
+              totalSteps={TOTAL_STEPS}
               progressPercent={progressPercent}
               onStepClick={goToStep}
             />
@@ -138,42 +139,44 @@ export default function BuilderPage() {
       {/* Main Content - Split Screen */}
       <main className="flex-1 flex overflow-hidden relative">
         {/* Left Panel - Step Editor */}
-        <div 
+        <div
           className={`bg-white flex flex-col overflow-hidden border-r border-stone-100 transition-all duration-300 ease-in-out ${
             isPreviewOpen ? "w-full lg:w-1/2" : "w-full"
           }`}
         >
           {/* Step Content */}
-          <div className="flex-1 overflow-y-auto p-8">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <StepContent step={currentStep} />
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex-shrink-0 px-8 py-5 border-t border-stone-100 bg-[#FAFAF8]">
-            <div className="flex items-center justify-between">
+          <div className="flex-shrink-0 px-4 sm:px-8 py-4 sm:py-5 border-t border-stone-100 bg-[#FAFAF8]">
+            <div className="flex items-center justify-between gap-3">
               <button
                 onClick={prevStep}
                 disabled={currentStep === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed border border-stone-300 text-stone-700 rounded-sm transition-colors tracking-wide"
+                aria-label="Previous step"
+                className="flex items-center gap-2 px-4 sm:px-6 py-3 bg-white hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed border border-stone-300 text-stone-700 rounded-sm transition-colors tracking-wide focus-visible:outline-none"
               >
                 <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-                Back
+                <span className="hidden sm:inline">Back</span>
               </button>
-              
-              <span className="text-stone-500 text-sm font-light tracking-wide">
+
+              <span className="text-stone-500 text-xs sm:text-sm font-light tracking-wide whitespace-nowrap">
                 Step {currentStep + 1} of {TOTAL_STEPS}
               </span>
 
               {currentStep < TOTAL_STEPS - 1 ? (
                 <button
                   onClick={nextStep}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide"
+                  aria-label="Next step"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
                 >
-                  Next
+                  <span className="hidden sm:inline">Next</span>
                   <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
                 </button>
               ) : (
-                <div className="w-24" />
+                <div className="w-12 sm:w-24" />
               )}
             </div>
           </div>
@@ -228,12 +231,15 @@ export default function BuilderPage() {
         {!isPreviewOpen && (
           <button
             onClick={() => setIsPreviewOpen(true)}
-            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-3 pl-5 pr-4 py-5 bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-l-sm shadow-xl hover:shadow-2xl transition-all duration-300 group"
+            aria-label="Show resume preview"
             title="Show Preview"
+            className="fixed z-40 bg-[#0A2647] hover:bg-[#0d3259] text-white shadow-xl hover:shadow-2xl transition-all duration-300 group focus-visible:outline-none
+                       bottom-4 right-4 inline-flex items-center gap-2 px-4 py-3 rounded-sm
+                       sm:bottom-auto sm:right-0 sm:top-1/2 sm:-translate-y-1/2 sm:gap-3 sm:pl-5 sm:pr-4 sm:py-5 sm:rounded-l-sm sm:rounded-r-none"
           >
             <Eye className="w-5 h-5" strokeWidth={1.5} />
-            <span className="text-sm font-medium tracking-wide writing-vertical">Preview</span>
-            <PanelRightOpen className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.5} />
+            <span className="text-sm font-medium tracking-wide sm:writing-vertical">Preview</span>
+            <PanelRightOpen className="hidden sm:inline-block w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.5} />
           </button>
         )}
       </main>
@@ -280,12 +286,14 @@ function ProgressBar({
       </div>
 
       {/* Step indicators */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-1 sm:gap-2">
         {WIZARD_STEPS.map((step, index) => (
           <button
             key={step.id}
             onClick={() => onStepClick(index)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-sm transition-all ${
+            aria-label={`Go to step ${index + 1}: ${step.title}`}
+            aria-current={index === currentStep ? "step" : undefined}
+            className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-sm transition-all focus-visible:outline-none ${
               index === currentStep
                 ? "bg-[#0A2647]/5 text-[#0A2647]"
                 : index < currentStep
@@ -293,11 +301,11 @@ function ProgressBar({
                 : "text-stone-500 hover:bg-stone-100 hover:text-stone-600"
             }`}
           >
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-              index < currentStep 
-                ? "bg-[#0A2647]/10 text-[#0A2647]" 
-                : index === currentStep 
-                ? "bg-[#0A2647] text-white" 
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
+              index < currentStep
+                ? "bg-[#0A2647]/10 text-[#0A2647]"
+                : index === currentStep
+                ? "bg-[#0A2647] text-white"
                 : "bg-stone-200 text-stone-500"
             }`}>
               {index < currentStep ? (
@@ -393,9 +401,10 @@ function PersonalInfoStep() {
                 />
                 <button
                   onClick={handleRemovePhoto}
-                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
+                  aria-label="Remove profile photo"
+                  className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors focus-visible:outline-none"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             ) : (
@@ -431,8 +440,8 @@ function PersonalInfoStep() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="sm:col-span-2">
           <FormLabel required>Full Name</FormLabel>
           <FormInput
             value={resumeData.personalInfo.name}
@@ -440,7 +449,7 @@ function PersonalInfoStep() {
             placeholder="John Doe"
           />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <FormLabel>Professional Title</FormLabel>
           <FormInput
             value={resumeData.personalInfo.title}
@@ -482,7 +491,7 @@ function PersonalInfoStep() {
             placeholder="linkedin.com/in/johndoe"
           />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <FormLabel>Website / Portfolio</FormLabel>
           <FormInput
             value={resumeData.personalInfo.website}
@@ -530,14 +539,15 @@ function ExperienceStep() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <StepHeader 
-          title="Work Experience" 
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <StepHeader
+          title="Work Experience"
           description="Add your relevant work history, starting with your most recent position."
         />
         <button
           onClick={() => addExperience()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors"
+          aria-label="Add a work-experience entry"
+          className="self-start sm:self-auto flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors focus-visible:outline-none whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           Add Position
@@ -545,8 +555,8 @@ function ExperienceStep() {
       </div>
 
       {resumeData.experience.length === 0 ? (
-        <EmptyState 
-          text="No work experience added yet" 
+        <EmptyState
+          text="No work experience added yet"
           subtext="Click 'Add Position' to add your first job"
         />
       ) : (
@@ -569,14 +579,15 @@ function EducationStep() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <StepHeader 
-          title="Education" 
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <StepHeader
+          title="Education"
           description="Add your educational background, including degrees, certifications, and relevant coursework."
         />
         <button
           onClick={() => addEducation()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors"
+          aria-label="Add an education entry"
+          className="self-start sm:self-auto flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors focus-visible:outline-none whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           Add Education
@@ -647,7 +658,7 @@ function SkillsStep() {
 
       {/* Skills */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
             <Wrench className="w-5 h-5 text-indigo-600" />
             Skills
@@ -655,26 +666,31 @@ function SkillsStep() {
           <button
             onClick={handleSuggestSkills}
             disabled={isSuggesting}
-            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-sm font-medium rounded-lg transition-all"
+            aria-label="Suggest skills with AI"
+            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-sm font-medium rounded-lg transition-all focus-visible:outline-none whitespace-nowrap"
           >
             {isSuggesting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Sparkles className="w-4 h-4" />
             )}
-            ✨ Suggest Skills
+            <span className="hidden sm:inline">Suggest Skills</span>
+            <span className="sm:hidden">Suggest</span>
           </button>
         </div>
         <div className="flex gap-2">
-          <FormInput
-            value={newSkill}
-            onChange={(e) => setNewSkill(e.target.value)}
-            placeholder="Add a skill (e.g., JavaScript, Project Management)"
-            onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
-          />
+          <div className="flex-1 min-w-0">
+            <FormInput
+              value={newSkill}
+              onChange={(e) => setNewSkill(e.target.value)}
+              placeholder="Add a skill (e.g., JavaScript)"
+              onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
+            />
+          </div>
           <button
             onClick={handleAddSkill}
-            className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap"
+            aria-label="Add skill"
+            className="flex-shrink-0 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap focus-visible:outline-none"
           >
             Add
           </button>
@@ -697,15 +713,18 @@ function SkillsStep() {
           Languages
         </h3>
         <div className="flex gap-2">
-          <FormInput
-            value={newLanguage}
-            onChange={(e) => setNewLanguage(e.target.value)}
-            placeholder="Add a language (e.g., English - Native, Spanish - Fluent)"
-            onKeyDown={(e) => e.key === "Enter" && handleAddLanguage()}
-          />
+          <div className="flex-1 min-w-0">
+            <FormInput
+              value={newLanguage}
+              onChange={(e) => setNewLanguage(e.target.value)}
+              placeholder="Add a language (e.g., English - Native)"
+              onKeyDown={(e) => e.key === "Enter" && handleAddLanguage()}
+            />
+          </div>
           <button
             onClick={handleAddLanguage}
-            className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap"
+            aria-label="Add language"
+            className="flex-shrink-0 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap focus-visible:outline-none"
           >
             Add
           </button>
@@ -756,18 +775,22 @@ function CustomSectionsStep() {
 
       {/* Add new section */}
       <div className="flex gap-2">
-        <FormInput
-          value={newSectionTitle}
-          onChange={(e) => setNewSectionTitle(e.target.value)}
-          placeholder="Section title (e.g., Volunteering, Publications, Awards)"
-          onKeyDown={(e) => e.key === "Enter" && handleAddSection()}
-        />
+        <div className="flex-1 min-w-0">
+          <FormInput
+            value={newSectionTitle}
+            onChange={(e) => setNewSectionTitle(e.target.value)}
+            placeholder="Section title (e.g., Awards)"
+            onKeyDown={(e) => e.key === "Enter" && handleAddSection()}
+          />
+        </div>
         <button
           onClick={handleAddSection}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap"
+          aria-label="Add section"
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium rounded-xl transition-colors whitespace-nowrap focus-visible:outline-none"
         >
           <Plus className="w-4 h-4" />
-          Add Section
+          <span className="hidden sm:inline">Add Section</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
@@ -879,7 +902,7 @@ function ReviewStep() {
           </span>
         </div>
         
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <CompletionItem label="Name" completed={stats.hasName} />
           <CompletionItem label="Email" completed={stats.hasEmail} />
           <CompletionItem label="Summary" completed={stats.hasSummary} />
@@ -952,7 +975,7 @@ function ReviewStep() {
         <p className="text-sm text-slate-500">
           Choose from 8 professional templates. Click to preview, then download as PDF.
         </p>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {(Object.keys(ALL_TEMPLATES) as AllTemplateId[]).map((templateId) => (
             <TemplateDownloadCard
               key={templateId}
@@ -1171,11 +1194,12 @@ function DatePicker({
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 min-w-0">
       <select
         value={month}
         onChange={(e) => handleChange(e.target.value, year)}
-        className="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+        aria-label="Month"
+        className="flex-1 min-w-0 px-2 sm:px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer text-sm"
       >
         <option value="" className="bg-white">Month</option>
         {MONTHS.map((m) => (
@@ -1185,7 +1209,8 @@ function DatePicker({
       <select
         value={year}
         onChange={(e) => handleChange(month, e.target.value)}
-        className="w-24 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+        aria-label="Year"
+        className="w-20 sm:w-24 flex-shrink-0 px-2 sm:px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer text-sm"
       >
         <option value="" className="bg-white">Year</option>
         {YEARS.map((y) => (
@@ -1195,7 +1220,8 @@ function DatePicker({
       {showPresent && (
         <button
           onClick={() => onPresentChange?.(true)}
-          className="px-3 py-2.5 text-indigo-600 hover:text-indigo-700 text-sm font-medium transition-colors whitespace-nowrap"
+          aria-label="Set end date to Present"
+          className="flex-shrink-0 px-2 sm:px-3 py-2.5 text-indigo-600 hover:text-indigo-700 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap focus-visible:outline-none"
         >
           Present
         </button>
@@ -1251,7 +1277,7 @@ function ExperienceCard({ experience, index }: { experience: Experience; index: 
         </button>
       </div>
       
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <FormLabel required>Job Title</FormLabel>
           <FormInput
@@ -1276,7 +1302,7 @@ function ExperienceCard({ experience, index }: { experience: Experience; index: 
             placeholder="Mountain View, CA"
           />
         </div>
-        <div></div>
+        <div className="hidden sm:block"></div>
         <div>
           <FormLabel>Start Date</FormLabel>
           <DatePicker
@@ -1294,7 +1320,7 @@ function ExperienceCard({ experience, index }: { experience: Experience; index: 
             onPresentChange={(isPresent) => updateExperience(experience.id, { current: isPresent, endDate: "" })}
           />
         </div>
-        <div className="col-span-2 space-y-2">
+        <div className="sm:col-span-2 space-y-2">
           <FormLabel>Key Achievements</FormLabel>
           <textarea
             value={experience.description.join("\n")}
@@ -1342,8 +1368,8 @@ function EducationCard({ education, index }: { education: Education; index: numb
         </button>
       </div>
       
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="sm:col-span-2">
           <FormLabel required>Institution</FormLabel>
           <FormInput
             value={education.institution}

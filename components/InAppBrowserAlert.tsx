@@ -138,7 +138,7 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
           {/* Dismiss button */}
           <button
             onClick={() => setDismissed(true)}
-            className="flex-shrink-0 p-1.5 hover:bg-amber-200 rounded-lg transition-colors"
+            className="flex-shrink-0 p-2.5 hover:bg-amber-200 rounded-lg transition-colors focus-visible:outline-none"
             aria-label="Dismiss"
           >
             <X className="w-4 h-4 text-amber-600" />

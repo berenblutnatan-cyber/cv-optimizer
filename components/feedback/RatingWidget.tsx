@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { MessageSquare, X, Star, Send, Check, Loader2 } from "lucide-react";
 
 type WidgetState = "button" | "rating" | "comment" | "submitting" | "success";
@@ -9,12 +10,21 @@ interface RatingWidgetProps {
   source?: string;
 }
 
+// Routes where the floating widget would overlap a bottom action bar on mobile
+// (the builder has its own fixed Back/Next footer).
+const HIDDEN_ROUTES = ["/builder"];
+
 export function RatingWidget({ source }: RatingWidgetProps) {
+  const pathname = usePathname();
   const [state, setState] = useState<WidgetState>("button");
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [comment, setComment] = useState("");
   const [isVisible, setIsVisible] = useState(true);
+
+  if (pathname && HIDDEN_ROUTES.some((r) => pathname.startsWith(r))) {
+    return null;
+  }
 
   // Auto-close success message
   useEffect(() => {
@@ -69,16 +79,18 @@ export function RatingWidget({ source }: RatingWidgetProps) {
 
   if (state === "button") {
     return (
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 group">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-2 group">
         <button
           onClick={handleDismiss}
-          className="bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full shadow border border-slate-200 transition-all"
+          aria-label="Dismiss feedback prompt"
+          className="bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full shadow border border-slate-200 transition-all focus-visible:outline-none"
         >
           <X className="w-4 h-4" />
         </button>
         <button
           onClick={() => setState("rating")}
-          className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-full shadow-lg transition-all hover:scale-105"
+          aria-label="Open feedback form"
+          className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-full shadow-lg transition-all hover:scale-105 focus-visible:outline-none"
         >
           <MessageSquare className="w-5 h-5" />
           <span>Feedback</span>
@@ -89,7 +101,7 @@ export function RatingWidget({ source }: RatingWidgetProps) {
 
   if (state === "success") {
     return (
-      <div className="fixed bottom-6 right-6 z-50 bg-white rounded-xl shadow-2xl border border-emerald-200 p-6 w-80 animate-in fade-in slide-in-from-bottom-4">
+      <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50 bg-white rounded-xl shadow-2xl border border-emerald-200 p-6 sm:w-80 animate-in fade-in slide-in-from-bottom-4">
         <div className="flex flex-col items-center text-center gap-2">
           <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
             <Check className="w-6 h-6 text-emerald-600" />
@@ -101,16 +113,24 @@ export function RatingWidget({ source }: RatingWidgetProps) {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 w-80 animate-in fade-in slide-in-from-bottom-4">
+    <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 sm:w-80 animate-in fade-in slide-in-from-bottom-4">
       <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/50 rounded-t-xl">
         <span className="font-semibold text-sm text-slate-700">
           {state === "rating" ? "Rate Experience" : "Add Details"}
         </span>
         <div className="flex gap-1">
-          <button onClick={() => setState("button")} className="p-1 hover:bg-slate-200 rounded text-slate-500">
-             <div className="w-3 h-0.5 bg-current translate-y-1"></div>
+          <button
+            onClick={() => setState("button")}
+            aria-label="Minimize feedback"
+            className="p-2 hover:bg-slate-200 rounded text-slate-500 focus-visible:outline-none"
+          >
+            <div className="w-3 h-0.5 bg-current translate-y-1"></div>
           </button>
-          <button onClick={handleDismiss} className="p-1 hover:bg-red-100 hover:text-red-600 rounded text-slate-400">
+          <button
+            onClick={handleDismiss}
+            aria-label="Dismiss feedback"
+            className="p-2 hover:bg-red-100 hover:text-red-600 rounded text-slate-400 focus-visible:outline-none"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
