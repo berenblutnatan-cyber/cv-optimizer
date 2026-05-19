@@ -96,61 +96,78 @@ export interface TemplateConfig {
  * ALL_TEMPLATES - Complete registry of all 8 template archetypes
  * Used by the builder download section and preview cards
  */
-export const ALL_TEMPLATES: Record<AllTemplateId, { 
-  name: string; 
-  description: string; 
+export const ALL_TEMPLATES: Record<AllTemplateId, {
+  name: string;
+  description: string;
   preview: string;
   category: "professional" | "classic" | "creative" | "technical";
+  /** Free templates are usable by everyone; premium ones cost 1 credit to unlock per user. */
+  isPremium?: boolean;
 }> = {
   "modern-sidebar": {
     name: "Modern Professional",
     description: "Two-column with dark sidebar. Perfect for tech & business roles.",
     preview: "linear-gradient(135deg, #0f172a 35%, #ffffff 35%)",
     category: "professional",
+    isPremium: true,
   },
   "ivy-league": {
     name: "Ivy League",
     description: "Classic serif elegance. Ideal for legal, academic & executive roles.",
     preview: "linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%)",
     category: "classic",
+    // The only free / default template. Everyone gets this without paying.
   },
   "minimalist": {
     name: "Minimalist",
     description: "Clean whitespace design. Great for modern creative roles.",
     preview: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
     category: "professional",
+    isPremium: true,
   },
   "executive": {
     name: "Executive",
     description: "Bold dark header for senior professionals & consultants.",
     preview: "linear-gradient(180deg, #111827 30%, #ffffff 30%)",
     category: "professional",
+    isPremium: true,
   },
   "techie": {
     name: "Techie",
     description: "Developer-focused with skills grid. Perfect for engineers.",
     preview: "linear-gradient(180deg, #1e293b 20%, #ffffff 20%)",
     category: "technical",
+    isPremium: true,
   },
   "creative": {
     name: "Creative",
     description: "Unique split design. Made for designers & marketers.",
     preview: "linear-gradient(135deg, #10b981 35%, #ffffff 35%)",
     category: "creative",
+    isPremium: true,
   },
   "startup": {
     name: "Startup",
     description: "Bold modern typography. Great for innovative companies.",
     preview: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)",
     category: "creative",
+    isPremium: true,
   },
   "international": {
     name: "International",
     description: "Photo support, standardized format. Common in Europe.",
     preview: "linear-gradient(135deg, #f1f5f9 30%, #ffffff 30%)",
     category: "professional",
+    isPremium: true,
   },
 };
+
+export const DEFAULT_FREE_TEMPLATE_ID: AllTemplateId = "ivy-league";
+
+/** Whether a template requires unlocking. */
+export function isPremiumTemplate(id: string): boolean {
+  return !!ALL_TEMPLATES[id as AllTemplateId]?.isPremium;
+}
 
 // ==========================================
 // TEMPLATE REGISTRY (Legacy 4)

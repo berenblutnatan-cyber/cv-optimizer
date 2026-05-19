@@ -86,13 +86,46 @@ export default function LandingPage() {
                 <span className="text-indigo-600">Land the interview.</span>
               </h1>
 
-              <p className="text-sm sm:text-lg text-stone-500 mb-6 sm:mb-12 leading-relaxed font-light">
+              <p className="text-sm sm:text-lg text-stone-500 mb-6 sm:mb-8 leading-relaxed font-light">
                 AI tailors your resume for every job posting — ATS-ready in under 60 seconds. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
               </p>
 
-              {/* Power Duo Cards — always 2-col so both fit above the fold on
-                  mobile. Card padding shrinks on small to keep the pair
-                  visible without scrolling. */}
+              {/* Primary Lead Magnet — Big Score CTA. This is the highest-converting
+                  entry point (no signup, 60s result). It must dominate above the fold. */}
+              <Link
+                href="/score"
+                className="group relative inline-flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto px-6 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-[#B8860B] to-[#d4a017] hover:from-[#9c7409] hover:to-[#b8870e] text-white font-semibold rounded-sm transition-all duration-300 mb-3 sm:mb-4 tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8860B]/40 overflow-hidden animate-cta-glow motion-reduce:animate-none"
+              >
+                <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 animate-shimmer-x motion-reduce:hidden" />
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 relative" strokeWidth={2} />
+                <span className="relative text-base sm:text-xl">Check Your CV Score — Free</span>
+                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform relative" strokeWidth={2} />
+              </Link>
+              <p className="text-xs sm:text-sm text-stone-500 font-light mb-6 sm:mb-10 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-[#0A2647]" strokeWidth={2} />
+                  No signup
+                </span>
+                <span className="text-stone-300">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-[#0A2647]" strokeWidth={2} />
+                  60-second result
+                </span>
+                <span className="text-stone-300">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-[#0A2647]" strokeWidth={2} />
+                  ATS-graded
+                </span>
+              </p>
+
+              <div className="flex items-center gap-3 mb-4 sm:mb-5">
+                <div className="h-px flex-1 bg-stone-200" />
+                <span className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-stone-400 font-medium">Or start from scratch</span>
+                <div className="h-px flex-1 bg-stone-200" />
+              </div>
+
+              {/* Secondary entry points — keep visible but visually subordinate
+                  to the score CTA above. */}
               <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-10">
                 {/* Create New Resume Card */}
                 <Link

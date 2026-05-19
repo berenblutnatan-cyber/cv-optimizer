@@ -105,10 +105,11 @@ export async function POST(request: NextRequest) {
       finalJobDescription = result.description;
     }
 
-    // Validation: Need at least jobDescription OR jobTitle to proceed
+    // Validation: Quick mode skips role requirement; targeted modes still need jobTitle or jobDescription.
+    const isQuickMode = mode === "quick";
     const hasJobContext = finalJobDescription?.trim() || jobTitle?.trim();
-    
-    if (!hasJobContext) {
+
+    if (!isQuickMode && !hasJobContext) {
       return NextResponse.json(
         { error: "Please provide a Job Title, Job Description, or URL to continue." },
         { status: 400 }
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     const effectiveJobTitle =
       cleanTitle(jobTitle) ||
       (finalJobDescription ? inferJobTitleFromDescription(finalJobDescription, companyName) : "") ||
-      "Role";
+      (isQuickMode ? "General Role" : "Role");
 
     // DEBUG: Log what job context we received
     console.log("=== JOB CONTEXT DEBUG ===");
@@ -127,8 +128,36 @@ export async function POST(request: NextRequest) {
     console.log("Final effectiveJobTitle:", effectiveJobTitle);
     console.log("========================");
 
+    const quickModeOverride = isQuickMode
+      ? `\n════════════════════════════════════════════════════════════════════════════════
+QUICK-OPTIMIZE MODE (no target role provided)
+════════════════════════════════════════════════════════════════════════════════
+The candidate did NOT supply a specific target role. They want a polished,
+generally-strong CV — not a job-specific tailor.
+
+DO THIS INSTEAD OF JOB-MATCH SCORING:
+1. Infer the candidate's current/desired role from the most recent position in their CV.
+   Use that as "TARGET ROLE" below.
+2. Score them as "best-in-class CV for someone in their own field" (NOT as a job-match).
+3. Use the same bands but interpret them as overall CV quality, not role fit:
+   - 85-95: Excellent CV, recruiter-ready, ATS-optimized
+   - 75-84: Strong CV with minor polish needed
+   - 60-74: Decent baseline, several gaps in impact/keywords
+   - 45-59: Weak presentation, lacks metrics/structure
+   - 20-44: Needs substantial rewrite
+4. SKIP the domain-mismatch penalties (no domain to mismatch against).
+5. SKIP the seniority gap penalty (no job seniority to compare to).
+6. Focus optimization on: impact framing, action verbs, metrics surfacing,
+   ATS keyword coverage for the inferred role, summary strength, clarity.
+7. \`missingKeySkills\` should list skills typically expected for the inferred
+   role that the CV doesn't surface (not role-specific gaps).
+
+════════════════════════════════════════════════════════════════════════════════
+`
+      : "";
+
     // Analyze CV against job description using OpenAI - COMPREHENSIVE OPTIMIZATION
-    const analysisPrompt = `You are a SENIOR TECHNICAL RECRUITER and ATS AUDITOR who also transforms resumes.
+    const analysisPrompt = `${quickModeOverride}You are a SENIOR TECHNICAL RECRUITER and ATS AUDITOR who also transforms resumes.
 You must FIRST score the original CV ruthlessly, THEN optimize it.
 
 ════════════════════════════════════════════════════════════════════════════════
@@ -877,7 +906,11 @@ Return ONLY the JSON object.`;
       success: true,
       analysis,
       meta: {
-        mode: mode === "title_only" ? "title_only" : "specific_role",
+        mode: isQuickMode
+          ? "quick"
+          : mode === "title_only"
+            ? "title_only"
+            : "specific_role",
         jobTitle: effectiveJobTitle,
         jobUrl,
         companyName,

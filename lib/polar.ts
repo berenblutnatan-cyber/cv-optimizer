@@ -6,6 +6,15 @@ export type PolarPlan = {
 };
 
 export const POLAR_PLANS = {
+  // Foot-in-the-door SKU shown in the out-of-credits modal. The product must
+  // exist in the Polar dashboard and POLAR_PRODUCT_ONEMORE must be set —
+  // without the env var the checkout route returns "Unknown plan" 400.
+  onemore: {
+    productId: process.env.POLAR_PRODUCT_ONEMORE ?? "",
+    name: "1 More Credit",
+    amount: 1,
+    credits: 1,
+  },
   starter: {
     productId: process.env.POLAR_PRODUCT_STARTER ?? "",
     name: "Starter",

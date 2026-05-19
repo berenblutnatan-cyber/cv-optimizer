@@ -7,20 +7,25 @@ import { Logo } from "@/components/Logo";
 import Link from "next/link";
 import { CreditBalance } from "@/components/CreditBalance";
 import { toast } from "sonner";
-import { 
-  Upload, 
-  FileText, 
-  Briefcase, 
-  ArrowRight, 
-  X, 
-  Check, 
+import {
+  Upload,
+  FileText,
+  Briefcase,
+  ArrowRight,
+  X,
+  Check,
   AlertCircle,
   Loader2,
   Link as LinkIcon,
   FileSearch,
   Pen,
-  Coins
+  Coins,
+  Zap,
+  Target,
+  Sparkles
 } from "lucide-react";
+import { AnalyzingScreen } from "@/components/AnalyzingScreen";
+import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { saveAnalysisToSession } from "@/lib/analysisSession";
 import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
 import { FreeCreditToast } from "@/components/FreeCreditToast";
@@ -74,9 +79,21 @@ export function OptimizerClient() {
   
   // Job input mode toggle
   const [jobInputMode, setJobInputMode] = useState<"description" | "url">("description");
+
+  // Analysis mode: "quick" (CV only, no role) vs "targeted" (CV + role for tailoring).
+  // Initialize from ?mode=quick query param so the landing-page Quick CTA can deep-link in.
+  const [analysisMode, setAnalysisMode] = useState<"targeted" | "quick">("targeted");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "quick") setAnalysisMode("quick");
+  }, []);
   
   // Auth modal for deferred authentication
   const { isOpen: isAuthModalOpen, trigger: authTrigger, openModal: openAuthModal, closeModal: closeAuthModal } = useAuthModal();
+
+  // Out-of-credits paywall
+  const oocModal = useOutOfCreditsModal();
   
   // Track if we've already restored from draft
   const hasRestoredDraft = useRef(false);
@@ -212,7 +229,8 @@ export function OptimizerClient() {
   // Validation
   const hasResume = cvText.trim() || cvFile;
   const hasJobContext = jobTitle.trim() || jobDescription.trim() || jobUrl.trim();
-  const canAnalyze = hasResume && hasJobContext;
+  const isQuickMode = analysisMode === "quick";
+  const canAnalyze = isQuickMode ? !!hasResume : !!(hasResume && hasJobContext);
 
   const focusEmptyField = (id: string) => {
     if (typeof document === "undefined") return;
@@ -231,6 +249,7 @@ export function OptimizerClient() {
       has_resume: !!hasResume,
       has_job_context: !!hasJobContext,
       job_input_mode: jobInputMode,
+      analysis_mode: analysisMode,
     });
 
     if (!hasResume) {
@@ -240,9 +259,9 @@ export function OptimizerClient() {
       focusEmptyField("cv-text");
       return;
     }
-    if (!hasJobContext) {
+    if (!isQuickMode && !hasJobContext) {
       toast.error("Add the target role to continue", {
-        description: "A job title, description, or LinkedIn URL works",
+        description: "A job title, description, or LinkedIn URL works — or switch to Quick mode",
       });
       focusEmptyField(jobInputMode === "url" ? "job-url" : "job-title");
       return;
@@ -294,16 +313,7 @@ export function OptimizerClient() {
 
       if (!creditResult.success) {
         track("credit_check_failed", { reason: "insufficient_credits" });
-        toast.error("You need credits to continue", {
-          description: "Get our Starter Pack for just $3!",
-          action: {
-            label: "View Pricing",
-            onClick: () => {
-              track("pricing_clicked", { source: "credit_toast" });
-              router.push("/pricing");
-            },
-          },
-        });
+        oocModal.open({ trigger: "optimize" });
         return;
       }
     } catch (creditError) {
@@ -325,8 +335,8 @@ export function OptimizerClient() {
       const formData = new FormData();
       if (cvFile) formData.append("cv", cvFile);
       if (cvText) formData.append("cvText", cvText);
-      formData.append("mode", "specific_role");
-      
+      formData.append("mode", isQuickMode ? "quick" : "specific_role");
+
       if (jobTitle.trim()) formData.append("jobTitle", jobTitle.trim());
       if (jobDescription.trim()) formData.append("jobDescription", jobDescription.trim());
       if (jobUrl.trim()) formData.append("jobUrl", jobUrl.trim());
@@ -442,18 +452,74 @@ export function OptimizerClient() {
       <main className="flex-1 w-full px-4 sm:px-8 lg:px-16 py-10 sm:py-12">
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10 sm:mb-14">
+          <div className="text-center mb-8 sm:mb-10">
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
               Optimize Your Resume
             </h1>
             <div className="w-16 h-px bg-[#0A2647] mx-auto mb-5" />
             <p className="text-stone-500 text-base sm:text-lg font-light tracking-wide max-w-xl mx-auto">
-              Upload your resume and provide the target role — we'll tailor it for maximum impact
+              {isQuickMode
+                ? "Upload your CV and we'll polish it — no job description needed."
+                : "Upload your resume and provide the target role — we'll tailor it for maximum impact."}
             </p>
           </div>
 
-          {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-6 sm:gap-10 max-w-6xl mx-auto">
+          {/* Mode Toggle: Quick (CV only) vs Targeted (with role) */}
+          <div className="max-w-2xl mx-auto mb-8 sm:mb-12">
+            <div
+              role="tablist"
+              aria-label="Optimization mode"
+              className="grid grid-cols-2 gap-2 p-1.5 bg-white border border-stone-200 rounded-sm shadow-soft"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isQuickMode}
+                onClick={() => {
+                  setAnalysisMode("quick");
+                  track("analysis_mode_changed", { mode: "quick" });
+                }}
+                className={`group relative flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 rounded-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30 ${
+                  isQuickMode
+                    ? "bg-[#0A2647] text-white shadow-sm"
+                    : "bg-transparent text-stone-600 hover:bg-stone-50"
+                }`}
+              >
+                <Zap className={`w-4 h-4 sm:w-5 sm:h-5 ${isQuickMode ? "text-[#B8860B]" : ""}`} strokeWidth={2} />
+                <div className="text-left">
+                  <div className="text-sm sm:text-base font-medium tracking-wide">Quick Optimize</div>
+                  <div className={`hidden sm:block text-[11px] font-light ${isQuickMode ? "text-white/70" : "text-stone-500"}`}>
+                    Just my CV · no role
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!isQuickMode}
+                onClick={() => {
+                  setAnalysisMode("targeted");
+                  track("analysis_mode_changed", { mode: "targeted" });
+                }}
+                className={`group relative flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 rounded-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30 ${
+                  !isQuickMode
+                    ? "bg-[#0A2647] text-white shadow-sm"
+                    : "bg-transparent text-stone-600 hover:bg-stone-50"
+                }`}
+              >
+                <Target className={`w-4 h-4 sm:w-5 sm:h-5 ${!isQuickMode ? "text-[#B8860B]" : ""}`} strokeWidth={2} />
+                <div className="text-left">
+                  <div className="text-sm sm:text-base font-medium tracking-wide">Tailor to Role</div>
+                  <div className={`hidden sm:block text-[11px] font-light ${!isQuickMode ? "text-white/70" : "text-stone-500"}`}>
+                    Match a specific job
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Form Layout — single-col in quick mode, two-col in targeted mode */}
+          <div className={`grid gap-6 sm:gap-10 max-w-6xl mx-auto ${isQuickMode ? "lg:grid-cols-1 max-w-2xl" : "lg:grid-cols-2"}`}>
             
             {/* Left Panel - Resume Upload */}
             <div className="bg-white rounded-sm shadow-card p-6 sm:p-8 lg:p-10">
@@ -562,7 +628,8 @@ export function OptimizerClient() {
               </div>
             </div>
 
-            {/* Right Panel - Job Context */}
+            {/* Right Panel - Job Context. Hidden in quick mode. */}
+            {!isQuickMode && (
             <div className="bg-white rounded-sm shadow-card p-6 sm:p-8 lg:p-10">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-11 h-11 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
@@ -672,6 +739,7 @@ export function OptimizerClient() {
                 )}
               </div>
             </div>
+            )}
           </div>
 
 
@@ -687,6 +755,12 @@ export function OptimizerClient() {
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.5} />
                   <span>Analyzing...</span>
+                </>
+              ) : isQuickMode ? (
+                <>
+                  <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+                  <span>Quick Optimize My CV</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                 </>
               ) : (
                 <>
@@ -713,10 +787,24 @@ export function OptimizerClient() {
 
           {/* Helper Text */}
           <p className="text-center text-sm text-stone-500 mt-6 font-light tracking-wide">
-            For best results, provide the complete job description
+            {isQuickMode
+              ? "Want a job-specific tailor? Switch to Tailor to Role above."
+              : "For best results, provide the complete job description"}
           </p>
         </div>
       </main>
+
+      {/* Full-screen analyzing overlay */}
+      <AnalyzingScreen open={isAnalyzing} mode={analysisMode} jobTitle={jobTitle} />
+
+      {/* Out-of-credits paywall — shown when /api/use-credit reports zero balance */}
+      <OutOfCreditsModal
+        open={oocModal.isOpen}
+        onClose={oocModal.close}
+        trigger={oocModal.trigger}
+        title={oocModal.title}
+        subtitle={oocModal.subtitle}
+      />
 
       {/* Free Credit incentive shown before the auth modal */}
       <FreeCreditToast

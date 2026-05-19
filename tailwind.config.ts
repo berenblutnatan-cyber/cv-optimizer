@@ -65,11 +65,27 @@ const config: Config = {
       animation: {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "fade-in": "fadeIn 0.25s ease-out both",
+        "cta-glow": "ctaGlow 2.4s ease-in-out infinite",
+        "shimmer-x": "shimmerX 2.8s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
+        },
+        ctaGlow: {
+          "0%, 100%": {
+            boxShadow:
+              "0 8px 30px -8px rgba(184, 134, 11, 0.45), 0 0 0 0 rgba(184, 134, 11, 0.35)",
+          },
+          "50%": {
+            boxShadow:
+              "0 10px 36px -6px rgba(184, 134, 11, 0.55), 0 0 0 6px rgba(184, 134, 11, 0)",
+          },
+        },
+        shimmerX: {
+          "0%": { transform: "translateX(-120%) skewX(-12deg)" },
+          "60%, 100%": { transform: "translateX(220%) skewX(-12deg)" },
         },
       },
     },

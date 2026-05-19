@@ -21,10 +21,12 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { GoalSelector } from "@/components/teaser/GoalSelector";
 import { SiteFooter } from "@/components/shared/SiteFooter";
+import { AnalyzingScreen } from "@/components/AnalyzingScreen";
 import { useTeaserStore } from "@/stores/teaserStore";
 import { isValidJobTitle } from "@/constants/jobTitles";
 import posthog from "posthog-js";
 import { trackConversion } from "@/lib/gtag";
+import { track } from "@/lib/analytics";
 
 type Step = "input" | "processing" | "result";
 
@@ -339,25 +341,13 @@ export default function ScoreTeaserPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Processing */}
+            {/* Step 2: Processing — full-screen analyzing overlay */}
             {step === "processing" && (
-              <motion.div
-                key="processing"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="text-center py-20 bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)]"
-              >
-                <div className="relative inline-block mb-8">
-                  <div className="w-24 h-24 rounded-full border-4 border-stone-100 flex items-center justify-center">
-                    <Loader2 className="w-10 h-10 text-[#0A2647] animate-spin" strokeWidth={1.5} />
-                  </div>
-                </div>
-                <h2 className="font-serif text-2xl font-light text-[#1a1a1a] mb-3">Analyzing Your Resume...</h2>
-                <p className="text-stone-500 font-light">
-                  Checking structure, keywords, and role alignment
-                </p>
-              </motion.div>
+              <AnalyzingScreen
+                open
+                mode={targetRole ? "targeted" : "quick"}
+                jobTitle={targetRole}
+              />
             )}
 
             {/* Step 3: Result */}
@@ -470,7 +460,7 @@ export default function ScoreTeaserPage() {
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                        <span className="text-stone-700 text-sm font-light">2 free credits to start</span>
+                        <span className="text-stone-700 text-sm font-light">1 free credit to start</span>
                       </li>
                     </ul>
 
@@ -479,6 +469,7 @@ export default function ScoreTeaserPage() {
                         {/* Low score = high paid intent. Lead with pricing. */}
                         <Link
                           href="/pricing?utm_source=score&utm_medium=cta&utm_score=low"
+                          onClick={() => track("score_upsell_clicked", { cta: "pricing", score_band: "low", target_role: targetRole || null, match_score: result.score })}
                           className="inline-flex items-center gap-2 px-8 py-4 bg-[#B8860B] hover:bg-[#9c7409] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
                         >
                           <Sparkles className="w-5 h-5" strokeWidth={1.5} />
@@ -487,8 +478,11 @@ export default function ScoreTeaserPage() {
                         </Link>
                         <div className="mt-3">
                           <SignUpButton mode="modal" forceRedirectUrl="/builder">
-                            <button className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light">
-                              Or try 2 credits free →
+                            <button
+                              onClick={() => track("score_upsell_clicked", { cta: "signup_free", score_band: "low", target_role: targetRole || null, match_score: result.score })}
+                              className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light"
+                            >
+                              Or try 1 credit free →
                             </button>
                           </SignUpButton>
                         </div>
@@ -497,14 +491,21 @@ export default function ScoreTeaserPage() {
                       <>
                         {/* High score = lower intent. Lead with free signup. */}
                         <SignUpButton mode="modal" forceRedirectUrl="/builder">
-                          <button className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide">
+                          <button
+                            onClick={() => track("score_upsell_clicked", { cta: "signup_free", score_band: "high", target_role: targetRole || null, match_score: result.score })}
+                            className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
+                          >
                             <Sparkles className="w-5 h-5" strokeWidth={1.5} />
                             Optimize My Resume — Free
                             <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
                           </button>
                         </SignUpButton>
                         <div className="mt-3">
-                          <Link href="/pricing" className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light">
+                          <Link
+                            href="/pricing"
+                            onClick={() => track("score_upsell_clicked", { cta: "pricing", score_band: "high", target_role: targetRole || null, match_score: result.score })}
+                            className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light"
+                          >
                             Or see all plans →
                           </Link>
                         </div>

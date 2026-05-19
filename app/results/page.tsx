@@ -7,6 +7,7 @@ import { Download, X, ArrowLeft } from "lucide-react";
 import { AnalysisResults } from "@/components/AnalysisResults";
 import { AnalysisSessionPayload, clearAnalysisSession, loadAnalysisFromSession, saveAnalysisToSession } from "@/lib/analysisSession";
 import { ShellNav } from "@/components/ShellNav";
+import { track } from "@/lib/analytics";
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -24,6 +25,20 @@ export default function ResultsPage() {
     const stored = loadAnalysisFromSession<AnalysisSessionPayload>();
     setPayload(stored);
     setCoverLetter(stored?.coverLetter || "");
+
+    if (stored) {
+      const score =
+        (stored.analysis as { matchScore?: number; overall_score?: number; overallScore?: number })?.matchScore ??
+        (stored.analysis as { matchScore?: number; overall_score?: number; overallScore?: number })?.overall_score ??
+        (stored.analysis as { matchScore?: number; overall_score?: number; overallScore?: number })?.overallScore ??
+        null;
+      const band = score == null ? "unknown" : score >= 85 ? "great" : score >= 70 ? "good" : score >= 50 ? "partial" : "weak";
+      track("results_viewed", {
+        mode: stored.meta?.mode || null,
+        match_score: typeof score === "number" ? score : null,
+        score_band: band,
+      });
+    }
   }, []);
 
   const closeSignInPrompt = useCallback(() => setShowSignInPrompt(false), []);

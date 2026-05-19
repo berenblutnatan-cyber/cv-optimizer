@@ -1,9 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { toast } from "sonner";
 import { useBuilder, BuilderTemplateId, ThemeColor, THEME_COLOR_VALUES } from "@/context/BuilderContext";
 import { TEMPLATE_METADATA } from "@/components/cv-templates/ThemeEngine";
-import { Layout, Palette, Check, Sparkles } from "lucide-react";
+import { Layout, Palette, Check, Sparkles, Lock } from "lucide-react";
+import {
+  ALL_TEMPLATES,
+  DEFAULT_FREE_TEMPLATE_ID,
+  isPremiumTemplate,
+} from "@/components/cv-templates";
+import { getUnlockedTemplates, unlockTemplate } from "@/lib/templateUnlocks";
+import { TemplateUnlockModal } from "@/components/TemplateUnlockModal";
+import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
+import { track } from "@/lib/analytics";
 
 /**
  * TemplateSwitcher
@@ -105,9 +116,102 @@ export const COLOR_OPTIONS: ColorOption[] = [
   { id: "black", name: "Black" },
 ];
 
+/**
+ * Hook: handles the unlock flow for premium templates. Wraps the bare
+ * `setTemplate` setter from BuilderContext so callers can use one function and
+ * not worry about whether the template needs a credit charge first.
+ */
+function useTemplateGating(
+  setTemplate: (id: BuilderTemplateId) => void,
+  currentTemplateId: BuilderTemplateId,
+) {
+  const { userId } = useAuth();
+  const oocModal = useOutOfCreditsModal();
+  const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
+  const [pendingTemplate, setPendingTemplate] = useState<TemplateOption | null>(null);
+  const [unlockLoading, setUnlockLoading] = useState(false);
+
+  // Re-read localStorage when userId changes (anon → signed-in).
+  useEffect(() => {
+    setUnlocked(new Set(getUnlockedTemplates(userId ?? null)));
+  }, [userId]);
+
+  const isLocked = (id: string) =>
+    isPremiumTemplate(id) && !unlocked.has(id) && id !== DEFAULT_FREE_TEMPLATE_ID;
+
+  /** Call this from a tile/button click. If locked, opens the unlock modal. */
+  const handleSelect = (template: TemplateOption) => {
+    // Re-clicking the active template is a no-op — even if it's a premium one
+    // the user hasn't paid for (grandfathered selection).
+    if (template.id === currentTemplateId) return;
+
+    if (!isLocked(template.id)) {
+      setTemplate(template.id);
+      return;
+    }
+    track("template_unlock_modal_shown", { template_id: template.id });
+    setPendingTemplate(template);
+  };
+
+  const cancelUnlock = () => setPendingTemplate(null);
+
+  const confirmUnlock = async () => {
+    if (!pendingTemplate) return;
+    const target = pendingTemplate;
+    setUnlockLoading(true);
+    try {
+      const res = await fetch("/api/use-credit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!data?.success) {
+        track("credit_check_failed", { reason: "insufficient_credits", source: "template_unlock" });
+        setPendingTemplate(null);
+        oocModal.open({
+          trigger: "template_unlock",
+          title: `Unlock ${target.name}?`,
+          subtitle: "You're out of credits. Top up to unlock this and any other premium template.",
+        });
+        return;
+      }
+
+      // Persist unlock + apply it.
+      unlockTemplate(userId ?? null, target.id);
+      setUnlocked((prev) => {
+        const next = new Set(prev);
+        next.add(target.id);
+        return next;
+      });
+      track("template_unlocked", { template_id: target.id });
+      setTemplate(target.id);
+      setPendingTemplate(null);
+      toast.success(`${target.name} unlocked`, { description: "You can switch back to it anytime." });
+    } catch (err) {
+      console.error("Template unlock failed:", err);
+      toast.error("Couldn't unlock template", {
+        description: "Please try again — no credit was charged.",
+      });
+    } finally {
+      setUnlockLoading(false);
+    }
+  };
+
+  return {
+    isLocked,
+    handleSelect,
+    pendingTemplate,
+    unlockLoading,
+    confirmUnlock,
+    cancelUnlock,
+    oocModal,
+  };
+}
+
 export function TemplateSwitcher({ variant = "sidebar", showColors = true }: TemplateSwitcherProps) {
   const { selectedTemplateId, themeColor, setTemplate, setThemeColor } = useBuilder();
   const [activeTab, setActiveTab] = useState<"layout" | "design">("layout");
+  const gating = useTemplateGating(setTemplate, selectedTemplateId);
 
   if (variant === "toolbar") {
     return <ToolbarSwitcher />;
@@ -149,7 +253,11 @@ export function TemplateSwitcher({ variant = "sidebar", showColors = true }: Tem
           <LayoutTab
             templates={TEMPLATE_OPTIONS}
             selectedId={selectedTemplateId}
-            onSelect={setTemplate}
+            onSelect={(id) => {
+              const t = TEMPLATE_OPTIONS.find((x) => x.id === id);
+              if (t) gating.handleSelect(t);
+            }}
+            isLocked={gating.isLocked}
           />
         ) : (
           <DesignTab
@@ -159,6 +267,26 @@ export function TemplateSwitcher({ variant = "sidebar", showColors = true }: Tem
           />
         )}
       </div>
+
+      {/* Unlock confirmation */}
+      <TemplateUnlockModal
+        open={!!gating.pendingTemplate}
+        templateName={gating.pendingTemplate?.name ?? ""}
+        templateDescription={gating.pendingTemplate?.description}
+        templatePreview={gating.pendingTemplate?.preview}
+        loading={gating.unlockLoading}
+        onConfirm={gating.confirmUnlock}
+        onClose={gating.cancelUnlock}
+      />
+
+      {/* Paywall fallback when the unlock attempt finds zero credits */}
+      <OutOfCreditsModal
+        open={gating.oocModal.isOpen}
+        onClose={gating.oocModal.close}
+        trigger={gating.oocModal.trigger}
+        title={gating.oocModal.title}
+        subtitle={gating.oocModal.subtitle}
+      />
     </div>
   );
 }
@@ -168,10 +296,12 @@ function LayoutTab({
   templates,
   selectedId,
   onSelect,
+  isLocked,
 }: {
   templates: typeof TEMPLATE_OPTIONS;
   selectedId: BuilderTemplateId;
   onSelect: (id: BuilderTemplateId) => void;
+  isLocked: (id: string) => boolean;
 }) {
   return (
     <div className="space-y-3">
@@ -179,53 +309,78 @@ function LayoutTab({
         Choose a layout that fits your industry and style.
       </p>
       <div className="grid grid-cols-2 gap-3">
-        {templates.map((template) => (
-          <button
-            key={template.id}
-            onClick={() => onSelect(template.id)}
-            className={`group relative rounded-lg overflow-hidden transition-all duration-200 ${
-              selectedId === template.id
-                ? "ring-2 ring-indigo-500 ring-offset-2"
-                : "ring-1 ring-slate-200 hover:ring-slate-300"
-            }`}
-          >
-            {/* Preview Thumbnail */}
-            <div
-              className="aspect-[3/4] w-full"
-              style={{ background: template.preview }}
+        {templates.map((template) => {
+          const locked = isLocked(template.id);
+          const isSelected = selectedId === template.id;
+          return (
+            <button
+              key={template.id}
+              onClick={() => onSelect(template.id)}
+              aria-label={locked ? `${template.name} — unlock for 1 credit` : template.name}
+              className={`group relative rounded-lg overflow-hidden transition-all duration-200 ${
+                isSelected
+                  ? "ring-2 ring-indigo-500 ring-offset-2"
+                  : "ring-1 ring-slate-200 hover:ring-slate-300"
+              }`}
             >
-              {/* Mini layout indicator */}
-              <div className="absolute inset-2 opacity-20">
-                <div className="h-full rounded-sm bg-white/40 flex">
-                  {template.id === "modern-sidebar" || template.id === "creative" || template.id === "international" ? (
-                    <>
-                      <div className="w-1/3 bg-slate-800/30 rounded-l-sm" />
-                      <div className="flex-1" />
-                    </>
-                  ) : template.id === "executive" ? (
-                    <div className="w-full flex flex-col">
-                      <div className="h-1/4 bg-slate-800/30 rounded-t-sm" />
-                      <div className="flex-1" />
-                    </div>
-                  ) : null}
+              {/* Preview Thumbnail */}
+              <div
+                className="aspect-[3/4] w-full relative"
+                style={{ background: template.preview }}
+              >
+                {/* Mini layout indicator */}
+                <div className="absolute inset-2 opacity-20">
+                  <div className="h-full rounded-sm bg-white/40 flex">
+                    {template.id === "modern-sidebar" || template.id === "creative" || template.id === "international" ? (
+                      <>
+                        <div className="w-1/3 bg-slate-800/30 rounded-l-sm" />
+                        <div className="flex-1" />
+                      </>
+                    ) : template.id === "executive" ? (
+                      <div className="w-full flex flex-col">
+                        <div className="h-1/4 bg-slate-800/30 rounded-t-sm" />
+                        <div className="flex-1" />
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Info */}
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900/90 to-transparent p-2 pt-6">
-              <p className="text-xs font-semibold text-white truncate">{template.name}</p>
-              <p className="text-[10px] text-slate-300 truncate">{template.description}</p>
-            </div>
-
-            {/* Selected Check */}
-            {selectedId === template.id && (
-              <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
-                <Check className="w-3 h-3 text-white" />
+                {/* Locked overlay — hidden on the currently-selected tile so
+                    pre-existing users on a premium template aren't disrupted. */}
+                {locked && !isSelected && (
+                  <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-[1px] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-1.5 px-3 py-2 bg-white/95 rounded-sm shadow-md">
+                      <Lock className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-[#B8860B] font-semibold">
+                        1 Credit
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </button>
-        ))}
+
+              {/* Info */}
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900/90 to-transparent p-2 pt-6">
+                <p className="text-xs font-semibold text-white truncate">{template.name}</p>
+                <p className="text-[10px] text-slate-300 truncate">{template.description}</p>
+              </div>
+
+              {/* Selected Check */}
+              {isSelected && !locked && (
+                <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <Check className="w-3 h-3 text-white" />
+                </div>
+              )}
+
+              {/* Free badge on the default template */}
+              {template.id === DEFAULT_FREE_TEMPLATE_ID && !locked && (
+                <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-emerald-500/95 rounded-sm">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white">Free</span>
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -314,6 +469,7 @@ function DesignTab({
 // Compact Toolbar variant
 function ToolbarSwitcher() {
   const { selectedTemplateId, themeColor, setTemplate, setThemeColor } = useBuilder();
+  const gating = useTemplateGating(setTemplate, selectedTemplateId);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showColors, setShowColors] = useState(false);
 
@@ -336,29 +492,49 @@ function ToolbarSwitcher() {
 
         {showTemplates && (
           <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2 max-h-80 overflow-y-auto">
-            {TEMPLATE_OPTIONS.map((template) => (
-              <button
-                key={template.id}
-                onClick={() => { setTemplate(template.id); setShowTemplates(false); }}
-                className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                  selectedTemplateId === template.id
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "hover:bg-slate-50 text-slate-700"
-                }`}
-              >
-                <div
-                  className="w-10 h-12 rounded-md border border-slate-200 overflow-hidden"
-                  style={{ background: template.preview }}
-                />
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium">{template.name}</p>
-                  <p className="text-xs text-slate-500">{template.description}</p>
-                </div>
-                {selectedTemplateId === template.id && (
-                  <Check className="w-4 h-4 text-indigo-500" />
-                )}
-              </button>
-            ))}
+            {TEMPLATE_OPTIONS.map((template) => {
+              const locked = gating.isLocked(template.id);
+              return (
+                <button
+                  key={template.id}
+                  onClick={() => {
+                    gating.handleSelect(template);
+                    // Keep menu open if a modal will appear, otherwise close.
+                    if (!locked) setShowTemplates(false);
+                  }}
+                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                    selectedTemplateId === template.id
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  <div
+                    className="relative w-10 h-12 rounded-md border border-slate-200 overflow-hidden flex-shrink-0"
+                    style={{ background: template.preview }}
+                  >
+                    {locked && (
+                      <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
+                        <Lock className="w-3 h-3 text-white" strokeWidth={2.5} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium flex items-center gap-1.5">
+                      {template.name}
+                      {locked && (
+                        <span className="text-[9px] uppercase tracking-[0.14em] text-[#B8860B] font-semibold bg-[#B8860B]/10 px-1.5 py-0.5 rounded-sm">
+                          1 cr
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-500">{template.description}</p>
+                  </div>
+                  {selectedTemplateId === template.id && !locked && (
+                    <Check className="w-4 h-4 text-indigo-500" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -405,6 +581,24 @@ function ToolbarSwitcher() {
           </div>
         )}
       </div>
+
+      {/* Unlock + paywall modals (mounted in the toolbar variant too) */}
+      <TemplateUnlockModal
+        open={!!gating.pendingTemplate}
+        templateName={gating.pendingTemplate?.name ?? ""}
+        templateDescription={gating.pendingTemplate?.description}
+        templatePreview={gating.pendingTemplate?.preview}
+        loading={gating.unlockLoading}
+        onConfirm={gating.confirmUnlock}
+        onClose={gating.cancelUnlock}
+      />
+      <OutOfCreditsModal
+        open={gating.oocModal.isOpen}
+        onClose={gating.oocModal.close}
+        trigger={gating.oocModal.trigger}
+        title={gating.oocModal.title}
+        subtitle={gating.oocModal.subtitle}
+      />
     </div>
   );
 }
