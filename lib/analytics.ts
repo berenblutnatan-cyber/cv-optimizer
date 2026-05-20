@@ -24,12 +24,17 @@ export type EventName =
   | "optimize_failed"
   | "credit_check_failed"
   | "out_of_credits_modal_shown"
+  | "out_of_credits_modal_dismissed"
   | "template_unlock_modal_shown"
   | "template_unlocked"
   | "results_viewed"
   | "score_upsell_clicked"
   | "landing_cta_clicked"
   | "pricing_clicked"
+  | "checkout_started"
+  | "purchase_completed"
+  | "builder_welcome_viewed"
+  | "builder_welcome_dismissed"
   | "scroll_depth";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
@@ -60,6 +65,21 @@ export function track(event: EventName, props: EventProps = {}) {
         window.clarity?.("set", k, String(v));
       }
     }
+  } catch {
+    // ignore
+  }
+}
+
+export function setUserProps(
+  props: EventProps,
+  propsOnce: EventProps = {},
+) {
+  if (typeof window === "undefined") return;
+  try {
+    posthog.setPersonProperties(
+      props as Record<string, unknown>,
+      propsOnce as Record<string, unknown>,
+    );
   } catch {
     // ignore
   }

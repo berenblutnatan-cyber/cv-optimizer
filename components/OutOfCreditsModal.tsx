@@ -72,22 +72,54 @@ export function OutOfCreditsModal({
   subtitle,
 }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<Tier["key"] | null>(null);
+  const [socialProofCount, setSocialProofCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
     track("out_of_credits_modal_shown", { trigger });
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        track("out_of_credits_modal_dismissed", { trigger, source: "escape" });
+        onClose();
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, trigger, onClose]);
 
+  useEffect(() => {
+    if (!open || socialProofCount !== null) return;
+    let cancelled = false;
+    fetch("/api/stats/active-users", { cache: "force-cache" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (typeof data?.display === "number") setSocialProofCount(data.display);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open, socialProofCount]);
+
   const handleBuy = (plan: Tier["key"]) => {
+    const tier = TIERS.find((t) => t.key === plan);
     track("pricing_clicked", { source: "out_of_credits_modal", plan, trigger });
+    track("checkout_started", {
+      source: "out_of_credits_modal",
+      plan,
+      trigger,
+      price: tier?.price ?? null,
+      credits: tier?.credits ?? null,
+    });
     setLoadingPlan(plan);
     // Hard navigation — checkout route is a redirect handler
     window.location.href = `/api/checkout/polar?plan=${plan}`;
+  };
+
+  const handleDismiss = (source: "backdrop" | "x_button" | "escape") => {
+    track("out_of_credits_modal_dismissed", { trigger, source });
+    onClose();
   };
 
   return (
@@ -108,7 +140,7 @@ export function OutOfCreditsModal({
           <button
             type="button"
             aria-label="Close"
-            onClick={onClose}
+            onClick={() => handleDismiss("backdrop")}
             className="absolute inset-0 bg-[#0A2647]/70 backdrop-blur-sm"
           />
 
@@ -122,7 +154,7 @@ export function OutOfCreditsModal({
             {/* Close */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => handleDismiss("x_button")}
               aria-label="Close modal"
               className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30"
             >
@@ -144,6 +176,11 @@ export function OutOfCreditsModal({
                 {subtitle ??
                   "Top up to keep going. Start with $1 — no commitment, no subscription."}
               </p>
+              {socialProofCount !== null && (
+                <p className="mt-3 text-[11px] sm:text-xs text-stone-400 font-light tracking-wide">
+                  Trusted by {socialProofCount.toLocaleString()}+ job seekers in the last 30 days
+                </p>
+              )}
             </div>
 
             {/* Tier grid */}
@@ -265,6 +302,11 @@ export function OutOfCreditsModal({
                 <span className="inline-flex items-center gap-1">
                   <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
                   Credits never expire
+                </span>
+                <span className="text-stone-300">·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
+                  Unused credits refundable
                 </span>
               </p>
             </div>

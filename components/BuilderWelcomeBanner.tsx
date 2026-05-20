@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Sparkles, X } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 const DISMISS_KEY = "hired-cv:builder-welcome-dismissed";
 
@@ -23,7 +24,10 @@ export function BuilderWelcomeBanner() {
         if (cancelled) return;
         const n = typeof data?.credits === "number" ? data.credits : null;
         setCredits(n);
-        if (n !== null && n > 0) setShow(true);
+        if (n !== null && n > 0) {
+          setShow(true);
+          track("builder_welcome_viewed", { credits: n });
+        }
       })
       .catch(() => {});
     return () => {
@@ -35,6 +39,7 @@ export function BuilderWelcomeBanner() {
 
   const dismiss = () => {
     setShow(false);
+    track("builder_welcome_dismissed", { credits: credits ?? 0 });
     try {
       localStorage.setItem(DISMISS_KEY, "1");
     } catch {}

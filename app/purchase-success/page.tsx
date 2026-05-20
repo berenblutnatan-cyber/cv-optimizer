@@ -9,6 +9,7 @@ import { Logo } from "@/components/Logo";
 import { POLAR_PLANS, type PolarPlanKey } from "@/lib/polar";
 import { trackConversion } from "@/lib/gtag";
 import { trackMetaEvent } from "@/lib/fbq";
+import { track, setUserProps } from "@/lib/analytics";
 
 function PurchaseSuccessContent() {
   const searchParams = useSearchParams();
@@ -35,6 +36,24 @@ function PurchaseSuccessContent() {
       content_ids: [plan ?? "unknown"],
       num_items: 1,
     });
+    track("purchase_completed", {
+      plan: plan ?? "unknown",
+      amount: planConfig.amount,
+      credits: planConfig.credits,
+      checkout_id: checkoutId ?? null,
+    });
+    setUserProps(
+      {
+        is_paid: true,
+        last_paid_plan: plan ?? "unknown",
+        last_paid_amount: planConfig.amount,
+        last_paid_at: new Date().toISOString(),
+      },
+      {
+        first_paid_at: new Date().toISOString(),
+        first_paid_plan: plan ?? "unknown",
+      },
+    );
   }, [planConfig, plan, checkoutId, user]);
 
   return (

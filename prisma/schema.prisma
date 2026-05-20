@@ -12,7 +12,7 @@ datasource db {
 model User {
   id        String   @id @unique // Matches Clerk User ID (user_2N...)
   email     String   @unique
-  credits   Int      @default(1) // New users get 1 free credit
+  credits   Int      @default(2) // New users get 2 free credits (lets them see the optimized result + retry once before paywall)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
