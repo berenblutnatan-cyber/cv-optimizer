@@ -38,9 +38,9 @@ export function FreeCreditToast({ isOpen, onClose }: FreeCreditToastProps) {
           <Gift className="w-6 h-6" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm">🎁 Sign up now & get 1 FREE Credit!</p>
+          <p className="font-semibold text-sm">🎁 Try 3 AI optimizations for $1</p>
           <p className="text-xs text-indigo-100 mt-0.5">
-            Use it to download or optimize your resume
+            Credits never expire · 14-day refund
           </p>
         </div>
         <button

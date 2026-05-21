@@ -6,6 +6,17 @@ export type PolarPlan = {
 };
 
 export const POLAR_PLANS = {
+  // First-purchase tripwire: $1 for 3 credits, used to convert /score visitors
+  // into paying customers in a single step (no "free tier"). Requires
+  // POLAR_PRODUCT_TRIPWIRE — checkout returns "Unknown plan" 400 if missing.
+  // Distinct from `onemore` which is the OUT-OF-CREDITS impulse SKU for
+  // existing payers ($1 for 1 credit, smaller commitment mid-session).
+  tripwire: {
+    productId: process.env.POLAR_PRODUCT_TRIPWIRE ?? "",
+    name: "Try 3 for $1",
+    amount: 1,
+    credits: 3,
+  },
   // Foot-in-the-door SKU shown in the out-of-credits modal. The product must
   // exist in the Polar dashboard and POLAR_PRODUCT_ONEMORE must be set —
   // without the env var the checkout route returns "Unknown plan" 400.

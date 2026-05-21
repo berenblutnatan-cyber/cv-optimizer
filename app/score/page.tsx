@@ -16,7 +16,7 @@ import {
   RotateCcw,
   ArrowLeft
 } from "lucide-react";
-import { SignUpButton } from "@clerk/nextjs";
+import { SignUpButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { GoalSelector } from "@/components/teaser/GoalSelector";
@@ -460,62 +460,55 @@ export default function ScoreTeaserPage() {
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                        <span className="text-stone-700 text-sm font-light">1 free credit to start</span>
+                        <span className="text-stone-700 text-sm font-light">3 AI optimizations for $1</span>
                       </li>
                     </ul>
 
-                    {result.score < 65 ? (
-                      <>
-                        {/* Low score = high paid intent. Lead with pricing. */}
-                        <Link
-                          href="/pricing?utm_source=score&utm_medium=cta&utm_score=low"
-                          onClick={() => track("score_upsell_clicked", { cta: "pricing", score_band: "low", target_role: targetRole || null, match_score: result.score })}
+                    {/* Single tripwire CTA — same for low- and high-score paths.
+                        Differential treatment by score band didn't survive the
+                        funnel rewrite: the data showed neither path converted
+                        because "Free" wasn't a real offer (users churned after
+                        burning 2 free credits). Now everyone goes through the
+                        $1 tripwire — a real micro-commitment that pre-qualifies
+                        the buyer and pays for itself on Anthropic costs. */}
+                    <SignedIn>
+                      <Link
+                        href={`/api/checkout/polar?plan=tripwire&utm_source=score&utm_medium=cta&utm_score=${result.score < 65 ? "low" : "high"}`}
+                        onClick={() => track("score_upsell_clicked", { cta: "tripwire", auth: "signed_in", score_band: result.score < 65 ? "low" : "high", target_role: targetRole || null, match_score: result.score })}
+                        className="inline-flex items-center gap-2 px-8 py-4 bg-[#B8860B] hover:bg-[#9c7409] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
+                      >
+                        <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+                        Optimize My Resume — $1 for 3 Rewrites
+                        <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
+                      </Link>
+                    </SignedIn>
+                    <SignedOut>
+                      <SignUpButton mode="modal" forceRedirectUrl="/api/checkout/polar?plan=tripwire&utm_source=score&utm_medium=cta">
+                        <button
+                          onClick={() => track("score_upsell_clicked", { cta: "tripwire", auth: "signed_out", score_band: result.score < 65 ? "low" : "high", target_role: targetRole || null, match_score: result.score })}
                           className="inline-flex items-center gap-2 px-8 py-4 bg-[#B8860B] hover:bg-[#9c7409] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
                         >
                           <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                          Fix My Resume — Plans from $3
+                          Optimize My Resume — $1 for 3 Rewrites
                           <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
-                        </Link>
-                        <div className="mt-3">
-                          <SignUpButton mode="modal" forceRedirectUrl="/builder">
-                            <button
-                              onClick={() => track("score_upsell_clicked", { cta: "signup_free", score_band: "low", target_role: targetRole || null, match_score: result.score })}
-                              className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light"
-                            >
-                              Or try 1 credit free →
-                            </button>
-                          </SignUpButton>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {/* High score = lower intent. Lead with free signup. */}
-                        <SignUpButton mode="modal" forceRedirectUrl="/builder">
-                          <button
-                            onClick={() => track("score_upsell_clicked", { cta: "signup_free", score_band: "high", target_role: targetRole || null, match_score: result.score })}
-                            className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
-                          >
-                            <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                            Optimize My Resume — Free
-                            <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
-                          </button>
-                        </SignUpButton>
-                        <div className="mt-3">
-                          <Link
-                            href="/pricing"
-                            onClick={() => track("score_upsell_clicked", { cta: "pricing", score_band: "high", target_role: targetRole || null, match_score: result.score })}
-                            className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light"
-                          >
-                            Or see all plans →
-                          </Link>
-                        </div>
-                      </>
-                    )}
+                        </button>
+                      </SignUpButton>
+                    </SignedOut>
+
+                    <div className="mt-3">
+                      <Link
+                        href="/pricing"
+                        onClick={() => track("score_upsell_clicked", { cta: "pricing", score_band: result.score < 65 ? "low" : "high", target_role: targetRole || null, match_score: result.score })}
+                        className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light"
+                      >
+                        Or see all plans →
+                      </Link>
+                    </div>
 
                     <p className="text-sm text-stone-500 mt-4 flex items-center justify-center gap-4 font-light flex-wrap">
                       <span className="flex items-center gap-1">
                         <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
-                        No credit card
+                        Credits never expire
                       </span>
                       <span className="flex items-center gap-1">
                         <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />

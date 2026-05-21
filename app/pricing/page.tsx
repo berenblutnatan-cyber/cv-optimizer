@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Check, X, Sparkles, Zap, Gift, BarChart3, ArrowRight } from 'lucide-react';
+import { Check, Sparkles, Zap, Gift, BarChart3, ArrowRight } from 'lucide-react';
 import {
   SignInButton,
   SignUpButton,
@@ -96,56 +96,56 @@ export default function PricingPage() {
           {/* Pricing Cards - 4 Column Layout (Free + 3 Paid Tiers) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 items-stretch">
             
-            {/* Tier 1: Free Audit */}
+            {/* Tier 1: Tripwire — first-purchase taster, $1 for 3 credits.
+                Replaces the old $0 "Free Audit" tier; the free product is now
+                the /score page (no signup), and every paying funnel starts
+                here. Filters tire-kickers, covers Anthropic costs from $0. */}
             <div className="bg-white rounded-sm border border-stone-200 hover:border-stone-300 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.1)] transition-all duration-300 p-6 md:p-8 flex flex-col">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
                     <Gift className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-serif text-xl text-[#1a1a1a]">Free Audit</h3>
+                  <h3 className="font-serif text-xl text-[#1a1a1a]">Try 3 for $1</h3>
                 </div>
-                <p className="text-sm text-stone-500 mb-6 font-light">Curious users</p>
-                
+                <p className="text-sm text-stone-500 mb-6 font-light">First-purchase taster</p>
+
                 <div className="mb-6">
                   <div className="flex items-baseline gap-2">
-                    <span className="font-serif text-4xl font-light text-[#1a1a1a]">$0</span>
-                    <span className="text-sm text-stone-500 font-light">Free</span>
+                    <span className="font-serif text-4xl font-light text-[#1a1a1a]">$1</span>
+                    <span className="text-sm text-stone-500 font-light">One-time</span>
                   </div>
+                  <p className="text-xs text-[#0A2647] font-medium mt-1">3 Credits</p>
                 </div>
 
                 {/* Features List */}
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-600 font-light">ATS Score Analysis</span>
+                    <span className="text-stone-600 font-light"><span className="font-medium">3 Credits</span> - Optimize 3 resumes</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-600 font-light">Keyword Gap Detection</span>
+                    <span className="text-stone-600 font-light">Full AI Rewrite (no preview wall)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <X className="w-5 h-5 text-stone-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-500 line-through font-light">Full AI Rewrite (Preview Only)</span>
+                    <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <span className="text-stone-600 font-light">PDF & Docx Download</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <X className="w-5 h-5 text-stone-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-500 line-through font-light">File Download (PDF/Docx)</span>
+                    <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <span className="text-stone-600 font-light">ATS Score + Keyword Gap</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <X className="w-5 h-5 text-stone-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                    <span className="text-stone-500 line-through font-light">Cover Letter</span>
+                    <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <span className="text-stone-600 font-light">Credits never expire · 14-day refund</span>
                   </li>
                 </ul>
               </div>
 
-              {/* CTA Button - Outline Style */}
-              <Link 
-                href="/optimize"
-                className="w-full px-6 py-3 border border-stone-300 hover:border-stone-400 text-stone-700 hover:text-stone-900 font-medium rounded-sm transition-all tracking-wide text-center"
-              >
-                Get Started for Free
-              </Link>
+              <div className="mt-auto">
+                <PolarCheckoutButton plan="tripwire" planName="Try 3 for $1" amount={1} />
+              </div>
             </div>
 
             {/* Tier 2: Starter */}

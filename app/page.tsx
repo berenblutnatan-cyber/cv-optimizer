@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Star, Zap, ArrowRight, FileText, Target, Lock, Bot, BarChart3, Plus, Wand2, ArrowUp, Coins } from "lucide-react";
+import { Check, Star, Zap, ArrowRight, FileText, Target, Lock, Bot, BarChart3, Wand2, ArrowUp, Coins } from "lucide-react";
 import {
   SignInButton,
   SignUpButton,
@@ -118,47 +118,13 @@ export default function LandingPage() {
                 </span>
               </p>
 
-              <div className="flex items-center gap-3 mb-4 sm:mb-5">
-                <div className="h-px flex-1 bg-stone-200" />
-                <span className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-stone-400 font-medium">Or start from scratch</span>
-                <div className="h-px flex-1 bg-stone-200" />
-              </div>
-
-              {/* Secondary entry points — keep visible but visually subordinate
-                  to the score CTA above. */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-10">
-                {/* Create New Resume Card */}
-                <Link
-                  href="/builder"
-                  className="group relative flex flex-col p-4 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
-                >
-                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-105 transition-transform">
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Create New Resume</h3>
-                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Start fresh with our guided builder</p>
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
-                    Build my resume
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
-                  </div>
-                </Link>
-
-                {/* Optimize Existing Card */}
-                <Link
-                  href="/optimize"
-                  className="group relative flex flex-col p-4 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
-                >
-                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-105 transition-transform">
-                    <Wand2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#B8860B]" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Optimize Existing</h3>
-                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Upload & enhance with AI magic</p>
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
-                    Optimize mine
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
-                  </div>
-                </Link>
-              </div>
+              {/* Single-CTA funnel — every visitor goes through /score first.
+                  Builder + Optimize are still reachable from the header nav for
+                  return users, but the landing is one-button to maximize intent
+                  and remove tire-kicker signups. */}
+              <p className="text-xs sm:text-sm text-stone-400 font-light mb-10">
+                Already a member? Use the menu above to jump to the builder or optimizer.
+              </p>
 
             </div>
             
