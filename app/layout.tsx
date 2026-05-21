@@ -13,6 +13,7 @@ import { RatingWidget } from "@/components/feedback";
 import { Toaster } from "sonner";
 import { UserSyncProvider } from "@/components/UserSyncProvider";
 import { InAppBrowserAlert } from "@/components/InAppBrowserAlert";
+import { GclidCapture } from "@/components/GclidCapture";
 import "./globals.css";
 
 const GOOGLE_ADS_ID = "AW-18163039044";
@@ -97,10 +98,19 @@ export default function RootLayout({
             src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
             strategy="lazyOnload"
           />
-          <Script id="google-ads-gtag" strategy="lazyOnload">
+          {/* gtag function init runs `afterInteractive` (not `lazyOnload`)
+              so `window.gtag` is defined before any conversion event fires
+              from a page-mount effect (e.g. `/purchase-success`). The big
+              gtag.js network bundle above stays lazyOnload — that's what
+              actually impacts LCP. This 4-line inline init is essentially
+              free. Without this, conversion events queue into dataLayer but
+              the previous `typeof window.gtag !== "function"` guard in
+              lib/gtag.ts silently dropped them. */}
+          <Script id="google-ads-gtag" strategy="afterInteractive">
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
+              window.gtag = gtag;
               gtag('js', new Date());
               gtag('config', '${GOOGLE_ADS_ID}');
             `}
@@ -138,6 +148,7 @@ export default function RootLayout({
             `}
           </Script>
           <InAppBrowserAlert />
+          <GclidCapture />
           <UserSyncProvider>
             {children}
           </UserSyncProvider>

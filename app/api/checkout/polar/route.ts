@@ -39,6 +39,16 @@ export async function GET(req: NextRequest) {
   url.searchParams.set("customerExternalId", userId);
   if (email) url.searchParams.set("customerEmail", email);
 
+  // Attribution: thread the Google Ads click ID (captured client-side by
+  // GclidCapture and stored in a 90-day cookie) into Polar's order metadata
+  // so the webhook can persist it on the Purchase row. Without this we can't
+  // attribute paid orders back to the ad click that drove them and the
+  // Google Ads Purchase conversion stays "Unverified".
+  const gclid = req.cookies.get("gclid")?.value;
+  if (gclid) {
+    url.searchParams.set("metadata[gclid]", gclid);
+  }
+
   const proxied = new NextRequest(url, req);
   return handler(proxied);
 }

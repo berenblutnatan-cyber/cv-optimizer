@@ -41,6 +41,13 @@ export const POST = Webhooks({
 
     const email = order.customer?.email ?? `${userId}@pending.local`;
 
+    // Pull the Google Ads click ID we threaded through checkout metadata.
+    // Used purely for attribution (so we can correlate paid orders back to
+    // specific ad clicks) and to give Google Ads enough signal to verify
+    // the Purchase conversion goal.
+    const gclid =
+      (order as unknown as { metadata?: Record<string, string> | null }).metadata?.gclid ?? null;
+
     await prisma.user.upsert({
       where: { id: userId },
       update: { credits: { increment: plan.credits } },
@@ -54,6 +61,7 @@ export const POST = Webhooks({
         plan: plan.name,
         polarOrderId: orderId,
         status: "completed",
+        gclid,
       },
     });
 

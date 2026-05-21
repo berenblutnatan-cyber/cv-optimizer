@@ -73,11 +73,17 @@ model Purchase {
   plan         String
   polarOrderId String?  @unique
   status       String   @default("completed")
+  // Google Ads click ID captured on landing and threaded through Polar
+  // checkout metadata. Required for the Purchase conversion to verify in
+  // Google Ads — without it the tag fires but Google can't match the
+  // conversion back to a click and flags the goal "Misconfigured".
+  gclid        String?
   createdAt    DateTime @default(now())
 
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
+  @@index([gclid])
 }
 
 model Coupon {
