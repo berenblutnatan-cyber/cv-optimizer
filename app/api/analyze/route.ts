@@ -11,6 +11,52 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Extract the first complete JSON object from a string by counting braces.
+// Safer than /\{[\s\S]*\}/ which is greedy and silently matches truncated /
+// concatenated objects.
+function extractBalancedJson(text: string): string | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (escape) { escape = false; continue; }
+    if (c === "\\") { escape = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null; // unbalanced — likely truncated
+}
+
+// Fire a server-side optimize_failed event so failures stay visible in PostHog
+// even when the client never reports them (e.g. user closes the tab on error).
+async function fireOptimizeFailedServer(
+  reason: "truncated" | "parse_error" | "no_json" | "model_error",
+  props: Record<string, unknown> = {}
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return;
+    const ph = getPostHogClient();
+    if (!ph) return;
+    ph.capture({
+      distinctId: userId,
+      event: "optimize_failed_server",
+      properties: { failure_reason: reason, ...props },
+    });
+    await ph.shutdown();
+  } catch (err) {
+    console.error("[analyze] failed to fire optimize_failed_server:", err);
+  }
+}
+
 function cleanTitle(raw: string) {
   return raw
     .replace(/[*_`~]/g, "") // strip markdown emphasis
@@ -797,7 +843,7 @@ Return ONLY the JSON object.`;
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: "You are an executive resume writer who ENHANCES content, not deletes it. Create an AMAZING 3-4 line professional summary. PRESERVE all education details (GPA, honors, coursework). Recent roles: 2 bullets (3 if exceptional), older: 0-1. Transform weak content into strong content. Executive language. NEVER fabricate. Respond with valid JSON only.",
       messages: [
         {
@@ -809,21 +855,44 @@ Return ONLY the JSON object.`;
     });
 
     const content = response.content[0].type === 'text' ? response.content[0].text : "";
-    
-    // Parse the JSON response
+
+    // If the model hit max_tokens, the JSON is truncated — never try to parse
+    // it, surface a specific actionable error so the client can refund + retry.
+    if (response.stop_reason === "max_tokens") {
+      console.error("[analyze] model output truncated at max_tokens");
+      void fireOptimizeFailedServer("truncated", {
+        cv_text_length: cvText.length,
+        job_description_length: (finalJobDescription || "").length,
+      });
+      return NextResponse.json(
+        {
+          error: "Your CV is too long for a single pass. Try removing older roles or shortening descriptions, then try again.",
+          failure_reason: "truncated",
+        },
+        { status: 422 }
+      );
+    }
+
+    // Parse the JSON response. Use a balanced-brace scan instead of a greedy
+    // regex so we don't accidentally swallow trailing text or fail on minor
+    // whitespace differences.
     let analysis;
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        analysis = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error("No JSON found in response");
-      }
+      const jsonText = extractBalancedJson(content);
+      if (!jsonText) throw new Error("No JSON object found in response");
+      analysis = JSON.parse(jsonText);
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
-      console.log("Raw response:", content);
+      console.log("Raw response (first 500 chars):", content.slice(0, 500));
+      void fireOptimizeFailedServer("parse_error", {
+        message: parseError instanceof Error ? parseError.message : "unknown",
+        cv_text_length: cvText.length,
+      });
       return NextResponse.json(
-        { error: "Failed to parse analysis results. Please try again." },
+        {
+          error: "We couldn't read the AI's response. Please try again — your credit was refunded.",
+          failure_reason: "parse_error",
+        },
         { status: 500 }
       );
     }
