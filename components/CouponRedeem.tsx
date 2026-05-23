@@ -61,16 +61,16 @@ export function CouponRedeem() {
   };
 
   return (
-    <div className="bg-white border border-stone-200 rounded-sm shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] p-8 space-y-5">
+    <div className="bg-white border border-stone-200 rounded-sm shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
           <Gift className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
         </div>
         <h3 className="font-serif text-lg text-[#1a1a1a]">Redeem Promo Code</h3>
       </div>
-      
+
       <form onSubmit={handleRedeem} className="space-y-4">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             value={code}
@@ -78,14 +78,14 @@ export function CouponRedeem() {
               setCode(e.target.value.toUpperCase());
               setMessage(null); // Clear message when typing
             }}
-            placeholder="Enter promo code (e.g., LAUNCH2024)"
-            className="flex-1 px-4 py-2.5 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] text-base sm:text-sm font-light text-[#1a1a1a] placeholder:text-stone-500"
+            placeholder="Enter promo code"
+            className="min-w-0 flex-1 px-4 py-2.5 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] text-base sm:text-sm font-light text-[#1a1a1a] placeholder:text-stone-500"
             disabled={isRedeeming}
           />
           <button
             type="submit"
             disabled={isRedeeming || !code.trim()}
-            className="px-6 py-2.5 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-medium rounded-sm transition-colors flex items-center gap-2 tracking-wide"
+            className="flex-shrink-0 px-6 py-2.5 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-medium rounded-sm transition-colors flex items-center justify-center gap-2 tracking-wide"
           >
             {isRedeeming ? (
               <>
