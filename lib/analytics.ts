@@ -35,7 +35,23 @@ export type EventName =
   | "purchase_completed"
   | "builder_welcome_viewed"
   | "builder_welcome_dismissed"
-  | "scroll_depth";
+  | "scroll_depth"
+  // Career-hub redesign events (Stage 8)
+  | "landing_roles_submitted"
+  | "start_choice"
+  | "improvement_blurred_view"
+  | "improvement_unlock_clicked"
+  | "improvements_unlocked"
+  | "multirole_generation_started"
+  | "multirole_card_unlocked"
+  | "voice_entry_clicked"
+  | "voice_session_started"
+  | "voice_session_completed"
+  | "voice_finalized"
+  | "voice_abandoned"
+  | "voice_error"
+  | "xp_awarded"
+  | "level_up";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

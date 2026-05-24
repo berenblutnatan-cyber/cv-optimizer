@@ -57,6 +57,49 @@ async function fireOptimizeFailedServer(
   }
 }
 
+// Normalize the `improvements` field into the redesign-v2 shape. Accepts:
+//   - new shape: Array<{ text, scoreImpact, category }>
+//   - legacy: string[]
+//   - mixed bag with missing fields
+// Always returns a non-empty list (or [] if there is truly nothing).
+export type NormalizedImprovement = {
+  id: string;
+  text: string;
+  scoreImpact: number;
+  category: "ats" | "impact" | "clarity";
+};
+
+function normalizeImprovements(raw: unknown): NormalizedImprovement[] {
+  if (!Array.isArray(raw)) return [];
+  const out: NormalizedImprovement[] = [];
+  raw.forEach((item, i) => {
+    if (typeof item === "string") {
+      out.push({
+        id: `imp_${i}`,
+        text: item,
+        scoreImpact: 0,
+        category: "impact",
+      });
+    } else if (item && typeof item === "object") {
+      const obj = item as Record<string, unknown>;
+      const text = String(obj.text ?? obj.improvement ?? "").trim();
+      if (!text) return;
+      let scoreImpact = Number(obj.scoreImpact ?? obj.score_impact ?? 0);
+      if (!Number.isFinite(scoreImpact)) scoreImpact = 0;
+      scoreImpact = Math.max(0, Math.min(15, Math.round(scoreImpact)));
+      const catRaw = String(obj.category ?? "impact").toLowerCase();
+      const category: NormalizedImprovement["category"] =
+        catRaw === "ats" || catRaw === "clarity" ? catRaw : "impact";
+      out.push({ id: `imp_${i}`, text, scoreImpact, category });
+    }
+  });
+  // Stable sort: highest impact first, fall back to original order.
+  return out
+    .map((imp, idx) => ({ imp, idx }))
+    .sort((a, b) => b.imp.scoreImpact - a.imp.scoreImpact || a.idx - b.idx)
+    .map(({ imp }) => imp);
+}
+
 function cleanTitle(raw: string) {
   return raw
     .replace(/[*_`~]/g, "") // strip markdown emphasis
@@ -744,11 +787,15 @@ Optimization improves PRESENTATION only. It CANNOT change the candidate's actual
   ],
   // LIMIT: Exactly 3 strengths - each must reference a SPECIFIC skill, experience, or qualification from the CV that matches the JD
   "improvements": [
-    "<improvement #1 - Be SPECIFIC: name exactly what's missing and WHY it matters. e.g., 'No Python experience listed - required for 3 of 5 core job responsibilities'>",
-    "<improvement #2 - specific gap>",
-    "<improvement #3 - specific gap>"
+    {
+      "text": "<improvement #1 - SPECIFIC: name what's missing and WHY it matters. e.g., 'No Python listed — required for 3 of 5 core responsibilities'>",
+      "scoreImpact": <integer 1-15: how many points the overall score would gain from fixing this>,
+      "category": "ats" | "impact" | "clarity"
+    }
+    // Return 5-8 improvements total, sorted by scoreImpact DESCENDING (highest impact first).
+    // Sum of all scoreImpact values should be roughly consistent with scoreComparison.improvement.
+    // Each entry MUST name the specific gap and its importance to this role.
   ],
-  // LIMIT: Exactly 3 improvements - ranked by IMPACT (most important first). Each must name the specific gap and its importance to this role
   "missingKeySkills": [
     "<critical skill gap #1>",
     "<critical skill gap #2>",
@@ -881,6 +928,11 @@ Return ONLY the JSON object.`;
       const jsonText = extractBalancedJson(content);
       if (!jsonText) throw new Error("No JSON object found in response");
       analysis = JSON.parse(jsonText);
+      // Coerce `improvements` into the new {text, scoreImpact, category} shape.
+      // The prompt asks for the rich shape, but we tolerate the legacy
+      // string[] response too so cached/in-flight analyses don't break the
+      // results page during the rollout.
+      analysis.improvements = normalizeImprovements(analysis.improvements);
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
       console.log("Raw response (first 500 chars):", content.slice(0, 500));
@@ -917,6 +969,44 @@ Return ONLY the JSON object.`;
         : typeof analysis?.overall_score === "number"
           ? analysis.overall_score
           : undefined;
+
+    // Persist the analysis + improvements so the results page can read them
+    // by id and the paywall blur can flip individual rows to unlocked.
+    // We attempt this awaited (not fire-and-forget) so we can return the
+    // analysisId in the response. Failure here doesn't block the response —
+    // the legacy sessionStorage path still works.
+    let analysisId: string | null = null;
+    if (userId) {
+      try {
+        const normalizedImps = (analysis.improvements ?? []) as NormalizedImprovement[];
+        const created = await prisma.analysis.create({
+          data: {
+            userId,
+            cvText: cvText.slice(0, 60_000),
+            jobTitle: effectiveJobTitle,
+            overallScore: typeof analysis?.overallScore === "number" ? Math.round(analysis.overallScore) : null,
+            optimizedScore:
+              typeof analysis?.scoreComparison?.optimized?.total === "number"
+                ? Math.round(analysis.scoreComparison.optimized.total)
+                : null,
+            raw: analysis,
+            improvements: {
+              create: normalizedImps.map((imp, i) => ({
+                text: imp.text,
+                scoreImpact: imp.scoreImpact,
+                category: imp.category,
+                unlocked: i < 3, // top 3 by score impact are free
+                position: i,
+              })),
+            },
+          },
+          select: { id: true },
+        });
+        analysisId = created.id;
+      } catch (persistErr) {
+        console.error("[analyze] failed to persist Analysis:", persistErr);
+      }
+    }
 
     // Fire-and-forget admin notification + server-side PostHog event + DB log.
     // No await so user-facing latency is unaffected.
@@ -974,6 +1064,7 @@ Return ONLY the JSON object.`;
     return NextResponse.json({
       success: true,
       analysis,
+      analysisId,
       meta: {
         mode: isQuickMode
           ? "quick"

@@ -16,13 +16,98 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Gamification + onboarding columns introduced in the career-hub redesign.
+  // `targetRoles` is set from the marketing role-picker; everything else is
+  // updated server-side via lib/gamification.ts.
+  xp           Int       @default(0)
+  streakDays   Int       @default(0)
+  lastActiveAt DateTime?
+  targetRoles  String[]  @default([])
+
   resumes          Resume[]
   feedbacks        Feedback[]
   purchases        Purchase[]
   couponRedemptions CouponRedemption[]
   optimizations    OptimizationLog[]
+  analyses         Analysis[]
+  generatedResumes GeneratedResume[]
+  voiceSessions    VoiceSession[]
 
   @@index([createdAt])
+}
+
+// Persisted optimization run. Replaces the sessionStorage-only flow so users
+// can revisit analyses, unlock improvements asynchronously, and we can rank
+// improvements by score impact for the blurred-paywall UI.
+model Analysis {
+  id             String        @id @default(cuid())
+  userId         String
+  cvText         String        @db.Text
+  jobTitle       String?
+  overallScore   Int?
+  optimizedScore Int?
+  raw            Json
+  createdAt      DateTime      @default(now())
+
+  improvements Improvement[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// One row per improvement returned by the analyze endpoint. `scoreImpact`
+// drives the per-item "+X pts" chips; `unlocked=false` rows render through
+// <BlurredLock>. A successful credit spend flips every row of an analysis
+// to unlocked=true (single mental model — unlock-all-per-analysis).
+model Improvement {
+  id          String   @id @default(cuid())
+  analysisId  String
+  text        String   @db.Text
+  scoreImpact Int
+  category    String
+  unlocked    Boolean  @default(false)
+  position    Int
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
+
+// One row per role in the multi-role generation. content is the ResumeData
+// JSON ready to feed back into the existing builder/templates. First card
+// (lowest createdAt for a given run) is unlocked=true; the rest are blurred
+// until a credit spend flips a single row.
+model GeneratedResume {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String
+  content   Json
+  score     Int?
+  unlocked  Boolean  @default(false)
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, role])
+}
+
+// Metadata-only record of a voice CV builder session. We deliberately do NOT
+// store the transcript — it lives in sessionStorage during the call and is
+// discarded server-side after Claude returns the finalized ResumeData.
+model VoiceSession {
+  id          String   @id @default(cuid())
+  userId      String
+  durationSec Int
+  turns       Int
+  finalized   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model OptimizationLog {

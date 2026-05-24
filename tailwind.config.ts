@@ -55,12 +55,28 @@ const config: Config = {
           900: "#312e81",
           950: "#1e1b4b",
         },
+        // Glass-theme palette — sourced from CSS vars so JS can override.
+        glass: {
+          DEFAULT: "rgba(20, 18, 38, 0.45)",
+          strong: "rgba(20, 18, 38, 0.65)",
+          border: "rgba(255, 255, 255, 0.12)",
+          highlight: "rgba(255, 255, 255, 0.06)",
+        },
+        warm: "#f5b8c8",
+        cool: "#8fb3ff",
+      },
+      backdropBlur: {
+        glass: "24px",
+      },
+      borderRadius: {
+        squircle: "28%",
       },
       boxShadow: {
         soft: "0 2px 20px -6px rgba(0, 0, 0, 0.06)",
         card: "0 4px 40px -12px rgba(0, 0, 0, 0.08)",
         lift: "0 8px 30px -8px rgba(0, 0, 0, 0.10)",
         modal: "0 8px 60px -12px rgba(0, 0, 0, 0.25)",
+        glow: "0 0 0 1px rgba(255,255,255,0.12), 0 20px 60px -20px rgba(20,18,38,0.6)",
       },
       animation: {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
