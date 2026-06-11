@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { extractBalancedJson } from "@/lib/extractJson";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -170,7 +171,7 @@ YOU MUST RESPOND WITH VALID JSON ONLY. NO MARKDOWN, NO EXPLANATIONS. JUST THE JS
 
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-6",
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: optimizerSystemPrompt,
         messages: [
           { role: "user", content: userMessage },
@@ -178,8 +179,22 @@ YOU MUST RESPOND WITH VALID JSON ONLY. NO MARKDOWN, NO EXPLANATIONS. JUST THE JS
         temperature: 0.3, // Very low temperature for consistent, strict scoring
       });
 
+      // Long CVs can hit the output cap — surface that as a clear error
+      // instead of letting JSON.parse blow up on a truncated object.
+      if (response.stop_reason === "max_tokens") {
+        console.error("[optimize] output truncated at max_tokens");
+        return NextResponse.json(
+          { error: "Your CV is too long to optimize in one pass. Trim it and try again." },
+          { status: 502 }
+        );
+      }
       const content = response.content[0].type === 'text' ? response.content[0].text : '{}';
-      const result = JSON.parse(content);
+      const jsonText = extractBalancedJson(content);
+      if (!jsonText) {
+        console.error("[optimize] no balanced JSON in model output");
+        return NextResponse.json({ error: "Failed to optimize" }, { status: 502 });
+      }
+      const result = JSON.parse(jsonText);
       return NextResponse.json(result);
     }
 

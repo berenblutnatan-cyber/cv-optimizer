@@ -48,14 +48,14 @@ export function ChatComposer({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {QUICK_CHIPS.map((chip) => (
           <button
             key={chip}
             type="button"
             disabled={disabled}
             onClick={() => send(chip)}
-            className="px-3 py-1.5 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors disabled:opacity-40"
+            className="flex-shrink-0 px-3 py-1.5 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors disabled:opacity-40"
           >
             {chip}
           </button>

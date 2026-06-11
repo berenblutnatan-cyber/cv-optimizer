@@ -12,7 +12,7 @@ interface RatingWidgetProps {
 
 // Routes where the floating widget would overlap a bottom action bar on mobile
 // (the builder has its own fixed Back/Next footer).
-const HIDDEN_ROUTES = ["/builder"];
+const HIDDEN_ROUTES = ["/builder", "/build"];
 
 export function RatingWidget({ source }: RatingWidgetProps) {
   const pathname = usePathname();
@@ -22,9 +22,10 @@ export function RatingWidget({ source }: RatingWidgetProps) {
   const [comment, setComment] = useState("");
   const [isVisible, setIsVisible] = useState(true);
 
-  if (pathname && HIDDEN_ROUTES.some((r) => pathname.startsWith(r))) {
-    return null;
-  }
+  // NOTE: route check must come AFTER all hooks — an early return above the
+  // useEffect crashes React ("fewer hooks than expected") when navigating
+  // between hidden and visible routes.
+  const hidden = Boolean(pathname && HIDDEN_ROUTES.some((r) => pathname.startsWith(r)));
 
   // Auto-close success message
   useEffect(() => {
@@ -75,7 +76,7 @@ export function RatingWidget({ source }: RatingWidgetProps) {
     setIsVisible(false);
   };
 
-  if (!isVisible) return null;
+  if (hidden || !isVisible) return null;
 
   if (state === "button") {
     return (

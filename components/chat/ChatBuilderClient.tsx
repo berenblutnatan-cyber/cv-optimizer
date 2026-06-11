@@ -271,9 +271,11 @@ export function ChatBuilderClient() {
             <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-glass-border">
               <BuildProgress data={resumeData} />
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
-              <ChatThread messages={messages} streaming={streaming} />
-            </div>
+            <ChatThread
+              messages={messages}
+              streaming={streaming}
+              className="flex-1 min-h-0 px-4 py-4"
+            />
             <div className="flex-shrink-0 px-3 pb-3 pt-1">
               <ChatComposer onSend={send} disabled={streaming} />
             </div>

@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let anyToolApplied = false;
+      let emittedText = false; // any text sent in a previous round
       try {
         const messages: Anthropic.MessageParam[] = merged.map((m) => ({
           role: m.role,
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
         }));
 
         for (let round = 0; round < MAX_MODEL_ROUNDS; round++) {
+          let roundEmittedText = false;
           const msgStream = anthropic.messages.stream({
             model: "claude-sonnet-4-6",
             max_tokens: 2000,
@@ -140,6 +142,13 @@ export async function POST(request: NextRequest) {
               event.type === "content_block_delta" &&
               event.delta.type === "text_delta"
             ) {
+              // The model resumes mid-sentence after tool rounds; keep the
+              // bubble readable by separating cross-round text segments.
+              if (!roundEmittedText && emittedText) {
+                controller.enqueue(sseEncode({ type: "text", text: "\n\n" }));
+              }
+              roundEmittedText = true;
+              emittedText = true;
               controller.enqueue(sseEncode({ type: "text", text: event.delta.text }));
             } else if (
               event.type === "content_block_start" &&

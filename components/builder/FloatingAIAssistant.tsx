@@ -127,17 +127,18 @@ export function FloatingAIAssistant({
     
     setProcessingAction(action.id);
     setThinking(true);
-    
+
     try {
-      // TODO: Replace with actual API call
-      // Simulating AI processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock improved text for demonstration
-      const improvedText = `[Improved] ${fieldValue}`;
-      
-      console.log(`[AI Assistant] Improved text: "${improvedText}"`);
-      
+      const res = await fetch("/api/optimize-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: fieldValue, context: action.prompt }),
+      });
+      if (!res.ok) throw new Error(`optimize-text failed (${res.status})`);
+      const data = await res.json();
+      const improvedText = String(data?.improvedText ?? "").trim();
+      if (!improvedText) throw new Error("empty improvement");
+
       onImproveText?.(fieldValue, improvedText, action.id);
     } catch (error) {
       console.error("[AI Assistant] Error:", error);
