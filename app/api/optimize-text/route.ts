@@ -1,45 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
-import { kv } from "@vercel/kv";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Per-user cap: a heavy builder session uses ~15 improvements; this stops
-// the endpoint from being scripted as a free rewriting API.
-const HOURLY_CAP = 40;
+// Stays public: the /builder page is a "try before signup" experience and its
+// improve-text buttons call this anonymously. Spend is bounded by a KV rate
+// limit (per user when signed in, per IP otherwise) and an input-size cap.
+const HOURLY_CAP = 20;
+const MAX_TEXT_LENGTH = 8_000;
 
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
-    if (!userId) {
+    const rl = await checkRateLimit({
+      name: "optimize-text",
+      id: userId ?? `ip:${clientIp(request)}`,
+      limit: HOURLY_CAP,
+      windowSeconds: 60 * 60,
+    });
+    if (!rl.ok) {
       return NextResponse.json(
-        { error: "Sign in to use AI writing help" },
-        { status: 401 }
+        { error: `Limit reached (${HOURLY_CAP}/hour). Please try again soon.` },
+        { status: 429 }
       );
-    }
-    try {
-      const key = `opttext:rl:${userId}`;
-      const raw = await kv.get(key);
-      const used = typeof raw === "number" ? raw : Number(raw ?? 0);
-      if (Number.isFinite(used) && used >= HOURLY_CAP) {
-        return NextResponse.json(
-          { error: "Hourly AI-improvement limit reached — try again soon." },
-          { status: 429 }
-        );
-      }
-      await kv.set(key, (Number.isFinite(used) ? used : 0) + 1, { ex: 60 * 60 });
-    } catch (kvErr) {
-      console.warn("[optimize-text] KV rate-limit unavailable:", kvErr);
     }
 
     const { text, context } = await request.json();
 
-    if (!text || text.trim().length === 0) {
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
       return NextResponse.json(
         { error: "No text provided" },
+        { status: 400 }
+      );
+    }
+    if (text.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json(
+        { error: "Text is too long to optimize in one pass" },
         { status: 400 }
       );
     }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 5. Removing filler words and redundancy
 6. Maintaining professional tone
 
-Context: ${context || "resume section"}
+Context: ${typeof context === "string" && context.trim() ? context.slice(0, 300) : "resume section"}
 
 IMPORTANT: 
 - Return ONLY the improved text, no explanations
@@ -62,13 +62,12 @@ IMPORTANT:
 - If it's already good, make minimal changes`;
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-opus-4-8",
       max_tokens: 500,
       system: systemPrompt,
       messages: [
         { role: "user", content: `Improve this text:\n\n${text}` },
       ],
-      temperature: 0.7,
     });
 
     const improvedText = response.content[0].type === 'text' ? response.content[0].text.trim() : '';

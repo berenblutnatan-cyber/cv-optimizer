@@ -234,7 +234,7 @@ async function extractWithLlm(
   anthropic: Anthropic
 ): Promise<string | null> {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-opus-4-8",
     max_tokens: 2048,
     messages: [
       {
@@ -242,7 +242,6 @@ async function extractWithLlm(
         content: `Extract the job description from this webpage content. Include job title, company, requirements, qualifications, and responsibilities. If this appears to be a login page or doesn't contain a job description, respond with exactly "NO_JOB_FOUND". Return only the extracted job description, no other commentary.\n\nWebpage content:\n${textContent}`,
       },
     ],
-    temperature: 0.3,
   });
   const block = response.content[0];
   const text = block.type === "text" ? block.text : "";

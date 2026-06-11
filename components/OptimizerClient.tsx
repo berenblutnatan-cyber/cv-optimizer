@@ -302,22 +302,8 @@ export function OptimizerClient() {
       return;
     }
 
-    // Read-only balance check for instant paywall UX. The actual charge
-    // happens server-side inside /api/analyze, after a successful run —
-    // this pre-check just avoids a long wait before showing the paywall.
-    try {
-      const creditCheck = await fetch("/api/get-credits");
-      const creditResult = await creditCheck.json();
-      if (typeof creditResult.credits === "number" && creditResult.credits <= 0) {
-        track("credit_check_failed", { reason: "insufficient_credits" });
-        oocModal.open({ trigger: "optimize" });
-        return;
-      }
-    } catch (creditError) {
-      // Non-fatal — the server enforces credits either way.
-      console.error("Credit pre-check failed:", creditError);
-    }
-
+    // Credits are checked and charged server-side by /api/analyze (only on
+    // success), so there's no separate use-credit/refund-credit round trip.
     track("optimize_started", {
       job_input_mode: jobInputMode,
       cv_size: cvText.length || (cvFile?.size ?? 0),
@@ -344,7 +330,7 @@ export function OptimizerClient() {
       const response = await fetch("/api/analyze", { method: "POST", body: formData });
       const data = await response.json();
       if (response.status === 402) {
-        track("credit_check_failed", { reason: "insufficient_credits_server" });
+        track("credit_check_failed", { reason: "insufficient_credits" });
         oocModal.open({ trigger: "optimize" });
         return;
       }
@@ -382,8 +368,8 @@ export function OptimizerClient() {
       router.push("/results");
 
     } catch (err) {
-      // Credits are only charged server-side after a successful analysis,
-      // so a failure here never costs the user anything.
+      // The server only charges a credit when analysis succeeds, so a failure
+      // here costs the user nothing.
       track("optimize_failed", {
         message: err instanceof Error ? err.message : "unknown",
       });
@@ -790,7 +776,7 @@ export function OptimizerClient() {
       {/* Full-screen analyzing overlay */}
       <AnalyzingScreen open={isAnalyzing} mode={analysisMode} jobTitle={jobTitle} />
 
-      {/* Out-of-credits paywall — shown when /api/use-credit reports zero balance */}
+      {/* Out-of-credits paywall — shown when /api/analyze returns 402 */}
       <OutOfCreditsModal
         open={oocModal.isOpen}
         onClose={oocModal.close}

@@ -1,6 +1,6 @@
 // Extract the first complete JSON object from a string by counting braces.
 // Safer than /\{[\s\S]*\}/ which is greedy and silently matches truncated /
-// concatenated objects. Shared by the AI routes that parse model output.
+// concatenated objects.
 export function extractBalancedJson(text: string): string | null {
   const start = text.indexOf("{");
   if (start === -1) return null;

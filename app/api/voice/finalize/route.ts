@@ -5,32 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { awardXp } from "@/lib/gamification";
 import { buildFinalizePrompt } from "@/lib/voice/finalizePrompt";
 import { normalizeFinalizeOutput } from "@/lib/voice/schema";
+import { extractBalancedJson } from "@/lib/extractJson";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 45;
-
-function extractBalancedJson(text: string): string | null {
-  const start = text.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inString = false;
-  let escape = false;
-  for (let i = start; i < text.length; i++) {
-    const c = text[i];
-    if (escape) { escape = false; continue; }
-    if (c === "\\") { escape = true; continue; }
-    if (c === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return text.slice(start, i + 1);
-    }
-  }
-  return null;
-}
 
 type Turn = { role: "user" | "assistant"; text: string };
 
@@ -86,11 +66,10 @@ export async function POST(request: Request) {
   let resumeData;
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-opus-4-8",
       max_tokens: 4000,
       system: "Convert spoken career conversations into resume JSON. Use ONLY facts from the transcript — never invent. Return strict JSON only.",
       messages: [{ role: "user", content: buildFinalizePrompt(transcript) }],
-      temperature: 0.2,
     });
     const content = response.content[0]?.type === "text" ? response.content[0].text : "";
     const jsonText = extractBalancedJson(content);

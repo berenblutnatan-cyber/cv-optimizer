@@ -6,45 +6,21 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { sendOptimizeNotification } from "@/lib/email";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { prisma } from "@/lib/prisma";
+import { extractBalancedJson } from "@/lib/extractJson";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Extract the first complete JSON object from a string by counting braces.
-// Safer than /\{[\s\S]*\}/ which is greedy and silently matches truncated /
-// concatenated objects.
-function extractBalancedJson(text: string): string | null {
-  const start = text.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inString = false;
-  let escape = false;
-  for (let i = start; i < text.length; i++) {
-    const c = text[i];
-    if (escape) { escape = false; continue; }
-    if (c === "\\") { escape = true; continue; }
-    if (c === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return text.slice(start, i + 1);
-    }
-  }
-  return null; // unbalanced — likely truncated
-}
-
 // Fire a server-side optimize_failed event so failures stay visible in PostHog
 // even when the client never reports them (e.g. user closes the tab on error).
-async function fireOptimizeFailedServer(
+function fireOptimizeFailedServer(
+  userId: string,
   reason: "truncated" | "parse_error" | "no_json" | "model_error",
   props: Record<string, unknown> = {}
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) return;
     const ph = getPostHogClient();
     if (!ph) return;
     ph.capture({
@@ -52,7 +28,7 @@ async function fireOptimizeFailedServer(
       event: "optimize_failed_server",
       properties: { failure_reason: reason, ...props },
     });
-    await ph.shutdown();
+    void ph.shutdown();
   } catch (err) {
     console.error("[analyze] failed to fire optimize_failed_server:", err);
   }
@@ -137,30 +113,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Server-side gate: auth + a positive balance BEFORE any model spend.
-    // The credit is only charged AFTER a successful analysis (below), so a
-    // failed run never costs the user anything — no refund dance needed.
-    const { userId: authedUserId } = await auth();
-    if (!authedUserId) {
+    // Auth + credits are enforced HERE, not by a separate client-side
+    // /api/use-credit call — otherwise skipping that call gives unlimited free
+    // optimizations. The optimizer UI already requires sign-in before calling.
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    {
-      const u = await currentUser();
-      const dbUser = await prisma.user.upsert({
-        where: { id: authedUserId },
-        update: {},
-        create: {
-          id: authedUserId,
-          email: u?.emailAddresses[0]?.emailAddress || "no-email",
-          credits: FREE_CREDITS_FOR_NEW_USER,
-        },
-      });
-      if (dbUser.credits <= 0) {
-        return NextResponse.json(
-          { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
-          { status: 402 }
-        );
-      }
+    const user = await currentUser();
+    const userEmail = user?.emailAddresses[0]?.emailAddress || "no-email";
+
+    // Ensure the User row exists (mirrors /api/use-credit) and check the
+    // balance up front so we don't burn a Claude call for a user with 0.
+    // The actual decrement happens AFTER the work succeeds, in the same
+    // transaction that persists the analysis (see below) — failures are
+    // never charged, so no refund endpoint is needed.
+    const dbUser = await prisma.user.upsert({
+      where: { id: userId },
+      update: { email: userEmail },
+      create: {
+        id: userId,
+        email: userEmail,
+        credits: FREE_CREDITS_FOR_NEW_USER,
+      },
+    });
+    if (dbUser.credits <= 0) {
+      return NextResponse.json(
+        { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
+        { status: 402 }
+      );
     }
 
     const formData = await request.formData();
@@ -916,7 +897,7 @@ IMPORTANT:
 Return ONLY the JSON object.`;
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-opus-4-8",
       max_tokens: 8000,
       system: "You are an executive resume writer who ENHANCES content, not deletes it. Create an AMAZING 3-4 line professional summary. PRESERVE all education details (GPA, honors, coursework). Recent roles: 2 bullets (3 if exceptional), older: 0-1. Transform weak content into strong content. Executive language. NEVER fabricate. Respond with valid JSON only.",
       messages: [
@@ -925,16 +906,16 @@ Return ONLY the JSON object.`;
           content: analysisPrompt,
         },
       ],
-      temperature: 0.5, // Lower for more consistent, truthful output
     });
 
     const content = response.content[0].type === 'text' ? response.content[0].text : "";
 
     // If the model hit max_tokens, the JSON is truncated — never try to parse
-    // it, surface a specific actionable error so the client can refund + retry.
+    // it, surface a specific actionable error so the user can shorten + retry.
+    // No credit has been charged at this point.
     if (response.stop_reason === "max_tokens") {
       console.error("[analyze] model output truncated at max_tokens");
-      void fireOptimizeFailedServer("truncated", {
+      fireOptimizeFailedServer(userId, "truncated", {
         cv_text_length: cvText.length,
         job_description_length: (finalJobDescription || "").length,
       });
@@ -963,7 +944,7 @@ Return ONLY the JSON object.`;
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
       console.log("Raw response (first 500 chars):", content.slice(0, 500));
-      void fireOptimizeFailedServer("parse_error", {
+      fireOptimizeFailedServer(userId, "parse_error", {
         message: parseError instanceof Error ? parseError.message : "unknown",
         cv_text_length: cvText.length,
       });
@@ -976,42 +957,6 @@ Return ONLY the JSON object.`;
       );
     }
 
-    // Charge the credit now that the analysis succeeded. Atomic decrement
-    // with a negative-balance guard handles concurrent requests racing past
-    // the read-side check above.
-    try {
-      await prisma.$transaction(async (tx) => {
-        const updated = await tx.user.update({
-          where: { id: authedUserId },
-          data: { credits: { decrement: 1 } },
-        });
-        if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
-      });
-    } catch (chargeErr) {
-      if (chargeErr instanceof Error && chargeErr.message === "INSUFFICIENT_CREDITS") {
-        return NextResponse.json(
-          { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
-          { status: 402 }
-        );
-      }
-      console.error("[analyze] credit charge failed:", chargeErr);
-      return NextResponse.json({ error: "Failed to process credits" }, { status: 500 });
-    }
-
-    // Read auth inside the request context so we can fire notifications after responding.
-    let userId: string | null = null;
-    let userEmail = "anonymous";
-    try {
-      const a = await auth();
-      userId = a.userId;
-      if (userId) {
-        const u = await currentUser();
-        userEmail = u?.emailAddresses[0]?.emailAddress || userEmail;
-      }
-    } catch (authErr) {
-      console.warn("[analyze] could not read auth context for notification:", authErr);
-    }
-
     const matchScore =
       typeof analysis?.matchScore === "number"
         ? analysis.matchScore
@@ -1019,16 +964,20 @@ Return ONLY the JSON object.`;
           ? analysis.overall_score
           : undefined;
 
-    // Persist the analysis + improvements so the results page can read them
-    // by id and the paywall blur can flip individual rows to unlocked.
-    // We attempt this awaited (not fire-and-forget) so we can return the
-    // analysisId in the response. Failure here doesn't block the response —
-    // the legacy sessionStorage path still works.
+    // Charge the credit + persist the analysis in a single transaction so a
+    // crash here never leaves a user billed without a result (or vice versa) —
+    // same pattern as /api/voice/finalize. The decrement-then-guard handles
+    // concurrent requests racing past the up-front balance check.
     let analysisId: string | null = null;
-    if (userId) {
-      try {
-        const normalizedImps = (analysis.improvements ?? []) as NormalizedImprovement[];
-        const created = await prisma.analysis.create({
+    try {
+      const normalizedImps = (analysis.improvements ?? []) as NormalizedImprovement[];
+      const created = await prisma.$transaction(async (tx) => {
+        const updated = await tx.user.update({
+          where: { id: userId },
+          data: { credits: { decrement: 1 } },
+        });
+        if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
+        return tx.analysis.create({
           data: {
             userId,
             cvText: cvText.slice(0, 60_000),
@@ -1051,35 +1000,43 @@ Return ONLY the JSON object.`;
           },
           select: { id: true },
         });
-        analysisId = created.id;
-      } catch (persistErr) {
-        console.error("[analyze] failed to persist Analysis:", persistErr);
+      });
+      analysisId = created.id;
+    } catch (persistErr) {
+      if (persistErr instanceof Error && persistErr.message === "INSUFFICIENT_CREDITS") {
+        return NextResponse.json(
+          { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
+          { status: 402 }
+        );
       }
+      console.error("[analyze] charge+persist transaction failed:", persistErr);
+      return NextResponse.json(
+        { error: "Failed to save your analysis. Please try again — you weren't charged.", failure_reason: "persist_error" },
+        { status: 500 }
+      );
     }
 
     // Fire-and-forget admin notification + server-side PostHog event + DB log.
     // No await so user-facing latency is unaffected.
     void (async () => {
       try {
-        if (userId) {
-          try {
-            await prisma.optimizationLog.create({
-              data: {
-                userId,
-                userEmail,
-                jobTitle: effectiveJobTitle,
-                companyName: companyName && companyName !== "Target Company" ? companyName : null,
-                matchScore: typeof matchScore === "number" ? Math.round(matchScore) : null,
-              },
-            });
-          } catch (logErr) {
-            console.error("[analyze] optimizationLog write failed:", logErr);
-          }
+        try {
+          await prisma.optimizationLog.create({
+            data: {
+              userId,
+              userEmail,
+              jobTitle: effectiveJobTitle,
+              companyName: companyName && companyName !== "Target Company" ? companyName : null,
+              matchScore: typeof matchScore === "number" ? Math.round(matchScore) : null,
+            },
+          });
+        } catch (logErr) {
+          console.error("[analyze] optimizationLog write failed:", logErr);
         }
 
         await sendOptimizeNotification({
           userEmail,
-          userId: userId || undefined,
+          userId,
           jobTitle: effectiveJobTitle,
           companyName,
           hasJobUrl: !!jobUrl,
@@ -1089,7 +1046,7 @@ Return ONLY the JSON object.`;
         });
 
         const ph = getPostHogClient();
-        if (ph && userId) {
+        if (ph) {
           ph.capture({
             distinctId: userId,
             event: "optimize_succeeded_server",
