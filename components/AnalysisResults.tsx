@@ -60,7 +60,7 @@ interface AnalysisResult {
   scoreComparison?: ScoreComparison;
   summary: string;
   strengths: string[];
-  improvements: string[];
+  improvements: (string | { text: string; scoreImpact?: number; category?: string; id?: string })[];
   suggestedChanges: {
     id?: string;
     section: string;
@@ -171,7 +171,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   // Suggested changes acceptance state: "pending" | "accepted" | "rejected"
   const [changeStatuses, setChangeStatuses] = useState<Record<string, "pending" | "accepted" | "rejected">>(() => {
     const initial: Record<string, "pending" | "accepted" | "rejected"> = {};
-    results.suggestedChanges.forEach((change, idx) => {
+    (results.suggestedChanges ?? []).forEach((change, idx) => {
       initial[change.id || `chg_${idx}`] = "pending";
     });
     return initial;
@@ -206,8 +206,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   const [resumeData, setResumeData] = useState<ResumePreviewData>(initialParsedCV);
 
   // Separate regular changes from skill placements
-  const regularChanges = results.suggestedChanges.filter(change => !change.id?.startsWith('skill_'));
-  const skillChanges = results.skillPlacementChanges || results.suggestedChanges.filter(change => change.id?.startsWith('skill_'));
+  const regularChanges = (results.suggestedChanges ?? []).filter(change => !change.id?.startsWith('skill_'));
+  const skillChanges = results.skillPlacementChanges || (results.suggestedChanges ?? []).filter(change => change.id?.startsWith('skill_'));
 
   // Score color based on value - Premium palette
   const getScoreColor = (score: number) => {
@@ -542,10 +542,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 Areas to Improve
               </h4>
                 <ul className="space-y-3">
-                {results.improvements.map((improvement, index) => (
+                {(results.improvements ?? []).map((improvement, index) => (
                     <li key={index} className="flex items-start gap-3 text-slate-600">
                       <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                      <span>{improvement}</span>
+                      <span>{typeof improvement === "string" ? improvement : improvement.text}</span>
                   </li>
                 ))}
               </ul>
