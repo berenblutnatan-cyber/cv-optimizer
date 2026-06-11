@@ -6,6 +6,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { sendOptimizeNotification } from "@/lib/email";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { prisma } from "@/lib/prisma";
+import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -134,6 +135,32 @@ export async function POST(request: NextRequest) {
         { error: "Missing required environment variable: ANTHROPIC_API_KEY" },
         { status: 500 }
       );
+    }
+
+    // Server-side gate: auth + a positive balance BEFORE any model spend.
+    // The credit is only charged AFTER a successful analysis (below), so a
+    // failed run never costs the user anything — no refund dance needed.
+    const { userId: authedUserId } = await auth();
+    if (!authedUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    {
+      const u = await currentUser();
+      const dbUser = await prisma.user.upsert({
+        where: { id: authedUserId },
+        update: {},
+        create: {
+          id: authedUserId,
+          email: u?.emailAddresses[0]?.emailAddress || "no-email",
+          credits: FREE_CREDITS_FOR_NEW_USER,
+        },
+      });
+      if (dbUser.credits <= 0) {
+        return NextResponse.json(
+          { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
+          { status: 402 }
+        );
+      }
     }
 
     const formData = await request.formData();
@@ -942,11 +969,33 @@ Return ONLY the JSON object.`;
       });
       return NextResponse.json(
         {
-          error: "We couldn't read the AI's response. Please try again — your credit was refunded.",
+          error: "We couldn't read the AI's response. Please try again — you weren't charged.",
           failure_reason: "parse_error",
         },
         { status: 500 }
       );
+    }
+
+    // Charge the credit now that the analysis succeeded. Atomic decrement
+    // with a negative-balance guard handles concurrent requests racing past
+    // the read-side check above.
+    try {
+      await prisma.$transaction(async (tx) => {
+        const updated = await tx.user.update({
+          where: { id: authedUserId },
+          data: { credits: { decrement: 1 } },
+        });
+        if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
+      });
+    } catch (chargeErr) {
+      if (chargeErr instanceof Error && chargeErr.message === "INSUFFICIENT_CREDITS") {
+        return NextResponse.json(
+          { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
+          { status: 402 }
+        );
+      }
+      console.error("[analyze] credit charge failed:", chargeErr);
+      return NextResponse.json({ error: "Failed to process credits" }, { status: 500 });
     }
 
     // Read auth inside the request context so we can fire notifications after responding.

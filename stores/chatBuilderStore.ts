@@ -13,6 +13,9 @@ export type BuilderChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  /** Compact text shown in the bubble instead of `content` (e.g. "📎 my-cv.pdf"
+   * for an upload turn whose real content is the full extracted CV text). */
+  display?: string;
   /** CV patches the agent applied during this turn — rendered as chips. */
   tools?: ChatToolEvent[];
 };

@@ -57,6 +57,7 @@ export type EventName =
   | "chat_builder_finished"
   | "chat_builder_reset"
   | "chat_dictation_toggled"
+  | "chat_cv_uploaded"
   | "chat_error"
   | "xp_awarded"
   | "level_up";

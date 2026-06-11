@@ -1,12 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "@clerk/nextjs/server";
+import { kv } from "@vercel/kv";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Per-user cap: a heavy builder session uses ~15 improvements; this stops
+// the endpoint from being scripted as a free rewriting API.
+const HOURLY_CAP = 40;
+
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Sign in to use AI writing help" },
+        { status: 401 }
+      );
+    }
+    try {
+      const key = `opttext:rl:${userId}`;
+      const raw = await kv.get(key);
+      const used = typeof raw === "number" ? raw : Number(raw ?? 0);
+      if (Number.isFinite(used) && used >= HOURLY_CAP) {
+        return NextResponse.json(
+          { error: "Hourly AI-improvement limit reached — try again soon." },
+          { status: 429 }
+        );
+      }
+      await kv.set(key, (Number.isFinite(used) ? used : 0) + 1, { ex: 60 * 60 });
+    } catch (kvErr) {
+      console.warn("[optimize-text] KV rate-limit unavailable:", kvErr);
+    }
+
     const { text, context } = await request.json();
 
     if (!text || text.trim().length === 0) {

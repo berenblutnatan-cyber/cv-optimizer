@@ -16,7 +16,9 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // anyone from using the endpoint as a free Claude proxy.
 const HOURLY_MESSAGE_CAP = 80;
 const MAX_HISTORY_MESSAGES = 60;
-const MAX_MESSAGE_CHARS = 12_000;
+// Big enough for an uploaded-CV turn (parse-cv caps extraction at 20k chars
+// plus the framing text around it).
+const MAX_MESSAGE_CHARS = 24_000;
 const MAX_MODEL_ROUNDS = 6; // tool-use loop guard within one request
 
 type ChatMessage = { role: "user" | "assistant"; content: string };

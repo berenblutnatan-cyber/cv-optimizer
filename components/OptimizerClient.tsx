@@ -302,27 +302,20 @@ export function OptimizerClient() {
       return;
     }
 
-    // Check credits before analyzing
+    // Read-only balance check for instant paywall UX. The actual charge
+    // happens server-side inside /api/analyze, after a successful run —
+    // this pre-check just avoids a long wait before showing the paywall.
     try {
-      const creditCheck = await fetch("/api/use-credit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
+      const creditCheck = await fetch("/api/get-credits");
       const creditResult = await creditCheck.json();
-
-      if (!creditResult.success) {
+      if (typeof creditResult.credits === "number" && creditResult.credits <= 0) {
         track("credit_check_failed", { reason: "insufficient_credits" });
         oocModal.open({ trigger: "optimize" });
         return;
       }
     } catch (creditError) {
-      console.error("Credit check failed:", creditError);
-      track("credit_check_failed", { reason: "exception" });
-      toast.error("Failed to check credits", {
-        description: "Please try again.",
-      });
-      return;
+      // Non-fatal — the server enforces credits either way.
+      console.error("Credit pre-check failed:", creditError);
     }
 
     track("optimize_started", {
@@ -350,6 +343,11 @@ export function OptimizerClient() {
 
       const response = await fetch("/api/analyze", { method: "POST", body: formData });
       const data = await response.json();
+      if (response.status === 402) {
+        track("credit_check_failed", { reason: "insufficient_credits_server" });
+        oocModal.open({ trigger: "optimize" });
+        return;
+      }
       if (!response.ok) throw new Error(data.error || "Analysis failed");
 
       saveAnalysisToSession({ 
@@ -384,17 +382,12 @@ export function OptimizerClient() {
       router.push("/results");
 
     } catch (err) {
-      // Credit was already deducted before the analyze call — refund it so the
-      // user isn't charged for a failure that isn't their fault.
-      try {
-        await fetch("/api/refund-credit", { method: "POST" });
-      } catch {
-        // best-effort; don't block the error toast
-      }
+      // Credits are only charged server-side after a successful analysis,
+      // so a failure here never costs the user anything.
       track("optimize_failed", {
         message: err instanceof Error ? err.message : "unknown",
       });
-      toast.error("Analysis failed — credit refunded", {
+      toast.error("Analysis failed — you weren't charged", {
         description: err instanceof Error ? err.message : "Something went wrong. Please try again.",
       });
     } finally {

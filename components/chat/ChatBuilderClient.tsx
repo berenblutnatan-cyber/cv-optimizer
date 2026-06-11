@@ -59,6 +59,7 @@ export function ChatBuilderClient() {
     useChatBuilderStore();
 
   const [streaming, setStreaming] = useState(false);
+  const [uploadingCv, setUploadingCv] = useState(false);
   const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
   const [unseenUpdates, setUnseenUpdates] = useState(0);
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
@@ -88,9 +89,9 @@ export function ChatBuilderClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function send(text: string) {
+  async function send(text: string, display?: string) {
     if (streaming) return;
-    const userMsg = { id: generateId(), role: "user" as const, content: text };
+    const userMsg = { id: generateId(), role: "user" as const, content: text, display };
     addMessage(userMsg);
     const assistantId = generateId();
     addMessage({ id: assistantId, role: "assistant", content: "" });
@@ -151,6 +152,27 @@ export function ChatBuilderClient() {
     } finally {
       setStreaming(false);
       abortRef.current = null;
+    }
+  }
+
+  async function handleUpload(file: File) {
+    if (streaming || uploadingCv) return;
+    setUploadingCv(true);
+    track("chat_cv_uploaded", { size: file.size, type: file.type });
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/chat/parse-cv", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error ?? "Couldn't read that file");
+      await send(
+        `I'm uploading my existing CV (${data.fileName}). Here's its full text — pull everything useful into the builder, then tell me what's missing or weak:\n\n"""\n${data.text}\n"""`,
+        `📎 ${data.fileName}`
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingCv(false);
     }
   }
 
@@ -277,7 +299,12 @@ export function ChatBuilderClient() {
               className="flex-1 min-h-0 px-4 py-4"
             />
             <div className="flex-shrink-0 px-3 pb-3 pt-1">
-              <ChatComposer onSend={send} disabled={streaming} />
+              <ChatComposer
+                onSend={send}
+                onUpload={handleUpload}
+                uploading={uploadingCv}
+                disabled={streaming || uploadingCv}
+              />
             </div>
           </div>
         </section>

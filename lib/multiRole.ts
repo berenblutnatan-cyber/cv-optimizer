@@ -27,7 +27,7 @@ export type GeneratedCardOutput = {
   score: number; // 0-100
 };
 
-// Trimmed variant of the existing /api/optimize prompt focused on a single
+// Trimmed variant of the optimizer scoring prompt focused on a single
 // target role. Deliberately concise — we run this N times in parallel and
 // every saved token compounds.
 export function buildRolePrompt(input: GeneratedCardInput): string {

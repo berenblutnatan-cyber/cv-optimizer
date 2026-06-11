@@ -1,21 +1,31 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowUp, Mic, MicOff } from "lucide-react";
+import { ArrowUp, Loader2, Mic, MicOff, Paperclip } from "lucide-react";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { track } from "@/lib/analytics";
 
-const QUICK_CHIPS = ["Skip this question", "Review my CV so far", "I'm done — wrap it up"];
+const QUICK_CHIPS = [
+  "Skip this question",
+  "Tailor it to a job post",
+  "Review my CV so far",
+  "I'm done — wrap it up",
+];
 
 export function ChatComposer({
   onSend,
+  onUpload,
+  uploading,
   disabled,
 }: {
   onSend: (text: string) => void;
+  onUpload: (file: File) => void;
+  uploading: boolean;
   disabled: boolean;
 }) {
   const [draft, setDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   // Dictation appends to whatever was typed before the mic was toggled on:
   // draft = base (pre-mic text) + accumulated finals + current interim.
   const baseRef = useRef("");
@@ -63,6 +73,31 @@ export function ChatComposer({
       </div>
 
       <div className="flex items-end gap-2 rounded-2xl bg-white/10 border border-glass-border p-2 focus-within:border-white/30 transition-colors">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf,.txt,.md,application/pdf,text/plain"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onUpload(file);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={disabled || uploading}
+          aria-label="Upload your current CV (PDF)"
+          title="Upload your current CV (PDF)"
+          className="grid place-items-center h-10 w-10 rounded-xl bg-white/10 text-white/75 hover:bg-white/20 hover:text-white transition-colors disabled:opacity-40"
+        >
+          {uploading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Paperclip className="h-5 w-5" />
+          )}
+        </button>
         <textarea
           ref={textareaRef}
           value={draft}
@@ -74,7 +109,13 @@ export function ChatComposer({
             }
           }}
           rows={Math.min(5, Math.max(1, draft.split("\n").length))}
-          placeholder={listening ? "Listening — just talk…" : "Type your answer, or tap the mic and say it"}
+          placeholder={
+            uploading
+              ? "Reading your CV…"
+              : listening
+                ? "Listening — just talk…"
+                : "Type your answer, or tap the mic and say it"
+          }
           className="flex-1 resize-none bg-transparent text-white placeholder:text-white/45 text-[15px] leading-relaxed px-2 py-1.5 focus:outline-none"
         />
         {supported ? (
