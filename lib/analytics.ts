@@ -50,6 +50,14 @@ export type EventName =
   | "voice_finalized"
   | "voice_abandoned"
   | "voice_error"
+  // Chat-first builder
+  | "chat_builder_opened"
+  | "chat_message_sent"
+  | "chat_tool_applied"
+  | "chat_builder_finished"
+  | "chat_builder_reset"
+  | "chat_dictation_toggled"
+  | "chat_error"
   | "xp_awarded"
   | "level_up";
 

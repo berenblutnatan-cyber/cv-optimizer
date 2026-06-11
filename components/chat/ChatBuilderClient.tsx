@@ -1,0 +1,304 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Download, Eye, MessageCircle, Mic, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
+import { useResumeStore } from "@/store/useResumeStore";
+import { useChatBuilderStore } from "@/stores/chatBuilderStore";
+import { applyCvToolCall } from "@/lib/chat/cvTools";
+import { chatGreeting, isPlaceholderSummary } from "@/lib/chat/prompts";
+import { convertToPreviewData } from "@/lib/resumeDataConverter";
+import { generateId } from "@/types/resume";
+import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
+import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
+import { track } from "@/lib/analytics";
+import { ChatThread } from "./ChatThread";
+import { ChatComposer } from "./ChatComposer";
+import { BuildProgress } from "./BuildProgress";
+
+type SseEvent =
+  | { type: "text"; text: string }
+  | { type: "tool"; name: string; input: Record<string, unknown>; label: string }
+  | { type: "resume"; resumeData: import("@/types/resume").ResumeData }
+  | { type: "done" }
+  | { type: "error"; error: string };
+
+async function readSse(
+  body: ReadableStream<Uint8Array>,
+  onEvent: (evt: SseEvent) => void
+) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const chunks = buffer.split("\n\n");
+    buffer = chunks.pop() ?? "";
+    for (const chunk of chunks) {
+      const line = chunk.trim();
+      if (!line.startsWith("data: ")) continue;
+      try {
+        onEvent(JSON.parse(line.slice(6)) as SseEvent);
+      } catch {
+        // skip malformed frame
+      }
+    }
+  }
+}
+
+export function ChatBuilderClient() {
+  const router = useRouter();
+  const resumeData = useResumeStore((s) => s.resumeData);
+  const setResumeData = useResumeStore((s) => s.setResumeData);
+  const resetResume = useResumeStore((s) => s.resetResume);
+  const { messages, addMessage, appendToMessage, addToolToMessage, updateMessage, clear } =
+    useChatBuilderStore();
+
+  const [streaming, setStreaming] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
+  const [unseenUpdates, setUnseenUpdates] = useState(0);
+  const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
+  const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
+  const [hydrated, setHydrated] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const mobileTabRef = useRef(mobileTab);
+  mobileTabRef.current = mobileTab;
+
+  // Seed the greeting locally after the persisted transcript hydrates —
+  // zustand/persist restores synchronously from localStorage on first
+  // client render, so one effect tick is enough.
+  useEffect(() => {
+    setHydrated(true);
+    track("chat_builder_opened");
+    const { messages: current } = useChatBuilderStore.getState();
+    if (current.length === 0) {
+      const { resumeData: cv } = useResumeStore.getState();
+      const hasCv = Boolean(cv.personalInfo.name.trim()) || cv.experience.length > 0;
+      useChatBuilderStore.getState().addMessage({
+        id: generateId(),
+        role: "assistant",
+        content: chatGreeting(hasCv),
+      });
+    }
+    return () => abortRef.current?.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function send(text: string) {
+    if (streaming) return;
+    const userMsg = { id: generateId(), role: "user" as const, content: text };
+    addMessage(userMsg);
+    const assistantId = generateId();
+    addMessage({ id: assistantId, role: "assistant", content: "" });
+    setStreaming(true);
+    track("chat_message_sent", { length: text.length });
+
+    // Strip the wizard's placeholder summary so the agent doesn't treat
+    // template filler as a real summary.
+    const cv = useResumeStore.getState().resumeData;
+    const outgoingCv = isPlaceholderSummary(cv.summary) ? { ...cv, summary: "" } : cv;
+    const history = [...useChatBuilderStore.getState().messages]
+      .filter((m) => m.id !== assistantId)
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+      const res = await fetch("/api/chat/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history, resumeData: outgoingCv }),
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Couldn't reach the assistant");
+      }
+      let toolCount = 0;
+      await readSse(res.body, (evt) => {
+        if (evt.type === "text") {
+          appendToMessage(assistantId, evt.text);
+        } else if (evt.type === "tool") {
+          toolCount++;
+          const current = useResumeStore.getState().resumeData;
+          setResumeData(applyCvToolCall(current, evt.name, evt.input));
+          addToolToMessage(assistantId, { id: generateId(), label: evt.label });
+          track("chat_tool_applied", { tool: evt.name });
+          if (mobileTabRef.current === "chat") setUnseenUpdates((n) => n + 1);
+        } else if (evt.type === "resume") {
+          // Server state is authoritative — corrects any client-side drift.
+          setResumeData(evt.resumeData);
+        } else if (evt.type === "error") {
+          throw new Error(evt.error);
+        }
+      });
+      if (toolCount === 0 && !useChatBuilderStore.getState().messages.find((m) => m.id === assistantId)?.content) {
+        updateMessage(assistantId, { content: "Hmm, I lost my train of thought — say that again?" });
+      }
+    } catch (err) {
+      if ((err as Error)?.name !== "AbortError") {
+        track("chat_error", { stage: "stream" });
+        const msg = err instanceof Error ? err.message : "Something broke";
+        updateMessage(assistantId, {
+          content: `⚠️ ${msg}`,
+        });
+        toast.error(msg);
+      }
+    } finally {
+      setStreaming(false);
+      abortRef.current = null;
+    }
+  }
+
+  function onFinish() {
+    track("chat_builder_finished");
+    router.push("/builder?step=6&from=chat");
+  }
+
+  function onReset() {
+    const ok = window.confirm(
+      "Start over? This clears the conversation AND the CV draft. It can't be undone."
+    );
+    if (!ok) return;
+    abortRef.current?.abort();
+    clear();
+    resetResume();
+    track("chat_builder_reset");
+    addMessage({ id: generateId(), role: "assistant", content: chatGreeting(false) });
+  }
+
+  const previewData = convertToPreviewData(
+    isPlaceholderSummary(resumeData.summary) ? { ...resumeData, summary: "" } : resumeData
+  );
+
+  if (!hydrated) return null;
+
+  return (
+    <div className="flex flex-col h-[100dvh]">
+      {/* Slim header */}
+      <header className="flex-shrink-0 px-4 md:px-6 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link
+            href="/dashboard"
+            aria-label="Back to dashboard"
+            className="grid place-items-center h-9 w-9 rounded-xl bg-white/10 border border-glass-border text-white/75 hover:text-white hover:bg-white/15 transition-colors"
+          >
+            <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={1.8} />
+          </Link>
+          <div className="min-w-0">
+            <div className="font-serif italic text-lg md:text-xl text-white leading-none truncate">
+              Tell us your story
+            </div>
+            <div className="text-[11px] text-white/55 mt-0.5 hidden sm:block">
+              Chat CV builder — type or talk, watch it build
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/build/voice"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
+          >
+            <Mic className="h-3.5 w-3.5" />
+            Hands-free call
+          </Link>
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Start over</span>
+          </button>
+          <button
+            type="button"
+            onClick={onFinish}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1a1a1a] text-xs font-semibold hover:bg-white/90 transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Finish & export
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile tab switch */}
+      <div className="md:hidden flex-shrink-0 px-4 pb-2">
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white/10 border border-glass-border">
+          <button
+            type="button"
+            onClick={() => setMobileTab("chat")}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm transition-colors ${
+              mobileTab === "chat" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70"
+            }`}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Chat
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTab("preview");
+              setUnseenUpdates(0);
+            }}
+            className={`relative flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm transition-colors ${
+              mobileTab === "preview" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70"
+            }`}
+          >
+            <Eye className="h-4 w-4" />
+            Preview
+            {unseenUpdates > 0 && mobileTab === "chat" ? (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[#f5b8c8] text-[#1a1a1a] text-[10px] font-bold">
+                {unseenUpdates}
+              </span>
+            ) : null}
+          </button>
+        </div>
+      </div>
+
+      {/* Split body */}
+      <div className="flex-1 flex min-h-0 px-4 md:px-6 pb-4 md:pb-6 gap-4">
+        {/* Chat column */}
+        <section
+          className={`flex-col min-h-0 w-full md:w-[44%] md:max-w-[560px] md:flex ${
+            mobileTab === "chat" ? "flex" : "hidden"
+          }`}
+        >
+          <div className="flex flex-col min-h-0 flex-1 rounded-3xl bg-glass border border-glass-border backdrop-blur-glass shadow-glow overflow-hidden">
+            <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-glass-border">
+              <BuildProgress data={resumeData} />
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+              <ChatThread messages={messages} streaming={streaming} />
+            </div>
+            <div className="flex-shrink-0 px-3 pb-3 pt-1">
+              <ChatComposer onSend={send} disabled={streaming} />
+            </div>
+          </div>
+        </section>
+
+        {/* Preview column */}
+        <section
+          className={`flex-1 min-h-0 min-w-0 md:flex ${
+            mobileTab === "preview" ? "flex" : "hidden"
+          }`}
+        >
+          <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-glow overflow-hidden">
+            <SmartResumePreview
+              data={previewData}
+              templateId={selectedTemplate}
+              themeColor={selectedColor}
+              showToolbar={true}
+              onTemplateChange={setSelectedTemplate}
+              onColorChange={setSelectedColor}
+              className="h-full"
+            />
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

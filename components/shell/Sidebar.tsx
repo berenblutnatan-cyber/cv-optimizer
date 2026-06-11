@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Mic, Wand2, Briefcase, FileText, CreditCard, LayoutGrid } from "lucide-react";
+import { Home, MessageCircle, Mic, Wand2, Briefcase, FileText, CreditCard, LayoutGrid } from "lucide-react";
 
 const ITEMS = [
   { href: "/", icon: Home, label: "Home" },
+  { href: "/build/chat", icon: MessageCircle, label: "Build (chat)" },
   { href: "/roles", icon: Briefcase, label: "Roles" },
   { href: "/build/voice", icon: Mic, label: "Voice" },
-  { href: "/builder", icon: Wand2, label: "Build" },
+  { href: "/builder", icon: Wand2, label: "Manual build" },
   { href: "/optimize", icon: LayoutGrid, label: "Optimize" },
   { href: "/templates", icon: FileText, label: "Templates" },
   { href: "/pricing", icon: CreditCard, label: "Pricing" },

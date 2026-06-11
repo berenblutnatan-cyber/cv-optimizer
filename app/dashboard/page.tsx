@@ -5,6 +5,7 @@ import {
   CreditCard,
   FileText,
   LayoutGrid,
+  MessageCircle,
   Mic,
   Wand2,
 } from "lucide-react";
@@ -140,6 +141,12 @@ export default async function DashboardPage() {
           Jump into
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-4 justify-center md:justify-start">
+          <SquircleIcon
+            icon={MessageCircle}
+            label="Build (chat)"
+            href="/build/chat"
+            gradient={["#f5b8c8", "#8fb3ff"]}
+          />
           <SquircleIcon
             icon={LayoutGrid}
             label="Optimize"

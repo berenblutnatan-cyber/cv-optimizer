@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
-import { Mic, UploadCloud, Wand2 } from "lucide-react";
+import { MessageCircle, Mic, UploadCloud, Wand2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GlassCard } from "@/components/shell/GlassCard";
 import { useOnboardingStore } from "@/stores/onboardingStore";
@@ -88,29 +88,47 @@ export function StartChoice() {
             </span>
             <div>
               <div className="font-serif italic text-2xl text-white">Build a new CV</div>
-              <div className="mt-1 text-sm text-white/65">Talk it out, or step through the builder.</div>
+              <div className="mt-1 text-sm text-white/65">
+                Chat with our coach — type or talk — and watch your CV build itself.
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center justify-center flex-wrap">
               <SignedIn>
                 <Link
-                  href="/build/voice"
+                  href="/build/chat"
+                  onClick={() => track("start_choice", { choice: "chat_build" })}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm"
                 >
+                  <MessageCircle className="h-4 w-4" />
+                  Tell your story (5 min)
+                </Link>
+                <Link
+                  href="/build/voice"
+                  onClick={() => track("start_choice", { choice: "voice_build" })}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-glass-border text-white font-medium text-sm hover:bg-white/20 transition-colors"
+                >
                   <Mic className="h-4 w-4" />
-                  Talk it out (90 sec)
+                  Voice call
                 </Link>
                 <Link
                   href="/builder"
+                  onClick={() => track("start_choice", { choice: "manual_build" })}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-glass-border text-white font-medium text-sm hover:bg-white/20 transition-colors"
                 >
                   Step-by-step
                 </Link>
               </SignedIn>
               <SignedOut>
-                <SignUpButton mode="modal">
+                <SignUpButton mode="modal" forceRedirectUrl="/build/chat">
                   <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm">
+                    <MessageCircle className="h-4 w-4" />
+                    Tell your story (5 min)
+                  </button>
+                </SignUpButton>
+                <SignUpButton mode="modal" forceRedirectUrl="/build/voice">
+                  <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-glass-border text-white font-medium text-sm hover:bg-white/20 transition-colors">
                     <Mic className="h-4 w-4" />
-                    Talk it out (90 sec)
+                    Voice call
                   </button>
                 </SignUpButton>
                 <SignUpButton mode="modal">
