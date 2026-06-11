@@ -2,18 +2,20 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { kv } from "@vercel/kv";
 import { VOICE_AGENT_SYSTEM_PROMPT } from "@/lib/voice/prompts";
+import { REALTIME_CV_TOOLS } from "@/lib/voice/realtimeTools";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const HOURLY_SESSION_CAP = 3;
+const REALTIME_MODEL = "gpt-realtime";
 
 // POST /api/voice/session
 //
-// Mints a short-lived OpenAI Realtime API ephemeral key the browser uses to
-// open a direct WebRTC connection to OpenAI. The key is valid for ~60s; the
-// actual session can run up to 8 minutes (enforced both client-side via auto-
-// finalize and server-side via the realtime API's session limits).
+// Mints a short-lived OpenAI Realtime ephemeral key the browser uses to open
+// a direct WebRTC connection. Uses the GA endpoint /v1/realtime/client_secrets
+// — the beta /v1/realtime/sessions endpoint this route originally called has
+// been REMOVED by OpenAI (404s), which silently broke voice sessions.
 //
 // Rate-limited per user (HOURLY_SESSION_CAP / hour) via Vercel KV.
 export async function POST() {
@@ -40,29 +42,37 @@ export async function POST() {
     console.warn("[voice/session] KV rate-limit unavailable:", kvErr);
   }
 
-  // Request a Realtime session token directly from OpenAI. Their REST returns
-  // the ephemeral client_secret the browser will use to authenticate the WebRTC
-  // SDP exchange.
   let upstream: Response;
   try {
-    upstream = await fetch("https://api.openai.com/v1/realtime/sessions", {
+    upstream = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-realtime-preview-2024-12-17",
-        voice: "verse",
-        instructions: VOICE_AGENT_SYSTEM_PROMPT,
-        modalities: ["audio", "text"],
-        turn_detection: {
-          type: "server_vad",
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 600,
+        session: {
+          type: "realtime",
+          model: REALTIME_MODEL,
+          instructions: VOICE_AGENT_SYSTEM_PROMPT,
+          output_modalities: ["audio"],
+          audio: {
+            input: {
+              transcription: { model: "whisper-1" },
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 600,
+              },
+            },
+            output: { voice: "verse" },
+          },
+          // Same tool layer as the chat builder — the voice agent patches the
+          // live CV preview while the user talks (lib/voice/realtimeTools).
+          tools: REALTIME_CV_TOOLS,
+          tool_choice: "auto",
         },
-        input_audio_transcription: { model: "whisper-1" },
       }),
     });
   } catch (err) {
@@ -79,8 +89,9 @@ export async function POST() {
   }
   const data = await upstream.json();
   return NextResponse.json({
-    client_secret: data?.client_secret?.value ?? null,
-    expires_at: data?.client_secret?.expires_at ?? null,
-    model: "gpt-4o-realtime-preview-2024-12-17",
+    // GA shape: the ephemeral key is the top-level `value`.
+    client_secret: data?.value ?? null,
+    expires_at: data?.expires_at ?? null,
+    model: REALTIME_MODEL,
   });
 }

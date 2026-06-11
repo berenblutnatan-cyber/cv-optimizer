@@ -14,7 +14,7 @@ export default async function VoiceBuilderPage() {
   return (
     <GradientShell>
       <Sidebar />
-      <main className="mx-auto max-w-3xl px-4 md:px-8 pt-10 md:pt-16 pb-24 md:pb-12 md:pl-20">
+      <main className="mx-auto max-w-6xl px-4 md:px-8 pt-10 md:pt-16 pb-24 md:pb-12 md:pl-20">
         <header className="text-center space-y-2">
           <div className="text-[11px] uppercase tracking-[0.22em] text-white/55">
             Voice CV builder
@@ -23,8 +23,8 @@ export default async function VoiceBuilderPage() {
             Tell us your story.
           </h1>
           <p className="text-white/70 md:text-lg max-w-md mx-auto">
-            We'll ask you a few questions for about three minutes, then build
-            your CV from what you said.
+            We'll ask you a few questions for about three minutes — and build
+            your CV on screen while you talk.
           </p>
         </header>
         <div className="mt-10">

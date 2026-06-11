@@ -49,6 +49,7 @@ export type EventName =
   | "voice_session_completed"
   | "voice_finalized"
   | "voice_abandoned"
+  | "voice_tool_applied"
   | "voice_error"
   // Chat-first builder
   | "chat_builder_opened"

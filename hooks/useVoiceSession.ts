@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { parseRealtimeToolCall } from "@/lib/voice/realtimeTools";
 
 export type VoiceState =
   | "idle"
@@ -12,6 +13,7 @@ export type VoiceState =
   | "error";
 
 export type Turn = { role: "user" | "assistant"; text: string };
+export type VoiceToolEvent = { id: string; label: string };
 
 const MAX_SECONDS = 8 * 60; // 8 min hard cap to match server-side guarantee
 
@@ -38,9 +40,14 @@ type RealtimeEvent =
   | { type: "error"; error: { message: string } }
   | { type: string; [k: string]: unknown };
 
-export function useVoiceSession() {
+export function useVoiceSession(opts?: {
+  /** Called for each completed Realtime function call. Return a short label
+   * for the UI feed (e.g. "Added PM at Acme"), or null to suppress it. */
+  onToolCall?: (name: string, input: Record<string, unknown>) => string | null;
+}) {
   const [state, setState] = useState<VoiceState>("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [toolEvents, setToolEvents] = useState<VoiceToolEvent[]>([]);
   const [amplitude, setAmplitude] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -53,6 +60,11 @@ export function useVoiceSession() {
   const rafRef = useRef<number | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const assistantBufRef = useRef<string>("");
+  const onToolCallRef = useRef(opts?.onToolCall);
+  onToolCallRef.current = opts?.onToolCall;
+  // function_call_output items queued until response.done — sending them (or
+  // response.create) while a response is still active is a protocol error.
+  const pendingToolOutputsRef = useRef<string[]>([]);
 
   const tick = useCallback(() => {
     if (!startedAtRef.current) return;
@@ -97,17 +109,41 @@ export function useVoiceSession() {
   }
 
   function handleEvent(evt: RealtimeEvent) {
+    // Live CV patching: the agent calls the same tools as the chat builder.
+    const toolCall = parseRealtimeToolCall(
+      evt as { type: string; item?: { type?: string; name?: string; call_id?: string; arguments?: string } }
+    );
+    if (toolCall) {
+      const label = onToolCallRef.current?.(toolCall.name, toolCall.input) ?? null;
+      if (label) {
+        setToolEvents((list) => [
+          ...list,
+          { id: `${toolCall.callId}-${list.length}`, label },
+        ]);
+      }
+      pendingToolOutputsRef.current.push(toolCall.callId);
+      return;
+    }
+
     if (evt.type === "conversation.item.input_audio_transcription.completed") {
       const text = String(evt.transcript ?? "").trim();
       if (text) setTurns((t) => [...t, { role: "user", text }]);
       return;
     }
-    if (evt.type === "response.audio_transcript.delta") {
-      assistantBufRef.current += String(evt.delta ?? "");
+    // Assistant transcript: GA renamed response.audio_transcript.* to
+    // response.output_audio_transcript.* — accept both.
+    if (
+      evt.type === "response.audio_transcript.delta" ||
+      evt.type === "response.output_audio_transcript.delta"
+    ) {
+      assistantBufRef.current += String((evt as { delta?: string }).delta ?? "");
       return;
     }
-    if (evt.type === "response.audio_transcript.done") {
-      const text = (assistantBufRef.current || String(evt.transcript ?? "")).trim();
+    if (
+      evt.type === "response.audio_transcript.done" ||
+      evt.type === "response.output_audio_transcript.done"
+    ) {
+      const text = (assistantBufRef.current || String((evt as { transcript?: string }).transcript ?? "")).trim();
       assistantBufRef.current = "";
       if (text) setTurns((t) => [...t, { role: "assistant", text }]);
       return;
@@ -125,6 +161,27 @@ export function useVoiceSession() {
       return;
     }
     if (evt.type === "response.done") {
+      // Acknowledge any function calls from this response, then ask the model
+      // to continue speaking. Doing this mid-response is a protocol error.
+      const pending = pendingToolOutputsRef.current;
+      if (pending.length > 0 && dcRef.current?.readyState === "open") {
+        for (const callId of pending) {
+          dcRef.current.send(
+            JSON.stringify({
+              type: "conversation.item.create",
+              item: {
+                type: "function_call_output",
+                call_id: callId,
+                output: "Applied. The user can see the change in their live CV preview.",
+              },
+            })
+          );
+        }
+        pendingToolOutputsRef.current = [];
+        dcRef.current.send(JSON.stringify({ type: "response.create" }));
+        setState("thinking");
+        return;
+      }
       setState("listening");
       return;
     }
@@ -139,6 +196,8 @@ export function useVoiceSession() {
     setError(null);
     setState("connecting");
     setTurns([]);
+    setToolEvents([]);
+    pendingToolOutputsRef.current = [];
     setElapsed(0);
     startedAtRef.current = Date.now();
 
@@ -197,8 +256,10 @@ export function useVoiceSession() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
+    // GA WebRTC handshake endpoint — the beta `/v1/realtime?model=` URL was
+    // removed along with /v1/realtime/sessions.
     const sdpRes = await fetch(
-      `https://api.openai.com/v1/realtime?model=${encodeURIComponent(session.model)}`,
+      `https://api.openai.com/v1/realtime/calls?model=${encodeURIComponent(session.model)}`,
       {
         method: "POST",
         headers: {
@@ -246,6 +307,8 @@ export function useVoiceSession() {
   function reset() {
     stop();
     setTurns([]);
+    setToolEvents([]);
+    pendingToolOutputsRef.current = [];
     setError(null);
     setElapsed(0);
     setState("idle");
@@ -260,6 +323,7 @@ export function useVoiceSession() {
   return {
     state,
     turns,
+    toolEvents,
     amplitude,
     error,
     elapsed,
