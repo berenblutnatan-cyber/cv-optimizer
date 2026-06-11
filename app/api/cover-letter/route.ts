@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "@clerk/nextjs/server";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 export const runtime = "nodejs";
+
+// Stays public: anonymous users can generate a cover letter from the public
+// /results page (only the PDF download requires sign-in). Spend is bounded by
+// a KV rate limit (per user when signed in, per IP otherwise) and input caps.
+const HOURLY_CAP = 10;
+const MAX_CV_LENGTH = 30_000;
+const MAX_JD_LENGTH = 30_000;
 
 function cleanTitle(raw: string) {
   return raw
@@ -41,13 +50,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { userId } = await auth();
+    const rl = await checkRateLimit({
+      name: "cover-letter",
+      id: userId ?? `ip:${clientIp(request)}`,
+      limit: HOURLY_CAP,
+      windowSeconds: 60 * 60,
+    });
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `Limit reached (${HOURLY_CAP}/hour). Please try again soon.` },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const cvText = (body?.cvText as string | undefined) ?? "";
     const jobDescription = (body?.jobDescription as string | undefined) ?? "";
-    const jobTitle = (body?.jobTitle as string | undefined) ?? "";
-    const companyName = (body?.companyName as string | undefined) ?? "";
+    const jobTitle = ((body?.jobTitle as string | undefined) ?? "").slice(0, 200);
+    const companyName = ((body?.companyName as string | undefined) ?? "").slice(0, 200);
 
     if (!cvText.trim()) return NextResponse.json({ error: "Missing cvText" }, { status: 400 });
+    if (cvText.length > MAX_CV_LENGTH) {
+      return NextResponse.json({ error: "CV text is too long" }, { status: 400 });
+    }
+    if (jobDescription.length > MAX_JD_LENGTH) {
+      return NextResponse.json({ error: "Job description is too long" }, { status: 400 });
+    }
     
     // Either job description OR job title is required (not both)
     const hasJobDescription = jobDescription.trim().length > 0;

@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "@clerk/nextjs/server";
 import { extractText } from "unpdf";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 export const runtime = "nodejs";
+
+// No client flow calls this route today (no fetch("/api/optimize-with-skills")
+// anywhere in the app), so require auth — it guards raw Anthropic spend.
+const HOURLY_CAP = 10;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_CV_LENGTH = 30_000;
+const MAX_JD_LENGTH = 30_000;
+const MAX_SKILL_PLACEMENTS = 20;
 
 type SkillPlacement = {
   skill: string;
@@ -27,13 +37,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rl = await checkRateLimit({
+      name: "optimize-with-skills",
+      id: userId,
+      limit: HOURLY_CAP,
+      windowSeconds: 60 * 60,
+    });
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `Limit reached (${HOURLY_CAP}/hour). Please try again soon.` },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
 
     let cvText = (formData.get("cvText") as string) || "";
     const cvFile = formData.get("cv") as File | null;
     const skillPlacementsRaw = (formData.get("skillPlacements") as string) || "[]";
-    const jobTitle = (formData.get("jobTitle") as string) || "";
+    const jobTitle = ((formData.get("jobTitle") as string) || "").slice(0, 200);
     const jobDescription = (formData.get("jobDescription") as string) || "";
+
+    if (cvFile && cvFile.size > MAX_FILE_BYTES) {
+      return NextResponse.json(
+        { error: "File is too large. Please upload a PDF under 5MB." },
+        { status: 400 }
+      );
+    }
+    if (jobDescription.length > MAX_JD_LENGTH) {
+      return NextResponse.json(
+        { error: "Job description is too long" },
+        { status: 400 }
+      );
+    }
 
     // Extract text from PDF if provided and cvText not present
     if (cvFile && !cvText) {
@@ -53,6 +94,12 @@ export async function POST(request: NextRequest) {
     if (!cvText) {
       return NextResponse.json(
         { error: "No CV content provided" },
+        { status: 400 }
+      );
+    }
+    if (cvText.length > MAX_CV_LENGTH) {
+      return NextResponse.json(
+        { error: "CV text is too long" },
         { status: 400 }
       );
     }
@@ -76,6 +123,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (skillPlacements.length > MAX_SKILL_PLACEMENTS) {
+      return NextResponse.json(
+        { error: `Too many skill placements (max ${MAX_SKILL_PLACEMENTS})` },
+        { status: 400 }
+      );
+    }
 
     // Build the optimization prompt
     const skillPlacementInstructions = skillPlacements
@@ -86,9 +139,9 @@ export async function POST(request: NextRequest) {
           ? `${sp.targetCvEntry.title} at ${sp.targetCvEntry.organization}`
           : sp.targetCvEntry.title || sp.targetCvEntry.section;
         
-        return `${idx + 1}. Skill: "${sp.skill}"
+        return `${idx + 1}. Skill: "${String(sp.skill).slice(0, 100)}"
    - Add to: ${entryLocation}
-   - Context: ${sp.userProvidedContext}`;
+   - Context: ${String(sp.userProvidedContext).slice(0, 500)}`;
       })
       .join("\n\n");
 

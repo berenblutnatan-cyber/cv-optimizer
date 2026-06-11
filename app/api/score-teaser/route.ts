@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { auth } from "@clerk/nextjs/server";
 import { extractText } from "unpdf";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+// Stays public: this is the /score lead magnet (listed in proxy.ts
+// isPublicRoute). Spend is bounded by a KV rate limit (per user when signed
+// in, per IP otherwise) plus input-size caps — cvText is already sliced to
+// 8000 chars when the prompt is built.
+const HOURLY_CAP = 10;
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // matches the "max 5MB" shown on /score
+const MAX_ROLE_LENGTH = 100;
 
 /**
  * Clean AI response text - removes markdown code blocks
@@ -32,11 +42,38 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const { userId } = await auth();
+    const rl = await checkRateLimit({
+      name: "score-teaser",
+      id: userId ?? `ip:${clientIp(request)}`,
+      limit: HOURLY_CAP,
+      windowSeconds: 60 * 60,
+    });
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `Limit reached (${HOURLY_CAP}/hour). Please try again soon.` },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
-    
+
     let cvText = formData.get("cvText") as string || "";
     const cvFile = formData.get("cvFile") as File | null;
     const targetRole = formData.get("targetRole") as string || "";
+
+    if (cvFile && cvFile.size > MAX_FILE_BYTES) {
+      return NextResponse.json(
+        { error: "File is too large. Please upload a PDF under 5MB." },
+        { status: 400 }
+      );
+    }
+    if (targetRole.trim().length > MAX_ROLE_LENGTH) {
+      return NextResponse.json(
+        { error: "Please select a target role." },
+        { status: 400 }
+      );
+    }
 
     // Extract text from PDF if file provided
     if (cvFile && !cvText) {
