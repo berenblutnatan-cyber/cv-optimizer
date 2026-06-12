@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import type { BuilderChatMessage } from "@/stores/chatBuilderStore";
 
@@ -27,9 +27,11 @@ function ToolChips({ tools }: { tools: BuilderChatMessage["tools"] }) {
       {tools.map((t) => (
         <span
           key={t.id}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-glass-border text-[11px] text-white/85"
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-glass-border text-[11px] ${
+            t.pending ? "text-white/60 animate-pulse" : "text-white/85"
+          }`}
         >
-          <Sparkles className="h-3 w-3 text-[#f5b8c8]" />
+          <Sparkles className={`h-3 w-3 ${t.pending ? "text-white/50" : "text-[#f5b8c8]"}`} />
           {t.label}
         </span>
       ))}
@@ -41,10 +43,14 @@ export function ChatThread({
   messages,
   streaming,
   className = "",
+  emptyExtras,
 }: {
   messages: BuilderChatMessage[];
   streaming: boolean;
   className?: string;
+  /** Rendered under the greeting while the conversation is empty —
+   * tappable starter cards (upload CV, tailor to a job, interview me). */
+  emptyExtras?: ReactNode;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   // Follow the stream unless the user deliberately scrolled up. Unsticking
@@ -87,14 +93,15 @@ export function ChatThread({
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
-              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-white text-[#1a1a1a] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+              {/* dir=auto: Hebrew/Arabic answers align right within the bubble */}
+              <div dir="auto" className="max-w-[85%] rounded-2xl rounded-br-md bg-white text-[#1a1a1a] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
                 {m.display ?? m.content}
               </div>
             </div>
           ) : (
             <div key={m.id} className="flex justify-start">
               <div className="max-w-[90%]">
-                <div className="rounded-2xl rounded-bl-md bg-white/10 border border-glass-border text-white px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+                <div dir="auto" className="rounded-2xl rounded-bl-md bg-white/10 border border-glass-border text-white px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
                   {m.content ? renderInlineBold(m.content) : (
                     <span className="inline-flex gap-1 items-center py-1" aria-label="Thinking">
                       <span className="h-1.5 w-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:0ms]" />
@@ -108,6 +115,7 @@ export function ChatThread({
             </div>
           )
         )}
+        {messages.length <= 1 && !streaming ? emptyExtras : null}
         {streaming ? <span className="sr-only">Assistant is typing</span> : null}
       </div>
     </div>

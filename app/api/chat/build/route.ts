@@ -161,6 +161,12 @@ export async function POST(request: NextRequest) {
                 name: event.content_block.name,
                 json: "",
               });
+              // Heads-up so the client can show "Writing your summary…"
+              // while the args stream; resolved by the matching "tool" event
+              // (or dropped if the call turns out to be a no-op).
+              controller.enqueue(
+                sseEncode({ type: "tool_start", name: event.content_block.name })
+              );
             } else if (
               event.type === "content_block_delta" &&
               event.delta.type === "input_json_delta"
@@ -189,6 +195,9 @@ export async function POST(request: NextRequest) {
                       label: describeToolCall(buf.name, input),
                     })
                   );
+                } else {
+                  // No-op call — tell the client to drop the pending chip.
+                  controller.enqueue(sseEncode({ type: "tool_noop", name: buf.name }));
                 }
                 toolBuf.delete(event.index);
               }

@@ -7,7 +7,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type ChatToolEvent = { id: string; label: string };
+export type ChatToolEvent = {
+  id: string;
+  label: string;
+  /** True while the tool call's args are still streaming — renders as a
+   * shimmer chip ("Writing your summary…") until the final label replaces it. */
+  pending?: boolean;
+};
 
 export type BuilderChatMessage = {
   id: string;
@@ -26,6 +32,8 @@ interface ChatBuilderStore {
   updateMessage: (id: string, patch: Partial<BuilderChatMessage>) => void;
   appendToMessage: (id: string, text: string) => void;
   addToolToMessage: (id: string, tool: ChatToolEvent) => void;
+  /** Replace the oldest pending tool chip with its final label (or drop it). */
+  resolvePendingTool: (id: string, label: string | null) => void;
   clear: () => void;
 }
 
@@ -49,6 +57,18 @@ export const useChatBuilderStore = create<ChatBuilderStore>()(
           messages: s.messages.map((m) =>
             m.id === id ? { ...m, tools: [...(m.tools ?? []), tool] } : m
           ),
+        })),
+      resolvePendingTool: (id, label) =>
+        set((s) => ({
+          messages: s.messages.map((m) => {
+            if (m.id !== id || !m.tools?.some((t) => t.pending)) return m;
+            const idx = m.tools.findIndex((t) => t.pending);
+            const tools =
+              label === null
+                ? m.tools.filter((_, i) => i !== idx)
+                : m.tools.map((t, i) => (i === idx ? { ...t, label, pending: false } : t));
+            return { ...m, tools };
+          }),
         })),
       clear: () => set({ messages: [] }),
     }),

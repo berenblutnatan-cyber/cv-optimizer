@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Loader2, Mic, MicOff, Paperclip } from "lucide-react";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { track } from "@/lib/analytics";
 
 const QUICK_CHIPS = [
   "Skip this question",
+  "Interview me — what's new?",
   "Tailor it to a job post",
   "Review my CV so far",
   "I'm done — wrap it up",
@@ -17,14 +18,26 @@ export function ChatComposer({
   onUpload,
   uploading,
   disabled,
+  prefill,
+  prefillNonce = 0,
 }: {
   onSend: (text: string) => void;
   onUpload: (file: File) => void;
   uploading: boolean;
   disabled: boolean;
+  /** Text dropped into the textarea (focused, ready to edit) when
+   * prefillNonce changes — used by the preview's quick-edit chips. */
+  prefill?: string;
+  prefillNonce?: number;
 }) {
   const [draft, setDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!prefillNonce || !prefill) return;
+    setDraft(prefill);
+    textareaRef.current?.focus();
+  }, [prefill, prefillNonce]);
   const fileRef = useRef<HTMLInputElement>(null);
   // Dictation appends to whatever was typed before the mic was toggled on:
   // draft = base (pre-mic text) + accumulated finals + current interim.
@@ -100,6 +113,7 @@ export function ChatComposer({
         </button>
         <textarea
           ref={textareaRef}
+          dir="auto"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {

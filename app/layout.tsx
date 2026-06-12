@@ -10,6 +10,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import { RatingWidget } from "@/components/feedback";
+import { ResumeSync } from "@/components/ResumeSync";
 import { Toaster } from "sonner";
 import { UserSyncProvider } from "@/components/UserSyncProvider";
 import { InAppBrowserAlert } from "@/components/InAppBrowserAlert";
@@ -152,6 +153,7 @@ export default function RootLayout({
           <UserSyncProvider>
             {children}
           </UserSyncProvider>
+          <ResumeSync />
           <Toaster position="top-center" richColors />
           {/* Global Feedback Widget */}
           <RatingWidget source="global" />

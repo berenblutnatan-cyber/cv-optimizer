@@ -3,11 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Eye, MessageCircle, Mic, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Eye,
+  MessageCircle,
+  Mic,
+  Pencil,
+  RotateCcw,
+  Sparkles,
+  Target,
+  UploadCloud,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useChatBuilderStore } from "@/stores/chatBuilderStore";
-import { applyCvToolCall } from "@/lib/chat/cvTools";
+import { applyCvToolCall, pendingToolLabel } from "@/lib/chat/cvTools";
 import { chatGreeting, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { generateId } from "@/types/resume";
@@ -20,6 +31,8 @@ import { BuildProgress } from "./BuildProgress";
 
 type SseEvent =
   | { type: "text"; text: string }
+  | { type: "tool_start"; name: string }
+  | { type: "tool_noop"; name: string }
   | { type: "tool"; name: string; input: Record<string, unknown>; label: string }
   | { type: "resume"; resumeData: import("@/types/resume").ResumeData }
   | { type: "done" }
@@ -55,12 +68,21 @@ export function ChatBuilderClient() {
   const resumeData = useResumeStore((s) => s.resumeData);
   const setResumeData = useResumeStore((s) => s.setResumeData);
   const resetResume = useResumeStore((s) => s.resetResume);
-  const { messages, addMessage, appendToMessage, addToolToMessage, updateMessage, clear } =
-    useChatBuilderStore();
+  const {
+    messages,
+    addMessage,
+    appendToMessage,
+    addToolToMessage,
+    resolvePendingTool,
+    updateMessage,
+    clear,
+  } = useChatBuilderStore();
 
   const [streaming, setStreaming] = useState(false);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
+  const [prefill, setPrefill] = useState("");
+  const [prefillNonce, setPrefillNonce] = useState(0);
   const [unseenUpdates, setUnseenUpdates] = useState(0);
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
   const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
@@ -123,11 +145,20 @@ export function ChatBuilderClient() {
       await readSse(res.body, (evt) => {
         if (evt.type === "text") {
           appendToMessage(assistantId, evt.text);
+        } else if (evt.type === "tool_start") {
+          // Shimmer chip while the args stream; resolved by "tool"/"tool_noop".
+          addToolToMessage(assistantId, {
+            id: generateId(),
+            label: pendingToolLabel(evt.name),
+            pending: true,
+          });
+        } else if (evt.type === "tool_noop") {
+          resolvePendingTool(assistantId, null);
         } else if (evt.type === "tool") {
           toolCount++;
           const current = useResumeStore.getState().resumeData;
           setResumeData(applyCvToolCall(current, evt.name, evt.input));
-          addToolToMessage(assistantId, { id: generateId(), label: evt.label });
+          resolvePendingTool(assistantId, evt.label);
           track("chat_tool_applied", { tool: evt.name });
           if (mobileTabRef.current === "chat") setUnseenUpdates((n) => n + 1);
         } else if (evt.type === "resume") {
@@ -150,9 +181,22 @@ export function ChatBuilderClient() {
         toast.error(msg);
       }
     } finally {
+      // Drop any shimmer chips the stream never resolved (error/abort paths).
+      for (let i = 0; i < 25; i++) {
+        const msg = useChatBuilderStore.getState().messages.find((m) => m.id === assistantId);
+        if (!msg?.tools?.some((t) => t.pending)) break;
+        resolvePendingTool(assistantId, null);
+      }
       setStreaming(false);
       abortRef.current = null;
     }
+  }
+
+  function quickEdit(text: string) {
+    setMobileTab("chat");
+    setPrefill(text);
+    setPrefillNonce((n) => n + 1);
+    track("chat_quick_edit_clicked");
   }
 
   async function handleUpload(file: File) {
@@ -195,6 +239,79 @@ export function ChatBuilderClient() {
 
   const previewData = convertToPreviewData(
     isPlaceholderSummary(resumeData.summary) ? { ...resumeData, summary: "" } : resumeData
+  );
+
+  const hasCv =
+    Boolean(resumeData.personalInfo.name.trim()) || resumeData.experience.length > 0;
+
+  // Quick-edit chips above the preview: one tap → composer prefilled with an
+  // edit request for that section. Only sections that exist get a chip.
+  const quickEdits: { label: string; prompt: string }[] = [
+    ...(!isPlaceholderSummary(resumeData.summary)
+      ? [{ label: "Summary", prompt: "Punch up my summary — " }]
+      : []),
+    ...(resumeData.experience.length > 0
+      ? [{ label: "Experience", prompt: "Strengthen my experience bullets — " }]
+      : []),
+    ...(resumeData.skills.length > 0
+      ? [{ label: "Skills", prompt: "Rework my skills list — " }]
+      : []),
+    ...(resumeData.education.length > 0
+      ? [{ label: "Education", prompt: "Update my education — " }]
+      : []),
+  ];
+
+  const emptyExtras = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+      <label className="cursor-pointer rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3">
+        <UploadCloud className="h-5 w-5 text-[#f5b8c8] flex-shrink-0 mt-0.5" />
+        <span>
+          <span className="block text-sm text-white font-medium">Upload my current CV</span>
+          <span className="block text-xs text-white/60 mt-0.5">
+            PDF in, everything pulled into the builder
+          </span>
+        </span>
+        <input
+          type="file"
+          accept=".pdf,.txt,.md,application/pdf,text/plain"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleUpload(file);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {hasCv ? (
+        <button
+          type="button"
+          onClick={() => send("Interview me — ask me what's new and help me update this CV.")}
+          className="text-left rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3"
+        >
+          <Sparkles className="h-5 w-5 text-[#c9b8ff] flex-shrink-0 mt-0.5" />
+          <span>
+            <span className="block text-sm text-white font-medium">Interview me — what&apos;s new?</span>
+            <span className="block text-xs text-white/60 mt-0.5">
+              Not sure what to add? I&apos;ll ask the right questions
+            </span>
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => send("Tailor it to a job post")}
+          className="text-left rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3"
+        >
+          <Target className="h-5 w-5 text-[#c9b8ff] flex-shrink-0 mt-0.5" />
+          <span>
+            <span className="block text-sm text-white font-medium">Tailor to a job post</span>
+            <span className="block text-xs text-white/60 mt-0.5">
+              Paste a posting, get a CV aimed at it
+            </span>
+          </span>
+        </button>
+      )}
+    </div>
   );
 
   if (!hydrated) return null;
@@ -297,6 +414,7 @@ export function ChatBuilderClient() {
               messages={messages}
               streaming={streaming}
               className="flex-1 min-h-0 px-4 py-4"
+              emptyExtras={emptyExtras}
             />
             <div className="flex-shrink-0 px-3 pb-3 pt-1">
               <ChatComposer
@@ -304,6 +422,8 @@ export function ChatBuilderClient() {
                 onUpload={handleUpload}
                 uploading={uploadingCv}
                 disabled={streaming || uploadingCv}
+                prefill={prefill}
+                prefillNonce={prefillNonce}
               />
             </div>
           </div>
@@ -315,16 +435,36 @@ export function ChatBuilderClient() {
             mobileTab === "preview" ? "flex" : "hidden"
           }`}
         >
-          <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-glow overflow-hidden">
-            <SmartResumePreview
-              data={previewData}
-              templateId={selectedTemplate}
-              themeColor={selectedColor}
-              showToolbar={true}
-              onTemplateChange={setSelectedTemplate}
-              onColorChange={setSelectedColor}
-              className="h-full"
-            />
+          <div className="flex-1 min-h-0 min-w-0 flex flex-col gap-2">
+            {quickEdits.length > 0 ? (
+              <div className="flex-shrink-0 flex items-center gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <span className="inline-flex items-center gap-1 text-[11px] text-white/55 flex-shrink-0">
+                  <Pencil className="h-3 w-3" />
+                  Quick edit:
+                </span>
+                {quickEdits.map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => quickEdit(q.prompt)}
+                    className="flex-shrink-0 px-2.5 py-1 rounded-full bg-white/10 border border-glass-border text-[11px] text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-glow overflow-hidden">
+              <SmartResumePreview
+                data={previewData}
+                templateId={selectedTemplate}
+                themeColor={selectedColor}
+                showToolbar={true}
+                onTemplateChange={setSelectedTemplate}
+                onColorChange={setSelectedColor}
+                className="h-full"
+              />
+            </div>
           </div>
         </section>
       </div>

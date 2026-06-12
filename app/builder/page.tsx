@@ -118,6 +118,15 @@ export default function BuilderPage() {
             </div>
             <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
               <Link
+                href="/build/chat"
+                aria-label="Not sure what to add? Talk it through with the AI coach"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0A2647]/5 text-[#0A2647] hover:bg-[#0A2647]/10 transition-colors text-sm tracking-wide focus-visible:outline-none"
+              >
+                <Sparkles className="w-4 h-4" strokeWidth={1.5} />
+                <span className="hidden lg:inline">Not sure what to add? Talk it through</span>
+                <span className="lg:hidden">Talk it through</span>
+              </Link>
+              <Link
                 href="/"
                 aria-label="Back to Home"
                 className="flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors text-sm tracking-wide focus-visible:outline-none"

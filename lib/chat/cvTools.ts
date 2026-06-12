@@ -580,3 +580,46 @@ export function snapshotForPrompt(data: ResumeData): string {
   );
   return lines.join("\n");
 }
+
+/** Present-progressive label shown while a tool call's args are still
+ * streaming — resolved into describeToolCall's past-tense label on apply. */
+export function pendingToolLabel(name: string): string {
+  switch (name as CvToolName) {
+    case "update_personal_info":
+      return "Updating your details…";
+    case "update_summary":
+      return "Writing your summary…";
+    case "add_experience":
+      return "Adding a role…";
+    case "update_experience":
+      return "Polishing an experience entry…";
+    case "remove_experience":
+      return "Removing an experience entry…";
+    case "add_education":
+      return "Adding education…";
+    case "update_education":
+      return "Updating education…";
+    case "remove_education":
+      return "Removing education…";
+    case "set_skills":
+      return "Updating skills…";
+    case "set_languages":
+      return "Updating languages…";
+    case "add_project":
+      return "Adding a project…";
+    case "update_project":
+      return "Updating a project…";
+    case "remove_project":
+      return "Removing a project…";
+    case "add_certification":
+      return "Adding a certification…";
+    case "remove_certification":
+      return "Removing a certification…";
+    case "add_custom_section":
+      return "Adding a section…";
+    case "remove_custom_section":
+      return "Removing a section…";
+    default:
+      return "Updating your CV…";
+  }
+}
