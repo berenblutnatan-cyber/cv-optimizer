@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { extractText } from "unpdf";
+import { extractCvFileText } from "@/lib/cvFileText";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -11,9 +11,9 @@ const MAX_TEXT_CHARS = 20_000;
 // POST /api/chat/parse-cv
 //
 // Extracts plain text from an uploaded CV so the chat agent can mine it.
-// PDF via unpdf (same as /api/analyze) and plain-text files. DOCX is parsed
-// nowhere in this codebase (the `docx` dep only WRITES files), so we ask for
-// a PDF export instead of silently feeding XML soup to the model.
+// PDF via unpdf, DOCX via mammoth, plus plain-text files. Legacy binary .doc
+// isn't supported — we ask for a PDF/DOCX export instead of feeding the
+// model garbage.
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -30,26 +30,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "File too large — 5MB max." }, { status: 413 });
   }
 
-  const name = (file.name || "").toLowerCase();
-  const isPdf = file.type === "application/pdf" || name.endsWith(".pdf");
-  const isText =
-    file.type.startsWith("text/") || /\.(txt|md|rtf)$/.test(name) || file.type === "";
-  if (!isPdf && !isText) {
-    return NextResponse.json(
-      { error: "That format isn't supported — export your CV as a PDF and try again." },
-      { status: 415 }
-    );
-  }
-
   let text = "";
   try {
-    if (isPdf) {
-      const arrayBuffer = await file.arrayBuffer();
-      const extracted = await extractText(arrayBuffer);
-      text = Array.isArray(extracted.text) ? extracted.text.join("\n") : extracted.text;
-    } else {
-      text = await file.text();
+    const result = await extractCvFileText(file);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
+    text = result.text;
   } catch (err) {
     console.error("[chat/parse-cv] extraction failed:", err);
     return NextResponse.json(

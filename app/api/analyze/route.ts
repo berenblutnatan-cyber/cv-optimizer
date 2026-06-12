@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { extractText } from "unpdf";
+import { extractCvFileText } from "@/lib/cvFileText";
 import { fetchJobDescription } from "@/lib/jobFetcher";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { sendOptimizeNotification } from "@/lib/email";
@@ -145,16 +145,20 @@ export async function POST(request: NextRequest) {
     // Get optional summary
     const userSummary = formData.get("summary") as string || "";
 
-    // Extract text from PDF if provided
+    // Extract text from the uploaded file (PDF / DOCX / plain text). The UI
+    // has always accepted .docx but this route could only parse PDFs — DOCX
+    // uploads used to fail here.
     if (cvFile && !cvText) {
       try {
-        const arrayBuffer = await cvFile.arrayBuffer();
-        const { text } = await extractText(arrayBuffer);
-        cvText = Array.isArray(text) ? text.join("\n") : text;
-      } catch (pdfError) {
-        console.error("PDF parsing error:", pdfError);
+        const result = await extractCvFileText(cvFile);
+        if (!result.ok) {
+          return NextResponse.json({ error: result.error }, { status: result.status });
+        }
+        cvText = result.text;
+      } catch (parseError) {
+        console.error("CV file parsing error:", parseError);
         return NextResponse.json(
-          { error: "Failed to parse PDF. Please try pasting your CV text instead." },
+          { error: "Failed to read that file. Please try pasting your CV text instead." },
           { status: 400 }
         );
       }

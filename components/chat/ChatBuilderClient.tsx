@@ -268,12 +268,12 @@ export function ChatBuilderClient() {
         <span>
           <span className="block text-sm text-white font-medium">Upload my current CV</span>
           <span className="block text-xs text-white/60 mt-0.5">
-            PDF in, everything pulled into the builder
+            PDF or Word in, everything pulled into the builder
           </span>
         </span>
         <input
           type="file"
-          accept=".pdf,.txt,.md,application/pdf,text/plain"
+          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           className="sr-only"
           onChange={(e) => {
             const file = e.target.files?.[0];

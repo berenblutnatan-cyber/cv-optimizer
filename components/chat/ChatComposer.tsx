@@ -89,7 +89,7 @@ export function ChatComposer({
         <input
           ref={fileRef}
           type="file"
-          accept=".pdf,.txt,.md,application/pdf,text/plain"
+          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           className="sr-only"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -101,8 +101,8 @@ export function ChatComposer({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={disabled || uploading}
-          aria-label="Upload your current CV (PDF)"
-          title="Upload your current CV (PDF)"
+          aria-label="Upload your current CV (PDF or Word)"
+          title="Upload your current CV (PDF or Word)"
           className="grid place-items-center h-10 w-10 rounded-xl bg-white/10 text-white/75 hover:bg-white/20 hover:text-white transition-colors disabled:opacity-40"
         >
           {uploading ? (
