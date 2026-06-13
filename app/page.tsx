@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Star, Zap, ArrowRight, FileText, Target, Lock, Bot, BarChart3, Plus, Wand2, ArrowUp, Coins } from "lucide-react";
+import { Check, Star, Zap, ArrowRight, FileText, Target, Lock, Bot, BarChart3, Wand2, ArrowUp, Coins, MessageCircle } from "lucide-react";
 import {
   SignInButton,
   SignUpButton,
@@ -127,18 +127,18 @@ export default function LandingPage() {
               {/* Secondary entry points — keep visible but visually subordinate
                   to the score CTA above. */}
               <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-10">
-                {/* Create New Resume Card */}
+                {/* Create New Resume Card — chat-first builder */}
                 <Link
-                  href="/builder"
+                  href="/build/chat"
                   className="group relative flex flex-col p-4 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
                 >
                   <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-105 transition-transform">
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
+                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Create New Resume</h3>
-                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Start fresh with our guided builder</p>
+                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Build by Chatting</h3>
+                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Answer a few questions — type or talk — and watch your CV build itself</p>
                   <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
-                    Build my resume
+                    Start chatting
                     <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </div>
                 </Link>
@@ -454,7 +454,7 @@ export default function LandingPage() {
             </SignedOut>
             <SignedIn>
               <Link
-                href="/builder"
+                href="/build/chat"
                 className="group inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 shadow-sm hover:shadow-md transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               >
                 Continue Building
