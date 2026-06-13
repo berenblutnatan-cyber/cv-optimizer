@@ -8,6 +8,11 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Opus calls can exceed Vercel's default function timeout; give headroom
+// so the route returns a result instead of a mid-flight 504.
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 // Stays public: this is the /score lead magnet (listed in proxy.ts
 // isPublicRoute). Spend is bounded by a KV rate limit (per user when signed
 // in, per IP otherwise) plus input-size caps — cvText is already sliced to

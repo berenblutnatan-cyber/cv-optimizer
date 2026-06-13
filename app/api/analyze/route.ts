@@ -16,6 +16,12 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// The full optimize (Opus 4.8, 8000 max_tokens) routinely takes 20-30s. Without
+// this the route inherits Vercel's short default timeout and 504s mid-flight —
+// the user sees "it didn't work" with no result and no charge. 60s headroom.
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 // Fire a server-side optimize_failed event so failures stay visible in PostHog
 // even when the client never reports them (e.g. user closes the tab on error).
 function fireOptimizeFailedServer(

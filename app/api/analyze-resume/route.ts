@@ -8,6 +8,11 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Opus calls can exceed Vercel's default function timeout; give headroom
+// so the route returns a result instead of a mid-flight 504.
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 // No anonymous client flow: the /builder review step gates this call behind
 // sign-in client-side, so require auth — it guards raw Anthropic spend.
 const HOURLY_CAP = 20;
