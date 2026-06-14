@@ -5,7 +5,7 @@ import { ArrowUp, Loader2, Mic, MicOff, Paperclip } from "lucide-react";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { track } from "@/lib/analytics";
 
-const QUICK_CHIPS = [
+const DEFAULT_CHIPS = [
   "Skip this question",
   "Interview me — what's new?",
   "Tailor it to a job post",
@@ -20,6 +20,9 @@ export function ChatComposer({
   disabled,
   prefill,
   prefillNonce = 0,
+  chips = DEFAULT_CHIPS,
+  placeholder,
+  uploadingLabel = "Reading your CV…",
 }: {
   onSend: (text: string) => void;
   onUpload: (file: File) => void;
@@ -29,6 +32,12 @@ export function ChatComposer({
    * prefillNonce changes — used by the preview's quick-edit chips. */
   prefill?: string;
   prefillNonce?: number;
+  /** Quick-reply chips above the composer. Pass [] to hide them. */
+  chips?: string[];
+  /** Override the idle textarea placeholder. */
+  placeholder?: string;
+  /** Override the "uploading" placeholder. */
+  uploadingLabel?: string;
 }) {
   const [draft, setDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -72,7 +81,7 @@ export function ChatComposer({
   return (
     <div className="space-y-2">
       <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {QUICK_CHIPS.map((chip) => (
+        {chips.map((chip) => (
           <button
             key={chip}
             type="button"
@@ -125,10 +134,10 @@ export function ChatComposer({
           rows={Math.min(5, Math.max(1, draft.split("\n").length))}
           placeholder={
             uploading
-              ? "Reading your CV…"
+              ? uploadingLabel
               : listening
                 ? "Listening — just talk…"
-                : "Type your answer, or tap the mic and say it"
+                : placeholder ?? "Type your answer, or tap the mic and say it"
           }
           className="flex-1 resize-none bg-transparent text-white placeholder:text-white/45 text-[15px] leading-relaxed px-2 py-1.5 focus:outline-none"
         />

@@ -61,6 +61,12 @@ export type EventName =
   | "chat_cv_uploaded"
   | "chat_quick_edit_clicked"
   | "chat_error"
+  // Chat-first optimizer
+  | "optimizer_chat_opened"
+  | "optimizer_chat_uploaded"
+  | "optimizer_chat_analyze"
+  | "optimizer_chat_scored"
+  | "optimizer_chat_view_full"
   | "xp_awarded"
   | "level_up";
 
