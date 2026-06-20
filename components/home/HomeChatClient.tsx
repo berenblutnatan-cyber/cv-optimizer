@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { ArrowRight, BarChart3, ListChecks, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, BarChart3, ListChecks, Sparkles, Target, UploadCloud, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useChatBuilderStore, type BuilderChatMessage } from "@/stores/chatBuilderStore";
@@ -22,12 +22,6 @@ import { readSse } from "@/lib/chat/sse";
 import { initialResumeState, generateId, type ResumeData } from "@/types/resume";
 import { track } from "@/lib/analytics";
 import { ChatComposer } from "@/components/chat/ChatComposer";
-
-const STARTER_CHIPS = [
-  "I'm a software engineer with 5 years' experience",
-  "Interview me to get started",
-  "Tailor my CV to a job post",
-];
 
 // Render the agent's occasional **bold** without pulling in a markdown lib.
 function renderInlineBold(text: string) {
@@ -60,6 +54,7 @@ export function HomeChatClient() {
   const stick = useRef(true);
   const cvRef = useRef(cv);
   cvRef.current = cv;
+  const optimizeFileRef = useRef<HTMLInputElement>(null);
 
   // Local message-store helpers (functional updates, no persistence).
   const addMessage = (m: BuilderChatMessage) => setMessages((l) => [...l, m]);
@@ -171,20 +166,21 @@ export function HomeChatClient() {
     }
   }
 
-  async function handleUpload(file: File) {
+  async function handleUpload(file: File, mode: "build" | "optimize" = "build") {
     if (streaming || uploadingCv) return;
     setUploadingCv(true);
-    track("home_chat_cv_uploaded", { size: file.size, type: file.type });
+    track("home_chat_cv_uploaded", { size: file.size, type: file.type, mode });
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/chat/parse-cv", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Couldn't read that file");
-      await send(
-        `I'm uploading my existing CV (${data.fileName}). Here's its full text — pull everything useful into the builder, then tell me what's missing or weak:\n\n"""\n${data.text}\n"""`,
-        `📎 ${data.fileName}`
-      );
+      const framing =
+        mode === "optimize"
+          ? `I'm uploading my existing CV (${data.fileName}) to OPTIMIZE it for a specific role. Here's the full text — pull everything in, then ask me which role I'm targeting and for the job post (the link or a description), and tailor my CV to it:\n\n"""\n${data.text}\n"""`
+          : `I'm uploading my existing CV (${data.fileName}). Here's its full text — pull everything useful into the builder, then tell me what's missing or weak:\n\n"""\n${data.text}\n"""`;
+      await send(framing, `📎 ${data.fileName}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -209,22 +205,54 @@ export function HomeChatClient() {
   const started = messages.some((m) => m.role === "user");
   const hasCv = Boolean(cv.personalInfo.name.trim()) || cv.experience.length > 0;
 
-  // The "old way" entry points — always available, visually quiet.
-  const manualLinks = (
-    <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 text-sm">
-      <span className="text-stone-400">Or do it the old way:</span>
-      <Link href="/score" className="inline-flex items-center gap-1 text-stone-600 hover:text-[#0A2647] font-medium transition-colors">
-        <BarChart3 className="h-3.5 w-3.5" /> Check CV Score
+  // The other ways to build — proper, noticeable buttons (not faint links),
+  // each with its own accent so they stand out on the chat screen too.
+  const entryButtons = (
+    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+      <Link
+        href="/score"
+        className="group inline-flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-xl bg-white border border-stone-200 shadow-sm hover:shadow-md hover:border-[#0A2647]/40 hover:-translate-y-0.5 transition-all"
+      >
+        <span className="grid place-items-center h-7 w-7 rounded-lg bg-[#0A2647]/8 text-[#0A2647] group-hover:bg-[#0A2647]/15 transition-colors">
+          <BarChart3 className="h-4 w-4" strokeWidth={1.8} />
+        </span>
+        <span className="text-sm font-semibold text-[#1a1a1a]">Check CV Score</span>
       </Link>
-      <span className="text-stone-300">·</span>
-      <Link href="/builder" className="inline-flex items-center gap-1 text-stone-600 hover:text-[#0A2647] font-medium transition-colors">
-        <ListChecks className="h-3.5 w-3.5" /> Build manually
+      <Link
+        href="/builder"
+        className="group inline-flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-xl bg-white border border-stone-200 shadow-sm hover:shadow-md hover:border-indigo-400/60 hover:-translate-y-0.5 transition-all"
+      >
+        <span className="grid place-items-center h-7 w-7 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+          <ListChecks className="h-4 w-4" strokeWidth={1.8} />
+        </span>
+        <span className="text-sm font-semibold text-[#1a1a1a]">Build manually</span>
       </Link>
-      <span className="text-stone-300">·</span>
-      <Link href="/optimize" className="inline-flex items-center gap-1 text-stone-600 hover:text-[#0A2647] font-medium transition-colors">
-        <Wand2 className="h-3.5 w-3.5" /> Optimize existing
+      <Link
+        href="/optimize"
+        className="group inline-flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-xl bg-white border border-stone-200 shadow-sm hover:shadow-md hover:border-[#B8860B]/60 hover:-translate-y-0.5 transition-all"
+      >
+        <span className="grid place-items-center h-7 w-7 rounded-lg bg-[#B8860B]/10 text-[#B8860B] group-hover:bg-[#B8860B]/20 transition-colors">
+          <Wand2 className="h-4 w-4" strokeWidth={1.8} />
+        </span>
+        <span className="text-sm font-semibold text-[#1a1a1a]">Optimize existing</span>
       </Link>
     </div>
+  );
+
+  // Hidden input for the "Upload CV & optimize" path (separate framing so the
+  // agent asks for the target role + job post).
+  const optimizeFileInput = (
+    <input
+      ref={optimizeFileRef}
+      type="file"
+      accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+      className="sr-only"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) handleUpload(file, "optimize");
+        e.target.value = "";
+      }}
+    />
   );
 
   if (!hydrated) return null;
@@ -234,11 +262,12 @@ export function HomeChatClient() {
     return (
       <div className="h-full flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-2xl mx-auto">
+          {optimizeFileInput}
           <h1 className="text-center font-serif text-3xl sm:text-4xl lg:text-5xl text-[#1a1a1a] leading-tight">
             Let&apos;s build your CV
           </h1>
           <p className="text-center text-stone-500 mt-3 text-base sm:text-lg font-light">
-            Just start talking. Type, paste, or upload your old CV — I&apos;ll write it as we go.
+            Tell me your story — or upload your CV and I&apos;ll optimize it for the role you want.
           </p>
 
           <div className="mt-7">
@@ -255,21 +284,44 @@ export function HomeChatClient() {
             />
           </div>
 
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {STARTER_CHIPS.map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                disabled={streaming || uploadingCv}
-                onClick={() => send(chip)}
-                className="px-3.5 py-2 rounded-full bg-white border border-stone-200 text-sm text-stone-600 hover:text-[#0A2647] hover:border-stone-300 shadow-sm transition-colors disabled:opacity-40"
-              >
-                {chip}
-              </button>
-            ))}
+          {/* Two clear paths */}
+          <div className="mt-4 flex flex-wrap justify-center gap-2.5">
+            <button
+              type="button"
+              disabled={streaming || uploadingCv}
+              onClick={() => send("Let's build my CV from scratch — I'll tell you my story.")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-medium hover:bg-[#0d3259] shadow-sm hover:shadow-md transition-all disabled:opacity-40"
+            >
+              <Sparkles className="h-4 w-4" />
+              Tell me your story
+            </button>
+            <button
+              type="button"
+              disabled={streaming || uploadingCv}
+              onClick={() => optimizeFileRef.current?.click()}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-stone-300 text-[#1a1a1a] text-sm font-medium hover:border-[#B8860B]/60 hover:bg-stone-50 shadow-sm hover:shadow-md transition-all disabled:opacity-40"
+            >
+              <UploadCloud className="h-4 w-4 text-[#B8860B]" />
+              Upload CV &amp; optimize
+            </button>
+            <button
+              type="button"
+              disabled={streaming || uploadingCv}
+              onClick={() => send("Tailor my CV to a job post")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-stone-200 text-stone-600 text-sm hover:text-[#0A2647] hover:border-stone-300 shadow-sm transition-all disabled:opacity-40"
+            >
+              <Target className="h-4 w-4" />
+              Tailor to a job post
+            </button>
           </div>
 
-          <div className="mt-10">{manualLinks}</div>
+          {/* Other ways to build — appealing buttons */}
+          <div className="mt-9">
+            <p className="text-center text-[11px] uppercase tracking-[0.18em] text-stone-400 mb-3">
+              Or build it another way
+            </p>
+            {entryButtons}
+          </div>
         </div>
       </div>
     );
@@ -360,7 +412,7 @@ export function HomeChatClient() {
           placeholder="Type your answer, or tap 📎 to upload your CV"
           uploadingLabel="Reading your CV…"
         />
-        <div className="mt-3">{manualLinks}</div>
+        <div className="mt-3">{entryButtons}</div>
       </div>
     </div>
   );
