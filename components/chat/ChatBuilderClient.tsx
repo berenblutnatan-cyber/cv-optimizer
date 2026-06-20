@@ -50,6 +50,9 @@ export function ChatBuilderClient() {
   const [uploadingCv, setUploadingCv] = useState(false);
   const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
   const [previewView, setPreviewView] = useState<"guided" | "document">("guided");
+  // Preview is OPT-IN — the build is a conversation first; the user chooses to
+  // open the CV preview (and switch templates) when they want to see it render.
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [prefill, setPrefill] = useState("");
   const [prefillNonce, setPrefillNonce] = useState(0);
   const [unseenUpdates, setUnseenUpdates] = useState(0);
@@ -307,6 +310,31 @@ export function ChatBuilderClient() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewOpen((v) => {
+                const next = !v;
+                setMobileTab(next ? "preview" : "chat");
+                if (next) setUnseenUpdates(0);
+                return next;
+              });
+            }}
+            aria-pressed={previewOpen}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-xs transition-colors ${
+              previewOpen
+                ? "bg-white text-[#1a1a1a] border-transparent font-medium"
+                : "bg-white/8 border-glass-border text-white/75 hover:bg-white/15 hover:text-white"
+            }`}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{previewOpen ? "Hide preview" : "Preview"}</span>
+            {!previewOpen && unseenUpdates > 0 ? (
+              <span className="min-w-[16px] h-[16px] px-1 grid place-items-center rounded-full bg-[#f5b8c8] text-[#1a1a1a] text-[10px] font-bold">
+                {unseenUpdates}
+              </span>
+            ) : null}
+          </button>
           <Link
             href="/build/voice"
             className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
@@ -333,7 +361,8 @@ export function ChatBuilderClient() {
         </div>
       </header>
 
-      {/* Mobile tab switch */}
+      {/* Mobile tab switch — only when the preview is open */}
+      {previewOpen ? (
       <div className="md:hidden flex-shrink-0 px-4 pb-2">
         <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white/10 border border-glass-border">
           <button
@@ -366,14 +395,15 @@ export function ChatBuilderClient() {
           </button>
         </div>
       </div>
+      ) : null}
 
       {/* Split body */}
       <div className="flex-1 flex min-h-0 px-4 md:px-6 pb-4 md:pb-6 gap-4">
-        {/* Chat column */}
+        {/* Chat column — fills the width when the preview is closed */}
         <section
-          className={`flex-col min-h-0 w-full md:w-[44%] md:max-w-[560px] md:flex ${
-            mobileTab === "chat" ? "flex" : "hidden"
-          }`}
+          className={`flex-col min-h-0 w-full md:flex ${
+            previewOpen ? "md:w-[44%] md:max-w-[560px]" : "md:max-w-[760px] md:mx-auto"
+          } ${mobileTab === "chat" ? "flex" : "hidden"}`}
         >
           <div className="flex flex-col min-h-0 flex-1 rounded-3xl bg-glass border border-glass-border backdrop-blur-glass shadow-glow overflow-hidden">
             <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-glass-border">
@@ -398,7 +428,8 @@ export function ChatBuilderClient() {
           </div>
         </section>
 
-        {/* Preview column */}
+        {/* Preview column — opt-in (hidden until the user clicks Preview) */}
+        {previewOpen ? (
         <section
           className={`flex-1 min-h-0 min-w-0 md:flex ${
             mobileTab === "preview" ? "flex" : "hidden"
@@ -462,6 +493,7 @@ export function ChatBuilderClient() {
             )}
           </div>
         </section>
+        ) : null}
       </div>
     </div>
   );
