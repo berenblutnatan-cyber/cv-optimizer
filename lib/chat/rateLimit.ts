@@ -15,13 +15,14 @@
 import type { NextRequest } from "next/server";
 import { kv } from "@vercel/kv";
 
-type ChatKind = "build" | "parse";
+type ChatKind = "build" | "parse" | "fetch";
 
 // Hourly caps. User caps are generous; anon caps are tight enough to deter
 // abuse while still letting a real visitor complete a CV before signing up.
 const CAPS: Record<ChatKind, { user: number; anon: number }> = {
   build: { user: 80, anon: 30 },
   parse: { user: 60, anon: 15 },
+  fetch: { user: 40, anon: 20 },
 };
 
 const LIMIT_MESSAGE: Record<ChatKind, { user: string; anon: string }> = {
@@ -32,6 +33,10 @@ const LIMIT_MESSAGE: Record<ChatKind, { user: string; anon: string }> = {
   parse: {
     user: "Too many uploads in a row — give it a minute and try again.",
     anon: "You've reached the free upload limit — sign up to keep going.",
+  },
+  fetch: {
+    user: "Too many link reads in a row — give it a minute.",
+    anon: "You've hit the free link-read limit — sign up to keep going.",
   },
 };
 

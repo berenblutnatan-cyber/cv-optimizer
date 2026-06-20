@@ -26,6 +26,7 @@ import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
 import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { track } from "@/lib/analytics";
 import { readSse } from "@/lib/chat/sse";
+import { firstUrl, fetchJobPosting, withJobPosting } from "@/lib/chat/jobUrl";
 import { ChatThread } from "./ChatThread";
 import { ChatComposer } from "./ChatComposer";
 import { BuildProgress } from "./BuildProgress";
@@ -53,6 +54,7 @@ export function ChatBuilderClient() {
   // Preview is OPT-IN — the build is a conversation first; the user chooses to
   // open the CV preview (and switch templates) when they want to see it render.
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [fetchingJob, setFetchingJob] = useState(false);
   const [prefill, setPrefill] = useState("");
   const [prefillNonce, setPrefillNonce] = useState(0);
   const [unseenUpdates, setUnseenUpdates] = useState(0);
@@ -169,6 +171,32 @@ export function ChatBuilderClient() {
     setPrefill(text);
     setPrefillNonce((n) => n + 1);
     track("chat_quick_edit_clicked");
+  }
+
+  // Read a pasted job URL server-side and fold the posting into what the agent
+  // sees; fall back to the raw message if it can't be read.
+  async function handleSend(text: string) {
+    if (streaming || uploadingCv || fetchingJob) return;
+    const url = firstUrl(text);
+    if (!url) {
+      void send(text);
+      return;
+    }
+    setFetchingJob(true);
+    const tid = toast.loading("Reading the job post…");
+    try {
+      const job = await fetchJobPosting(url);
+      toast.dismiss(tid);
+      if (job.ok) {
+        toast.success("Got the job post — tailoring to it now");
+        await send(withJobPosting(text, url, job), text);
+      } else {
+        toast.message(job.error ?? "Couldn't open that link — paste the description and I'll use it.");
+        await send(text);
+      }
+    } finally {
+      setFetchingJob(false);
+    }
   }
 
   async function handleUpload(file: File) {
@@ -417,10 +445,11 @@ export function ChatBuilderClient() {
             />
             <div className="flex-shrink-0 px-3 pb-3 pt-1">
               <ChatComposer
-                onSend={send}
+                onSend={handleSend}
                 onUpload={handleUpload}
                 uploading={uploadingCv}
-                disabled={streaming || uploadingCv}
+                disabled={streaming || uploadingCv || fetchingJob}
+                placeholder="Reply, paste a job link, or tap 📎 to upload"
                 prefill={prefill}
                 prefillNonce={prefillNonce}
               />

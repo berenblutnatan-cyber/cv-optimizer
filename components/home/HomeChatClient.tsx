@@ -19,6 +19,7 @@ import { useChatBuilderStore, type BuilderChatMessage } from "@/stores/chatBuild
 import { applyCvToolCall, pendingToolLabel } from "@/lib/chat/cvTools";
 import { chatGreeting, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { readSse } from "@/lib/chat/sse";
+import { firstUrl, fetchJobPosting, withJobPosting } from "@/lib/chat/jobUrl";
 import { initialResumeState, generateId, type ResumeData } from "@/types/resume";
 import { track } from "@/lib/analytics";
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -48,6 +49,7 @@ export function HomeChatClient() {
   const [cv, setCv] = useState<ResumeData>(initialResumeState);
   const [streaming, setStreaming] = useState(false);
   const [uploadingCv, setUploadingCv] = useState(false);
+  const [fetchingJob, setFetchingJob] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -166,6 +168,34 @@ export function HomeChatClient() {
     }
   }
 
+  // Composer entry point: if the message contains a job URL, read the posting
+  // server-side and fold it into what the agent sees (so it tailors against the
+  // real job). On any failure, send the raw message — the agent then asks for a
+  // pasted description.
+  async function handleSend(text: string) {
+    if (streaming || uploadingCv || fetchingJob) return;
+    const url = firstUrl(text);
+    if (!url) {
+      void send(text);
+      return;
+    }
+    setFetchingJob(true);
+    const tid = toast.loading("Reading the job post…");
+    try {
+      const job = await fetchJobPosting(url);
+      toast.dismiss(tid);
+      if (job.ok) {
+        toast.success("Got the job post — tailoring to it now");
+        await send(withJobPosting(text, url, job), text);
+      } else {
+        toast.message(job.error ?? "Couldn't open that link — paste the description and I'll use it.");
+        await send(text);
+      }
+    } finally {
+      setFetchingJob(false);
+    }
+  }
+
   async function handleUpload(file: File, mode: "build" | "optimize" = "build") {
     if (streaming || uploadingCv) return;
     setUploadingCv(true);
@@ -275,11 +305,11 @@ export function HomeChatClient() {
               theme="light"
               minRows={2}
               chips={[]}
-              onSend={send}
+              onSend={handleSend}
               onUpload={handleUpload}
               uploading={uploadingCv}
-              disabled={streaming || uploadingCv}
-              placeholder="Tell me about your experience — or tap 📎 to upload your CV"
+              disabled={streaming || uploadingCv || fetchingJob}
+              placeholder="Tell me your experience, paste a job link, or tap 📎 to upload your CV"
               uploadingLabel="Reading your CV…"
             />
           </div>
@@ -405,11 +435,11 @@ export function HomeChatClient() {
         <ChatComposer
           theme="light"
           chips={[]}
-          onSend={send}
+          onSend={handleSend}
           onUpload={handleUpload}
           uploading={uploadingCv}
-          disabled={streaming || uploadingCv}
-          placeholder="Type your answer, or tap 📎 to upload your CV"
+          disabled={streaming || uploadingCv || fetchingJob}
+          placeholder="Reply, paste a job link, or tap 📎 to upload your CV"
           uploadingLabel="Reading your CV…"
         />
         <div className="mt-3">{entryButtons}</div>
