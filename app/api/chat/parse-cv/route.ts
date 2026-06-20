@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { extractCvFileText } from "@/lib/cvFileText";
+import { chatRateLimit } from "@/lib/chat/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -15,8 +16,11 @@ const MAX_TEXT_CHARS = 20_000;
 // isn't supported — we ask for a PDF/DOCX export instead of feeding the
 // model garbage.
 export async function POST(request: NextRequest) {
+  // Public for the chat-first home (logged-out visitors upload their CV before
+  // signing up). Bounded by per-IP / per-user hourly caps.
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const rl = await chatRateLimit(request, userId, "parse");
+  if (!rl.ok) return NextResponse.json({ error: rl.error }, { status: 429 });
 
   let file: File | null = null;
   try {

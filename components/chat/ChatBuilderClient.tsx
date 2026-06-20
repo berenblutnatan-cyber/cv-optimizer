@@ -25,43 +25,11 @@ import { generateId } from "@/types/resume";
 import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
 import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { track } from "@/lib/analytics";
+import { readSse } from "@/lib/chat/sse";
 import { ChatThread } from "./ChatThread";
 import { ChatComposer } from "./ChatComposer";
 import { BuildProgress } from "./BuildProgress";
-
-type SseEvent =
-  | { type: "text"; text: string }
-  | { type: "tool_start"; name: string }
-  | { type: "tool_noop"; name: string }
-  | { type: "tool"; name: string; input: Record<string, unknown>; label: string }
-  | { type: "resume"; resumeData: import("@/types/resume").ResumeData }
-  | { type: "done" }
-  | { type: "error"; error: string };
-
-async function readSse(
-  body: ReadableStream<Uint8Array>,
-  onEvent: (evt: SseEvent) => void
-) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const chunks = buffer.split("\n\n");
-    buffer = chunks.pop() ?? "";
-    for (const chunk of chunks) {
-      const line = chunk.trim();
-      if (!line.startsWith("data: ")) continue;
-      try {
-        onEvent(JSON.parse(line.slice(6)) as SseEvent);
-      } catch {
-        // skip malformed frame
-      }
-    }
-  }
-}
+import { GuidedSectionsPreview } from "./GuidedSectionsPreview";
 
 export function ChatBuilderClient() {
   const router = useRouter();
@@ -81,6 +49,7 @@ export function ChatBuilderClient() {
   const [streaming, setStreaming] = useState(false);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
+  const [previewView, setPreviewView] = useState<"guided" | "document">("guided");
   const [prefill, setPrefill] = useState("");
   const [prefillNonce, setPrefillNonce] = useState(0);
   const [unseenUpdates, setUnseenUpdates] = useState(0);
@@ -454,17 +423,43 @@ export function ChatBuilderClient() {
                 ))}
               </div>
             ) : null}
-            <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-glow overflow-hidden">
-              <SmartResumePreview
-                data={previewData}
-                templateId={selectedTemplate}
-                themeColor={selectedColor}
-                showToolbar={true}
-                onTemplateChange={setSelectedTemplate}
-                onColorChange={setSelectedColor}
-                className="h-full"
-              />
+            <div className="flex-shrink-0 self-start inline-flex items-center gap-1 p-1 rounded-full bg-white/10 border border-glass-border">
+              <button
+                type="button"
+                onClick={() => setPreviewView("guided")}
+                className={`px-3 py-1 rounded-full text-[12px] transition-colors ${
+                  previewView === "guided" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70 hover:text-white"
+                }`}
+              >
+                Guided
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewView("document")}
+                className={`px-3 py-1 rounded-full text-[12px] transition-colors ${
+                  previewView === "document" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70 hover:text-white"
+                }`}
+              >
+                Document
+              </button>
             </div>
+            {previewView === "guided" ? (
+              <div className="flex-1 min-h-0 rounded-3xl bg-glass border border-glass-border backdrop-blur-glass shadow-glow p-3">
+                <GuidedSectionsPreview data={resumeData} />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-glow overflow-hidden">
+                <SmartResumePreview
+                  data={previewData}
+                  templateId={selectedTemplate}
+                  themeColor={selectedColor}
+                  showToolbar={true}
+                  onTemplateChange={setSelectedTemplate}
+                  onColorChange={setSelectedColor}
+                  className="h-full"
+                />
+              </div>
+            )}
           </div>
         </section>
       </div>

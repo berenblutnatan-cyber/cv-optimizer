@@ -1,20 +1,17 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
-import { kv } from "@vercel/kv";
 import type { ResumeData } from "@/types/resume";
 import { initialResumeState } from "@/types/resume";
 import { CV_TOOLS, applyCvToolCall, describeToolCall } from "@/lib/chat/cvTools";
 import { buildChatSystemPrompt } from "@/lib/chat/prompts";
+import { chatRateLimit } from "@/lib/chat/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Per-user message cap. Generous — a full build takes ~20 turns — but stops
-// anyone from using the endpoint as a free Claude proxy.
-const HOURLY_MESSAGE_CAP = 80;
 const MAX_HISTORY_MESSAGES = 60;
 // Big enough for an uploaded-CV turn (parse-cv caps extraction at 20k chars
 // plus the framing text around it).
@@ -41,25 +38,12 @@ export async function POST(request: NextRequest) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return Response.json({ error: "Missing ANTHROPIC_API_KEY" }, { status: 500 });
   }
+  // Public ("try before signup"): logged-out home-page visitors can chat. Abuse
+  // is bounded by per-IP (anon) / per-user (signed-in) hourly caps instead of a
+  // hard auth gate. The sign-in wall lives downstream at export / paid score.
   const { userId } = await auth();
-  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-  // Same cheap KV counter pattern as /api/voice/session — best-effort, the
-  // feature works if KV is down.
-  try {
-    const key = `chatbuild:rl:${userId}`;
-    const raw = await kv.get(key);
-    const used = typeof raw === "number" ? raw : Number(raw ?? 0);
-    if (Number.isFinite(used) && used >= HOURLY_MESSAGE_CAP) {
-      return Response.json(
-        { error: "You've hit the hourly chat limit — take a short break and come back." },
-        { status: 429 }
-      );
-    }
-    await kv.set(key, (Number.isFinite(used) ? used : 0) + 1, { ex: 60 * 60 });
-  } catch (kvErr) {
-    console.warn("[chat/build] KV rate-limit unavailable:", kvErr);
-  }
+  const rl = await chatRateLimit(request, userId, "build");
+  if (!rl.ok) return Response.json({ error: rl.error }, { status: 429 });
 
   let body: { messages?: ChatMessage[]; resumeData?: ResumeData };
   try {

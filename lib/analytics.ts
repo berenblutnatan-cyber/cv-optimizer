@@ -61,6 +61,13 @@ export type EventName =
   | "chat_cv_uploaded"
   | "chat_quick_edit_clicked"
   | "chat_error"
+  // Chat-first home (public landing chat)
+  | "home_chat_opened"
+  | "home_chat_message_sent"
+  | "home_chat_tool_applied"
+  | "home_chat_cv_uploaded"
+  | "home_chat_finished"
+  | "home_chat_error"
   // Chat-first optimizer
   | "optimizer_chat_opened"
   | "optimizer_chat_uploaded"

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Star, Zap, ArrowRight, FileText, Target, Lock, Bot, BarChart3, Wand2, ArrowUp, Coins, MessageCircle } from "lucide-react";
+import { Check, Star, ArrowRight, FileText, BarChart3 } from "lucide-react";
 import {
   SignInButton,
   SignUpButton,
@@ -8,11 +8,11 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import { Logo } from "@/components/Logo";
-import { HeroResumeVisual } from "@/components/landing/HeroResumeVisual";
 import { ActiveNavLinks } from "@/components/landing/ActiveNavLinks";
 import { CreditBalance } from "@/components/CreditBalance";
 import { SiteFooter } from "@/components/shared/SiteFooter";
 import { ScrollDepthTracker } from "@/components/ScrollDepthTracker";
+import { HomeChatClient } from "@/components/home/HomeChatClient";
 
 export default function LandingPage() {
   return (
@@ -65,141 +65,28 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section. Heights/margins are tight on mobile because Clarity
-          shows scroll-depth dies at ~25% on prod — the duo cards must be
-          visible without scrolling. */}
-      <section id="hero" className="relative w-full lg:min-h-screen flex flex-col pt-20 sm:pt-28 pb-10 sm:pb-8">
-        {/* Subtle background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#FAFAF8] via-white to-stone-50" />
-
-        <div className="relative flex-1 flex items-center max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 w-full">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full">
-            {/* Left Content */}
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-xs sm:text-sm font-medium mb-4 sm:mb-8 tracking-wide">
-                <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
-                AI-Powered Resume Builder
-              </div>
-
-              <h1 className="font-serif text-3xl sm:text-5xl lg:text-[4rem] font-normal tracking-tight text-[#1a1a1a] mb-4 sm:mb-8 leading-[1.1]">
-                Beat the bots.{" "}
-                <span className="text-indigo-600">Land the interview.</span>
-              </h1>
-
-              <p className="text-sm sm:text-lg text-stone-500 mb-6 sm:mb-8 leading-relaxed font-light">
-                AI tailors your resume for every job posting — ATS-ready in under 60 seconds. Don't just apply. <span className="text-[#0A2647] font-bold">Get Hired.</span>
-              </p>
-
-              {/* Primary Lead Magnet — Big Score CTA. This is the highest-converting
-                  entry point (no signup, 60s result). It must dominate above the fold. */}
-              <Link
-                href="/score"
-                className="group relative inline-flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto px-6 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-[#B8860B] to-[#d4a017] hover:from-[#9c7409] hover:to-[#b8870e] text-white font-semibold rounded-sm transition-all duration-300 mb-3 sm:mb-4 tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8860B]/40 overflow-hidden animate-cta-glow motion-reduce:animate-none"
-              >
-                <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 animate-shimmer-x motion-reduce:hidden" />
-                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 relative" strokeWidth={2} />
-                <span className="relative text-base sm:text-xl">Check Your CV Score — Free</span>
-                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform relative" strokeWidth={2} />
-              </Link>
-              <p className="text-xs sm:text-sm text-stone-500 font-light mb-6 sm:mb-10 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="inline-flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-[#0A2647]" strokeWidth={2} />
-                  No signup
-                </span>
-                <span className="text-stone-300">·</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-[#0A2647]" strokeWidth={2} />
-                  60-second result
-                </span>
-                <span className="text-stone-300">·</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-[#0A2647]" strokeWidth={2} />
-                  ATS-graded
-                </span>
-              </p>
-
-              <div className="flex items-center gap-3 mb-4 sm:mb-5">
-                <div className="h-px flex-1 bg-stone-200" />
-                <span className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-stone-400 font-medium">Or start from scratch</span>
-                <div className="h-px flex-1 bg-stone-200" />
-              </div>
-
-              {/* Secondary entry points — keep visible but visually subordinate
-                  to the score CTA above. */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-10">
-                {/* Create New Resume Card — chat-first builder */}
-                <Link
-                  href="/build/chat"
-                  className="group relative flex flex-col p-4 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
-                >
-                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-105 transition-transform">
-                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Build by Chatting</h3>
-                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Answer a few questions — type or talk — and watch your CV build itself</p>
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
-                    Start chatting
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
-                  </div>
-                </Link>
-
-                {/* Optimize Existing Card */}
-                <Link
-                  href="/optimize"
-                  className="group relative flex flex-col p-4 sm:p-7 bg-white hover:bg-stone-50 border border-stone-200 hover:border-stone-300 rounded-sm transition-all duration-300 shadow-soft hover:shadow-lift focus-visible:outline-none"
-                >
-                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-[#B8860B]/10 flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-105 transition-transform">
-                    <Wand2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#B8860B]" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="font-serif text-base sm:text-xl text-[#1a1a1a] mb-1 sm:mb-2">Optimize Existing</h3>
-                  <p className="hidden sm:block text-sm text-stone-500 font-light mb-5">Upload & enhance with AI magic</p>
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-[#0A2647] font-medium text-xs sm:text-sm mt-auto tracking-wide">
-                    Optimize mine
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
-                  </div>
-                </Link>
-              </div>
-
-            </div>
-            
-            {/* Right Visual - 3D Floating Resume */}
-            <div className="hidden md:block relative">
-              <HeroResumeVisual />
-            </div>
+      {/* Chat-first hero — the home page IS a conversation. Anonymous visitors
+          can type, talk, or upload to build their CV live; the manual "old way"
+          entry points sit at the bottom of the chat. The marketing sections
+          below stay for scrollers / SEO. */}
+      <section
+        id="hero"
+        className="relative w-full grain-overlay"
+        style={{
+          background: "linear-gradient(135deg, #f5c4d4 0%, #c9b8ff 45%, #8fb3ff 100%)",
+        }}
+      >
+        <div className="relative h-[100dvh] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-4 sm:pb-6 flex flex-col">
+          <div className="flex-shrink-0 text-center mb-3 sm:mb-4">
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2.5rem] leading-tight text-white">
+              Let&apos;s build your CV — just start talking
+            </h1>
+            <p className="text-white/75 text-sm sm:text-base mt-1.5 font-light">
+              Type, talk, or upload. Watch it build itself, live. No signup to start.
+            </p>
           </div>
-          
-        </div>
-        
-        {/* Trust Bar - Full width at bottom of hero content */}
-        <div className="relative z-10 w-full mt-12 lg:mt-auto pt-8 border-t border-stone-200/60 px-4 sm:px-8 lg:px-16">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
-                <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
-              </div>
-              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">Privacy First</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
-              </div>
-              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">AI Powered</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
-                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
-              </div>
-              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">ATS Optimized</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={1.5} />
-              </div>
-              <span className="text-xs sm:text-sm text-[#1a1a1a] font-semibold">60-Second Score</span>
-            </div>
+          <div className="flex-1 min-h-0">
+            <HomeChatClient />
           </div>
         </div>
       </section>
@@ -322,7 +209,7 @@ export default function LandingPage() {
                 Designed to Get You Hired
               </h3>
               <p className="text-base text-stone-500 mb-8 leading-relaxed font-light">
-                Our templates are designed by hiring experts from top companies. 
+                Our templates are designed by hiring experts from top companies.
                 Each template is optimized for both human recruiters and ATS systems.
               </p>
               <ul className="space-y-4">
