@@ -1,48 +1,48 @@
 "use client";
 
-// Chat-first landing experience. This IS the home page: an anonymous visitor
-// lands straight into a conversation that builds their CV live (type, talk, or
-// upload). It reuses the exact chat engine behind /build/chat — same
-// /api/chat/build stream, same CV tools, same persisted stores — so a session
-// started here continues seamlessly after sign-in. The sign-in wall only
-// appears at export (and the paid score lives on /score).
-//
-// The "old way" manual entry points sit at the bottom: Check CV Score, Build
-// manually (the step wizard), and Optimize existing (the classic form).
+// Chat-first landing — clean & light (base44-inspired). An anonymous visitor
+// lands on a single centered chat box: type, talk, or upload to build their CV
+// live. It reuses the exact chat engine behind /build/chat (same
+// /api/chat/build stream, same CV tools, same persisted stores), so a session
+// started here continues after sign-in. The sign-in wall only appears at
+// export; the full split-screen builder + live preview lives at /build/chat.
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser, SignInButton } from "@clerk/nextjs";
-import {
-  BarChart3,
-  Download,
-  Eye,
-  ListChecks,
-  MessageCircle,
-  Sparkles,
-  Target,
-  UploadCloud,
-  Wand2,
-} from "lucide-react";
+import { ArrowRight, BarChart3, ListChecks, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useChatBuilderStore } from "@/stores/chatBuilderStore";
 import { applyCvToolCall, pendingToolLabel } from "@/lib/chat/cvTools";
 import { chatGreeting, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { readSse } from "@/lib/chat/sse";
-import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { generateId } from "@/types/resume";
-import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
-import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { track } from "@/lib/analytics";
-import { ChatThread } from "@/components/chat/ChatThread";
 import { ChatComposer } from "@/components/chat/ChatComposer";
-import { BuildProgress } from "@/components/chat/BuildProgress";
-import { GuidedSectionsPreview } from "@/components/chat/GuidedSectionsPreview";
+
+const STARTER_CHIPS = [
+  "I'm a software engineer with 5 years' experience",
+  "Interview me to get started",
+  "Tailor my CV to a job post",
+];
+
+// Render the agent's occasional **bold** without pulling in a markdown lib.
+function renderInlineBold(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  if (parts.length === 1) return text;
+  return parts.map((p, i) =>
+    p.startsWith("**") && p.endsWith("**") && p.length > 4 ? (
+      <strong key={i} className="font-semibold">
+        {p.slice(2, -2)}
+      </strong>
+    ) : (
+      <span key={i}>{p}</span>
+    )
+  );
+}
 
 export function HomeChatClient() {
-  const router = useRouter();
   const { isSignedIn } = useUser();
   const resumeData = useResumeStore((s) => s.resumeData);
   const setResumeData = useResumeStore((s) => s.setResumeData);
@@ -57,18 +57,13 @@ export function HomeChatClient() {
 
   const [streaming, setStreaming] = useState(false);
   const [uploadingCv, setUploadingCv] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
-  const [previewView, setPreviewView] = useState<"guided" | "document">("guided");
-  const [unseenUpdates, setUnseenUpdates] = useState(0);
-  const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
-  const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
   const [hydrated, setHydrated] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const mobileTabRef = useRef(mobileTab);
-  mobileTabRef.current = mobileTab;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stick = useRef(true);
 
   // Seed the greeting once the persisted transcript has hydrated. Returning
-  // visitors (who already have a transcript) keep their conversation.
+  // visitors keep their conversation.
   useEffect(() => {
     setHydrated(true);
     track("home_chat_opened");
@@ -86,12 +81,18 @@ export function HomeChatClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && stick.current) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
   async function send(text: string, display?: string) {
     if (streaming) return;
     addMessage({ id: generateId(), role: "user", content: text, display });
     const assistantId = generateId();
     addMessage({ id: assistantId, role: "assistant", content: "" });
     setStreaming(true);
+    stick.current = true;
     track("home_chat_message_sent", { length: text.length });
 
     const cv = useResumeStore.getState().resumeData;
@@ -131,7 +132,6 @@ export function HomeChatClient() {
           setResumeData(applyCvToolCall(current, evt.name, evt.input));
           resolvePendingTool(assistantId, evt.label);
           track("home_chat_tool_applied", { tool: evt.name });
-          if (mobileTabRef.current === "chat") setUnseenUpdates((n) => n + 1);
         } else if (evt.type === "resume") {
           setResumeData(evt.resumeData);
         } else if (evt.type === "error") {
@@ -183,227 +183,170 @@ export function HomeChatClient() {
     }
   }
 
-  function onFinish() {
-    track("home_chat_finished", { signedIn: Boolean(isSignedIn) });
-    // The CV + transcript live in persisted stores, so the full builder picks
-    // up exactly where this left off — after sign-in for anonymous visitors.
-    router.push("/builder?step=6&from=chat");
-  }
-
-  const previewData = convertToPreviewData(
-    isPlaceholderSummary(resumeData.summary) ? { ...resumeData, summary: "" } : resumeData
-  );
-
+  const started = messages.some((m) => m.role === "user");
   const hasCv =
     Boolean(resumeData.personalInfo.name.trim()) || resumeData.experience.length > 0;
 
-  const emptyExtras = (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-      <label className="cursor-pointer rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3">
-        <UploadCloud className="h-5 w-5 text-[#f5b8c8] flex-shrink-0 mt-0.5" />
-        <span>
-          <span className="block text-sm text-white font-medium">Upload my current CV</span>
-          <span className="block text-xs text-white/60 mt-0.5">
-            PDF or Word in, everything pulled into the builder
-          </span>
-        </span>
-        <input
-          type="file"
-          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          className="sr-only"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleUpload(file);
-            e.target.value = "";
-          }}
-        />
-      </label>
-      <button
-        type="button"
-        onClick={() => send("Tailor it to a job post")}
-        className="text-left rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3"
-      >
-        <Target className="h-5 w-5 text-[#c9b8ff] flex-shrink-0 mt-0.5" />
-        <span>
-          <span className="block text-sm text-white font-medium">Tailor to a job post</span>
-          <span className="block text-xs text-white/60 mt-0.5">
-            Paste a posting, get a CV aimed at it
-          </span>
-        </span>
-      </button>
+  // The "old way" entry points — always available, visually quiet.
+  const manualLinks = (
+    <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 text-sm">
+      <span className="text-stone-400">Or do it the old way:</span>
+      <Link href="/score" className="inline-flex items-center gap-1 text-stone-600 hover:text-[#0A2647] font-medium transition-colors">
+        <BarChart3 className="h-3.5 w-3.5" /> Check CV Score
+      </Link>
+      <span className="text-stone-300">·</span>
+      <Link href="/builder" className="inline-flex items-center gap-1 text-stone-600 hover:text-[#0A2647] font-medium transition-colors">
+        <ListChecks className="h-3.5 w-3.5" /> Build manually
+      </Link>
+      <span className="text-stone-300">·</span>
+      <Link href="/optimize" className="inline-flex items-center gap-1 text-stone-600 hover:text-[#0A2647] font-medium transition-colors">
+        <Wand2 className="h-3.5 w-3.5" /> Optimize existing
+      </Link>
     </div>
   );
 
   if (!hydrated) return null;
 
-  return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Mobile tab switch — preview only matters once there's content */}
-      {hasCv ? (
-        <div className="md:hidden flex-shrink-0 pb-2">
-          <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white/10 border border-glass-border">
-            <button
-              type="button"
-              onClick={() => setMobileTab("chat")}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm transition-colors ${
-                mobileTab === "chat" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70"
-              }`}
-            >
-              <MessageCircle className="h-4 w-4" />
-              Chat
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileTab("preview");
-                setUnseenUpdates(0);
-              }}
-              className={`relative flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm transition-colors ${
-                mobileTab === "preview" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70"
-              }`}
-            >
-              <Eye className="h-4 w-4" />
-              Preview
-              {unseenUpdates > 0 && mobileTab === "chat" ? (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[#f5b8c8] text-[#1a1a1a] text-[10px] font-bold">
-                  {unseenUpdates}
-                </span>
-              ) : null}
-            </button>
+  // EMPTY STATE — a single, clean, centered chat box (base44-style).
+  if (!started) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-2xl mx-auto">
+          <h1 className="text-center font-serif text-3xl sm:text-4xl lg:text-5xl text-[#1a1a1a] leading-tight">
+            Let&apos;s build your CV
+          </h1>
+          <p className="text-center text-stone-500 mt-3 text-base sm:text-lg font-light">
+            Just start talking. Type, paste, or upload your old CV — I&apos;ll write it as we go.
+          </p>
+
+          <div className="mt-7">
+            <ChatComposer
+              theme="light"
+              minRows={2}
+              chips={[]}
+              onSend={send}
+              onUpload={handleUpload}
+              uploading={uploadingCv}
+              disabled={streaming || uploadingCv}
+              placeholder="Tell me about your experience — or tap 📎 to upload your CV"
+              uploadingLabel="Reading your CV…"
+            />
           </div>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {STARTER_CHIPS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                disabled={streaming || uploadingCv}
+                onClick={() => send(chip)}
+                className="px-3.5 py-2 rounded-full bg-white border border-stone-200 text-sm text-stone-600 hover:text-[#0A2647] hover:border-stone-300 shadow-sm transition-colors disabled:opacity-40"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-10">{manualLinks}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ACTIVE STATE — a clean light conversation.
+  return (
+    <div className="h-full flex flex-col max-w-2xl w-full mx-auto px-4">
+      {hasCv ? (
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 py-2">
+          <span className="inline-flex items-center gap-1.5 text-xs text-stone-500">
+            <Sparkles className="h-3.5 w-3.5 text-[#B8860B]" />
+            Building your CV live
+          </span>
+          {isSignedIn ? (
+            <Link
+              href="/build/chat"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0A2647] text-white text-xs font-semibold hover:bg-[#0d3259] transition-colors"
+            >
+              Open full builder
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : (
+            <SignInButton mode="modal" forceRedirectUrl="/build/chat">
+              <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0A2647] text-white text-xs font-semibold hover:bg-[#0d3259] transition-colors">
+                Save &amp; open builder
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </SignInButton>
+          )}
         </div>
       ) : null}
 
-      {/* Split body: chat (left) + live preview (right) */}
-      <div className="flex-1 flex min-h-0 gap-4">
-        {/* Chat column */}
-        <section
-          className={`flex-col min-h-0 w-full ${hasCv ? "md:w-[44%] md:max-w-[560px]" : "md:max-w-[680px] md:mx-auto"} md:flex ${
-            mobileTab === "chat" ? "flex" : "hidden"
-          }`}
-        >
-          <div className="flex flex-col min-h-0 flex-1 rounded-3xl bg-glass border border-glass-border backdrop-blur-glass shadow-glow overflow-hidden">
-            {hasCv ? (
-              <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-glass-border">
-                <BuildProgress data={resumeData} />
-              </div>
-            ) : null}
-            <ChatThread
-              messages={messages}
-              streaming={streaming}
-              className="flex-1 min-h-0 px-4 py-4"
-              emptyExtras={emptyExtras}
-            />
-            <div className="flex-shrink-0 px-3 pb-3 pt-1">
-              <ChatComposer
-                onSend={send}
-                onUpload={handleUpload}
-                uploading={uploadingCv}
-                disabled={streaming || uploadingCv}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Preview column — appears once the CV has content. Guided accordion
-            by default; full document render via the toggle. */}
-        {hasCv ? (
-          <section
-            className={`flex-1 min-h-0 min-w-0 flex-col md:flex ${
-              mobileTab === "preview" ? "flex" : "hidden"
-            }`}
-          >
-            <div className="flex-1 min-h-0 min-w-0 flex flex-col gap-2">
-              <div className="flex-shrink-0 self-start inline-flex items-center gap-1 p-1 rounded-full bg-white/10 border border-glass-border">
-                <button
-                  type="button"
-                  onClick={() => setPreviewView("guided")}
-                  className={`px-3 py-1 rounded-full text-[12px] transition-colors ${
-                    previewView === "guided" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70 hover:text-white"
-                  }`}
-                >
-                  Guided
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewView("document")}
-                  className={`px-3 py-1 rounded-full text-[12px] transition-colors ${
-                    previewView === "document" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70 hover:text-white"
-                  }`}
-                >
-                  Document
-                </button>
-              </div>
-              {previewView === "guided" ? (
-                <div className="flex-1 min-h-0 rounded-3xl bg-glass border border-glass-border backdrop-blur-glass shadow-glow p-3">
-                  <GuidedSectionsPreview data={resumeData} />
+      <div
+        ref={scrollRef}
+        onScroll={() => {
+          const el = scrollRef.current;
+          if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+        }}
+        className="flex-1 min-h-0 overflow-y-auto py-4"
+      >
+        <div className="flex flex-col gap-4">
+          {messages.map((m) =>
+            m.role === "user" ? (
+              <div key={m.id} className="flex justify-end">
+                <div dir="auto" className="max-w-[85%] rounded-2xl rounded-br-md bg-[#0A2647] text-white px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+                  {m.display ?? m.content}
                 </div>
-              ) : (
-                <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-glow overflow-hidden">
-                  <SmartResumePreview
-                    data={previewData}
-                    templateId={selectedTemplate}
-                    themeColor={selectedColor}
-                    showToolbar={true}
-                    onTemplateChange={setSelectedTemplate}
-                    onColorChange={setSelectedColor}
-                    className="h-full"
-                  />
+              </div>
+            ) : (
+              <div key={m.id} className="flex justify-start">
+                <div className="max-w-[90%]">
+                  <div dir="auto" className="rounded-2xl rounded-bl-md bg-white border border-stone-200 text-[#1a1a1a] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm">
+                    {m.content ? (
+                      renderInlineBold(m.content)
+                    ) : (
+                      <span className="inline-flex gap-1 items-center py-1" aria-label="Thinking">
+                        <span className="h-1.5 w-1.5 rounded-full bg-stone-400 animate-bounce" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-stone-400 animate-bounce [animation-delay:150ms]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-stone-400 animate-bounce [animation-delay:300ms]" />
+                      </span>
+                    )}
+                  </div>
+                  {m.tools && m.tools.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {m.tools.map((t) => (
+                        <span
+                          key={t.id}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] ${
+                            t.pending
+                              ? "bg-stone-50 border-stone-200 text-stone-400 animate-pulse"
+                              : "bg-[#B8860B]/10 border-[#B8860B]/20 text-[#8a6608]"
+                          }`}
+                        >
+                          <Sparkles className={`h-3 w-3 ${t.pending ? "text-stone-300" : "text-[#B8860B]"}`} />
+                          {t.label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
-              )}
-            </div>
-          </section>
-        ) : null}
+              </div>
+            )
+          )}
+        </div>
       </div>
 
-      {/* Bottom row: finish/export + the manual "old way" entry points */}
-      <div className="flex-shrink-0 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="hidden sm:inline text-[11px] uppercase tracking-[0.18em] text-white/50 mr-1">
-            Prefer the old way?
-          </span>
-          <Link
-            href="/score"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/80 hover:bg-white/15 hover:text-white transition-colors"
-          >
-            <BarChart3 className="h-3.5 w-3.5" />
-            Check CV Score
-          </Link>
-          <Link
-            href="/builder"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/80 hover:bg-white/15 hover:text-white transition-colors"
-          >
-            <ListChecks className="h-3.5 w-3.5" />
-            Build manually
-          </Link>
-          <Link
-            href="/optimize"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/80 hover:bg-white/15 hover:text-white transition-colors"
-          >
-            <Wand2 className="h-3.5 w-3.5" />
-            Optimize existing
-          </Link>
-        </div>
-
-        {hasCv ? (
-          isSignedIn ? (
-            <button
-              type="button"
-              onClick={onFinish}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition-colors"
-            >
-              <Download className="h-4 w-4" />
-              Finish &amp; export
-            </button>
-          ) : (
-            <SignInButton mode="modal" forceRedirectUrl="/build/chat">
-              <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition-colors">
-                <Sparkles className="h-4 w-4" />
-                Save &amp; finish — sign up free
-              </button>
-            </SignInButton>
-          )
-        ) : null}
+      <div className="flex-shrink-0 pt-1 pb-1">
+        <ChatComposer
+          theme="light"
+          chips={[]}
+          onSend={send}
+          onUpload={handleUpload}
+          uploading={uploadingCv}
+          disabled={streaming || uploadingCv}
+          placeholder="Type your answer, or tap 📎 to upload your CV"
+          uploadingLabel="Reading your CV…"
+        />
+        <div className="mt-3">{manualLinks}</div>
       </div>
     </div>
   );

@@ -13,6 +13,45 @@ const DEFAULT_CHIPS = [
   "I'm done — wrap it up",
 ];
 
+type Theme = "dark" | "light";
+
+// Two skins: "dark" for the glass shells (builder / optimizer), "light" for the
+// clean base44-style home chat. Logic (dictation, upload, auto-resize) is shared.
+const SKIN: Record<
+  Theme,
+  {
+    chip: string;
+    box: string;
+    iconBtn: string;
+    textarea: string;
+    micIdle: string;
+    micOn: string;
+    send: string;
+    error: string;
+  }
+> = {
+  dark: {
+    chip: "bg-white/8 border-glass-border text-white/75 hover:bg-white/15 hover:text-white",
+    box: "bg-white/10 border-glass-border focus-within:border-white/30",
+    iconBtn: "bg-white/10 text-white/75 hover:bg-white/20 hover:text-white",
+    textarea: "text-white placeholder:text-white/45",
+    micIdle: "bg-white/10 text-white/75 hover:bg-white/20 hover:text-white",
+    micOn: "bg-[#f5b8c8] text-[#1a1a1a] animate-pulse",
+    send: "bg-white text-[#1a1a1a]",
+    error: "text-[#f5b8c8]",
+  },
+  light: {
+    chip: "bg-white border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 shadow-sm",
+    box: "bg-white border-stone-300 focus-within:border-[#0A2647]/40 shadow-sm",
+    iconBtn: "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700",
+    textarea: "text-[#1a1a1a] placeholder:text-stone-400",
+    micIdle: "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700",
+    micOn: "bg-[#0A2647] text-white animate-pulse",
+    send: "bg-[#0A2647] text-white hover:bg-[#0d3259]",
+    error: "text-rose-600",
+  },
+};
+
 export function ChatComposer({
   onSend,
   onUpload,
@@ -23,6 +62,8 @@ export function ChatComposer({
   chips = DEFAULT_CHIPS,
   placeholder,
   uploadingLabel = "Reading your CV…",
+  theme = "dark",
+  minRows = 1,
 }: {
   onSend: (text: string) => void;
   onUpload: (file: File) => void;
@@ -38,9 +79,14 @@ export function ChatComposer({
   placeholder?: string;
   /** Override the "uploading" placeholder. */
   uploadingLabel?: string;
+  /** "dark" (glass shells) or "light" (home chat). */
+  theme?: Theme;
+  /** Minimum textarea rows — bump to 2-3 for a roomier base44-style box. */
+  minRows?: number;
 }) {
   const [draft, setDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const skin = SKIN[theme];
 
   useEffect(() => {
     if (!prefillNonce || !prefill) return;
@@ -80,21 +126,23 @@ export function ChatComposer({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {chips.map((chip) => (
-          <button
-            key={chip}
-            type="button"
-            disabled={disabled}
-            onClick={() => send(chip)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors disabled:opacity-40"
-          >
-            {chip}
-          </button>
-        ))}
-      </div>
+      {chips.length > 0 ? (
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {chips.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              disabled={disabled}
+              onClick={() => send(chip)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full border text-xs transition-colors disabled:opacity-40 ${skin.chip}`}
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
-      <div className="flex items-end gap-2 rounded-2xl bg-white/10 border border-glass-border p-2 focus-within:border-white/30 transition-colors">
+      <div className={`flex items-end gap-2 rounded-2xl border p-2 transition-colors ${skin.box}`}>
         <input
           ref={fileRef}
           type="file"
@@ -112,7 +160,7 @@ export function ChatComposer({
           disabled={disabled || uploading}
           aria-label="Upload your current CV (PDF or Word)"
           title="Upload your current CV (PDF or Word)"
-          className="grid place-items-center h-10 w-10 rounded-xl bg-white/10 text-white/75 hover:bg-white/20 hover:text-white transition-colors disabled:opacity-40"
+          className={`grid place-items-center h-10 w-10 rounded-xl transition-colors disabled:opacity-40 ${skin.iconBtn}`}
         >
           {uploading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -131,7 +179,7 @@ export function ChatComposer({
               send(draft);
             }
           }}
-          rows={Math.min(5, Math.max(1, draft.split("\n").length))}
+          rows={Math.min(6, Math.max(minRows, draft.split("\n").length))}
           placeholder={
             uploading
               ? uploadingLabel
@@ -139,7 +187,7 @@ export function ChatComposer({
                 ? "Listening — just talk…"
                 : placeholder ?? "Type your answer, or tap the mic and say it"
           }
-          className="flex-1 resize-none bg-transparent text-white placeholder:text-white/45 text-[15px] leading-relaxed px-2 py-1.5 focus:outline-none"
+          className={`flex-1 resize-none bg-transparent text-[15px] leading-relaxed px-2 py-1.5 focus:outline-none ${skin.textarea}`}
         />
         {supported ? (
           <button
@@ -148,9 +196,7 @@ export function ChatComposer({
             aria-label={listening ? "Stop dictation" : "Dictate your answer"}
             aria-pressed={listening}
             className={`grid place-items-center h-10 w-10 rounded-xl transition-colors ${
-              listening
-                ? "bg-[#f5b8c8] text-[#1a1a1a] animate-pulse"
-                : "bg-white/10 text-white/75 hover:bg-white/20 hover:text-white"
+              listening ? skin.micOn : skin.micIdle
             }`}
           >
             {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -161,13 +207,13 @@ export function ChatComposer({
           onClick={() => send(draft)}
           disabled={disabled || !draft.trim()}
           aria-label="Send"
-          className="grid place-items-center h-10 w-10 rounded-xl bg-white text-[#1a1a1a] disabled:opacity-40 transition-opacity"
+          className={`grid place-items-center h-10 w-10 rounded-xl disabled:opacity-40 transition-colors ${skin.send}`}
         >
           <ArrowUp className="h-5 w-5" strokeWidth={2.2} />
         </button>
       </div>
 
-      {error ? <div className="text-xs text-[#f5b8c8]">{error}</div> : null}
+      {error ? <div className={`text-xs ${skin.error}`}>{error}</div> : null}
     </div>
   );
 }

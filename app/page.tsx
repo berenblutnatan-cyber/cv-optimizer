@@ -65,26 +65,12 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Chat-first hero — the home page IS a conversation. Anonymous visitors
-          can type, talk, or upload to build their CV live; the manual "old way"
-          entry points sit at the bottom of the chat. The marketing sections
-          below stay for scrollers / SEO. */}
-      <section
-        id="hero"
-        className="relative w-full grain-overlay"
-        style={{
-          background: "linear-gradient(135deg, #f5c4d4 0%, #c9b8ff 45%, #8fb3ff 100%)",
-        }}
-      >
-        <div className="relative h-[100dvh] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-4 sm:pb-6 flex flex-col">
-          <div className="flex-shrink-0 text-center mb-3 sm:mb-4">
-            <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2.5rem] leading-tight text-white">
-              Let&apos;s build your CV — just start talking
-            </h1>
-            <p className="text-white/75 text-sm sm:text-base mt-1.5 font-light">
-              Type, talk, or upload. Watch it build itself, live. No signup to start.
-            </p>
-          </div>
+      {/* Chat-first hero — the home page IS a conversation: a single clean,
+          centered chat box (base44-style). Anonymous visitors type, talk, or
+          upload to build their CV live; the manual "old way" entry points sit
+          quietly below. The marketing sections below stay for scrollers / SEO. */}
+      <section id="hero" className="relative w-full bg-[#FAFAF8]">
+        <div className="h-[100dvh] flex flex-col pt-16 sm:pt-20 pb-6">
           <div className="flex-1 min-h-0">
             <HomeChatClient />
           </div>
