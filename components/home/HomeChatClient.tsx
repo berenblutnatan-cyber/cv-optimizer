@@ -235,6 +235,12 @@ export function HomeChatClient() {
   const started = messages.some((m) => m.role === "user");
   const hasCv = Boolean(cv.personalInfo.name.trim()) || cv.experience.length > 0;
 
+  // Anti-abuse / funnel gate: anonymous visitors get 3 free prompts, then must
+  // sign in to keep building (their chat is preserved across the sign-in).
+  const ANON_FREE_PROMPTS = 3;
+  const userMsgCount = messages.reduce((n, m) => (m.role === "user" ? n + 1 : n), 0);
+  const gated = !isSignedIn && userMsgCount >= ANON_FREE_PROMPTS;
+
   // The other ways to build — proper, noticeable buttons (not faint links),
   // each with its own accent so they stand out on the chat screen too.
   const entryButtons = (
@@ -432,16 +438,35 @@ export function HomeChatClient() {
       </div>
 
       <div className="flex-shrink-0 pt-1 pb-1">
-        <ChatComposer
-          theme="light"
-          chips={[]}
-          onSend={handleSend}
-          onUpload={handleUpload}
-          uploading={uploadingCv}
-          disabled={streaming || uploadingCv || fetchingJob}
-          placeholder="Reply, paste a job link, or tap 📎 to upload your CV"
-          uploadingLabel="Reading your CV…"
-        />
+        {gated ? (
+          <div className="rounded-2xl border border-[#0A2647]/15 bg-[#0A2647]/[0.04] px-4 py-4 text-center">
+            <p className="text-sm font-semibold text-[#1a1a1a]">
+              That&apos;s your {ANON_FREE_PROMPTS} free messages 🎉
+            </p>
+            <p className="text-sm text-stone-500 mt-1">
+              Sign in (free) to save this chat and keep building — your work is waiting for you.
+            </p>
+            <button
+              type="button"
+              onClick={saveAndOpenBuilder}
+              className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] shadow-sm hover:shadow-md transition-all"
+            >
+              Sign in &amp; keep building
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <ChatComposer
+            theme="light"
+            chips={[]}
+            onSend={handleSend}
+            onUpload={handleUpload}
+            uploading={uploadingCv}
+            disabled={streaming || uploadingCv || fetchingJob}
+            placeholder="Reply, paste a job link, or tap 📎 to upload your CV"
+            uploadingLabel="Reading your CV…"
+          />
+        )}
         <div className="mt-3">{entryButtons}</div>
       </div>
     </div>
