@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { ArrowRight, BarChart3, ListChecks, Sparkles, Target, UploadCloud, Wand2 } from "lucide-react";
+import { ArrowRight, Award, BarChart3, ListChecks, ShieldCheck, Sparkles, Target, UploadCloud, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useChatBuilderStore, type BuilderChatMessage } from "@/stores/chatBuilderStore";
@@ -357,6 +357,21 @@ export function HomeChatClient() {
               Or build it another way
             </p>
             {entryButtons}
+          </div>
+
+          {/* Credibility strip — honest framing, no fabricated numbers */}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-stone-400">
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-[#B8860B]" /> Powered by Claude
+            </span>
+            <span className="text-stone-300">·</span>
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#0A2647]" /> Scored on ATS rules
+            </span>
+            <span className="text-stone-300">·</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Award className="h-3.5 w-3.5 text-[#0A2647]" /> Recruiter-reviewed templates
+            </span>
           </div>
         </div>
       </div>

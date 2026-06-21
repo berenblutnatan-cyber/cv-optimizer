@@ -6,6 +6,7 @@ import { awardXp } from "@/lib/gamification";
 import { buildFinalizePrompt } from "@/lib/voice/finalizePrompt";
 import { normalizeFinalizeOutput } from "@/lib/voice/schema";
 import { extractBalancedJson } from "@/lib/extractJson";
+import { hasActiveSubscription } from "@/lib/subscription";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -52,11 +53,13 @@ export async function POST(request: Request) {
   }
 
   // Credit check up front so we don't burn a Claude call for a user with 0.
+  // Unlimited subscribers skip the check (and the charge below).
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { credits: true },
+    select: { credits: true, subscriptionStatus: true, subscriptionCurrentPeriodEnd: true },
   });
-  if (!user || user.credits <= 0) {
+  const unlimited = user ? hasActiveSubscription(user) : false;
+  if (!unlimited && (!user || user.credits <= 0)) {
     return NextResponse.json(
       { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
       { status: 402 }
@@ -87,11 +90,13 @@ export async function POST(request: Request) {
   // never leaves a user double-billed or unpaid.
   try {
     await prisma.$transaction(async (tx) => {
-      const updated = await tx.user.update({
-        where: { id: userId },
-        data: { credits: { decrement: 1 } },
-      });
-      if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
+      if (!unlimited) {
+        const updated = await tx.user.update({
+          where: { id: userId },
+          data: { credits: { decrement: 1 } },
+        });
+        if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
+      }
       await tx.voiceSession.create({
         data: {
           userId,

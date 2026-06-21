@@ -8,6 +8,7 @@ import { getPostHogClient } from "@/lib/posthog-server";
 import { prisma } from "@/lib/prisma";
 import { extractBalancedJson } from "@/lib/extractJson";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
+import { hasActiveSubscription } from "@/lib/subscription";
 // Prompt assembly lives in lib/optimizer/prompt.ts so the eval harness can
 // exercise the EXACT prompt this route ships.
 import { buildOptimizerPrompt, OPTIMIZER_SYSTEM_PROMPT } from "@/lib/optimizer/prompt";
@@ -120,7 +121,9 @@ export async function POST(request: NextRequest) {
         credits: FREE_CREDITS_FOR_NEW_USER,
       },
     });
-    if (dbUser.credits <= 0) {
+    // Unlimited subscribers skip the balance check (and the charge below).
+    const unlimited = hasActiveSubscription(dbUser);
+    if (!unlimited && dbUser.credits <= 0) {
       return NextResponse.json(
         { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
         { status: 402 }
@@ -293,11 +296,13 @@ export async function POST(request: NextRequest) {
     try {
       const normalizedImps = (analysis.improvements ?? []) as NormalizedImprovement[];
       const created = await prisma.$transaction(async (tx) => {
-        const updated = await tx.user.update({
-          where: { id: userId },
-          data: { credits: { decrement: 1 } },
-        });
-        if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
+        if (!unlimited) {
+          const updated = await tx.user.update({
+            where: { id: userId },
+            data: { credits: { decrement: 1 } },
+          });
+          if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
+        }
         return tx.analysis.create({
           data: {
             userId,

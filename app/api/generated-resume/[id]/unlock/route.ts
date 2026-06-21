@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { awardXp } from "@/lib/gamification";
+import { isUnlimited } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -27,22 +28,30 @@ export async function POST(
     return NextResponse.json({ ok: true, alreadyUnlocked: true });
   }
 
+  const unlimited = await isUnlimited(userId);
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({
-        where: { id: userId },
-        select: { credits: true },
-      });
-      if (!user || user.credits <= 0) throw new Error("INSUFFICIENT_CREDITS");
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
-        data: { credits: { decrement: 1 } },
-      });
+      let creditsRemaining = 0;
+      if (unlimited) {
+        const user = await tx.user.findUnique({ where: { id: userId }, select: { credits: true } });
+        creditsRemaining = user?.credits ?? 0;
+      } else {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { credits: true },
+        });
+        if (!user || user.credits <= 0) throw new Error("INSUFFICIENT_CREDITS");
+        const updatedUser = await tx.user.update({
+          where: { id: userId },
+          data: { credits: { decrement: 1 } },
+        });
+        creditsRemaining = updatedUser.credits;
+      }
       await tx.generatedResume.update({
         where: { id },
         data: { unlocked: true },
       });
-      return { creditsRemaining: updatedUser.credits };
+      return { creditsRemaining };
     });
     const xp = await awardXp(userId, "unlock").catch(() => null);
     return NextResponse.json({ ok: true, creditsRemaining: result.creditsRemaining, xp });

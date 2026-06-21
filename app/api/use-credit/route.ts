@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
+import { hasActiveSubscription } from "@/lib/subscription";
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +30,16 @@ export async function POST(request: Request) {
           credits: FREE_CREDITS_FOR_NEW_USER,
         },
     });
+
+    // Unlimited subscribers never spend credits.
+    if (hasActiveSubscription(dbUser)) {
+      return NextResponse.json({
+        success: true,
+        remaining: dbUser.credits,
+        unlimited: true,
+        message: "Unlimited plan — no credit used",
+      });
+    }
 
     // Check if user has credits
     if (dbUser.credits <= 0) {

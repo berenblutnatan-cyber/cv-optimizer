@@ -24,6 +24,13 @@ model User {
   lastActiveAt DateTime?
   targetRoles  String[]  @default([])
 
+  // Unlimited subscription (Polar recurring). When active (and within the paid
+  // period) the user bypasses credit charges everywhere — see lib/subscription.
+  subscriptionStatus           String?   // "active" | "canceled" | "revoked" | "past_due"
+  subscriptionPlan             String?   // POLAR_PLANS key, e.g. "unlimited_monthly"
+  subscriptionCurrentPeriodEnd DateTime?
+  polarSubscriptionId          String?
+
   resumes          Resume[]
   feedbacks        Feedback[]
   purchases        Purchase[]

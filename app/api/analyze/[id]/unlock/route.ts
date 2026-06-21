@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { awardXp } from "@/lib/gamification";
+import { isUnlimited } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -31,24 +32,33 @@ export async function POST(
 
   // Run the credit debit + flip in a single transaction so a crash mid-flip
   // can't double-charge or leave half-unlocked rows.
+  const unlimited = await isUnlimited(userId);
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({
-        where: { id: userId },
-        select: { credits: true },
-      });
-      if (!user || user.credits <= 0) {
-        throw new Error("INSUFFICIENT_CREDITS");
+      let creditsRemaining = 0;
+      if (unlimited) {
+        // Unlimited subscriber — unlock without charging.
+        const user = await tx.user.findUnique({ where: { id: userId }, select: { credits: true } });
+        creditsRemaining = user?.credits ?? 0;
+      } else {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { credits: true },
+        });
+        if (!user || user.credits <= 0) {
+          throw new Error("INSUFFICIENT_CREDITS");
+        }
+        const updatedUser = await tx.user.update({
+          where: { id: userId },
+          data: { credits: { decrement: 1 } },
+        });
+        creditsRemaining = updatedUser.credits;
       }
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
-        data: { credits: { decrement: 1 } },
-      });
       await tx.improvement.updateMany({
         where: { analysisId: id, unlocked: false },
         data: { unlocked: true },
       });
-      return { creditsRemaining: updatedUser.credits };
+      return { creditsRemaining };
     });
 
     // XP outside the txn (best-effort).

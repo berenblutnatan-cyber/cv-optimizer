@@ -1,11 +1,52 @@
 import { Webhooks } from "@polar-sh/nextjs";
 import { prisma } from "@/lib/prisma";
-import { findPlanByProductId } from "@/lib/polar";
+import { findPlanByProductId, findPlanKeyByProductId } from "@/lib/polar";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 import { sendPurchaseNotification } from "@/lib/email";
 
+// Polar subscription payloads vary slightly by event; read defensively.
+type AnySub = {
+  id?: string;
+  status?: string;
+  productId?: string | null;
+  currentPeriodEnd?: string | Date | null;
+  externalCustomerId?: string | null;
+  customer?: { externalId?: string | null; email?: string | null } | null;
+};
+
+// Upsert the user's Unlimited-subscription state. `statusOverride` lets the
+// cancel/revoke handlers force the terminal status.
+async function applySubscription(sub: AnySub, statusOverride?: string) {
+  const userId = sub.customer?.externalId ?? sub.externalCustomerId ?? null;
+  if (!userId) {
+    console.error("[polar webhook] subscription missing externalCustomerId", sub.id);
+    return;
+  }
+  const status = statusOverride ?? sub.status ?? "active";
+  const planKey = sub.productId ? findPlanKeyByProductId(sub.productId) : null;
+  const periodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+  const email = sub.customer?.email ?? `${userId}@pending.local`;
+
+  const fields = {
+    subscriptionStatus: status,
+    subscriptionPlan: planKey ?? null,
+    subscriptionCurrentPeriodEnd: periodEnd,
+    polarSubscriptionId: sub.id ?? null,
+  };
+  await prisma.user.upsert({
+    where: { id: userId },
+    update: fields,
+    create: { id: userId, email, credits: FREE_CREDITS_FOR_NEW_USER, ...fields },
+  });
+  console.log(`[polar webhook] subscription ${status} for ${userId} (${planKey ?? "?"})`);
+}
+
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
+
+  // One-time credit packs (and the first invoice of a subscription, which also
+  // arrives as an order — harmless: subscription plans grant 0 credits and the
+  // subscription handlers below own entitlement).
   onOrderPaid: async (payload) => {
     const order = payload.data;
     const orderId = order.id;
@@ -42,9 +83,6 @@ export const POST = Webhooks({
     const email = order.customer?.email ?? `${userId}@pending.local`;
 
     // Pull the Google Ads click ID we threaded through checkout metadata.
-    // Used purely for attribution (so we can correlate paid orders back to
-    // specific ad clicks) and to give Google Ads enough signal to verify
-    // the Purchase conversion goal.
     const gclid =
       (order as unknown as { metadata?: Record<string, string> | null }).metadata?.gclid ?? null;
 
@@ -65,18 +103,30 @@ export const POST = Webhooks({
       },
     });
 
-    console.log(`[polar webhook] +${plan.credits} credits to ${userId} (order ${orderId})`);
-
-    void sendPurchaseNotification({
-      userEmail: email,
-      userId,
-      planName: plan.name,
-      amount,
-      currency: order.currency?.toUpperCase() ?? "USD",
-      credits: plan.credits,
-      orderId,
-    }).catch((err) =>
-      console.error("[polar webhook] purchase notification failed:", err)
+    console.log(
+      `[polar webhook] order ${orderId}: ${plan.name} (+${plan.credits} credits) for ${userId}`
     );
+
+    // Credit-pack purchases get the "+N credits" email; subscriptions get their
+    // own lifecycle via the subscription handlers.
+    if (plan.kind !== "subscription") {
+      void sendPurchaseNotification({
+        userEmail: email,
+        userId,
+        planName: plan.name,
+        amount,
+        currency: order.currency?.toUpperCase() ?? "USD",
+        credits: plan.credits,
+        orderId,
+      }).catch((err) => console.error("[polar webhook] purchase notification failed:", err));
+    }
   },
+
+  // Subscription lifecycle → User.subscription* (drives unlimited entitlement).
+  onSubscriptionCreated: async (p) => applySubscription(p.data as unknown as AnySub),
+  onSubscriptionActive: async (p) => applySubscription(p.data as unknown as AnySub),
+  onSubscriptionUpdated: async (p) => applySubscription(p.data as unknown as AnySub),
+  onSubscriptionCanceled: async (p) => applySubscription(p.data as unknown as AnySub, "canceled"),
+  onSubscriptionRevoked: async (p) =>
+    applySubscription({ ...(p.data as unknown as AnySub), currentPeriodEnd: null }, "revoked"),
 });
