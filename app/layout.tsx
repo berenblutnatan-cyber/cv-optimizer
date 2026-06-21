@@ -15,6 +15,7 @@ import { Toaster } from "sonner";
 import { UserSyncProvider } from "@/components/UserSyncProvider";
 import { InAppBrowserAlert } from "@/components/InAppBrowserAlert";
 import { GclidCapture } from "@/components/GclidCapture";
+import { WelcomeOfferBanner } from "@/components/WelcomeOfferBanner";
 import "./globals.css";
 
 const GOOGLE_ADS_ID = "AW-18163039044";
@@ -154,6 +155,9 @@ export default function RootLayout({
             {children}
           </UserSyncProvider>
           <ResumeSync />
+          <SignedIn>
+            <WelcomeOfferBanner />
+          </SignedIn>
           <Toaster position="top-center" richColors />
           {/* Global Feedback Widget */}
           <RatingWidget source="global" />

@@ -86,10 +86,22 @@ export const POST = Webhooks({
     const gclid =
       (order as unknown as { metadata?: Record<string, string> | null }).metadata?.gclid ?? null;
 
+    // The Job Search Pass is a one-time order that grants time-boxed Unlimited
+    // instead of credits — set the subscription window here.
+    const unlimitedDays = plan.grantsUnlimitedDays ?? 0;
+    const subFields =
+      unlimitedDays > 0
+        ? {
+            subscriptionStatus: "active",
+            subscriptionPlan: findPlanKeyByProductId(productId),
+            subscriptionCurrentPeriodEnd: new Date(Date.now() + unlimitedDays * 86_400_000),
+          }
+        : {};
+
     await prisma.user.upsert({
       where: { id: userId },
-      update: { credits: { increment: plan.credits } },
-      create: { id: userId, email, credits: FREE_CREDITS_FOR_NEW_USER + plan.credits },
+      update: { credits: { increment: plan.credits }, ...subFields },
+      create: { id: userId, email, credits: FREE_CREDITS_FOR_NEW_USER + plan.credits, ...subFields },
     });
 
     await prisma.purchase.create({

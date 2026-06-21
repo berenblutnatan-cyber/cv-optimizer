@@ -2,18 +2,20 @@ export type PolarPlan = {
   productId: string;
   name: string;
   amount: number;
-  /** Credits granted on purchase (one-time packs). 0 for subscriptions, which
-   * grant "unlimited" via User.subscription* instead. */
+  /** Credits granted on purchase (one-time packs). 0 for plans that grant
+   * Unlimited instead (subscriptions and the time-boxed pass). */
   credits: number;
   kind: "one_time" | "subscription";
-  /** Billing interval for subscriptions. */
+  /** Billing interval for recurring subscriptions. */
   interval?: "month" | "year";
+  /** One-time products that grant time-boxed Unlimited instead of credits
+   * (the 3-month Job Search Pass). The webhook sets the subscription period
+   * end to now + this many days. */
+  grantsUnlimitedDays?: number;
 };
 
 export const POLAR_PLANS = {
-  // Foot-in-the-door SKU shown in the out-of-credits modal. The product must
-  // exist in the Polar dashboard and POLAR_PRODUCT_ONEMORE must be set —
-  // without the env var the checkout route returns "Unknown plan" 400.
+  // Micro top-up — shown in the out-of-credits moment, not on the pricing page.
   onemore: {
     productId: process.env.POLAR_PRODUCT_ONEMORE ?? "",
     name: "1 More Credit",
@@ -21,6 +23,17 @@ export const POLAR_PLANS = {
     credits: 1,
     kind: "one_time",
   },
+  // Welcome flash — 24h, one-time, post-signup. 10 credits for $3, anchored at a
+  // real $10 list price so "70% off" is honest. Needs POLAR_PRODUCT_WELCOME.
+  welcome: {
+    productId: process.env.POLAR_PRODUCT_WELCOME ?? "",
+    name: "Welcome Offer",
+    amount: 3,
+    credits: 10,
+    kind: "one_time",
+  },
+  // Kept in config (existing links + out-of-credits modal) but hidden from the
+  // pricing page — its $3 price point now belongs to the welcome flash.
   starter: {
     productId: process.env.POLAR_PRODUCT_STARTER ?? "",
     name: "Starter",
@@ -42,9 +55,7 @@ export const POLAR_PLANS = {
     credits: 60,
     kind: "one_time",
   },
-  // Unlimited subscription — the flagship. Create these as RECURRING products in
-  // Polar (monthly + yearly) and set the two env vars. Until then the checkout
-  // route returns "Unknown plan" 400 and the pricing CTA shows "Coming soon".
+  // Unlimited — the flagship. Recurring monthly product in Polar.
   unlimited_monthly: {
     productId: process.env.POLAR_PRODUCT_UNLIMITED_MONTHLY ?? "",
     name: "Unlimited (Monthly)",
@@ -53,13 +64,16 @@ export const POLAR_PLANS = {
     kind: "subscription",
     interval: "month",
   },
-  unlimited_annual: {
-    productId: process.env.POLAR_PRODUCT_UNLIMITED_ANNUAL ?? "",
-    name: "Unlimited (Annual)",
-    amount: 450, // $50/mo × 12 − 25% = $450/yr (~$37.50/mo)
+  // Job Search Pass — a ONE-TIME $90 product granting 90 days of Unlimited (no
+  // auto-renew). Fits the short, intense job search far better than an annual
+  // plan. Needs POLAR_PRODUCT_UNLIMITED_QUARTER.
+  unlimited_quarter: {
+    productId: process.env.POLAR_PRODUCT_UNLIMITED_QUARTER ?? "",
+    name: "Job Search Pass (3 months)",
+    amount: 90,
     credits: 0,
-    kind: "subscription",
-    interval: "year",
+    kind: "one_time",
+    grantsUnlimitedDays: 90,
   },
 } satisfies Record<string, PolarPlan>;
 

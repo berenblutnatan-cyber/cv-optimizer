@@ -17,16 +17,16 @@ import { UnlimitedPlanCard } from '@/components/pricing/UnlimitedPlanCard';
 export const dynamic = "force-dynamic";
 
 // One-time credit packs — the "pay as you go" track beneath the Unlimited hero.
-const PACKS: { plan: "starter" | "pro" | "ultimate"; name: string; price: number; credits: number; perCredit: string; best?: boolean }[] = [
-  { plan: "starter", name: "Starter", price: 3, credits: 5, perCredit: "$0.60 / credit" },
+// Starter ($3/5) is retired here: that price point now belongs to the 24h
+// welcome flash (10 credits for $3).
+const PACKS: { plan: "pro" | "ultimate"; name: string; price: number; credits: number; perCredit: string; best?: boolean }[] = [
   { plan: "pro", name: "Pro", price: 9, credits: 20, perCredit: "$0.45 / credit", best: true },
   { plan: "ultimate", name: "Ultimate", price: 20, credits: 60, perCredit: "$0.33 / credit" },
 ];
 
 export default function PricingPage() {
-  const unlimitedConfigured = Boolean(
-    process.env.POLAR_PRODUCT_UNLIMITED_MONTHLY && process.env.POLAR_PRODUCT_UNLIMITED_ANNUAL
-  );
+  const monthlyConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_MONTHLY);
+  const passConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_QUARTER);
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
@@ -82,7 +82,7 @@ export default function PricingPage() {
           </div>
 
           {/* Unlimited hero */}
-          <UnlimitedPlanCard configured={unlimitedConfigured} />
+          <UnlimitedPlanCard monthlyConfigured={monthlyConfigured} passConfigured={passConfigured} />
 
           {/* Pay-as-you-go divider */}
           <div className="flex items-center gap-4 max-w-3xl mx-auto mt-16 mb-8">
@@ -94,7 +94,7 @@ export default function PricingPage() {
           </div>
 
           {/* Free + credit packs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-stretch max-w-4xl mx-auto">
             {/* Free */}
             <div className="bg-white rounded-sm border border-stone-200 p-6 flex flex-col">
               <h3 className="font-serif text-lg text-[#1a1a1a]">Free</h3>

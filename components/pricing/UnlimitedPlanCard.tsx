@@ -13,23 +13,28 @@ const FEATURES = [
   "Priority processing",
 ];
 
-// The flagship. The monthly⇄annual toggle is the page's signature moment: it
-// swaps the headline price and reveals the 25% annual saving. `configured` is
-// false until the Polar subscription products + env vars exist — then the CTA
-// is live; until then it reads "Coming soon" so nobody hits a dead checkout.
-export function UnlimitedPlanCard({ configured }: { configured: boolean }) {
-  const [annual, setAnnual] = useState(true);
-  const plan = annual ? "unlimited_annual" : "unlimited_monthly";
+// The flagship. The Monthly ⇄ 3-month-pass toggle is the page's signature: it
+// swaps the price and the framing (recurring vs. a one-time pass for one job
+// search). Each option's CTA falls back to "Coming soon" until its Polar
+// product exists, so nobody hits a dead checkout.
+export function UnlimitedPlanCard({
+  monthlyConfigured,
+  passConfigured,
+}: {
+  monthlyConfigured: boolean;
+  passConfigured: boolean;
+}) {
+  const [pass, setPass] = useState(true);
+  const plan = pass ? "unlimited_quarter" : "unlimited_monthly";
+  const configured = pass ? passConfigured : monthlyConfigured;
 
   return (
     <div className="relative max-w-3xl mx-auto">
-      {/* soft gold halo */}
       <div
         aria-hidden
         className="absolute -inset-px rounded-sm bg-gradient-to-b from-[#B8860B]/40 to-[#B8860B]/10 blur-[2px]"
       />
       <div className="relative bg-[#0A2647] text-white rounded-sm border border-[#B8860B]/50 shadow-[0_24px_70px_-30px_rgba(10,38,71,0.7)] overflow-hidden">
-        {/* gold edge */}
         <div aria-hidden className="h-1 w-full bg-gradient-to-r from-[#B8860B] via-[#d4a017] to-[#B8860B]" />
 
         <div className="p-6 sm:p-10">
@@ -53,32 +58,32 @@ export function UnlimitedPlanCard({ configured }: { configured: boolean }) {
               <div className="inline-flex items-center p-1 rounded-sm bg-white/10 border border-white/15">
                 <button
                   type="button"
-                  onClick={() => setAnnual(false)}
-                  aria-pressed={!annual}
+                  onClick={() => setPass(false)}
+                  aria-pressed={!pass}
                   className={`px-3.5 py-1.5 rounded-sm text-sm transition-colors ${
-                    !annual ? "bg-white text-[#0A2647] font-medium" : "text-white/70 hover:text-white"
+                    !pass ? "bg-white text-[#0A2647] font-medium" : "text-white/70 hover:text-white"
                   }`}
                 >
                   Monthly
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAnnual(true)}
-                  aria-pressed={annual}
+                  onClick={() => setPass(true)}
+                  aria-pressed={pass}
                   className={`px-3.5 py-1.5 rounded-sm text-sm transition-colors ${
-                    annual ? "bg-white text-[#0A2647] font-medium" : "text-white/70 hover:text-white"
+                    pass ? "bg-white text-[#0A2647] font-medium" : "text-white/70 hover:text-white"
                   }`}
                 >
-                  Annual
+                  3-month pass
                 </button>
               </div>
               <div className="mt-2 text-right">
                 <span
                   className={`inline-block text-[11px] font-medium tracking-wide text-[#e7c66a] transition-opacity duration-200 ${
-                    annual ? "opacity-100" : "opacity-0"
+                    pass ? "opacity-100" : "opacity-0"
                   }`}
                 >
-                  Save 25% — 3 months free
+                  Save $60 — covers a whole search
                 </span>
               </div>
             </div>
@@ -87,14 +92,14 @@ export function UnlimitedPlanCard({ configured }: { configured: boolean }) {
           {/* Price */}
           <div className="mt-6 flex items-baseline gap-3 flex-wrap">
             <span className="font-serif text-6xl font-light tabular-nums">
-              ${annual ? "37.50" : "50"}
+              ${pass ? "30" : "50"}
             </span>
             <span className="text-white/55 font-light">/ month</span>
             <span className="text-sm text-white/45 font-light">
-              {annual ? (
+              {pass ? (
                 <>
-                  billed <span className="text-white/70">$450</span>/yr ·{" "}
-                  <span className="line-through text-white/35">$600</span>
+                  <span className="text-white/70">$90</span> once for 3 months ·{" "}
+                  <span className="line-through text-white/35">$150</span>
                 </>
               ) : (
                 "billed monthly · cancel anytime"
@@ -120,7 +125,7 @@ export function UnlimitedPlanCard({ configured }: { configured: boolean }) {
                 onClick={() => track("checkout_started", { plan })}
                 className="group w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-[#B8860B] hover:bg-[#a3760a] text-white font-medium rounded-sm transition-colors tracking-wide"
               >
-                Go Unlimited
+                {pass ? "Get the 3-month pass" : "Go Unlimited"}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.8} />
               </Link>
             ) : (
@@ -134,8 +139,9 @@ export function UnlimitedPlanCard({ configured }: { configured: boolean }) {
               </button>
             )}
             <p className="text-center text-xs text-white/40 font-light mt-3">
-              {annual ? "$450 billed today, then yearly. " : "$50 billed today, then monthly. "}
-              Cancel anytime — keep access through the period you paid for.
+              {pass
+                ? "$90 billed once. 3 months of unlimited — no auto-renew."
+                : "$50 billed today, then monthly. Cancel anytime — keep access through the period you paid for."}
             </p>
           </div>
         </div>
