@@ -57,6 +57,8 @@ export type EventName =
   | "chat_tool_applied"
   | "chat_builder_finished"
   | "chat_builder_reset"
+  | "chat_new_chat"
+  | "chat_opened_history"
   | "chat_dictation_toggled"
   | "chat_cv_uploaded"
   | "chat_quick_edit_clicked"

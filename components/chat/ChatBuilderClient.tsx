@@ -5,15 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Clock,
   Download,
   Eye,
   MessageCircle,
   Mic,
   Pencil,
-  RotateCcw,
+  Plus,
   Sparkles,
   Target,
+  Trash2,
   UploadCloud,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeStore } from "@/store/useResumeStore";
@@ -21,7 +24,7 @@ import { useChatBuilderStore } from "@/stores/chatBuilderStore";
 import { applyCvToolCall, pendingToolLabel } from "@/lib/chat/cvTools";
 import { chatGreeting, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
-import { generateId } from "@/types/resume";
+import { generateId, type ResumeData } from "@/types/resume";
 import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
 import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { track } from "@/lib/analytics";
@@ -31,6 +34,11 @@ import { ChatThread } from "./ChatThread";
 import { ChatComposer } from "./ChatComposer";
 import { BuildProgress } from "./BuildProgress";
 import { GuidedSectionsPreview } from "./GuidedSectionsPreview";
+
+type ChatListItem = { id: string; title: string; updatedAt: string; messageCount: number };
+// Remembers which saved chat is being edited, so a refresh keeps writing to the
+// same row instead of creating duplicates.
+const ACTIVE_KEY = "chat-active-session-id";
 
 export function ChatBuilderClient() {
   const router = useRouter();
@@ -61,7 +69,14 @@ export function ChatBuilderClient() {
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
   const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
   const [hydrated, setHydrated] = useState(false);
+  // Saved-history state (DB-backed; /build/chat is always signed-in).
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [chats, setChats] = useState<ChatListItem[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  sessionIdRef.current = sessionId;
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mobileTabRef = useRef(mobileTab);
   mobileTabRef.current = mobileTab;
 
@@ -71,6 +86,22 @@ export function ChatBuilderClient() {
   useEffect(() => {
     setHydrated(true);
     track("chat_builder_opened");
+    try {
+      const saved = localStorage.getItem(ACTIVE_KEY);
+      if (saved) {
+        setSessionId(saved);
+        sessionIdRef.current = saved;
+      }
+    } catch {
+      /* ignore */
+    }
+    void loadChats();
+    // If a conversation is already present (e.g. promoted from the anonymous
+    // home chat on sign-in, or restored from localStorage), save it to history
+    // right away so it isn't lost before the next turn.
+    if (useChatBuilderStore.getState().messages.some((m) => m.role === "user")) {
+      scheduleSave();
+    }
     const { messages: current } = useChatBuilderStore.getState();
     if (current.length === 0) {
       const { resumeData: cv } = useResumeStore.getState();
@@ -84,6 +115,64 @@ export function ChatBuilderClient() {
     return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadChats() {
+    try {
+      const res = await fetch("/api/chats");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.chats)) setChats(data.chats as ChatListItem[]);
+    } catch {
+      /* offline / unauth — keep what we have */
+    }
+  }
+
+  // Save the current transcript + CV to the user's history (create or update).
+  // Best-effort: a failed save never blocks the chat (the local copy persists).
+  async function persistSession() {
+    const msgs = useChatBuilderStore.getState().messages;
+    if (!msgs.some((m) => m.role === "user")) return; // nothing meaningful yet
+    const payload = {
+      messages: msgs.map((m) => ({ role: m.role, content: m.content, display: m.display, tools: m.tools })),
+      resume: useResumeStore.getState().resumeData,
+    };
+    try {
+      const id = sessionIdRef.current;
+      if (id) {
+        await fetch(`/api/chats/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        const res = await fetch("/api/chats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d?.id) {
+            sessionIdRef.current = d.id;
+            setSessionId(d.id);
+            try {
+              localStorage.setItem(ACTIVE_KEY, d.id);
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      }
+      void loadChats();
+    } catch {
+      /* keep local copy */
+    }
+  }
+
+  function scheduleSave() {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void persistSession(), 800);
+  }
 
   async function send(text: string, display?: string) {
     if (streaming) return;
@@ -163,6 +252,7 @@ export function ChatBuilderClient() {
       }
       setStreaming(false);
       abortRef.current = null;
+      scheduleSave(); // auto-save the turn to history
     }
   }
 
@@ -225,16 +315,78 @@ export function ChatBuilderClient() {
     router.push("/builder?step=6&from=chat");
   }
 
-  function onReset() {
-    const ok = window.confirm(
-      "Start over? This clears the conversation AND the CV draft. It can't be undone."
-    );
-    if (!ok) return;
+  // Start a fresh chat. The current one is already auto-saved to history, so we
+  // flush it then clear the workspace — no destructive "are you sure".
+  function newChat() {
     abortRef.current?.abort();
+    void persistSession();
     clear();
     resetResume();
-    track("chat_builder_reset");
+    setSessionId(null);
+    sessionIdRef.current = null;
+    try {
+      localStorage.removeItem(ACTIVE_KEY);
+    } catch {
+      /* ignore */
+    }
     addMessage({ id: generateId(), role: "assistant", content: chatGreeting(false) });
+    setHistoryOpen(false);
+    track("chat_new_chat");
+  }
+
+  async function openChat(id: string) {
+    if (id === sessionIdRef.current) {
+      setHistoryOpen(false);
+      return;
+    }
+    void persistSession(); // flush the current chat before switching
+    try {
+      const res = await fetch(`/api/chats/${id}`);
+      if (!res.ok) {
+        toast.error("Couldn't open that chat");
+        return;
+      }
+      const { chat } = await res.json();
+      const loaded = (chat.messages ?? []).map(
+        (m: { id: string; role: string; content: string; display: string | null; tools: unknown }) => ({
+          id: m.id,
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          display: m.display ?? undefined,
+          tools: (m.tools ?? undefined) as never,
+        })
+      );
+      abortRef.current?.abort();
+      useChatBuilderStore.setState({
+        messages: loaded.length
+          ? loaded
+          : [{ id: generateId(), role: "assistant", content: chatGreeting(false) }],
+      });
+      if (chat.resume) setResumeData(chat.resume as ResumeData);
+      else resetResume();
+      setSessionId(id);
+      sessionIdRef.current = id;
+      try {
+        localStorage.setItem(ACTIVE_KEY, id);
+      } catch {
+        /* ignore */
+      }
+      setHistoryOpen(false);
+      track("chat_opened_history");
+    } catch {
+      toast.error("Couldn't open that chat");
+    }
+  }
+
+  async function deleteChat(id: string) {
+    setChats((list) => list.filter((c) => c.id !== id));
+    try {
+      await fetch(`/api/chats/${id}`, { method: "DELETE" });
+    } catch {
+      /* ignore */
+    }
+    if (id === sessionIdRef.current) newChat();
+    else void loadChats();
   }
 
   const previewData = convertToPreviewData(
@@ -372,11 +524,24 @@ export function ChatBuilderClient() {
           </Link>
           <button
             type="button"
-            onClick={onReset}
+            onClick={() => setHistoryOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Start over</span>
+            <Clock className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">History</span>
+            {chats.length > 0 ? (
+              <span className="min-w-[16px] h-[16px] px-1 grid place-items-center rounded-full bg-white/15 text-[10px] text-white/80">
+                {chats.length}
+              </span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            onClick={newChat}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">New chat</span>
           </button>
           <button
             type="button"
@@ -524,6 +689,76 @@ export function ChatBuilderClient() {
         </section>
         ) : null}
       </div>
+
+      {/* History drawer — saved chats (DB-backed) */}
+      {historyOpen ? (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setHistoryOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative w-full max-w-sm h-full bg-[#241a33]/95 backdrop-blur-glass border-r border-glass-border shadow-glow flex flex-col">
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-glass-border">
+              <div className="text-sm font-semibold text-white">Your chats</div>
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(false)}
+                aria-label="Close history"
+                className="grid place-items-center h-8 w-8 rounded-lg bg-white/10 text-white/70 hover:text-white hover:bg-white/15 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-shrink-0 px-3 py-3">
+              <button
+                type="button"
+                onClick={newChat}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                New chat
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-3 space-y-1">
+              {chats.length === 0 ? (
+                <p className="text-center text-xs text-white/50 px-4 py-8">
+                  No saved chats yet. Your conversations save automatically as you build.
+                </p>
+              ) : (
+                chats.map((c) => (
+                  <div
+                    key={c.id}
+                    className={`group flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                      c.id === sessionId ? "bg-white/15" : "hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => openChat(c.id)}
+                      className="flex-1 min-w-0 text-left"
+                    >
+                      <div className="text-sm text-white truncate">{c.title}</div>
+                      <div className="text-[11px] text-white/45">
+                        {new Date(c.updatedAt).toLocaleDateString()} · {c.messageCount} msg
+                        {c.messageCount === 1 ? "" : "s"}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteChat(c.id)}
+                      aria-label="Delete chat"
+                      className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-white/40 hover:text-[#f5b8c8] hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -32,8 +32,42 @@ model User {
   analyses         Analysis[]
   generatedResumes GeneratedResume[]
   voiceSessions    VoiceSession[]
+  chatSessions     ChatSession[]
 
   @@index([createdAt])
+}
+
+// A saved chat-builder conversation. Unlike the voice session (metadata only),
+// we DO persist the transcript here so signed-in users get cross-device history
+// and can resume any past chat. `resume` is the ResumeData snapshot at last save
+// (powers the history-list preview + instant resume without replaying tools).
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String
+  title     String        @default("New chat")
+  resume    Json?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      String      // "user" | "assistant"
+  content   String      @db.Text
+  display   String?     @db.Text
+  tools     Json?       // ChatToolEvent[] (sparkle chips)
+  position  Int         // preserves order within the session
+  createdAt DateTime    @default(now())
+
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, position])
 }
 
 // Persisted optimization run. Replaces the sessionStorage-only flow so users
