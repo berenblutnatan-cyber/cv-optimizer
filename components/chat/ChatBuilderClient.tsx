@@ -74,6 +74,7 @@ export function ChatBuilderClient() {
   const [chats, setChats] = useState<ChatListItem[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const previewAutoOpenedRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
   sessionIdRef.current = sessionId;
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -115,6 +116,19 @@ export function ChatBuilderClient() {
     return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reveal the preview the first time the CV has real content — like Claude
+  // sliding in the artifact panel when the first artifact appears. Once only,
+  // so a manual close afterwards sticks. On mobile the panel becomes a tap away
+  // (we don't yank focus off the chat).
+  useEffect(() => {
+    if (previewAutoOpenedRef.current) return;
+    const hasContent =
+      Boolean(resumeData.personalInfo.name.trim()) || resumeData.experience.length > 0;
+    if (!hasContent) return;
+    previewAutoOpenedRef.current = true;
+    setPreviewOpen(true);
+  }, [resumeData.personalInfo.name, resumeData.experience.length]);
 
   async function loadChats() {
     try {
