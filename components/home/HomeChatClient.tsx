@@ -218,6 +218,42 @@ export function HomeChatClient() {
     }
   }
 
+  // Enhancv-style single shot: take the visitor's self-description, ask the
+  // agent to build a COMPLETE first draft in one pass (no back-and-forth), then
+  // hand off to the unified builder to refine. Falls back to a normal
+  // conversation if the agent couldn't build enough to land a draft.
+  async function generateFullDraft(text: string) {
+    if (streaming || uploadingCv || fetchingJob) return;
+    const wrapped =
+      `${text}\n\n` +
+      `(Build my complete CV now as a polished first draft — fill in every section ` +
+      `you reasonably can from this and make sensible professional inferences. ` +
+      `Don't ask me questions first; I'll refine it afterwards.)`;
+    track("home_generate_full_draft", { length: text.length });
+
+    const url = firstUrl(text);
+    if (url) {
+      setFetchingJob(true);
+      const tid = toast.loading("Reading the job post…");
+      try {
+        const job = await fetchJobPosting(url);
+        toast.dismiss(tid);
+        await send(job.ok ? withJobPosting(wrapped, url, job) : wrapped, text);
+      } finally {
+        setFetchingJob(false);
+      }
+    } else {
+      await send(wrapped, text);
+    }
+
+    // Let the final tool/resume events flush into state, then land in the
+    // unified builder if we actually produced a draft.
+    await new Promise((r) => setTimeout(r, 60));
+    const built =
+      Boolean(cvRef.current.personalInfo.name.trim()) || cvRef.current.experience.length > 0;
+    if (built) saveAndOpenBuilder();
+  }
+
   // Promote the local session into the persisted builder stores, then hand off
   // to /build/chat (signing in first for anonymous visitors). This is the ONLY
   // path that keeps the conversation — home itself never persists it.
@@ -303,7 +339,8 @@ export function HomeChatClient() {
             Let&apos;s build your CV
           </h1>
           <p className="text-center text-stone-500 mt-3 text-base sm:text-lg font-light">
-            Tell me your story — or upload your CV and I&apos;ll optimize it for the role you want.
+            Describe your experience in a sentence or two — I&apos;ll generate a complete first draft,
+            then you refine it by chat or by hand.
           </p>
 
           <div className="mt-7">
@@ -311,12 +348,13 @@ export function HomeChatClient() {
               theme="light"
               minRows={2}
               chips={[]}
-              onSend={handleSend}
+              onSend={generateFullDraft}
               onUpload={handleUpload}
               uploading={uploadingCv}
               disabled={streaming || uploadingCv || fetchingJob}
-              placeholder="Tell me your experience, paste a job link, or tap 📎 to upload your CV"
+              placeholder="e.g. Product manager, 8 yrs in fintech, led a team of 6, based in London, targeting Director roles"
               uploadingLabel="Reading your CV…"
+              sendLabel="Generate my CV"
             />
           </div>
 
@@ -325,11 +363,11 @@ export function HomeChatClient() {
             <button
               type="button"
               disabled={streaming || uploadingCv}
-              onClick={() => send("Let's build my CV from scratch — I'll tell you my story.")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-medium hover:bg-[#0d3259] shadow-sm hover:shadow-md transition-all disabled:opacity-40"
+              onClick={() => send("Interview me step by step to build my CV — ask me one question at a time.")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-stone-300 text-[#1a1a1a] text-sm font-medium hover:border-[#0A2647]/40 hover:bg-stone-50 shadow-sm hover:shadow-md transition-all disabled:opacity-40"
             >
-              <Sparkles className="h-4 w-4" />
-              Tell me your story
+              <Sparkles className="h-4 w-4 text-[#0A2647]" />
+              Prefer questions? Interview me
             </button>
             <button
               type="button"

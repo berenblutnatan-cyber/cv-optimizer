@@ -26,7 +26,8 @@ import {
   Check,
   Camera,
   Upload,
-  PanelRightOpen
+  PanelRightOpen,
+  Pencil
 } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { 
@@ -110,22 +111,37 @@ export default function BuilderPage() {
       <header className="flex-shrink-0 w-full border-b border-stone-200/60 bg-white/85 backdrop-blur-md z-20">
         <div className="px-4 sm:px-8 lg:px-16 py-4 sm:py-5">
           <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+            <div className="flex items-center gap-3 sm:gap-5 min-w-0">
               <Logo variant="dark" size="md" />
-              <span className="hidden md:inline-flex px-4 py-1.5 rounded-sm bg-[#0A2647]/5 text-[#0A2647] text-xs font-medium tracking-wide whitespace-nowrap">
-                Resume Builder
-              </span>
+              {/* Mode switch — mirrors the chat builder so the two pages read as
+                  two modes of one builder. Edit is the current page; Chat keeps
+                  your work (shared useResumeStore) and continues in conversation. */}
+              <div
+                role="tablist"
+                aria-label="Builder mode"
+                className="inline-flex items-center gap-1 p-1 rounded-full bg-[#0A2647]/5 border border-[#0A2647]/10"
+              >
+                <Link
+                  href="/build/chat"
+                  role="tab"
+                  aria-selected={false}
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-[13px] text-[#0A2647]/70 hover:text-[#0A2647] transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  Chat
+                </Link>
+                <span
+                  role="tab"
+                  aria-selected={true}
+                  aria-current="page"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-[13px] bg-[#0A2647] text-white font-semibold"
+                >
+                  <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  Edit
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
-              <Link
-                href="/build/chat"
-                aria-label="Not sure what to add? Talk it through with the AI coach"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0A2647]/5 text-[#0A2647] hover:bg-[#0A2647]/10 transition-colors text-sm tracking-wide focus-visible:outline-none"
-              >
-                <Sparkles className="w-4 h-4" strokeWidth={1.5} />
-                <span className="hidden lg:inline">Not sure what to add? Talk it through</span>
-                <span className="lg:hidden">Talk it through</span>
-              </Link>
               <Link
                 href="/"
                 aria-label="Back to Home"

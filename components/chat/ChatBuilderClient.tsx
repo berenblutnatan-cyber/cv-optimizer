@@ -34,6 +34,7 @@ import { ChatThread } from "./ChatThread";
 import { ChatComposer } from "./ChatComposer";
 import { BuildProgress } from "./BuildProgress";
 import { GuidedSectionsPreview } from "./GuidedSectionsPreview";
+import { InlineCvEditor } from "./InlineCvEditor";
 
 type ChatListItem = { id: string; title: string; updatedAt: string; messageCount: number };
 // Remembers which saved chat is being edited, so a refresh keeps writing to the
@@ -57,6 +58,10 @@ export function ChatBuilderClient() {
 
   const [streaming, setStreaming] = useState(false);
   const [uploadingCv, setUploadingCv] = useState(false);
+  // Left pane: "chat" (let the AI build) or "edit" (tweak fields by hand). Both
+  // write the same useResumeStore, so switching never loses work — the merge of
+  // the chat builder and the regular form builder into one surface.
+  const [leftMode, setLeftMode] = useState<"chat" | "edit">("chat");
   const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
   const [previewView, setPreviewView] = useState<"guided" | "document">("guided");
   // Preview is OPT-IN — the build is a conversation first; the user chooses to
@@ -271,10 +276,23 @@ export function ChatBuilderClient() {
   }
 
   function quickEdit(text: string) {
+    setLeftMode("chat");
     setMobileTab("chat");
     setPrefill(text);
     setPrefillNonce((n) => n + 1);
     track("chat_quick_edit_clicked");
+  }
+
+  // Flip the left pane between chat and direct editing. Entering edit opens the
+  // preview so the two-pane "type on the left, watch it render" feel kicks in.
+  function switchMode(mode: "chat" | "edit") {
+    setLeftMode(mode);
+    setMobileTab("chat"); // the left column shows whichever mode is active
+    if (mode === "edit") {
+      setPreviewOpen(true);
+      previewAutoOpenedRef.current = true;
+    }
+    track("chat_builder_mode_switched", { mode });
   }
 
   // Read a pasted job URL server-side and fold the posting into what the agent
@@ -494,13 +512,41 @@ export function ChatBuilderClient() {
           >
             <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={1.8} />
           </Link>
-          <div className="min-w-0">
-            <div className="font-serif italic text-lg md:text-xl text-white leading-none truncate">
-              Tell us your story
-            </div>
-            <div className="text-[11px] text-white/55 mt-0.5 hidden sm:block">
-              Chat CV builder — type or talk, watch it build
-            </div>
+          {/* Mode switch — chat (AI builds) ⇄ edit (tweak by hand). Always
+              available so the user is never locked into the chat. */}
+          <div
+            role="tablist"
+            aria-label="Builder mode"
+            className="inline-flex items-center gap-1 p-1 rounded-full bg-white/10 border border-glass-border"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={leftMode === "chat"}
+              onClick={() => switchMode("chat")}
+              className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full text-[13px] transition-colors ${
+                leftMode === "chat"
+                  ? "bg-white text-[#1a1a1a] font-semibold"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Chat
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={leftMode === "edit"}
+              onClick={() => switchMode("edit")}
+              className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full text-[13px] transition-colors ${
+                leftMode === "edit"
+                  ? "bg-white text-[#1a1a1a] font-semibold"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -579,8 +625,8 @@ export function ChatBuilderClient() {
               mobileTab === "chat" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70"
             }`}
           >
-            <MessageCircle className="h-4 w-4" />
-            Chat
+            {leftMode === "edit" ? <Pencil className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+            {leftMode === "edit" ? "Edit" : "Chat"}
           </button>
           <button
             type="button"
@@ -616,23 +662,29 @@ export function ChatBuilderClient() {
             <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-glass-border">
               <BuildProgress data={resumeData} />
             </div>
-            <ChatThread
-              messages={messages}
-              streaming={streaming}
-              className="flex-1 min-h-0 px-4 py-4"
-              emptyExtras={emptyExtras}
-            />
-            <div className="flex-shrink-0 px-3 pb-3 pt-1">
-              <ChatComposer
-                onSend={handleSend}
-                onUpload={handleUpload}
-                uploading={uploadingCv}
-                disabled={streaming || uploadingCv || fetchingJob}
-                placeholder="Reply, paste a job link, or tap 📎 to upload"
-                prefill={prefill}
-                prefillNonce={prefillNonce}
-              />
-            </div>
+            {leftMode === "edit" ? (
+              <InlineCvEditor />
+            ) : (
+              <>
+                <ChatThread
+                  messages={messages}
+                  streaming={streaming}
+                  className="flex-1 min-h-0 px-4 py-4"
+                  emptyExtras={emptyExtras}
+                />
+                <div className="flex-shrink-0 px-3 pb-3 pt-1">
+                  <ChatComposer
+                    onSend={handleSend}
+                    onUpload={handleUpload}
+                    uploading={uploadingCv}
+                    disabled={streaming || uploadingCv || fetchingJob}
+                    placeholder="Reply, paste a job link, or tap 📎 to upload"
+                    prefill={prefill}
+                    prefillNonce={prefillNonce}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </section>
 
