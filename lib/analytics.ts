@@ -63,6 +63,7 @@ export type EventName =
   | "chat_dictation_toggled"
   | "chat_cv_uploaded"
   | "chat_quick_edit_clicked"
+  | "chat_builder_mode_switched"
   | "chat_error"
   // Chat-first home (public landing chat)
   | "home_chat_opened"
@@ -71,12 +72,18 @@ export type EventName =
   | "home_chat_cv_uploaded"
   | "home_chat_finished"
   | "home_chat_error"
+  | "home_cta_click"
+  | "home_generate_full_draft"
   // Chat-first optimizer
   | "optimizer_chat_opened"
   | "optimizer_chat_uploaded"
   | "optimizer_chat_analyze"
   | "optimizer_chat_scored"
   | "optimizer_chat_view_full"
+  // Build onboarding (beautiful guided front door)
+  | "build_onboarding_viewed"
+  | "build_onboarding_step"
+  | "build_onboarding_completed"
   | "xp_awarded"
   | "level_up";
 

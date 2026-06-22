@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Loader2, Mic, MicOff, Paperclip } from "lucide-react";
+import { ArrowUp, Loader2, Mic, MicOff, Paperclip, Sparkles } from "lucide-react";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { track } from "@/lib/analytics";
 
@@ -64,11 +64,15 @@ export function ChatComposer({
   uploadingLabel = "Reading your CV…",
   theme = "dark",
   minRows = 1,
+  sendLabel,
 }: {
   onSend: (text: string) => void;
   onUpload: (file: File) => void;
   uploading: boolean;
   disabled: boolean;
+  /** When set, the send button shows this label (with a sparkle) instead of the
+   * bare arrow — used for the single-shot "generate a full draft" entry. */
+  sendLabel?: string;
   /** Text dropped into the textarea (focused, ready to edit) when
    * prefillNonce changes — used by the preview's quick-edit chips. */
   prefill?: string;
@@ -206,10 +210,19 @@ export function ChatComposer({
           type="button"
           onClick={() => send(draft)}
           disabled={disabled || !draft.trim()}
-          aria-label="Send"
-          className={`grid place-items-center h-10 w-10 rounded-xl disabled:opacity-40 transition-colors ${skin.send}`}
+          aria-label={sendLabel ?? "Send"}
+          className={`inline-flex items-center justify-center gap-1.5 h-10 rounded-xl disabled:opacity-40 transition-colors ${
+            sendLabel ? "px-4 w-auto" : "w-10"
+          } ${skin.send}`}
         >
-          <ArrowUp className="h-5 w-5" strokeWidth={2.2} />
+          {sendLabel ? (
+            <>
+              <Sparkles className="h-4 w-4" />
+              <span className="text-sm font-semibold whitespace-nowrap">{sendLabel}</span>
+            </>
+          ) : (
+            <ArrowUp className="h-5 w-5" strokeWidth={2.2} />
+          )}
         </button>
       </div>
 
