@@ -70,6 +70,7 @@ export type EventName =
   | "home_chat_cv_uploaded"
   | "home_chat_finished"
   | "home_chat_error"
+  | "home_cta_click"
   // Chat-first optimizer
   | "optimizer_chat_opened"
   | "optimizer_chat_uploaded"
