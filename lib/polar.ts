@@ -59,7 +59,7 @@ export const POLAR_PLANS = {
   unlimited_monthly: {
     productId: process.env.POLAR_PRODUCT_UNLIMITED_MONTHLY ?? "",
     name: "Unlimited (Monthly)",
-    amount: 50,
+    amount: 15,
     credits: 0,
     kind: "subscription",
     interval: "month",

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Check, Sparkles, BarChart3, ShieldCheck, Lock, RotateCcw } from 'lucide-react';
+import { Check, Sparkles, BarChart3, ShieldCheck, Lock, RotateCcw, ArrowRight } from 'lucide-react';
 import {
   SignInButton,
   SignUpButton,
@@ -12,7 +12,6 @@ import { CreditBalance } from "@/components/CreditBalance";
 import { PolarCheckoutButton } from '@/components/PolarCheckoutButton';
 import { CouponRedeem } from '@/components/CouponRedeem';
 import { SiteFooter } from '@/components/shared/SiteFooter';
-import { UnlimitedPlanCard } from '@/components/pricing/UnlimitedPlanCard';
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +24,7 @@ const PACKS: { plan: "pro" | "ultimate"; name: string; price: number; credits: n
 ];
 
 export default function PricingPage() {
-  const monthlyConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_MONTHLY);
-  const passConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_QUARTER);
+  const unlimitedConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_MONTHLY);
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
@@ -81,20 +79,8 @@ export default function PricingPage() {
             </p>
           </div>
 
-          {/* Unlimited hero */}
-          <UnlimitedPlanCard monthlyConfigured={monthlyConfigured} passConfigured={passConfigured} />
-
-          {/* Pay-as-you-go divider */}
-          <div className="flex items-center gap-4 max-w-3xl mx-auto mt-16 mb-8">
-            <div className="h-px flex-1 bg-stone-200" />
-            <span className="text-xs uppercase tracking-[0.18em] text-stone-400 font-medium">
-              Or pay as you go
-            </span>
-            <div className="h-px flex-1 bg-stone-200" />
-          </div>
-
-          {/* Free + credit packs */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-stretch max-w-4xl mx-auto">
+          {/* One lineup: Free · credit packs · Unlimited (highlighted) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch max-w-6xl mx-auto">
             {/* Free */}
             <div className="bg-white rounded-sm border border-stone-200 p-6 flex flex-col">
               <h3 className="font-serif text-lg text-[#1a1a1a]">Free</h3>
@@ -135,9 +121,46 @@ export default function PricingPage() {
                 <PolarCheckoutButton plan={p.plan} planName={p.name} amount={p.price} variant="primary" />
               </div>
             ))}
+
+            {/* Unlimited — the flagship, sitting right in the lineup */}
+            <div className="relative bg-[#0A2647] text-white rounded-sm border-2 border-[#B8860B] shadow-[0_12px_44px_-14px_rgba(184,134,11,0.5)] p-6 flex flex-col">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-[#B8860B] text-white text-[10px] font-medium px-3 py-1 rounded-sm tracking-[0.12em] uppercase whitespace-nowrap">Best value</span>
+              </div>
+              <h3 className="font-serif text-lg text-white">Unlimited</h3>
+              <div className="mt-3 mb-1 flex items-baseline gap-1.5">
+                <span className="font-serif text-3xl font-light text-white">$15</span>
+                <span className="text-xs text-white/55 font-light">/ mo</span>
+              </div>
+              <p className="text-xs text-[#e7c66a] font-medium mb-4">Everything, no limits</p>
+              <ul className="space-y-2.5 text-sm flex-1">
+                <li className="flex items-start gap-2 text-white/85 font-light"><Check className="w-4 h-4 text-[#e7c66a] flex-shrink-0 mt-0.5" strokeWidth={2} />Unlimited scores & optimization</li>
+                <li className="flex items-start gap-2 text-white/85 font-light"><Check className="w-4 h-4 text-[#e7c66a] flex-shrink-0 mt-0.5" strokeWidth={2} />Unlimited downloads, every template</li>
+                <li className="flex items-start gap-2 text-white/85 font-light"><Check className="w-4 h-4 text-[#e7c66a] flex-shrink-0 mt-0.5" strokeWidth={2} />Unlimited chat & voice building</li>
+                <li className="flex items-start gap-2 text-white/85 font-light"><Check className="w-4 h-4 text-[#e7c66a] flex-shrink-0 mt-0.5" strokeWidth={2} />No credits — ever</li>
+              </ul>
+              {unlimitedConfigured ? (
+                <Link
+                  href="/api/checkout/polar?plan=unlimited_monthly"
+                  className="group mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#B8860B] hover:bg-[#a3760a] text-white text-sm font-medium rounded-sm transition-colors text-center"
+                >
+                  Go Unlimited
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.8} />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  title="Available soon"
+                  className="mt-5 w-full px-4 py-2.5 bg-white/10 text-white/60 text-sm font-medium rounded-sm cursor-not-allowed border border-white/15"
+                >
+                  Coming soon
+                </button>
+              )}
+            </div>
           </div>
           <p className="text-center text-xs text-stone-400 font-light mt-4">
-            1 credit = one optimization, score, or download. Credits never expire.
+            Credits never expire · Unlimited has no credits at all · Cancel anytime.
           </p>
 
           {/* Trust signals */}
