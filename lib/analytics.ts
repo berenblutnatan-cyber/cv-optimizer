@@ -79,6 +79,12 @@ export type EventName =
   | "optimizer_chat_analyze"
   | "optimizer_chat_scored"
   | "optimizer_chat_view_full"
+  // Build onboarding (beautiful guided front door)
+  | "build_onboarding_viewed"
+  | "build_onboarding_step"
+  | "build_onboarding_completed"
+  | "funnel_completed"
+  | "funnel_cv_uploaded"
   | "xp_awarded"
   | "level_up";
 

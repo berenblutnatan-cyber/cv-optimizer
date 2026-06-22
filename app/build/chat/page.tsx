@@ -1,14 +1,14 @@
-import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { GradientShell } from "@/components/shell/GradientShell";
 import { ChatBuilderClient } from "@/components/chat/ChatBuilderClient";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Tell us your story · Hired" };
+export const metadata = { title: "Build your CV · Hired" };
 
-export default async function ChatBuilderPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in?redirect_url=/build/chat");
+// Anonymous-capable: visitors draft + edit their CV with the AI before signing
+// up (Enhancv-style "build first, sign up to save"). The chat engine
+// (/api/chat/build) already serves anonymous users; saving to history + export
+// are gated behind sign-in inside ChatBuilderClient.
+export default function ChatBuilderPage() {
   return (
     <GradientShell>
       <ChatBuilderClient />

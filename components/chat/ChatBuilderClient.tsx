@@ -108,8 +108,37 @@ export function ChatBuilderClient() {
     if (useChatBuilderStore.getState().messages.some((m) => m.role === "user")) {
       scheduleSave();
     }
+    // Funnel hand-off: if the onboarding funnel stashed a kickoff, set the
+    // chosen template and draft the CV immediately (the "first draft" moment).
+    let kickoff: { role?: string; goal?: string; template?: BuilderTemplateId; cvText?: string } | null = null;
+    try {
+      const raw = sessionStorage.getItem("builder-kickoff");
+      if (raw) {
+        kickoff = JSON.parse(raw);
+        sessionStorage.removeItem("builder-kickoff");
+      }
+    } catch {
+      /* ignore */
+    }
+
     const { messages: current } = useChatBuilderStore.getState();
-    if (current.length === 0) {
+    if (kickoff && current.length === 0) {
+      if (kickoff.template) setSelectedTemplate(kickoff.template);
+      const role = kickoff.role?.trim();
+      const goalText =
+        kickoff.goal === "ats"
+          ? "to get past ATS screening"
+          : kickoff.goal === "recruiter"
+            ? "to impress the recruiter"
+            : kickoff.goal === "both"
+              ? "to pass ATS and impress recruiters"
+              : "";
+      const ctx = `${role ? ` for a ${role} role` : ""}${goalText ? `, optimized ${goalText}` : ""}`;
+      const msg = kickoff.cvText
+        ? `I'm building my CV${ctx}. Here's my current CV — pull everything in and rewrite it into a strong first draft, then tell me the biggest things to improve:\n\n"""\n${kickoff.cvText}\n"""`
+        : `I'm building my CV from scratch${ctx}. Interview me one question at a time and let's start now.`;
+      void send(msg, kickoff.cvText ? "📎 my current CV" : undefined);
+    } else if (current.length === 0) {
       const { resumeData: cv } = useResumeStore.getState();
       const hasCv = Boolean(cv.personalInfo.name.trim()) || cv.experience.length > 0;
       useChatBuilderStore.getState().addMessage({
@@ -679,6 +708,13 @@ export function ChatBuilderClient() {
                     uploading={uploadingCv}
                     disabled={streaming || uploadingCv || fetchingJob}
                     placeholder="Reply, paste a job link, or tap 📎 to upload"
+                    chips={[
+                      "Why am I getting no interview calls?",
+                      "How would an ATS read this?",
+                      "Tailor it to a job post",
+                      "Make my bullets stronger",
+                      "Review my CV so far",
+                    ]}
                     prefill={prefill}
                     prefillNonce={prefillNonce}
                   />
