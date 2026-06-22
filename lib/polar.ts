@@ -23,6 +23,15 @@ export const POLAR_PLANS = {
     credits: 1,
     kind: "one_time",
   },
+  // Tiny visible entry — a clean 1:1 micro-pack ($3 = 3 credits) so the cheapest
+  // option on the pricing page isn't $9. Needs POLAR_PRODUCT_MINI.
+  mini: {
+    productId: process.env.POLAR_PRODUCT_MINI ?? "",
+    name: "Mini",
+    amount: 3,
+    credits: 3,
+    kind: "one_time",
+  },
   // Welcome flash — 24h, one-time, post-signup. 10 credits for $3, anchored at a
   // real $10 list price so "70% off" is honest. Needs POLAR_PRODUCT_WELCOME.
   welcome: {
