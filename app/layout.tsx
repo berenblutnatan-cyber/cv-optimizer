@@ -89,7 +89,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
       <html lang="en" className="scroll-smooth">
         <body className={`${inter.variable} ${jetbrainsMono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable} ${playfair.variable} font-sans`}>
           {/* Analytics scripts are `lazyOnload`: they load after the page is
