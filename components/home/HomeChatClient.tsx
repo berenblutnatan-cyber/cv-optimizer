@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { ArrowRight, Award, BarChart3, ListChecks, ShieldCheck, Sparkles, Target, UploadCloud, Wand2 } from "lucide-react";
+import { ArrowRight, Award, BarChart3, ListChecks, ShieldCheck, Sparkles, Target, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useChatBuilderStore, type BuilderChatMessage } from "@/stores/chatBuilderStore";
@@ -56,7 +56,6 @@ export function HomeChatClient() {
   const stick = useRef(true);
   const cvRef = useRef(cv);
   cvRef.current = cv;
-  const optimizeFileRef = useRef<HTMLInputElement>(null);
 
   // Local message-store helpers (functional updates, no persistence).
   const addMessage = (m: BuilderChatMessage) => setMessages((l) => [...l, m]);
@@ -196,20 +195,17 @@ export function HomeChatClient() {
     }
   }
 
-  async function handleUpload(file: File, mode: "build" | "optimize" = "build") {
+  async function handleUpload(file: File) {
     if (streaming || uploadingCv) return;
     setUploadingCv(true);
-    track("home_chat_cv_uploaded", { size: file.size, type: file.type, mode });
+    track("home_chat_cv_uploaded", { size: file.size, type: file.type });
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/chat/parse-cv", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Couldn't read that file");
-      const framing =
-        mode === "optimize"
-          ? `I'm uploading my existing CV (${data.fileName}) to OPTIMIZE it for a specific role. Here's the full text — pull everything in, then ask me which role I'm targeting and for the job post (the link or a description), and tailor my CV to it:\n\n"""\n${data.text}\n"""`
-          : `I'm uploading my existing CV (${data.fileName}). Here's its full text — pull everything useful into the builder, then tell me what's missing or weak:\n\n"""\n${data.text}\n"""`;
+      const framing = `I'm uploading my existing CV (${data.fileName}). Here's its full text — pull everything useful into the builder, then tell me what's missing or weak:\n\n"""\n${data.text}\n"""`;
       await send(framing, `📎 ${data.fileName}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -275,103 +271,150 @@ export function HomeChatClient() {
     </div>
   );
 
-  // Hidden input for the "Upload CV & optimize" path (separate framing so the
-  // agent asks for the target role + job post).
-  const optimizeFileInput = (
-    <input
-      ref={optimizeFileRef}
-      type="file"
-      accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-      className="sr-only"
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) handleUpload(file, "optimize");
-        e.target.value = "";
-      }}
-    />
-  );
-
   if (!hydrated) return null;
 
-  // EMPTY STATE — a single, clean, centered chat box (base44-style).
+  // EMPTY STATE — the inviting hero. Leads with the low-friction classic-form
+  // paths (Optimize / Tailor straight into /optimize, plus the free Score
+  // check) as the prominent primary CTAs; the AI-chat path sits below as a
+  // clearly-secondary option. Buttons NAVIGATE — they don't fire chat prompts.
   if (!started) {
     return (
-      <div className="h-full flex flex-col items-center justify-center px-4">
-        <div className="w-full max-w-2xl mx-auto">
-          {optimizeFileInput}
-          <h1 className="text-center font-serif text-3xl sm:text-4xl lg:text-5xl text-[#1a1a1a] leading-tight">
-            Let&apos;s build your CV
-          </h1>
-          <p className="text-center text-stone-500 mt-3 text-base sm:text-lg font-light">
-            Tell me your story — or upload your CV and I&apos;ll optimize it for the role you want.
-          </p>
+      <div className="h-full overflow-y-auto">
+        <div className="min-h-full flex flex-col items-center justify-center px-4 py-8">
+          <div className="w-full max-w-3xl mx-auto">
+            <div className="flex justify-center">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-stone-200 shadow-sm text-[12px] text-stone-600">
+                <Sparkles className="h-3.5 w-3.5 text-[#B8860B]" />
+                Powered by Claude · Scored on real ATS rules
+              </span>
+            </div>
 
-          <div className="mt-7">
-            <ChatComposer
-              theme="light"
-              minRows={2}
-              chips={[]}
-              onSend={handleSend}
-              onUpload={handleUpload}
-              uploading={uploadingCv}
-              disabled={streaming || uploadingCv || fetchingJob}
-              placeholder="Tell me your experience, paste a job link, or tap 📎 to upload your CV"
-              uploadingLabel="Reading your CV…"
-            />
-          </div>
-
-          {/* Two clear paths */}
-          <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-            <button
-              type="button"
-              disabled={streaming || uploadingCv}
-              onClick={() => send("Let's build my CV from scratch — I'll tell you my story.")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-medium hover:bg-[#0d3259] shadow-sm hover:shadow-md transition-all disabled:opacity-40"
-            >
-              <Sparkles className="h-4 w-4" />
-              Tell me your story
-            </button>
-            <button
-              type="button"
-              disabled={streaming || uploadingCv}
-              onClick={() => optimizeFileRef.current?.click()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-stone-300 text-[#1a1a1a] text-sm font-medium hover:border-[#B8860B]/60 hover:bg-stone-50 shadow-sm hover:shadow-md transition-all disabled:opacity-40"
-            >
-              <UploadCloud className="h-4 w-4 text-[#B8860B]" />
-              Upload CV &amp; optimize
-            </button>
-            <button
-              type="button"
-              disabled={streaming || uploadingCv}
-              onClick={() => send("Tailor my CV to a job post")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-stone-200 text-stone-600 text-sm hover:text-[#0A2647] hover:border-stone-300 shadow-sm transition-all disabled:opacity-40"
-            >
-              <Target className="h-4 w-4" />
-              Tailor to a job post
-            </button>
-          </div>
-
-          {/* Other ways to build — appealing buttons */}
-          <div className="mt-9">
-            <p className="text-center text-[11px] uppercase tracking-[0.18em] text-stone-400 mb-3">
-              Or build it another way
+            <h1 className="text-center font-serif text-3xl sm:text-4xl lg:text-5xl text-[#1a1a1a] leading-tight mt-5">
+              Get a CV that gets you hired
+            </h1>
+            <p className="text-center text-stone-500 mt-3 text-base sm:text-lg font-light max-w-xl mx-auto">
+              Upload your CV and we&apos;ll sharpen it for the role you want — line by line,
+              the way recruiters and ATS actually read it.
             </p>
-            {entryButtons}
-          </div>
 
-          {/* Credibility strip — honest framing, no fabricated numbers */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-stone-400">
-            <span className="inline-flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-[#B8860B]" /> Powered by Claude
-            </span>
-            <span className="text-stone-300">·</span>
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#0A2647]" /> Scored on ATS rules
-            </span>
-            <span className="text-stone-300">·</span>
-            <span className="inline-flex items-center gap-1.5">
-              <Award className="h-3.5 w-3.5 text-[#0A2647]" /> Recruiter-reviewed templates
-            </span>
+            {/* Primary paths — the proven, low-friction form. These NAVIGATE. */}
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <Link
+                href="/optimize?mode=quick"
+                onClick={() => track("home_cta_click", { target: "optimize" })}
+                className="group relative flex flex-col rounded-2xl bg-[#0A2647] text-white p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              >
+                <span className="absolute top-3 right-3 text-[10px] font-medium uppercase tracking-wider bg-[#B8860B] text-white px-2 py-0.5 rounded-full">
+                  Popular
+                </span>
+                <span className="grid place-items-center h-10 w-10 rounded-xl bg-white/10">
+                  <Wand2 className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <span className="mt-3 font-semibold text-[15px]">Optimize my CV</span>
+                <span className="mt-1 text-[13px] text-white/70 leading-snug">
+                  Upload it and we&apos;ll fix every line in minutes.
+                </span>
+                <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-white/90">
+                  Start <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </Link>
+
+              <Link
+                href="/optimize"
+                onClick={() => track("home_cta_click", { target: "tailor" })}
+                className="group relative flex flex-col rounded-2xl bg-white border border-stone-200 p-5 shadow-sm hover:shadow-md hover:border-[#B8860B]/50 hover:-translate-y-0.5 transition-all"
+              >
+                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[#B8860B]/10 text-[#B8860B]">
+                  <Target className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <span className="mt-3 font-semibold text-[15px] text-[#1a1a1a]">Tailor to a job</span>
+                <span className="mt-1 text-[13px] text-stone-500 leading-snug">
+                  Match your CV to a specific role or job post.
+                </span>
+                <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-[#0A2647]">
+                  Start <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </Link>
+
+              <Link
+                href="/score"
+                onClick={() => track("home_cta_click", { target: "score" })}
+                className="group relative flex flex-col rounded-2xl bg-white border border-stone-200 p-5 shadow-sm hover:shadow-md hover:border-[#0A2647]/40 hover:-translate-y-0.5 transition-all"
+              >
+                <span className="absolute top-3 right-3 text-[10px] font-medium uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                  Free
+                </span>
+                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[#0A2647]/8 text-[#0A2647]">
+                  <BarChart3 className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <span className="mt-3 font-semibold text-[15px] text-[#1a1a1a]">Check my score</span>
+                <span className="mt-1 text-[13px] text-stone-500 leading-snug">
+                  See where you stand in 60s. No signup.
+                </span>
+                <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-[#0A2647]">
+                  Start <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </Link>
+            </div>
+
+            {/* Secondary — the AI-chat path, kept but quieter. */}
+            <div className="mt-8">
+              <div className="flex items-center gap-3 max-w-xl mx-auto">
+                <span className="h-px flex-1 bg-stone-200" />
+                <span className="text-[11px] uppercase tracking-[0.18em] text-stone-400 whitespace-nowrap">
+                  Or build it from a conversation
+                </span>
+                <span className="h-px flex-1 bg-stone-200" />
+              </div>
+
+              <div className="mt-4 max-w-xl mx-auto">
+                <ChatComposer
+                  theme="light"
+                  minRows={2}
+                  chips={[]}
+                  onSend={handleSend}
+                  onUpload={handleUpload}
+                  uploading={uploadingCv}
+                  disabled={streaming || uploadingCv || fetchingJob}
+                  placeholder="Tell me your experience, paste a job link, or tap 📎 to upload your CV"
+                  uploadingLabel="Reading your CV…"
+                />
+                <div className="mt-3 flex flex-wrap justify-center gap-2.5">
+                  <button
+                    type="button"
+                    disabled={streaming || uploadingCv}
+                    onClick={() => send("Let's build my CV from scratch — I'll tell you my story.")}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-300 text-[#1a1a1a] text-sm font-medium hover:border-[#0A2647]/50 hover:bg-stone-50 shadow-sm transition-all disabled:opacity-40"
+                  >
+                    <Sparkles className="h-4 w-4 text-[#B8860B]" />
+                    Tell me your story
+                  </button>
+                  <Link
+                    href="/builder"
+                    onClick={() => track("home_cta_click", { target: "builder" })}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200 text-stone-600 text-sm hover:text-[#0A2647] hover:border-stone-300 shadow-sm transition-all"
+                  >
+                    <ListChecks className="h-4 w-4 text-indigo-600" />
+                    Build manually
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Credibility strip — honest framing, no fabricated numbers */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-stone-400">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#0A2647]" /> Scored on real ATS rules
+              </span>
+              <span className="text-stone-300">·</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Award className="h-3.5 w-3.5 text-[#0A2647]" /> Recruiter-reviewed templates
+              </span>
+              <span className="text-stone-300">·</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-[#B8860B]" /> Powered by Claude
+              </span>
+            </div>
           </div>
         </div>
       </div>
