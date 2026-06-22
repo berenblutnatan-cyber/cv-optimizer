@@ -12,7 +12,7 @@ datasource db {
 model User {
   id        String   @id @unique // Matches Clerk User ID (user_2N...)
   email     String   @unique
-  credits   Int      @default(2) // New users get 2 free credits (lets them see the optimized result + retry once before paywall)
+  credits   Int      @default(1) // New users get 1 free credit — keep in sync with FREE_CREDITS_FOR_NEW_USER in lib/credits.ts. The first real CV (full rewrite/download) is paid.
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -30,6 +30,10 @@ model User {
   subscriptionPlan             String?   // POLAR_PLANS key, e.g. "unlimited_monthly"
   subscriptionCurrentPeriodEnd DateTime?
   polarSubscriptionId          String?
+
+  // Win-back: timestamp the one-time re-engagement email was sent, so the cron
+  // never emails the same lapsed user twice. Null = not yet emailed.
+  winbackEmailedAt DateTime?
 
   resumes          Resume[]
   feedbacks        Feedback[]

@@ -13,6 +13,7 @@ import { CreditBalance } from "@/components/CreditBalance";
 import { SiteFooter } from "@/components/shared/SiteFooter";
 import { ScrollDepthTracker } from "@/components/ScrollDepthTracker";
 import { HomeChatClient } from "@/components/home/HomeChatClient";
+import { SocialProofBadge } from "@/components/landing/SocialProofBadge";
 
 export default function LandingPage() {
   return (
@@ -228,6 +229,9 @@ export default function LandingPage() {
             <p className="text-lg text-stone-500 font-light">
               A few quotes from early user feedback
             </p>
+            <div className="mt-6 flex justify-center">
+              <SocialProofBadge />
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">

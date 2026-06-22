@@ -25,6 +25,7 @@ export type EventName =
   | "credit_check_failed"
   | "out_of_credits_modal_shown"
   | "out_of_credits_modal_dismissed"
+  | "welcome_flash_shown"
   | "template_unlock_modal_shown"
   | "template_unlocked"
   | "results_viewed"
