@@ -110,7 +110,13 @@ export function ChatBuilderClient() {
     }
     // Funnel hand-off: if the onboarding funnel stashed a kickoff, set the
     // chosen template and draft the CV immediately (the "first draft" moment).
-    let kickoff: { role?: string; goal?: string; template?: BuilderTemplateId; cvText?: string } | null = null;
+    let kickoff: {
+      role?: string;
+      goal?: string;
+      template?: BuilderTemplateId;
+      experience?: string | null;
+      cvText?: string | null;
+    } | null = null;
     try {
       const raw = sessionStorage.getItem("builder-kickoff");
       if (raw) {
@@ -133,7 +139,13 @@ export function ChatBuilderClient() {
             : kickoff.goal === "both"
               ? "to pass ATS and impress recruiters"
               : "";
-      const ctx = `${role ? ` for a ${role} role` : ""}${goalText ? `, optimized ${goalText}` : ""}`;
+      const expText =
+        kickoff.experience === "student"
+          ? ", and I'm just starting out"
+          : kickoff.experience
+            ? `, with ${kickoff.experience} years of experience`
+            : "";
+      const ctx = `${role ? ` for a ${role} role` : ""}${goalText ? `, optimized ${goalText}` : ""}${expText}`;
       const msg = kickoff.cvText
         ? `I'm building my CV${ctx}. Here's my current CV — pull everything in and rewrite it into a strong first draft, then tell me the biggest things to improve:\n\n"""\n${kickoff.cvText}\n"""`
         : `I'm building my CV from scratch${ctx}. Interview me one question at a time and let's start now.`;

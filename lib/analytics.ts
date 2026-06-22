@@ -83,8 +83,6 @@ export type EventName =
   | "build_onboarding_viewed"
   | "build_onboarding_step"
   | "build_onboarding_completed"
-  | "funnel_completed"
-  | "funnel_cv_uploaded"
   | "xp_awarded"
   | "level_up";
 

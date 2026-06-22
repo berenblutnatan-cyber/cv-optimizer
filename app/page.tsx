@@ -12,7 +12,7 @@ import { ActiveNavLinks } from "@/components/landing/ActiveNavLinks";
 import { CreditBalance } from "@/components/CreditBalance";
 import { SiteFooter } from "@/components/shared/SiteFooter";
 import { ScrollDepthTracker } from "@/components/ScrollDepthTracker";
-import { HomeExperience } from "@/components/home/HomeExperience";
+import { BuildOnboarding } from "@/components/build/BuildOnboarding";
 
 export default function LandingPage() {
   return (
@@ -65,13 +65,13 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* The home IS the onboarding funnel — one friendly question at a time,
-          then it drafts the CV live in the builder. Marketing sections below
-          stay for scrollers / SEO. */}
+      {/* The home IS the onboarding funnel — one friendly question at a time
+          (role → goal → template), then it drafts the CV live in the builder.
+          Marketing sections below stay for scrollers / SEO. */}
       <section id="hero" className="relative w-full bg-[#FAFAF8]">
         <div className="h-[100dvh] flex flex-col pt-16 sm:pt-20 pb-4">
           <div className="flex-1 min-h-0">
-            <HomeExperience />
+            <BuildOnboarding embedded />
           </div>
         </div>
       </section>
