@@ -100,6 +100,10 @@ export function StudioBuilder() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mobileTabRef = useRef(mobileTab);
   mobileTabRef.current = mobileTab;
+  // When an anon user hits the download gate, we open sign-up and remember they
+  // were mid-export — so the download resumes itself the moment they're in,
+  // instead of making them hunt for the Export button again.
+  const pendingExportRef = useRef(false);
 
   useEffect(() => {
     setHydrated(true);
@@ -130,6 +134,16 @@ export function StudioBuilder() {
     return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Seamless gate: if a download was blocked on sign-up, run it the instant the
+  // user is signed in (their first free credit covers this first CV).
+  useEffect(() => {
+    if (isSignedIn && pendingExportRef.current) {
+      pendingExportRef.current = false;
+      void onExport();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
 
   async function loadChats() {
     try {
@@ -345,7 +359,10 @@ export function StudioBuilder() {
       return;
     }
     if (!isSignedIn) {
-      toast.message("Create a free account to download your CV.");
+      pendingExportRef.current = true;
+      toast.message("Your CV's ready — create a free account to download it.", {
+        description: "Your first one's on us.",
+      });
       openSignUp?.();
       return;
     }
