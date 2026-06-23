@@ -33,7 +33,7 @@ import { generateId, type ResumeData } from "@/types/resume";
 import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
 import { ResumePreview } from "@/components/builder/ResumePreview";
 import { TemplateGalleryModal } from "@/components/builder/TemplateGalleryModal";
-import { SAMPLE_RESUME, isEmptyResume } from "@/lib/builder/sampleResume";
+import { SAMPLE_RESUME, SAMPLE_RESUME_DATA, isEmptyResume } from "@/lib/builder/sampleResume";
 import { exportToPdf } from "@/utils/exportToPdf";
 import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { track } from "@/lib/analytics";
@@ -848,6 +848,7 @@ export function StudioBuilder() {
         open={galleryOpen}
         onClose={() => setGalleryOpen(false)}
         data={docData}
+        isDemo={isEmpty}
         currentLayout={selectedTemplate}
         currentColor={selectedColor}
         onSelect={(layout, color) => {
@@ -855,6 +856,16 @@ export function StudioBuilder() {
           setSelectedColor(color);
           setMobileTab("document");
           track("studio_toolbar_action", { action: "template_select" });
+        }}
+        onMakeDemo={(layout, color) => {
+          // Loads the editable sample so the chosen design shows a finished CV.
+          // Guard real work — only replace silently when the CV is still empty.
+          if (!isEmpty && !window.confirm("Replace your current CV with the demo content?")) return;
+          setResumeData(SAMPLE_RESUME_DATA);
+          setSelectedTemplate(layout);
+          setSelectedColor(color);
+          setMobileTab("document");
+          track("studio_toolbar_action", { action: "template_make_demo" });
         }}
       />
 

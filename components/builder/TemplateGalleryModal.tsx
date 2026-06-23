@@ -20,12 +20,16 @@ function PresetCard({
   preset,
   data,
   selected,
+  isDemo,
   onSelect,
+  onMakeDemo,
 }: {
   preset: TemplatePreset;
   data: ResumePreviewData;
   selected: boolean;
+  isDemo: boolean;
   onSelect: () => void;
+  onMakeDemo: () => void;
 }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -60,52 +64,74 @@ function PresetCard({
   }, []);
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`group text-left rounded-xl border bg-white overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none ${
+    <div
+      className={`group relative text-left rounded-xl border bg-white overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg ${
         selected ? "border-[#0A2647] ring-2 ring-[#0A2647]/30" : "border-stone-200 hover:border-[#0A2647]/40"
       }`}
     >
-      {/* A4-ratio thumbnail */}
-      <div ref={frameRef} className="relative w-full overflow-hidden bg-stone-100" style={{ aspectRatio: "210 / 297" }}>
-        {visible ? (
-          <div
-            className="absolute top-0 left-0 origin-top-left pointer-events-none"
-            style={{ width: `${A4_W}px`, transform: `scale(${scale})` }}
-          >
-            <ResumePreview data={data} templateId={preset.layout} themeColor={preset.color} />
-          </div>
-        ) : (
-          <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-stone-100 to-stone-200" />
-        )}
-        {selected ? (
-          <div className="absolute top-2 right-2 grid place-items-center h-6 w-6 rounded-full bg-[#0A2647] text-white shadow">
-            <Check className="h-3.5 w-3.5" strokeWidth={3} />
-          </div>
-        ) : null}
-        <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
-          {preset.isNew ? (
-            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#0A2647] text-white text-[9px] font-bold tracking-wide shadow">
-              <Sparkles className="h-2.5 w-2.5" /> NEW
-            </div>
-          ) : null}
-          {preset.premium ? (
-            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#B8860B] text-white text-[9px] font-bold tracking-wide shadow">
-              <Crown className="h-2.5 w-2.5" /> PRO
+      {/* The whole card applies the design to the user's current CV. */}
+      <button type="button" onClick={onSelect} className="block w-full text-left focus-visible:outline-none">
+        {/* A4-ratio thumbnail — kept clear of badges so the design is never hidden. */}
+        <div ref={frameRef} className="relative w-full overflow-hidden bg-stone-100" style={{ aspectRatio: "210 / 297" }}>
+          {visible ? (
+            <div
+              className="absolute top-0 left-0 origin-top-left pointer-events-none"
+              style={{ width: `${A4_W}px`, transform: `scale(${scale})` }}
+            >
+              <ResumePreview data={data} templateId={preset.layout} themeColor={preset.color} />
             </div>
           ) : (
-            <div className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[9px] font-bold tracking-wide">
-              FREE
-            </div>
+            <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-stone-100 to-stone-200" />
           )}
+          {/* Dim the preview on hover so the "Make a demo CV" button reads clearly. */}
+          <div className="absolute inset-0 bg-[#0A2647]/0 group-hover:bg-[#0A2647]/20 transition-colors pointer-events-none" />
+          {selected ? (
+            <div className="absolute top-2 right-2 grid place-items-center h-6 w-6 rounded-full bg-[#0A2647] text-white shadow">
+              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+            </div>
+          ) : null}
+          {/* Signals the preview is sample content (shown only while the demo CV is on screen). */}
+          {isDemo ? (
+            <div className="absolute bottom-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/85 backdrop-blur text-[#0A2647] text-[8.5px] font-bold uppercase tracking-wide shadow-sm group-hover:opacity-0 transition-opacity">
+              demo CV
+            </div>
+          ) : null}
         </div>
-      </div>
-      <div className="px-2.5 py-2 border-t border-stone-100">
-        <div className="text-[12.5px] font-semibold text-[#0A2647] truncate">{preset.name}</div>
-        <div className="text-[11px] text-stone-400 truncate">{preset.tagline}</div>
-      </div>
-    </button>
+        {/* Footer: name + badges (badges live here, never over the preview). */}
+        <div className="px-2.5 py-2 border-t border-stone-100">
+          <div className="flex items-center gap-1.5">
+            <div className="text-[12.5px] font-semibold text-[#0A2647] truncate flex-1 min-w-0">{preset.name}</div>
+            {preset.isNew ? (
+              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#0A2647] text-white text-[8.5px] font-bold tracking-wide">
+                <Sparkles className="h-2 w-2" /> NEW
+              </span>
+            ) : null}
+            {preset.premium ? (
+              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#B8860B] text-white text-[8.5px] font-bold tracking-wide">
+                <Crown className="h-2 w-2" /> PRO
+              </span>
+            ) : (
+              <span className="flex-shrink-0 inline-flex items-center px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[8.5px] font-bold tracking-wide">
+                FREE
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-stone-400 truncate">{preset.tagline}</div>
+        </div>
+      </button>
+      {/* "Make a demo CV" — revealed on hover; loads the sample CV into this design.
+          pointer-events gate so the hidden button never swallows card clicks. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onMakeDemo();
+        }}
+        className="absolute left-1/2 top-[42%] z-10 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-[#0A2647] shadow-lg ring-1 ring-black/5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto hover:bg-[#0A2647] hover:text-white focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none"
+      >
+        <Sparkles className="h-3 w-3" /> Make a demo CV
+      </button>
+    </div>
   );
 }
 
@@ -113,16 +139,22 @@ export function TemplateGalleryModal({
   open,
   onClose,
   data,
+  isDemo = false,
   currentLayout,
   currentColor,
   onSelect,
+  onMakeDemo,
 }: {
   open: boolean;
   onClose: () => void;
   data: ResumePreviewData;
+  /** True when `data` is the sample CV (so cards can flag it "demo CV"). */
+  isDemo?: boolean;
   currentLayout: BuilderTemplateId;
   currentColor: ThemeColor;
   onSelect: (layout: BuilderTemplateId, color: ThemeColor) => void;
+  /** Apply this design AND load the sample CV into the builder. */
+  onMakeDemo: (layout: BuilderTemplateId, color: ThemeColor) => void;
 }) {
   const [category, setCategory] = useState<"All" | PresetCategory>("All");
   const [query, setQuery] = useState("");
@@ -208,9 +240,14 @@ export function TemplateGalleryModal({
                 key={preset.id}
                 preset={preset}
                 data={data}
+                isDemo={isDemo}
                 selected={preset.layout === currentLayout && preset.color === currentColor}
                 onSelect={() => {
                   onSelect(preset.layout, preset.color);
+                  onClose();
+                }}
+                onMakeDemo={() => {
+                  onMakeDemo(preset.layout, preset.color);
                   onClose();
                 }}
               />
