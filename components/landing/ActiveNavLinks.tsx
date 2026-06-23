@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 
 const sections = [
   { id: "hero", label: "Home" },
+  { id: "rewrite", label: "How it works" },
   { id: "templates", label: "Templates" },
-  { id: "testimonials", label: "Testimonials" },
+  { id: "stories", label: "Stories" },
 ];
 
 export function ActiveNavLinks() {
@@ -50,13 +51,13 @@ export function ActiveNavLinks() {
   };
 
   return (
-    <nav className="hidden md:flex items-center gap-12 absolute left-1/2 -translate-x-1/2">
+    <nav className="hidden min-[1140px]:flex flex-1 items-center justify-center gap-7 xl:gap-10">
       {sections.map((section) => (
         <a
           key={section.id}
           href={`#${section.id}`}
           onClick={(e) => handleClick(e, section.id)}
-          className={`font-serif text-sm transition-colors ${
+          className={`whitespace-nowrap font-serif text-sm transition-colors ${
             activeSection === section.id
               ? "text-[#0A2647] font-semibold"
               : "text-stone-500 hover:text-[#0A2647]"

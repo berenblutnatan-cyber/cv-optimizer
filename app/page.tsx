@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Star, ArrowRight, FileText, BarChart3 } from "lucide-react";
+import { ArrowRight, BarChart3, ChevronDown, Quote } from "lucide-react";
 import {
   SignInButton,
   SignUpButton,
@@ -14,23 +14,21 @@ import { SiteFooter } from "@/components/shared/SiteFooter";
 import { ScrollDepthTracker } from "@/components/ScrollDepthTracker";
 import { BuildOnboarding } from "@/components/build/BuildOnboarding";
 import { SocialProofBadge } from "@/components/landing/SocialProofBadge";
+import { RewriteShowcase } from "@/components/landing/RewriteShowcase";
+import { TwoReaders } from "@/components/landing/TwoReaders";
+import { TemplateGallery } from "@/components/landing/TemplateGallery";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
+    <div className="min-h-screen bg-[#FAFAF8] text-[#0A2647]">
       <ScrollDepthTracker page="landing" />
-      {/* Header - Premium Full Width Navbar */}
+
+      {/* Header — premium full-width navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
-          {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
-
-          {/* Navigation Links - Center */}
           <ActiveNavLinks />
-
-          {/* Score Button + Auth Buttons - Far Right */}
           <div className="flex items-center gap-2 sm:gap-3 md:gap-5">
-            {/* Lead Magnet: Check Score */}
             <Link
               href="/score"
               className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none"
@@ -57,8 +55,8 @@ export default function LandingPage() {
               <UserButton
                 appearance={{
                   elements: {
-                    avatarBox: "w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-stone-200"
-                  }
+                    avatarBox: "w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-stone-200",
+                  },
                 }}
               />
             </SignedIn>
@@ -66,285 +64,302 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* The home IS the onboarding funnel — one friendly question at a time
-          (role → goal → template), then it drafts the CV live in the builder.
-          Marketing sections below stay for scrollers / SEO. */}
+      {/* HERO — the home IS the guided funnel (role → goal → template), which
+          drafts the CV live. The narrative below is for scrollers / SEO. */}
       <section id="hero" className="relative w-full bg-[#FAFAF8]">
         <div className="h-[100dvh] flex flex-col pt-16 sm:pt-20 pb-4">
           <div className="flex-1 min-h-0">
             <BuildOnboarding embedded />
           </div>
         </div>
+        {/* Quiet scroll affordance into the story */}
+        <a
+          href="#rewrite"
+          className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 lg:flex flex-col items-center gap-1.5 text-[#0A2647]/40 transition-colors hover:text-[#0A2647] focus-visible:outline-none"
+        >
+          <span className="font-mono text-[10px] uppercase tracking-[0.24em]">
+            See how it works
+          </span>
+          <ChevronDown className="h-4 w-4 animate-bounce" strokeWidth={1.75} />
+        </a>
       </section>
 
-      {/* Templates Section */}
-      <section id="templates" className="w-full lg:min-h-screen flex items-center py-16 sm:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
-          <div className="grid lg:grid-cols-2 gap-12 sm:gap-16 lg:gap-20 items-center">
-            {/* Template Grid Visual */}
-            <div className="order-2 lg:order-1">
-              <div className="grid grid-cols-2 gap-4 sm:gap-5 max-w-md mx-auto lg:mx-0">
-                {/* Template 1: The Ivy */}
-                <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 p-3 overflow-hidden">
-                    <div className="space-y-2">
-                      <div className="text-center border-b border-stone-100 pb-2 mb-2">
-                        <div className="h-2 w-16 bg-stone-800 rounded-sm mx-auto mb-1" />
-                        <div className="h-1 w-20 bg-stone-300 rounded-sm mx-auto" />
-                      </div>
-                      <div className="h-1 w-8 bg-stone-400 rounded-sm" />
-                      <div className="space-y-1">
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
-                      </div>
-                      <div className="h-1 w-10 bg-stone-400 rounded-sm mt-2" />
-                      <div className="space-y-1">
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-4/5 bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="font-serif text-sm text-[#1a1a1a]">The Ivy</p>
-                  <p className="text-xs text-stone-500 font-light">Classic & Professional</p>
-                </div>
-                {/* Template 2: The Modern (Popular) */}
-                <div className="bg-white rounded-sm border-2 border-indigo-500 p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 overflow-hidden flex">
-                    <div className="w-1/3 bg-indigo-600 p-2">
-                      <div className="w-6 h-6 rounded-full bg-white/30 mx-auto mb-2" />
-                      <div className="space-y-1">
-                        <div className="h-0.5 w-full bg-white/40 rounded-sm" />
-                        <div className="h-0.5 w-4/5 bg-white/30 rounded-sm" />
-                      </div>
-                    </div>
-                    <div className="flex-1 p-2">
-                      <div className="h-1.5 w-12 bg-stone-700 rounded-sm mb-2" />
-                      <div className="space-y-1 mb-2">
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
-                      </div>
-                      <div className="h-1 w-8 bg-stone-400 rounded-sm mb-1" />
-                      <div className="space-y-0.5">
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-4/5 bg-stone-200 rounded-sm" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-serif text-sm text-[#1a1a1a]">The Modern</p>
-                      <p className="text-xs text-stone-500 font-light">Bold & Contemporary</p>
-                    </div>
-                    <span className="text-[10px] font-medium text-indigo-600 bg-indigo-100 px-2 py-1 rounded-sm">Popular</span>
-                  </div>
-                </div>
-                {/* Template 3: Executive */}
-                <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 p-3 overflow-hidden">
-                    <div className="border-b-2 border-[#B8860B] pb-2 mb-2">
-                      <div className="h-2 w-20 bg-stone-800 rounded-sm mb-1" />
-                      <div className="h-1 w-24 bg-stone-300 rounded-sm" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-1 w-10 bg-[#B8860B] rounded-sm" />
-                      <div className="space-y-1">
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
-                      </div>
-                      <div className="h-1 w-8 bg-[#B8860B] rounded-sm mt-2" />
-                      <div className="space-y-1">
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-4/5 bg-stone-200 rounded-sm" />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="font-serif text-sm text-[#1a1a1a]">Executive</p>
-                  <p className="text-xs text-stone-500 font-light">Senior Leadership</p>
-                </div>
-                {/* Template 4: Creative */}
-                <div className="bg-white rounded-sm border border-stone-200 p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-[3/4] bg-white border border-stone-100 rounded-sm mb-3 overflow-hidden">
-                    <div className="h-8 bg-gradient-to-r from-violet-500 to-purple-600 mb-2" />
-                    <div className="px-3 space-y-2">
-                      <div className="h-1.5 w-16 bg-stone-700 rounded-sm" />
-                      <div className="space-y-1">
-                        <div className="h-0.5 w-full bg-stone-200 rounded-sm" />
-                        <div className="h-0.5 w-5/6 bg-stone-200 rounded-sm" />
-                      </div>
-                      <div className="flex gap-1 mt-2">
-                        <div className="h-3 w-8 bg-violet-100 rounded-sm" />
-                        <div className="h-3 w-6 bg-purple-100 rounded-sm" />
-                        <div className="h-3 w-7 bg-violet-100 rounded-sm" />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="font-serif text-sm text-[#1a1a1a]">Creative</p>
-                  <p className="text-xs text-stone-500 font-light">Design & Marketing</p>
-                </div>
-              </div>
-            </div>
+      {/* ============================================================
+          SIGNATURE — THE REWRITE ENGINE
+          One line, two voices: the flat draft (mono) → the sharp,
+          quantified rewrite (serif), with the ATS score climbing.
+          ============================================================ */}
+      <section id="rewrite" className="relative w-full overflow-hidden bg-[#FAFAF8] py-20 sm:py-28">
+        {/* faint warm halo, echoing the funnel above */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-0 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-[#B8860B] opacity-[0.05] blur-[120px]"
+        />
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+              The rewrite engine
+            </p>
+            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
+              One line decides whether they keep reading.
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-[#0A2647]/55 sm:text-lg">
+              Hired turns the lines you&rsquo;d actually write into the ones a
+              recruiter repeats out loud. Same job — sharper proof.
+            </p>
+          </div>
 
-            {/* Text Content */}
-            <div className="order-1 lg:order-2 max-w-lg lg:justify-self-end">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-5 tracking-wide">
-                <FileText className="w-4 h-4" strokeWidth={1.5} />
-                Premium Templates
-              </div>
-              <h3 className="font-serif text-3xl sm:text-4xl font-light text-[#1a1a1a] mb-5">
-                Designed to Get You Hired
-              </h3>
-              <p className="text-base text-stone-500 mb-8 leading-relaxed font-light">
-                Our templates are designed by hiring experts from top companies.
-                Each template is optimized for both human recruiters and ATS systems.
-              </p>
-              <ul className="space-y-4">
-                <li className="flex items-center gap-4 text-stone-600 font-light">
-                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
-                  Designed by HR professionals
-                </li>
-                <li className="flex items-center gap-4 text-stone-600 font-light">
-                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
-                  ATS-friendly formatting
-                </li>
-                <li className="flex items-center gap-4 text-stone-600 font-light">
-                  <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0" strokeWidth={1.5} />
-                  Multiple industry styles
-                </li>
-              </ul>
-            </div>
+          <div className="mt-12 sm:mt-14">
+            <RewriteShowcase />
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="w-full lg:min-h-screen flex items-center py-16 sm:py-24 bg-[#FAFAF8]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
-              What job seekers are telling us
-            </h2>
-            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
-            <p className="text-lg text-stone-500 font-light">
-              A few quotes from early user feedback
+      {/* ============================================================
+          TWO READERS — why the rewrite works (navy / machine register)
+          ============================================================ */}
+      <section
+        id="two-readers"
+        className="w-full bg-gradient-to-b from-[#0A2647] to-[#061A33] py-20 sm:py-28"
+      >
+        <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#D4A83F]">
+              Before a human ever sees it
             </p>
+            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-white sm:text-4xl md:text-[2.7rem]">
+              Your résumé is read twice.
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-white/60 sm:text-lg">
+              First by software deciding if you&rsquo;re worth forwarding. Then by
+              a person deciding if you&rsquo;re worth meeting. Most tools write for
+              one. Hired writes for both.
+            </p>
+          </div>
+
+          <div className="mt-12 sm:mt-14">
+            <TwoReaders />
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          TEMPLATES — the artifact (premium documents)
+          ============================================================ */}
+      <section id="templates" className="w-full bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+              The templates
+            </p>
+            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
+              Built to survive the scan and earn the read.
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-[#0A2647]/55 sm:text-lg">
+              Every layout parses cleanly for the software and looks composed to
+              the person. Start with one — switch anytime, nothing&rsquo;s locked in.
+            </p>
+          </div>
+
+          <div className="mt-12 sm:mt-14">
+            <TemplateGallery />
+          </div>
+
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#0A2647]/40">
+              + 9 more in the studio
+            </p>
+            <Link
+              href="/build/chat"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-[#0A2647] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#0d3259] hover:shadow-md focus-visible:outline-none"
+            >
+              Start with a template
+              <ArrowRight
+                className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                strokeWidth={1.75}
+              />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          STORIES — proof, editorial pull-quotes (honest)
+          ============================================================ */}
+      <section id="stories" className="w-full bg-[#FAFAF8] py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+              Early signals
+            </p>
+            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
+              What people tell us after the rewrite.
+            </h2>
             <div className="mt-6 flex justify-center">
               <SocialProofBadge />
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <div className="bg-white rounded-sm p-8 border border-stone-100 shadow-sm">
-              <div className="flex items-center gap-1 mb-5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-[#B8860B] text-[#B8860B]" />
-                ))}
-              </div>
-              <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
-                "I'd been tweaking my resume for weeks without making real progress. Hired pointed out keyword gaps I never would've spotted on my own — and the rewrite suggestions were ones I actually wanted to use."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
-                  MG
-                </div>
-                <div>
-                  <p className="font-medium text-[#1a1a1a] text-sm">Maya G.</p>
-                  <p className="text-xs text-stone-500 font-light">Product Manager</p>
-                </div>
-              </div>
-            </div>
+          {/* Featured pull-quote */}
+          <figure className="mx-auto mt-14 max-w-3xl text-center">
+            <Quote
+              className="mx-auto h-9 w-9 text-[#B8860B]/40"
+              strokeWidth={1.25}
+              aria-hidden
+            />
+            <blockquote className="mt-5 text-balance font-serif text-2xl leading-snug text-[#0A2647] sm:text-3xl md:text-[2.1rem] md:leading-[1.25]">
+              &ldquo;I&rsquo;d been editing the same bullet for a week. Hired rewrote
+              it in <span className="italic text-[#9a6b08]">one line</span> — and it
+              was the line I actually wanted to say.&rdquo;
+            </blockquote>
+            <figcaption className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-[#0A2647]/50">
+              Maya G. · Product Manager
+            </figcaption>
+          </figure>
 
-            {/* Testimonial 2 */}
-            <div className="bg-white rounded-sm p-8 border border-stone-100 shadow-sm">
-              <div className="flex items-center gap-1 mb-5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-[#B8860B] text-[#B8860B]" />
-                ))}
-              </div>
-              <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
-                "Most resume tools spit out generic templates. The feedback here was specific to the job I was applying for and called out things I'd actually missed."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
-                  AR
-                </div>
-                <div>
-                  <p className="font-medium text-[#1a1a1a] text-sm">Amit R.</p>
-                  <p className="text-xs text-stone-500 font-light">Software Engineer</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 */}
-            <div className="bg-white rounded-sm p-8 border border-stone-100 shadow-sm">
-              <div className="flex items-center gap-1 mb-5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-[#B8860B] text-[#B8860B]" />
-                ))}
-              </div>
-              <p className="text-stone-600 mb-6 leading-relaxed text-sm font-light">
-                "Coming from a non-traditional background, presenting transferable skills was the hardest part. The AI gave me language I'd been struggling to find myself."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-[#0A2647] flex items-center justify-center text-white text-sm font-medium">
-                  SA
-                </div>
-                <div>
-                  <p className="font-medium text-[#1a1a1a] text-sm">Shaked A.</p>
-                  <p className="text-xs text-stone-500 font-light">Data Analyst</p>
-                </div>
-              </div>
-            </div>
+          {/* Supporting quotes */}
+          <div className="mx-auto mt-14 grid max-w-4xl gap-5 sm:grid-cols-2">
+            {[
+              {
+                quote:
+                  "It caught keyword gaps I'd never have spotted — then made the rewrite sound like me, not a template.",
+                name: "Amit R.",
+                role: "Software Engineer",
+              },
+              {
+                quote:
+                  "Coming from a non-traditional background, it gave me language for skills I could never put into words myself.",
+                name: "Shaked A.",
+                role: "Data Analyst",
+              },
+            ].map((t) => (
+              <blockquote
+                key={t.name}
+                className="rounded-2xl border border-[#0A2647]/8 bg-white p-7 text-left shadow-[0_18px_44px_-30px_rgba(10,38,71,0.4)]"
+              >
+                <p className="text-[15px] leading-relaxed text-[#0A2647]/75">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <footer className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/45">
+                  {t.name} · {t.role}
+                </footer>
+              </blockquote>
+            ))}
           </div>
-          <p className="text-center text-xs text-stone-500 font-light mt-8 tracking-wide">
+
+          <p className="mt-10 text-center font-mono text-[11px] tracking-wide text-[#0A2647]/40">
             Quotes from anonymized user interviews. Outcomes vary.
           </p>
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="w-full py-20 sm:py-28 bg-[#0A2647]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-8 lg:px-16 text-center">
-          <h2 className="font-serif text-4xl sm:text-5xl font-light text-white mb-6">
-            Ready to get Hired?
+      {/* ============================================================
+          FINAL CTA — the "Hired" payoff (deep navy + foil seal)
+          ============================================================ */}
+      <section className="relative w-full overflow-hidden bg-[#061A33] py-24 sm:py-32">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B8860B] opacity-[0.08] blur-[130px]"
+        />
+        <div className="relative mx-auto max-w-2xl px-4 text-center sm:px-8">
+          <HiredSeal />
+          <h2 className="mt-9 text-balance font-serif text-4xl leading-[1.05] text-white sm:text-5xl">
+            Stop tweaking. Get{" "}
+            <span className="italic text-[#D4A83F]">hired.</span>
           </h2>
-          <div className="w-16 h-px bg-[#B8860B] mx-auto mb-6" />
-          <p className="text-lg text-white/80 mb-10 font-light">
-            See where your resume stands in 60 seconds — no signup, no card.
+          <p className="mx-auto mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-white/70">
+            See where your résumé stands in 60 seconds — no signup, no card.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+
+          <div className="mt-10 flex flex-col items-center justify-center gap-5">
             <SignedOut>
               <Link
                 href="/score"
-                className="group inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 shadow-sm hover:shadow-md transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
               >
-                Check Your Score — Free
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+                Check your score — free
+                <ArrowRight
+                  className="h-5 w-5 transition-transform group-hover:translate-x-1"
+                  strokeWidth={1.5}
+                />
               </Link>
-              <SignUpButton mode="modal">
-                <button className="text-white/80 hover:text-white text-sm font-light underline-offset-4 hover:underline tracking-wide focus-visible:outline-none">
-                  or create an account
-                </button>
-              </SignUpButton>
+              <Link
+                href="#hero"
+                className="text-sm font-light tracking-wide text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:outline-none"
+              >
+                or build one from scratch
+              </Link>
             </SignedOut>
             <SignedIn>
               <Link
                 href="/build/chat"
-                className="group inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-white text-[#0A2647] font-medium rounded-sm hover:bg-stone-50 shadow-sm hover:shadow-md transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
               >
-                Continue Building
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+                Continue building
+                <ArrowRight
+                  className="h-5 w-5 transition-transform group-hover:translate-x-1"
+                  strokeWidth={1.5}
+                />
               </Link>
             </SignedIn>
           </div>
-          <p className="text-white/60 text-xs font-light mt-6 tracking-wide">
-            "The feedback here was specific to the job I was applying for and called out things I'd actually missed." — Amit R., Software Engineer
-          </p>
         </div>
       </section>
 
       <SiteFooter />
     </div>
+  );
+}
+
+/* The foil seal — the page's closing signature. A stamp of approval that ties
+   the product name to the emotional payoff. Static by choice (calm, not spinny). */
+function HiredSeal() {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      className="mx-auto h-28 w-28 sm:h-32 sm:w-32"
+      role="img"
+      aria-label="Get Hired seal"
+    >
+      <defs>
+        <linearGradient id="brassFoil" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#F3D58A" />
+          <stop offset="50%" stopColor="#D4A83F" />
+          <stop offset="100%" stopColor="#B8860B" />
+        </linearGradient>
+        <path
+          id="sealArc"
+          d="M 100,100 m -76,0 a 76,76 0 1,1 152,0 a 76,76 0 1,1 -152,0"
+          fill="none"
+        />
+      </defs>
+
+      {/* rings */}
+      <circle cx="100" cy="100" r="92" fill="none" stroke="url(#brassFoil)" strokeWidth="1.5" opacity="0.5" />
+      <circle cx="100" cy="100" r="84" fill="none" stroke="url(#brassFoil)" strokeWidth="2.5" />
+      <circle cx="100" cy="100" r="58" fill="none" stroke="url(#brassFoil)" strokeWidth="1" opacity="0.5" />
+
+      {/* curved seal text */}
+      <text
+        fill="url(#brassFoil)"
+        style={{
+          fontFamily: "var(--font-mono), monospace",
+          fontSize: "13px",
+          letterSpacing: "5px",
+          textTransform: "uppercase",
+        }}
+      >
+        <textPath href="#sealArc" startOffset="2%">
+          Get hired · Get hired · Get hired ·
+        </textPath>
+      </text>
+
+      {/* center monogram — the Hired mark */}
+      <g transform="translate(100 100)">
+        <rect x="-26" y="-22" width="11" height="44" rx="1" fill="url(#brassFoil)" />
+        <rect x="15" y="-22" width="11" height="44" rx="1" fill="url(#brassFoil)" />
+        <path d="M -15 -3 L 15 2 L 15 9 L -15 4 Z" fill="#FFFFFF" opacity="0.85" />
+      </g>
+    </svg>
   );
 }
