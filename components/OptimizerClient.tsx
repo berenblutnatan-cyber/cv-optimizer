@@ -302,29 +302,8 @@ export function OptimizerClient() {
       return;
     }
 
-    // Check credits before analyzing
-    try {
-      const creditCheck = await fetch("/api/use-credit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const creditResult = await creditCheck.json();
-
-      if (!creditResult.success) {
-        track("credit_check_failed", { reason: "insufficient_credits" });
-        oocModal.open({ trigger: "optimize" });
-        return;
-      }
-    } catch (creditError) {
-      console.error("Credit check failed:", creditError);
-      track("credit_check_failed", { reason: "exception" });
-      toast.error("Failed to check credits", {
-        description: "Please try again.",
-      });
-      return;
-    }
-
+    // Credits are checked and charged server-side by /api/analyze (only on
+    // success), so there's no separate use-credit/refund-credit round trip.
     track("optimize_started", {
       job_input_mode: jobInputMode,
       cv_size: cvText.length || (cvFile?.size ?? 0),
@@ -350,6 +329,11 @@ export function OptimizerClient() {
 
       const response = await fetch("/api/analyze", { method: "POST", body: formData });
       const data = await response.json();
+      if (response.status === 402) {
+        track("credit_check_failed", { reason: "insufficient_credits" });
+        oocModal.open({ trigger: "optimize" });
+        return;
+      }
       if (!response.ok) throw new Error(data.error || "Analysis failed");
 
       saveAnalysisToSession({ 
@@ -384,17 +368,12 @@ export function OptimizerClient() {
       router.push("/results");
 
     } catch (err) {
-      // Credit was already deducted before the analyze call — refund it so the
-      // user isn't charged for a failure that isn't their fault.
-      try {
-        await fetch("/api/refund-credit", { method: "POST" });
-      } catch {
-        // best-effort; don't block the error toast
-      }
+      // The server only charges a credit when analysis succeeds, so a failure
+      // here costs the user nothing.
       track("optimize_failed", {
         message: err instanceof Error ? err.message : "unknown",
       });
-      toast.error("Analysis failed — credit refunded", {
+      toast.error("Analysis failed — you weren't charged", {
         description: err instanceof Error ? err.message : "Something went wrong. Please try again.",
       });
     } finally {
@@ -797,7 +776,7 @@ export function OptimizerClient() {
       {/* Full-screen analyzing overlay */}
       <AnalyzingScreen open={isAnalyzing} mode={analysisMode} jobTitle={jobTitle} />
 
-      {/* Out-of-credits paywall — shown when /api/use-credit reports zero balance */}
+      {/* Out-of-credits paywall — shown when /api/analyze returns 402 */}
       <OutOfCreditsModal
         open={oocModal.isOpen}
         onClose={oocModal.close}

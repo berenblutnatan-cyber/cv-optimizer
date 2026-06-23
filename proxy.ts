@@ -9,7 +9,8 @@ const isPublicRoute = createRouteMatcher([
   "/optimize(.*)",      // Optimizer is now public - auth required only on analyze
   "/results(.*)",       // Results are public - data is in URL/state
   "/api/score-teaser(.*)",
-  "/api/analyze(.*)",
+  // NOTE: /api/analyze is NOT public — it requires auth and charges a credit
+  // at the route level (app/api/analyze/route.ts).
   "/sign-in(.*)",
   "/sign-up(.*)",
 ]);

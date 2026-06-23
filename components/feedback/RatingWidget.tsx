@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { MessageSquare, X, Star, Send, Check, Loader2 } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { MessageSquare, X, Star, Check, Loader2 } from "lucide-react";
 
 type WidgetState = "button" | "rating" | "comment" | "submitting" | "success";
 
@@ -12,19 +13,22 @@ interface RatingWidgetProps {
 
 // Routes where the floating widget would overlap a bottom action bar on mobile
 // (the builder has its own fixed Back/Next footer).
-const HIDDEN_ROUTES = ["/builder"];
+const HIDDEN_ROUTES = ["/builder", "/build"];
 
 export function RatingWidget({ source }: RatingWidgetProps) {
   const pathname = usePathname();
+  const { isSignedIn } = useUser();
   const [state, setState] = useState<WidgetState>("button");
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [comment, setComment] = useState("");
+  const [creditAwarded, setCreditAwarded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
-  if (pathname && HIDDEN_ROUTES.some((r) => pathname.startsWith(r))) {
-    return null;
-  }
+  // NOTE: route check must come AFTER all hooks — an early return above the
+  // useEffect crashes React ("fewer hooks than expected") when navigating
+  // between hidden and visible routes.
+  const hidden = Boolean(pathname && HIDDEN_ROUTES.some((r) => pathname.startsWith(r)));
 
   // Auto-close success message
   useEffect(() => {
@@ -33,7 +37,8 @@ export function RatingWidget({ source }: RatingWidgetProps) {
         setState("button");
         setRating(0);
         setComment("");
-      }, 3000);
+        setCreditAwarded(false);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [state]);
@@ -59,6 +64,8 @@ export function RatingWidget({ source }: RatingWidgetProps) {
       });
 
       if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setCreditAwarded(Boolean(data?.creditAwarded));
         setState("success");
       } else {
         setState("comment");
@@ -75,7 +82,7 @@ export function RatingWidget({ source }: RatingWidgetProps) {
     setIsVisible(false);
   };
 
-  if (!isVisible) return null;
+  if (hidden || !isVisible) return null;
 
   if (state === "button") {
     return (
@@ -106,7 +113,12 @@ export function RatingWidget({ source }: RatingWidgetProps) {
           <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
             <Check className="w-6 h-6 text-emerald-600" />
           </div>
-          <h3 className="font-bold text-slate-800">Thank You!</h3>
+          <h3 className="font-bold text-slate-800">
+            {creditAwarded ? "Thanks — +1 credit added!" : "Thank you!"}
+          </h3>
+          {creditAwarded ? (
+            <p className="text-sm text-slate-500">Your free credit is in your balance.</p>
+          ) : null}
         </div>
       </div>
     );
@@ -156,6 +168,12 @@ export function RatingWidget({ source }: RatingWidgetProps) {
             </button>
           ))}
         </div>
+
+        {isSignedIn && state === "rating" ? (
+          <p className="text-center text-xs font-medium text-emerald-600 -mt-2 mb-1">
+            ★ Your first review earns a free credit
+          </p>
+        ) : null}
 
         {(state === "comment" || state === "submitting") && (
           <div className="space-y-3 animate-in fade-in">

@@ -13,7 +13,7 @@ import {
   shouldShowField,
   FONTS,
 } from "@/utils/formatting";
-import { ResumePreviewData, ResumeSection, ResumeSectionItem, ResumeContact } from "./ResumePreview";
+import { ResumePreview, ResumePreviewData, ResumeSection, ResumeSectionItem, ResumeContact } from "./ResumePreview";
 
 /**
  * EditableResumePreview Component
@@ -279,6 +279,20 @@ export function EditableResumePreview({
           updateBullet={updateBullet}
         />
       );
+    // New designs render via the read-only ResumePreview (correct design;
+    // inline WYSIWYG editing for these is a fast-follow). Data still updates
+    // live from the form / chat, so the preview always reflects edits.
+    case "aurora":
+    case "banner":
+    case "spotlight":
+    case "ledger":
+    case "devfolio":
+    case "canvas":
+    case "timeline":
+    case "double-column":
+    case "compact":
+    case "photo-left":
+      return <ResumePreview data={data} templateId={templateId} themeColor={themeColor} />;
     default:
       return (
         <ModernSidebarEditable

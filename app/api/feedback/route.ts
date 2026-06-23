@@ -30,29 +30,41 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Ensure user exists in DB (sync Clerk -> Neon)
-      await prisma.user.upsert({
-        where: { id: user.id },
-        update: { email: user.emailAddresses[0]?.emailAddress || "" },
-        create: {
-          id: user.id,
-          email: user.emailAddresses[0]?.emailAddress || "no-email",
-          credits: FREE_CREDITS_FOR_NEW_USER,
-        },
+      // Grant +1 credit for the user's FIRST review (once each, abuse-safe),
+      // then save the feedback — atomically, so a crash can't double-grant.
+      const result = await prisma.$transaction(async (tx) => {
+        await tx.user.upsert({
+          where: { id: user.id },
+          update: { email: user.emailAddresses[0]?.emailAddress || "" },
+          create: {
+            id: user.id,
+            email: user.emailAddresses[0]?.emailAddress || "no-email",
+            credits: FREE_CREDITS_FOR_NEW_USER,
+          },
+        });
+        const creditAwarded = (await tx.feedback.count({ where: { userId: user.id } })) === 0;
+        if (creditAwarded) {
+          await tx.user.update({ where: { id: user.id }, data: { credits: { increment: 1 } } });
+        }
+        const feedback = await tx.feedback.create({
+          data: {
+            rating: Number(rating),
+            comment: comment || "",
+            source: source || "unknown",
+            user: { connect: { id: user.id } },
+          },
+        });
+        const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { credits: true } });
+        return { feedback, creditAwarded, credits: fresh?.credits ?? null };
       });
 
-      // Save feedback to database
-      const feedback = await prisma.feedback.create({
-        data: {
-          rating: Number(rating),
-          comment: comment || "",
-          source: source || "unknown",
-          user: { connect: { id: user.id } },
-        },
+      console.log(`✅ Feedback saved${result.creditAwarded ? " (+1 credit)" : ""}:`, result.feedback.id);
+      return NextResponse.json({
+        success: true,
+        feedback: result.feedback,
+        creditAwarded: result.creditAwarded,
+        credits: result.credits,
       });
-
-      console.log("✅ Feedback saved to database:", feedback.id);
-      return NextResponse.json({ success: true, feedback });
 
     } catch (dbError: unknown) {
       // Database failed - fall back to local storage in development
@@ -71,10 +83,11 @@ export async function POST(req: Request) {
       localFeedback.push(localEntry);
       
       console.log("📝 Feedback stored locally:", localEntry.id);
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         feedback: localEntry,
-        note: "Stored locally (database temporarily unavailable)" 
+        creditAwarded: false,
+        note: "Stored locally (database temporarily unavailable)"
       });
     }
 

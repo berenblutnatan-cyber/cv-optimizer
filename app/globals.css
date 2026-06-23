@@ -35,6 +35,18 @@
 
     /* Keyboard focus ring — consumed by the :focus-visible rule below. */
     --focus-ring: 0 0 0 3px rgba(10, 38, 71, 0.25);
+
+    /* Glass theme tokens — consumed by GlassCard / GradientShell on the (app) group. */
+    --bg-gradient: linear-gradient(135deg, #f5c4d4 0%, #c9b8ff 45%, #8fb3ff 100%);
+    --surface-glass: rgba(20, 18, 38, 0.45);
+    --surface-glass-strong: rgba(20, 18, 38, 0.65);
+    --surface-glass-border: rgba(255, 255, 255, 0.12);
+    --surface-glass-highlight: rgba(255, 255, 255, 0.06);
+    --text-on-glass: rgba(255, 255, 255, 0.92);
+    --text-on-glass-muted: rgba(255, 255, 255, 0.62);
+    --accent-warm: #f5b8c8;
+    --accent-cool: #8fb3ff;
+    --ring-glow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 20px 60px -20px rgba(20, 18, 38, 0.6);
   }
 }
 
@@ -81,6 +93,26 @@
   @keyframes revealUp {
     from { opacity: 0; transform: translate3d(0, 8px, 0); }
     to   { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  /* GradientShell film-grain — applied as a ::before overlay. Keeps the
+     gradient from looking like a flat color and gives the glass cards
+     something to refract. */
+  .grain-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.08;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>");
+    mix-blend-mode: overlay;
+  }
+
+  /* Squircle path — true iOS-style superellipse via clip-path. Tailwind's
+     border-radius rounds the corners but doesn't continuously curve them;
+     this gets closer. */
+  .squircle {
+    clip-path: path("M 24 0 Q 0 0 0 24 V 56 Q 0 80 24 80 H 56 Q 80 80 80 56 V 24 Q 80 0 56 0 Z");
   }
 }
 

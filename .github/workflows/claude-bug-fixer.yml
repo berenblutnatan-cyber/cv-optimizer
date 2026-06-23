@@ -1,0 +1,70 @@
+name: Claude Bug Fixer
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  triage-and-fix:
+    # Fire when:
+    #   - a new issue is opened with the `bug` label
+    #   - the `bug` label is added to an existing issue
+    #   - someone comments "@claude ..." on an issue
+    if: >
+      (github.event_name == 'issues' &&
+        github.event.action == 'opened' &&
+        contains(github.event.issue.labels.*.name, 'bug')) ||
+      (github.event_name == 'issues' &&
+        github.event.action == 'labeled' &&
+        github.event.label.name == 'bug') ||
+      (github.event_name == 'issue_comment' &&
+        contains(github.event.comment.body, '@claude'))
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          model: claude-opus-4-7
+          prompt: |
+            A bug has been filed. Investigate, fix it, and open a pull request.
+
+            Issue title: ${{ github.event.issue.title }}
+            Issue body:
+            ${{ github.event.issue.body }}
+
+            Steps:
+            1. Reproduce or locate the bug in the codebase.
+            2. Implement the smallest fix that resolves the root cause.
+            3. Run `npm run build` (and `npm test` if tests exist) to verify nothing regressed.
+            4. Open a PR titled "fix: <short description>" linked to issue #${{ github.event.issue.number }}
+               with "Closes #${{ github.event.issue.number }}" in the body.
+            5. Post a comment on the issue summarizing what you did and linking the PR.
+
+            If the issue is ambiguous or you cannot reproduce, post a comment asking
+            the reporter for the specific missing information — do not guess.
+          allowed_tools: |
+            Bash(npm:*)
+            Bash(git:*)
+            Bash(gh:*)
+            Read
+            Write
+            Edit
+            Grep

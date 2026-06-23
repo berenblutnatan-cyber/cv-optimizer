@@ -26,6 +26,12 @@ const TEMPLATES: {
   { id: 'creative', name: 'Creative', color: 'bg-gradient-to-br from-pink-500 to-rose-600', description: 'Stand out design', structure: 'modern' },
   { id: 'startup', name: 'Startup', color: 'bg-gradient-to-br from-orange-500 to-amber-600', description: 'Punchy & modern', structure: 'modern' },
   { id: 'international', name: 'International', color: 'bg-gradient-to-br from-indigo-500 to-blue-700', description: 'Photo compatible', structure: 'sidebar' },
+  { id: 'aurora', name: 'Aurora', color: 'bg-gradient-to-br from-indigo-500 to-violet-600', description: 'Accent rail', structure: 'modern' },
+  { id: 'banner', name: 'Banner', color: 'bg-gradient-to-br from-indigo-600 to-blue-700', description: 'Color banner', structure: 'modern' },
+  { id: 'spotlight', name: 'Spotlight', color: 'bg-gradient-to-br from-slate-300 to-slate-500', description: 'Centered, ATS-safe', structure: 'minimal' },
+  { id: 'ledger', name: 'Ledger', color: 'bg-gradient-to-br from-stone-500 to-stone-700', description: 'Editorial serif', structure: 'classic' },
+  { id: 'devfolio', name: 'Devfolio', color: 'bg-gradient-to-br from-slate-700 to-slate-900', description: 'Developer / mono', structure: 'modern' },
+  { id: 'canvas', name: 'Canvas', color: 'bg-gradient-to-br from-fuchsia-500 to-violet-700', description: 'Creative sidebar', structure: 'sidebar' },
 ];
 
 // Mini visual representations of template structures

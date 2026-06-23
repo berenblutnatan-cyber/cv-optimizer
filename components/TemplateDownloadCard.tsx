@@ -31,6 +31,16 @@ const templateIdMap: Record<AllTemplateId, BuilderTemplateId> = {
   "creative": "creative",
   "startup": "startup",
   "international": "international",
+  "aurora": "aurora",
+  "banner": "banner",
+  "spotlight": "spotlight",
+  "ledger": "ledger",
+  "devfolio": "devfolio",
+  "canvas": "canvas",
+  "timeline": "timeline",
+  "double-column": "double-column",
+  "compact": "compact",
+  "photo-left": "photo-left",
 };
 
 export function TemplateDownloadCard({

@@ -91,6 +91,75 @@ function escape(s: string) {
   );
 }
 
+export type WinbackEmailPayload = {
+  /** The lapsed user's address — this email goes to the USER, not the admin. */
+  userEmail: string;
+  /** Absolute URL to the discounted checkout (e.g. .../api/checkout/polar?plan=welcome). */
+  ctaUrl: string;
+  offerCredits: number;
+  offerPrice: number;
+  /** List price we anchor against, so "% off" is honest. */
+  anchorPrice: number;
+};
+
+/**
+ * One-time re-engagement email to a user who signed up, used their free credit,
+ * and never purchased. Sent by the win-back cron, which records winbackEmailedAt
+ * so nobody is emailed twice. Returns {ok:false, reason:"no_api_key"} when Resend
+ * isn't configured (caller should NOT mark the user as emailed in that case).
+ */
+export async function sendWinbackEmail(payload: WinbackEmailPayload) {
+  const resend = getClient();
+  if (!resend) {
+    console.warn("[email] RESEND_API_KEY not set — skipping win-back email");
+    return { ok: false, reason: "no_api_key" as const };
+  }
+
+  const { userEmail, ctaUrl, offerCredits, offerPrice, anchorPrice } = payload;
+  const pctOff = Math.round((1 - offerPrice / anchorPrice) * 100);
+  const subject = `Your tailored CV is one step away 👋`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background: #FAFAF8;">
+      <div style="background: white; border-radius: 6px; padding: 36px 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+        <h1 style="font-size: 22px; margin: 0 0 12px; color: #0A2647; font-weight: 600; line-height: 1.3;">You're closer than you think</h1>
+        <p style="font-size: 15px; color: #444; margin: 0 0 16px; line-height: 1.6;">
+          You started tailoring your CV with Hired — but didn't finish the rewrite. Recruiters spend
+          about <strong>7 seconds</strong> on a first scan, and the gaps we flagged are exactly what gets
+          a resume passed over. It takes about a minute to fix.
+        </p>
+        <p style="font-size: 15px; color: #444; margin: 0 0 24px; line-height: 1.6;">
+          Here's a hand to finish it — <strong>${offerCredits} credits for $${offerPrice}</strong>
+          <span style="color:#999; text-decoration: line-through;">$${anchorPrice}</span>
+          <span style="color:#B8860B; font-weight:600;">(${pctOff}% off)</span>:
+        </p>
+        <div style="text-align: center; margin: 0 0 24px;">
+          <a href="${escape(ctaUrl)}" style="display: inline-block; background: #B8860B; color: #fff; text-decoration: none; font-size: 15px; font-weight: 600; padding: 13px 30px; border-radius: 4px;">
+            Finish my CV →
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #999; margin: 0; line-height: 1.6; text-align: center;">
+          Credits never expire · Secure checkout via Polar · No subscription
+        </p>
+      </div>
+      <p style="font-size: 11px; color: #aaa; text-align: center; margin-top: 16px;">
+        Hired-CV · You're receiving this because you created an account.
+      </p>
+    </div>
+  `.trim();
+
+  try {
+    const res = await resend.emails.send({ from: FROM, to: [userEmail], subject, html });
+    if (res.error) {
+      console.error("[email] Resend error (winback):", res.error);
+      return { ok: false, reason: "resend_error" as const, error: res.error };
+    }
+    return { ok: true as const, id: res.data?.id };
+  } catch (err) {
+    console.error("[email] winback send failed:", err);
+    return { ok: false, reason: "exception" as const };
+  }
+}
+
 export type SignupEmailPayload = {
   userEmail: string;
   userId: string;

@@ -12,3 +12,17 @@ export { TechieTemplate } from "./TechieTemplate";
 export { CreativeTemplate } from "./CreativeTemplate";
 export { StartupTemplate } from "./StartupTemplate";
 export { InternationalTemplate } from "./InternationalTemplate";
+
+// New designs (gallery preview — not yet wired into the builder picker)
+export { AuroraTemplate } from "./AuroraTemplate";
+export { BannerTemplate } from "./BannerTemplate";
+export { SpotlightTemplate } from "./SpotlightTemplate";
+export { LedgerTemplate } from "./LedgerTemplate";
+export { DevfolioTemplate } from "./DevfolioTemplate";
+export { CanvasTemplate } from "./CanvasTemplate";
+
+// Layout expansion: Timeline / Double Column / Compact / Photo Left
+export { TimelineTemplate } from "./TimelineTemplate";
+export { DoubleColumnTemplate } from "./DoubleColumnTemplate";
+export { CompactTemplate } from "./CompactTemplate";
+export { PhotoLeftTemplate } from "./PhotoLeftTemplate";

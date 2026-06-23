@@ -59,16 +59,26 @@ export type TemplateId = "ivy" | "modern" | "executive" | "modern-sidebar";
 /** Legacy type for backwards compatibility */
 export type TemplateType = "harvard" | "modern" | "creative";
 
-/** All 8 template IDs */
-export type AllTemplateId = 
-  | "modern-sidebar" 
-  | "ivy-league" 
-  | "minimalist" 
-  | "executive" 
-  | "techie" 
-  | "creative" 
-  | "startup" 
-  | "international";
+/** All template IDs */
+export type AllTemplateId =
+  | "modern-sidebar"
+  | "ivy-league"
+  | "minimalist"
+  | "executive"
+  | "techie"
+  | "creative"
+  | "startup"
+  | "international"
+  | "aurora"
+  | "banner"
+  | "spotlight"
+  | "ledger"
+  | "devfolio"
+  | "canvas"
+  | "timeline"
+  | "double-column"
+  | "compact"
+  | "photo-left";
 
 /** Template props interface - all templates must accept these */
 export interface TemplateProps {
@@ -157,6 +167,76 @@ export const ALL_TEMPLATES: Record<AllTemplateId, {
     name: "International",
     description: "Photo support, standardized format. Common in Europe.",
     preview: "linear-gradient(135deg, #f1f5f9 30%, #ffffff 30%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "aurora": {
+    name: "Aurora",
+    description: "Accent rail + tinted header. Colorful but clean for PM & business roles.",
+    preview: "linear-gradient(90deg, #6366f1 7%, #eef2ff 7%, #ffffff 60%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "banner": {
+    name: "Banner",
+    description: "Full-width color banner header. Confident and modern, still one page.",
+    preview: "linear-gradient(180deg, #4f46e5 28%, #ffffff 28%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "spotlight": {
+    name: "Spotlight",
+    description: "Centered, airy and maximally ATS-safe. Great default for any role.",
+    preview: "linear-gradient(180deg, #ffffff 0%, #eef2ff 100%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "ledger": {
+    name: "Ledger",
+    description: "Editorial serif with a date rail. Elegant for finance, law & consulting.",
+    preview: "linear-gradient(180deg, #fbf6ec 0%, #f3ece0 100%)",
+    category: "classic",
+    isPremium: true,
+  },
+  "devfolio": {
+    name: "Devfolio",
+    description: "Monospace README style with a skills grid. Built for developers.",
+    preview: "linear-gradient(180deg, #0f172a 7%, #ffffff 7%)",
+    category: "technical",
+    isPremium: true,
+  },
+  "canvas": {
+    name: "Canvas",
+    description: "Bold accent sidebar with photo. Personality for designers & creatives.",
+    preview: "linear-gradient(120deg, #6366f1 34%, #ffffff 34%)",
+    category: "creative",
+    isPremium: true,
+  },
+  "timeline": {
+    name: "Timeline",
+    description: "A vertical timeline rail that tells your career as a story.",
+    preview: "linear-gradient(90deg, #6366f1 6%, #ffffff 6%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "double-column": {
+    name: "Double Column",
+    description: "Full header over two balanced light columns. Clean and compact.",
+    preview: "linear-gradient(90deg, #ffffff 60%, #f1f5f9 60%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "compact": {
+    name: "Compact",
+    description: "Dense, ATS-friendly single column. Fits more on one page.",
+    preview: "linear-gradient(180deg, #6366f1 5%, #ffffff 5%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "photo-left": {
+    name: "Photo Left",
+    description: "Photo rail with contact & skills beside your story.",
+    preview: "linear-gradient(90deg, #e0e7ff 34%, #ffffff 34%)",
     category: "professional",
     isPremium: true,
   },

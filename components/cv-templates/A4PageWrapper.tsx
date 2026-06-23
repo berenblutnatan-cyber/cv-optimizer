@@ -52,6 +52,11 @@ export function A4PageWrapper({
     <div
       id={pageId}
       className={`a4-wrapper ${className}`}
+      // The rendered page is the user's actual resume content (PII). Force
+      // Clarity to mask it in session replays regardless of the project's
+      // global masking mode, so the dashboard mode can be relaxed to "Relaxed"
+      // (readable UI) without ever exposing personal CV data.
+      data-clarity-mask="true"
       style={{
         // ==========================================
         // STRICT A4 DIMENSIONS (ENFORCED)

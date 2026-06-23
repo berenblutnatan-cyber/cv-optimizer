@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { Check, ArrowRight, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { PurchaseConfetti } from "@/components/PurchaseConfetti";
 import { POLAR_PLANS, type PolarPlanKey } from "@/lib/polar";
 import { trackConversion } from "@/lib/gtag";
 import { trackMetaEvent } from "@/lib/fbq";
@@ -23,41 +24,49 @@ function PurchaseSuccessContent() {
   useEffect(() => {
     if (hasFired.current || !planConfig) return;
     hasFired.current = true;
-    trackConversion("purchase", {
-      value: planConfig.amount,
-      currency: "USD",
-      transaction_id: checkoutId,
-      user_email: user?.emailAddresses[0]?.emailAddress,
-    });
-    trackMetaEvent("Purchase", {
-      value: planConfig.amount,
-      currency: "USD",
-      content_name: planConfig.name,
-      content_ids: [plan ?? "unknown"],
-      num_items: 1,
-    });
-    track("purchase_completed", {
-      plan: plan ?? "unknown",
-      amount: planConfig.amount,
-      credits: planConfig.credits,
-      checkout_id: checkoutId ?? null,
-    });
-    setUserProps(
-      {
-        is_paid: true,
-        last_paid_plan: plan ?? "unknown",
-        last_paid_amount: planConfig.amount,
-        last_paid_at: new Date().toISOString(),
-      },
-      {
-        first_paid_at: new Date().toISOString(),
-        first_paid_plan: plan ?? "unknown",
-      },
-    );
+    // Tracking must never take down the success page — the user already
+    // paid. Anything thrown here (pixel scripts hijacked by extensions,
+    // partial Clerk user objects, ...) is swallowed.
+    try {
+      trackConversion("purchase", {
+        value: planConfig.amount,
+        currency: "USD",
+        transaction_id: checkoutId,
+        user_email: user?.emailAddresses?.[0]?.emailAddress,
+      });
+      trackMetaEvent("Purchase", {
+        value: planConfig.amount,
+        currency: "USD",
+        content_name: planConfig.name,
+        content_ids: [plan ?? "unknown"],
+        num_items: 1,
+      });
+      track("purchase_completed", {
+        plan: plan ?? "unknown",
+        amount: planConfig.amount,
+        credits: planConfig.credits,
+        checkout_id: checkoutId ?? null,
+      });
+      setUserProps(
+        {
+          is_paid: true,
+          last_paid_plan: plan ?? "unknown",
+          last_paid_amount: planConfig.amount,
+          last_paid_at: new Date().toISOString(),
+        },
+        {
+          first_paid_at: new Date().toISOString(),
+          first_paid_plan: plan ?? "unknown",
+        },
+      );
+    } catch (error) {
+      console.error("purchase tracking failed:", error);
+    }
   }, [planConfig, plan, checkoutId, user]);
 
   return (
     <div className="max-w-xl w-full text-center">
+      <PurchaseConfetti />
       <div className="w-20 h-20 rounded-full bg-[#0A2647] flex items-center justify-center mx-auto mb-8">
         <Check className="w-10 h-10 text-white" strokeWidth={2} />
       </div>

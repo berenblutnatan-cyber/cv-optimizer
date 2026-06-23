@@ -10,10 +10,14 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import { RatingWidget } from "@/components/feedback";
+import { ResumeSync } from "@/components/ResumeSync";
 import { Toaster } from "sonner";
 import { UserSyncProvider } from "@/components/UserSyncProvider";
 import { InAppBrowserAlert } from "@/components/InAppBrowserAlert";
 import { GclidCapture } from "@/components/GclidCapture";
+import { ClarityRouteTags } from "@/components/analytics/ClarityRouteTags";
+import { WelcomeOfferBanner } from "@/components/WelcomeOfferBanner";
+import { FlashSaleBanner } from "@/components/FlashSaleBanner";
 import "./globals.css";
 
 const GOOGLE_ADS_ID = "AW-18163039044";
@@ -87,7 +91,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
       <html lang="en" className="scroll-smooth">
         <body className={`${inter.variable} ${jetbrainsMono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable} ${playfair.variable} font-sans`}>
           {/* Analytics scripts are `lazyOnload`: they load after the page is
@@ -138,7 +142,15 @@ export default function RootLayout({
               alt=""
             />
           </noscript>
-          <Script id="microsoft-clarity" strategy="lazyOnload">
+          {/* Clarity runs `afterInteractive` (not `lazyOnload`) so session
+              replay starts right after hydration instead of after window-load +
+              idle. On the heavy landing page `lazyOnload` meant recordings began
+              ~6-8s in (past the 5.2s LCP), so every session "started in the
+              middle" with no beginning — the main reason replays read as
+              incoherent. The tag.js bundle itself stays async (`t.async=1`
+              below), so this captures the session start without blocking the
+              hero paint. The big gtag.js + fbevents bundles above stay lazy. */}
+          <Script id="microsoft-clarity" strategy="afterInteractive">
             {`
               (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -149,9 +161,18 @@ export default function RootLayout({
           </Script>
           <InAppBrowserAlert />
           <GclidCapture />
+          <ClarityRouteTags />
           <UserSyncProvider>
             {children}
           </UserSyncProvider>
+          <ResumeSync />
+          <SignedIn>
+            <WelcomeOfferBanner />
+          </SignedIn>
+          {/* Engagement flash sale — self-hides until the builder arms it (a few
+              real actions). Outside SignedIn so anon builders get it too; claim
+              routes through sign-in. */}
+          <FlashSaleBanner />
           <Toaster position="top-center" richColors />
           {/* Global Feedback Widget */}
           <RatingWidget source="global" />

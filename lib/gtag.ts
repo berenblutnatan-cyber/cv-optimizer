@@ -61,14 +61,20 @@ export function trackConversion(event: ConversionEvent, payload: ConversionPaylo
           window.dataLayer!.push(arguments);
         };
 
-  if (payload.user_email) {
-    gtag("set", "user_data", { email: payload.user_email });
-  }
+  // Never let a broken/hijacked gtag (ad blockers, extensions overriding
+  // window.gtag) crash the calling page — conversions are best-effort.
+  try {
+    if (payload.user_email) {
+      gtag("set", "user_data", { email: payload.user_email });
+    }
 
-  gtag("event", "conversion", {
-    send_to: `${GOOGLE_ADS_ID}/${label}`,
-    value: payload.value,
-    currency: payload.currency,
-    transaction_id: payload.transaction_id,
-  });
+    gtag("event", "conversion", {
+      send_to: `${GOOGLE_ADS_ID}/${label}`,
+      value: payload.value,
+      currency: payload.currency,
+      transaction_id: payload.transaction_id,
+    });
+  } catch {
+    // ignore
+  }
 }
