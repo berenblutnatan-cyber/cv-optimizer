@@ -324,6 +324,9 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     </button>
                   ))}
                 </div>
+                <p className="mt-3 text-xs text-[#0A2647]/45">
+                  These are just examples — type any role.
+                </p>
                 <div className="mt-8 flex items-center justify-center gap-3">
                   <BackButton onClick={() => go("path")} />
                   <button
