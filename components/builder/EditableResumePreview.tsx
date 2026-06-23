@@ -13,7 +13,7 @@ import {
   shouldShowField,
   FONTS,
 } from "@/utils/formatting";
-import { ResumePreviewData, ResumeSection, ResumeSectionItem, ResumeContact } from "./ResumePreview";
+import { ResumePreview, ResumePreviewData, ResumeSection, ResumeSectionItem, ResumeContact } from "./ResumePreview";
 
 /**
  * EditableResumePreview Component
@@ -279,19 +279,16 @@ export function EditableResumePreview({
           updateBullet={updateBullet}
         />
       );
+    // timeline / double-column / compact / photo-left / banner (and any future
+    // layout without a dedicated inline-editable variant) render true-to-design
+    // via the read-only renderer. Edits still flow live from the form/chat —
+    // they're just not click-to-edit inside the document for these layouts.
     default:
       return (
-        <ModernSidebarEditable
-          data={data}
-          colors={colors}
-          photo={photo}
-          readOnly={readOnly}
-          updateField={updateField}
-          updateContact={updateContact}
-          updateSkill={updateSkill}
-          updateLanguage={updateLanguage}
-          updateSectionItem={updateSectionItem}
-          updateBullet={updateBullet}
+        <ResumePreview
+          data={{ ...data, photo: photo ?? data.photo }}
+          templateId={templateId}
+          themeColor={themeColor}
         />
       );
   }

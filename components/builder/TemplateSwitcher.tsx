@@ -100,6 +100,41 @@ export const TEMPLATE_OPTIONS: TemplateOption[] = [
     preview: "linear-gradient(135deg, #f1f5f9 30%, #ffffff 30%)",
     category: "professional",
   },
+  {
+    id: "timeline",
+    name: "Timeline",
+    description: "Vertical timeline rail",
+    preview: "linear-gradient(90deg, #6366f1 6%, #ffffff 6%)",
+    category: "professional",
+  },
+  {
+    id: "double-column",
+    name: "Double Column",
+    description: "Full header + two columns",
+    preview: "linear-gradient(90deg, #ffffff 60%, #f1f5f9 60%)",
+    category: "professional",
+  },
+  {
+    id: "compact",
+    name: "Compact",
+    description: "Dense, ATS-friendly",
+    preview: "linear-gradient(180deg, #6366f1 5%, #ffffff 5%)",
+    category: "professional",
+  },
+  {
+    id: "photo-left",
+    name: "Photo Left",
+    description: "Photo rail + content",
+    preview: "linear-gradient(90deg, #e0e7ff 34%, #ffffff 34%)",
+    category: "professional",
+  },
+  {
+    id: "banner",
+    name: "Banner",
+    description: "Bold accent banner header",
+    preview: "linear-gradient(180deg, #6366f1 26%, #ffffff 26%)",
+    category: "creative",
+  },
 ];
 
 // Color swatches - Updated for Indigo/Violet rebrand
@@ -331,7 +366,7 @@ function LayoutTab({
                 {/* Mini layout indicator */}
                 <div className="absolute inset-2 opacity-20">
                   <div className="h-full rounded-sm bg-white/40 flex">
-                    {template.id === "modern-sidebar" || template.id === "creative" || template.id === "international" ? (
+                    {template.id === "modern-sidebar" || template.id === "creative" || template.id === "international" || template.id === "photo-left" || template.id === "double-column" ? (
                       <>
                         <div className="w-1/3 bg-slate-800/30 rounded-l-sm" />
                         <div className="flex-1" />

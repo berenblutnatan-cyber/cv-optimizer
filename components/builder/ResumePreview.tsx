@@ -11,6 +11,11 @@ import {
   CreativeTemplate,
   StartupTemplate,
   InternationalTemplate,
+  TimelineTemplate,
+  DoubleColumnTemplate,
+  CompactTemplate,
+  PhotoLeftTemplate,
+  BannerTemplate,
 } from "@/components/cv-templates/templates";
 
 /**
@@ -118,6 +123,16 @@ export function ResumePreview({
       return <StartupTemplate data={templateData} themeColor={themeColor} className={className} />;
     case "international":
       return <InternationalTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "timeline":
+      return <TimelineTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "double-column":
+      return <DoubleColumnTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "compact":
+      return <CompactTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "photo-left":
+      return <PhotoLeftTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "banner":
+      return <BannerTemplate data={templateData} themeColor={themeColor} className={className} />;
     default:
       return <ModernSidebarTemplate data={templateData} themeColor={themeColor} className={className} />;
   }

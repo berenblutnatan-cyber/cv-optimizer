@@ -129,6 +129,11 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; pre
   { id: "creative", name: "Creative", icon: "◨", preview: "Split design" },
   { id: "startup", name: "Startup", icon: "◆", preview: "Modern punchy" },
   { id: "international", name: "Intl", icon: "🌐", preview: "Photo support" },
+  { id: "timeline", name: "Timeline", icon: "❘", preview: "Timeline rail" },
+  { id: "double-column", name: "Double", icon: "▥", preview: "Two columns" },
+  { id: "compact", name: "Compact", icon: "▤", preview: "Dense, ATS-friendly" },
+  { id: "photo-left", name: "Photo", icon: "◐", preview: "Photo rail" },
+  { id: "banner", name: "Banner", icon: "▀", preview: "Accent banner" },
 ];
 
 export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle, onTabChange }: AnalysisResultsProps) {
