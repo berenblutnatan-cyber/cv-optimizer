@@ -11,11 +11,12 @@ import {
   CreativeTemplate,
   StartupTemplate,
   InternationalTemplate,
-  TimelineTemplate,
-  DoubleColumnTemplate,
-  CompactTemplate,
-  PhotoLeftTemplate,
+  AuroraTemplate,
   BannerTemplate,
+  SpotlightTemplate,
+  LedgerTemplate,
+  DevfolioTemplate,
+  CanvasTemplate,
 } from "@/components/cv-templates/templates";
 
 /**
@@ -123,16 +124,18 @@ export function ResumePreview({
       return <StartupTemplate data={templateData} themeColor={themeColor} className={className} />;
     case "international":
       return <InternationalTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "timeline":
-      return <TimelineTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "double-column":
-      return <DoubleColumnTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "compact":
-      return <CompactTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "photo-left":
-      return <PhotoLeftTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "aurora":
+      return <AuroraTemplate data={templateData} themeColor={themeColor} className={className} />;
     case "banner":
       return <BannerTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "spotlight":
+      return <SpotlightTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "ledger":
+      return <LedgerTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "devfolio":
+      return <DevfolioTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "canvas":
+      return <CanvasTemplate data={templateData} themeColor={themeColor} className={className} />;
     default:
       return <ModernSidebarTemplate data={templateData} themeColor={themeColor} className={className} />;
   }

@@ -26,6 +26,9 @@ const PACKS: { plan: "mini" | "pro" | "ultimate"; name: string; price: number; c
 
 export default function PricingPage() {
   const unlimitedConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_MONTHLY);
+  // The 3-month Job Search Pass: $90 once → 90 days of Unlimited, no auto-renew.
+  // Fits a short, intense search better than a recurring plan people forget to cancel.
+  const passConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_QUARTER);
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
@@ -163,6 +166,31 @@ export default function PricingPage() {
           <p className="text-center text-xs text-stone-400 font-light mt-4">
             Credits never expire · Unlimited has no credits at all · Cancel anytime.
           </p>
+
+          {/* Job Search Pass — one-time, time-boxed Unlimited. Surfaced only when the
+              Polar product is configured (otherwise the CTA would dead-end). */}
+          {passConfigured && (
+            <div className="mt-8 max-w-3xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-sm border border-[#B8860B]/40 bg-[#B8860B]/[0.06] px-6 py-5">
+                <div className="flex-1">
+                  <p className="font-serif text-lg text-[#1a1a1a]">
+                    On an active search?{" "}
+                    <span className="text-[#0A2647]">Get the 3-month Job Search Pass</span>
+                  </p>
+                  <p className="text-sm text-stone-500 font-light mt-1">
+                    $90 once · 90 days of everything unlimited · <strong className="font-medium text-stone-600">no auto-renew</strong>. Cheaper than 6 monthly bills, nothing to cancel.
+                  </p>
+                </div>
+                <Link
+                  href="/api/checkout/polar?plan=unlimited_quarter"
+                  className="group flex-shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white text-sm font-medium rounded-sm transition-colors whitespace-nowrap"
+                >
+                  Get the Pass — $90
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.8} />
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Trust signals */}
           <div className="mt-14 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">

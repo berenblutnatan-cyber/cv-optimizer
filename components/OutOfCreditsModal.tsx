@@ -1,9 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Coins, X, Zap, Sparkles, Crown, ArrowRight, Check } from "lucide-react";
+import { Coins, X, Zap, Sparkles, Crown, ArrowRight, Check, Gift } from "lucide-react";
 import { track } from "@/lib/analytics";
+
+// Shape returned by /api/welcome-offer (the 24h post-signup flash). The same
+// honest, server-anchored offer that powers the bottom banner — surfaced here at
+// peak intent (the user just hit the paywall) instead of inventing a second timer.
+type WelcomeOffer = {
+  eligible: boolean;
+  endsAt?: string;
+  credits?: number;
+  price?: number;
+  anchor?: number;
+};
+
+function fmtCountdown(ms: number): string {
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  const s = Math.floor((ms % 60_000) / 1000);
+  return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+}
 
 type Trigger = "optimize" | "template_unlock" | "balance_click" | "manual";
 
@@ -73,6 +91,9 @@ export function OutOfCreditsModal({
 }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<Tier["key"] | null>(null);
   const [socialProofCount, setSocialProofCount] = useState<number | null>(null);
+  const [welcome, setWelcome] = useState<WelcomeOffer | null>(null);
+  const [remaining, setRemaining] = useState("");
+  const flashTracked = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -102,6 +123,55 @@ export function OutOfCreditsModal({
     };
   }, [open, socialProofCount]);
 
+  // Pull the welcome flash once when the modal opens. If the user is eligible
+  // (signed up <24h ago, no purchase yet) we lead with it — best offer, real
+  // countdown, at the exact moment intent peaks.
+  useEffect(() => {
+    if (!open || welcome !== null) return;
+    let cancelled = false;
+    fetch("/api/welcome-offer")
+      .then((r) => r.json())
+      .then((d: WelcomeOffer) => {
+        if (!cancelled) setWelcome(d ?? { eligible: false });
+      })
+      .catch(() => {
+        if (!cancelled) setWelcome({ eligible: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, welcome]);
+
+  // Tick the countdown while the flash is live. Anchored to the server-provided
+  // endsAt, so it can't be reset by reopening the modal — honest urgency.
+  useEffect(() => {
+    if (!open || !welcome?.eligible || !welcome.endsAt) return;
+    const end = new Date(welcome.endsAt).getTime();
+    const tick = () => {
+      const ms = end - Date.now();
+      if (ms <= 0) {
+        setWelcome({ eligible: false });
+        return;
+      }
+      setRemaining(fmtCountdown(ms));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [open, welcome]);
+
+  // Fire the analytics impression once per open, when the flash actually shows.
+  useEffect(() => {
+    if (!open) {
+      flashTracked.current = false;
+      return;
+    }
+    if (welcome?.eligible && !flashTracked.current) {
+      flashTracked.current = true;
+      track("welcome_flash_shown", { source: "out_of_credits_modal", trigger });
+    }
+  }, [open, welcome, trigger]);
+
   const handleBuy = (plan: Tier["key"]) => {
     const tier = TIERS.find((t) => t.key === plan);
     track("pricing_clicked", { source: "out_of_credits_modal", plan, trigger });
@@ -117,10 +187,25 @@ export function OutOfCreditsModal({
     window.location.href = `/api/checkout/polar?plan=${plan}`;
   };
 
+  const handleClaimFlash = () => {
+    track("pricing_clicked", { source: "out_of_credits_modal", plan: "welcome", trigger });
+    track("checkout_started", {
+      source: "out_of_credits_modal",
+      plan: "welcome",
+      trigger,
+      price: welcome?.price ?? null,
+      credits: welcome?.credits ?? null,
+    });
+    setLoadingPlan("onemore"); // reuse the loading lock; any value disables the grid
+    window.location.href = "/api/checkout/polar?plan=welcome";
+  };
+
   const handleDismiss = (source: "backdrop" | "x_button" | "escape") => {
     track("out_of_credits_modal_dismissed", { trigger, source });
     onClose();
   };
+
+  const flashLive = Boolean(welcome?.eligible && remaining);
 
   return (
     <AnimatePresence>
@@ -182,6 +267,46 @@ export function OutOfCreditsModal({
                 </p>
               )}
             </div>
+
+            {/* Welcome flash — only for users still inside their honest 24h window.
+                Best offer in the app, surfaced at the exact moment they hit the wall. */}
+            {flashLive && (
+              <div className="px-6 sm:px-10 pt-6">
+                <div className="relative overflow-hidden rounded-sm bg-[#0A2647] text-white border border-[#B8860B]/60 shadow-[0_18px_44px_-18px_rgba(10,38,71,0.65)]">
+                  <div aria-hidden className="h-1 w-full bg-gradient-to-r from-[#B8860B] via-[#d4a017] to-[#B8860B]" />
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-5">
+                    <span className="grid place-items-center h-11 w-11 rounded-sm bg-[#B8860B]/15 text-[#e7c66a] flex-shrink-0">
+                      <Gift className="h-5 w-5" strokeWidth={1.8} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm sm:text-base font-medium leading-tight">
+                        Your welcome offer — {welcome?.credits ?? 10} credits for ${welcome?.price ?? 3}{" "}
+                        <span className="text-white/45 line-through font-normal">${welcome?.anchor ?? 10}</span>
+                      </div>
+                      <div className="text-xs text-[#e7c66a] mt-1">
+                        70% off · ends in <span className="tabular-nums">{remaining}</span> — won't come back
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClaimFlash}
+                      disabled={loadingPlan !== null}
+                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-[#B8860B] hover:bg-[#a3760a] text-white text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-wait"
+                    >
+                      {loadingPlan ? "Redirecting…" : (
+                        <>
+                          Claim offer
+                          <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-5 mb-0 text-center text-[11px] uppercase tracking-[0.18em] text-stone-400 font-medium">
+                  Or top up anytime
+                </p>
+              </div>
+            )}
 
             {/* Tier grid */}
             <div className="px-6 sm:px-10 py-8 grid sm:grid-cols-3 gap-4">

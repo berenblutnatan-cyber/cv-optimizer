@@ -50,8 +50,8 @@ export const THEME_COLOR_VALUES: Record<ThemeColor, { primary: string; dark: str
   black: { primary: "#18181b", dark: "#09090b", light: "#f4f4f5", ring: "ring-zinc-900" },
 };
 
-// Template IDs - 11 distinct archetypes
-export type BuilderTemplateId =
+// Template IDs - 8 distinct archetypes
+export type BuilderTemplateId = 
   | "modern-sidebar"   // 1. Two-column with sidebar
   | "ivy-league"       // 2. Classic serif, conservative
   | "minimalist"       // 3. Clean whitespace, centered
@@ -60,11 +60,12 @@ export type BuilderTemplateId =
   | "creative"         // 6. Unique split design
   | "startup"          // 7. Modern, punchy
   | "international"    // 8. Photo support, standardized
-  | "timeline"         // 9. Vertical timeline rail
-  | "double-column"    // 10. Full header + two light columns
-  | "compact"          // 11. Dense, ATS-friendly single column
-  | "photo-left"       // 12. Photo rail + content column
-  | "banner";          // 13. Bold accent banner header
+  | "aurora"           // 9. Accent rail + tinted header (bold/colorful)
+  | "banner"           // 10. Full-width color banner
+  | "spotlight"        // 11. Centered minimal, ATS-safe
+  | "ledger"           // 12. Editorial serif, date rail
+  | "devfolio"         // 13. Developer / mono
+  | "canvas";          // 14. Creative accent sidebar
 
 export interface BuilderContextState {
   // Active field tracking

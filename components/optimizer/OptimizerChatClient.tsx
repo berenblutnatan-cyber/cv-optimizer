@@ -309,7 +309,9 @@ export function OptimizerChatClient() {
             }}
             className="flex-1 min-h-0 overflow-y-auto px-4 py-4"
           >
-            <div className="flex flex-col gap-4">
+            {/* Mask transcript (resume PII) in Clarity replays; behavior still
+                captured via optimizer_chat_* events + UI chrome. */}
+            <div className="flex flex-col gap-4" data-clarity-mask="true">
               {messages.map((m) =>
                 m.role === "user" ? (
                   <div key={m.id} className="flex justify-end">

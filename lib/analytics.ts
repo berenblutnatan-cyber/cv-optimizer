@@ -25,6 +25,7 @@ export type EventName =
   | "credit_check_failed"
   | "out_of_credits_modal_shown"
   | "out_of_credits_modal_dismissed"
+  | "welcome_flash_shown"
   | "template_unlock_modal_shown"
   | "template_unlocked"
   | "results_viewed"
@@ -81,10 +82,42 @@ export type EventName =
   | "optimizer_chat_analyze"
   | "optimizer_chat_scored"
   | "optimizer_chat_view_full"
+  // Build onboarding (beautiful guided front door)
+  | "build_onboarding_viewed"
+  | "build_onboarding_step"
+  | "build_onboarding_completed"
   | "xp_awarded"
   | "level_up";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
+
+// Low-cardinality dimensions worth slicing Clarity sessions by. Every key here
+// becomes a Filter/Segment in the Clarity dashboard, so keep the list small and
+// categorical — NEVER add ids, raw scores, counts, durations, file sizes or free
+// text (use the bucketed form, e.g. `score_band` instead of `match_score`).
+// Extend this set as new categorical props get added to `track()`.
+const CLARITY_TAG_KEYS = new Set<string>([
+  "source",
+  "cta",
+  "choice",
+  "mode",
+  "plan",
+  "tier",
+  "stage",
+  "step",
+  "tool",
+  "type",
+  "reason",
+  "trigger",
+  "variant",
+  "category",
+  "score_band",
+  "signed_in",
+  "signedIn",
+  "quick",
+  "template_id",
+  "target_role",
+]);
 
 export function track(event: EventName, props: EventProps = {}) {
   if (typeof window === "undefined") return;
@@ -103,17 +136,47 @@ export function track(event: EventName, props: EventProps = {}) {
     // ignore
   }
 
-  // Microsoft Clarity custom event + tags
+  // Microsoft Clarity: fire the custom event (it shows on the session-replay
+  // timeline AND becomes a filterable "Smart event"), then set ONLY the curated
+  // low-cardinality tags. Tagging every prop floods Clarity's Filters/Segments
+  // dropdowns with high-cardinality junk (ids, scores, counts) and makes
+  // segmentation unusable.
   try {
     window.clarity?.("event", event);
-    // tag a few useful filterable dimensions
     for (const [k, v] of Object.entries(props)) {
-      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
-        window.clarity?.("set", k, String(v));
+      if (!CLARITY_TAG_KEYS.has(k)) continue;
+      if (v === undefined || v === null) continue;
+      const s = String(v);
+      if (s.length > 0 && s.length <= 40) {
+        window.clarity?.("set", k, s);
       }
     }
   } catch {
     // ignore
+  }
+}
+
+/**
+ * Bridge Clarity <-> PostHog. Stamps PostHog's session + distinct id as Clarity
+ * custom tags so you can pivot from a PostHog event/funnel straight to the exact
+ * Clarity replay (filter Clarity by `ph_session_id`). These are intentionally
+ * high-cardinality lookup tags — search them by exact value, don't browse them.
+ * Safe to call repeatedly (ids are stable within a session); call client-side
+ * once both SDKs are ready.
+ */
+export function bridgeClarityToPostHog() {
+  if (typeof window === "undefined") return;
+  try {
+    const ph = posthog as unknown as {
+      get_session_id?: () => string | undefined;
+      get_distinct_id?: () => string | undefined;
+    };
+    const sid = ph.get_session_id?.();
+    const did = ph.get_distinct_id?.();
+    if (sid) window.clarity?.("set", "ph_session_id", String(sid));
+    if (did) window.clarity?.("set", "ph_distinct_id", String(did));
+  } catch {
+    // posthog/clarity may not be ready yet — ignore
   }
 }
 
@@ -140,10 +203,25 @@ export function identifyUser(distinctId: string, traits: EventProps = {}) {
     // ignore
   }
   try {
-    if (traits.email && typeof traits.email === "string") {
-      window.clarity?.("identify", String(traits.email));
-    } else {
-      window.clarity?.("identify", distinctId);
+    // Stable custom-id (Clerk userId) so a person's sessions group across
+    // visits; name/email becomes the human-readable friendly-name shown in the
+    // Clarity dashboard instead of a GUID. Signature:
+    // clarity("identify", custom-id, custom-session-id, custom-page-id, friendly-name)
+    const friendly =
+      (typeof traits.name === "string" && traits.name) ||
+      (typeof traits.email === "string" && traits.email) ||
+      undefined;
+    window.clarity?.("identify", distinctId, undefined, undefined, friendly);
+
+    // Session-level dimensions for slicing replays (e.g. paid vs free).
+    window.clarity?.("set", "signed_in", "true");
+    for (const [k, v] of Object.entries(traits)) {
+      if (!CLARITY_TAG_KEYS.has(k)) continue;
+      if (v === undefined || v === null) continue;
+      const s = String(v);
+      if (s.length > 0 && s.length <= 40) {
+        window.clarity?.("set", k, s);
+      }
     }
   } catch {
     // ignore

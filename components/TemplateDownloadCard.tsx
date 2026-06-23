@@ -31,11 +31,12 @@ const templateIdMap: Record<AllTemplateId, BuilderTemplateId> = {
   "creative": "creative",
   "startup": "startup",
   "international": "international",
-  "timeline": "timeline",
-  "double-column": "double-column",
-  "compact": "compact",
-  "photo-left": "photo-left",
+  "aurora": "aurora",
   "banner": "banner",
+  "spotlight": "spotlight",
+  "ledger": "ledger",
+  "devfolio": "devfolio",
+  "canvas": "canvas",
 };
 
 export function TemplateDownloadCard({

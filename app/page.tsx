@@ -12,7 +12,8 @@ import { ActiveNavLinks } from "@/components/landing/ActiveNavLinks";
 import { CreditBalance } from "@/components/CreditBalance";
 import { SiteFooter } from "@/components/shared/SiteFooter";
 import { ScrollDepthTracker } from "@/components/ScrollDepthTracker";
-import { HomeChatClient } from "@/components/home/HomeChatClient";
+import { BuildOnboarding } from "@/components/build/BuildOnboarding";
+import { SocialProofBadge } from "@/components/landing/SocialProofBadge";
 
 export default function LandingPage() {
   return (
@@ -65,14 +66,13 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Chat-first hero — the home page IS a conversation: a single clean,
-          centered chat box (base44-style). Anonymous visitors type, talk, or
-          upload to build their CV live; the manual "old way" entry points sit
-          quietly below. The marketing sections below stay for scrollers / SEO. */}
+      {/* The home IS the onboarding funnel — one friendly question at a time
+          (role → goal → template), then it drafts the CV live in the builder.
+          Marketing sections below stay for scrollers / SEO. */}
       <section id="hero" className="relative w-full bg-[#FAFAF8]">
-        <div className="h-[100dvh] flex flex-col pt-16 sm:pt-20 pb-6">
+        <div className="h-[100dvh] flex flex-col pt-16 sm:pt-20 pb-4">
           <div className="flex-1 min-h-0">
-            <HomeChatClient />
+            <BuildOnboarding embedded />
           </div>
         </div>
       </section>
@@ -228,6 +228,9 @@ export default function LandingPage() {
             <p className="text-lg text-stone-500 font-light">
               A few quotes from early user feedback
             </p>
+            <div className="mt-6 flex justify-center">
+              <SocialProofBadge />
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">

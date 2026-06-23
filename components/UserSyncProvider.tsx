@@ -20,7 +20,8 @@ export function UserSyncProvider({ children }: { children: React.ReactNode }) {
     if (isLoaded && userId && !hasIdentified.current) {
       hasIdentified.current = true;
       const email = user?.emailAddresses?.[0]?.emailAddress;
-      identifyUser(userId, { email });
+      const name = user?.fullName ?? user?.firstName ?? undefined;
+      identifyUser(userId, { email, name: name ?? undefined });
     }
 
     const syncUser = async () => {

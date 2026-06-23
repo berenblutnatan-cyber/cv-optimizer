@@ -22,6 +22,8 @@ export function Transcript({ turns }: { turns: Turn[] }) {
     <div
       ref={ref}
       className="max-w-xl mx-auto w-full max-h-[260px] overflow-y-auto pr-1 space-y-2 [scrollbar-width:thin]"
+      // Spoken answers are resume PII — mask the transcript in Clarity replays.
+      data-clarity-mask="true"
     >
       {turns.map((t, i) => (
         <motion.div

@@ -279,16 +279,29 @@ export function EditableResumePreview({
           updateBullet={updateBullet}
         />
       );
-    // timeline / double-column / compact / photo-left / banner (and any future
-    // layout without a dedicated inline-editable variant) render true-to-design
-    // via the read-only renderer. Edits still flow live from the form/chat —
-    // they're just not click-to-edit inside the document for these layouts.
+    // New designs render via the read-only ResumePreview (correct design;
+    // inline WYSIWYG editing for these is a fast-follow). Data still updates
+    // live from the form / chat, so the preview always reflects edits.
+    case "aurora":
+    case "banner":
+    case "spotlight":
+    case "ledger":
+    case "devfolio":
+    case "canvas":
+      return <ResumePreview data={data} templateId={templateId} themeColor={themeColor} />;
     default:
       return (
-        <ResumePreview
-          data={{ ...data, photo: photo ?? data.photo }}
-          templateId={templateId}
-          themeColor={themeColor}
+        <ModernSidebarEditable
+          data={data}
+          colors={colors}
+          photo={photo}
+          readOnly={readOnly}
+          updateField={updateField}
+          updateContact={updateContact}
+          updateSkill={updateSkill}
+          updateLanguage={updateLanguage}
+          updateSectionItem={updateSectionItem}
+          updateBullet={updateBullet}
         />
       );
   }
