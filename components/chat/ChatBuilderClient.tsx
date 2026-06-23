@@ -488,11 +488,11 @@ export function ChatBuilderClient() {
 
   const emptyExtras = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-      <label className="cursor-pointer rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3">
-        <UploadCloud className="h-5 w-5 text-[#f5b8c8] flex-shrink-0 mt-0.5" />
+      <label className="cursor-pointer rounded-2xl bg-white border border-[#0A2647]/10 hover:bg-[#0A2647]/10 transition-colors p-3.5 flex items-start gap-3">
+        <UploadCloud className="h-5 w-5 text-[#B8860B] flex-shrink-0 mt-0.5" />
         <span>
-          <span className="block text-sm text-white font-medium">Upload my current CV</span>
-          <span className="block text-xs text-white/60 mt-0.5">
+          <span className="block text-sm text-[#0A2647] font-medium">Upload my current CV</span>
+          <span className="block text-xs text-[#0A2647]/60 mt-0.5">
             PDF or Word in, everything pulled into the builder
           </span>
         </span>
@@ -511,12 +511,12 @@ export function ChatBuilderClient() {
         <button
           type="button"
           onClick={() => send("Interview me — ask me what's new and help me update this CV.")}
-          className="text-left rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3"
+          className="text-left rounded-2xl bg-white border border-[#0A2647]/10 hover:bg-[#0A2647]/10 transition-colors p-3.5 flex items-start gap-3"
         >
-          <Sparkles className="h-5 w-5 text-[#c9b8ff] flex-shrink-0 mt-0.5" />
+          <Sparkles className="h-5 w-5 text-[#0A2647] flex-shrink-0 mt-0.5" />
           <span>
-            <span className="block text-sm text-white font-medium">Interview me — what&apos;s new?</span>
-            <span className="block text-xs text-white/60 mt-0.5">
+            <span className="block text-sm text-[#0A2647] font-medium">Interview me — what&apos;s new?</span>
+            <span className="block text-xs text-[#0A2647]/60 mt-0.5">
               Not sure what to add? I&apos;ll ask the right questions
             </span>
           </span>
@@ -525,12 +525,12 @@ export function ChatBuilderClient() {
         <button
           type="button"
           onClick={() => send("Tailor it to a job post")}
-          className="text-left rounded-2xl bg-white/8 border border-glass-border hover:bg-white/15 transition-colors p-3.5 flex items-start gap-3"
+          className="text-left rounded-2xl bg-white border border-[#0A2647]/10 hover:bg-[#0A2647]/10 transition-colors p-3.5 flex items-start gap-3"
         >
-          <Target className="h-5 w-5 text-[#c9b8ff] flex-shrink-0 mt-0.5" />
+          <Target className="h-5 w-5 text-[#0A2647] flex-shrink-0 mt-0.5" />
           <span>
-            <span className="block text-sm text-white font-medium">Tailor to a job post</span>
-            <span className="block text-xs text-white/60 mt-0.5">
+            <span className="block text-sm text-[#0A2647] font-medium">Tailor to a job post</span>
+            <span className="block text-xs text-[#0A2647]/60 mt-0.5">
               Paste a posting, get a CV aimed at it
             </span>
           </span>
@@ -549,7 +549,7 @@ export function ChatBuilderClient() {
           <Link
             href="/dashboard"
             aria-label="Back to dashboard"
-            className="grid place-items-center h-9 w-9 rounded-xl bg-white/10 border border-glass-border text-white/75 hover:text-white hover:bg-white/15 transition-colors"
+            className="grid place-items-center h-9 w-9 rounded-xl bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[#0A2647]/75 hover:text-[#0A2647] hover:bg-[#0A2647]/10 transition-colors"
           >
             <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={1.8} />
           </Link>
@@ -558,7 +558,7 @@ export function ChatBuilderClient() {
           <div
             role="tablist"
             aria-label="Builder mode"
-            className="inline-flex items-center gap-1 p-1 rounded-full bg-white/10 border border-glass-border"
+            className="inline-flex items-center gap-1 p-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10"
           >
             <button
               type="button"
@@ -567,8 +567,8 @@ export function ChatBuilderClient() {
               onClick={() => switchMode("chat")}
               className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full text-[13px] transition-colors ${
                 leftMode === "chat"
-                  ? "bg-white text-[#1a1a1a] font-semibold"
-                  : "text-white/70 hover:text-white"
+                  ? "bg-[#0A2647] text-[#fff] font-semibold"
+                  : "text-[#0A2647]/70 hover:text-[#0A2647]"
               }`}
             >
               <Sparkles className="h-3.5 w-3.5" />
@@ -581,8 +581,8 @@ export function ChatBuilderClient() {
               onClick={() => switchMode("edit")}
               className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full text-[13px] transition-colors ${
                 leftMode === "edit"
-                  ? "bg-white text-[#1a1a1a] font-semibold"
-                  : "text-white/70 hover:text-white"
+                  ? "bg-[#0A2647] text-[#fff] font-semibold"
+                  : "text-[#0A2647]/70 hover:text-[#0A2647]"
               }`}
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -604,21 +604,21 @@ export function ChatBuilderClient() {
             aria-pressed={previewOpen}
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-xs transition-colors ${
               previewOpen
-                ? "bg-white text-[#1a1a1a] border-transparent font-medium"
-                : "bg-white/8 border-glass-border text-white/75 hover:bg-white/15 hover:text-white"
+                ? "bg-[#0A2647] text-[#fff] border-transparent font-medium"
+                : "bg-white border-[#0A2647]/10 text-[#0A2647]/75 hover:bg-[#0A2647]/10 hover:text-[#0A2647]"
             }`}
           >
             <Eye className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{previewOpen ? "Hide preview" : "Preview"}</span>
             {!previewOpen && unseenUpdates > 0 ? (
-              <span className="min-w-[16px] h-[16px] px-1 grid place-items-center rounded-full bg-[#f5b8c8] text-[#1a1a1a] text-[10px] font-bold">
+              <span className="min-w-[16px] h-[16px] px-1 grid place-items-center rounded-full bg-[#B8860B] text-[#1a1a1a] text-[10px] font-bold">
                 {unseenUpdates}
               </span>
             ) : null}
           </button>
           <Link
             href="/build/voice"
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white border border-[#0A2647]/10 text-xs text-[#0A2647]/75 hover:bg-[#0A2647]/10 hover:text-[#0A2647] transition-colors"
           >
             <Mic className="h-3.5 w-3.5" />
             Hands-free call
@@ -626,12 +626,12 @@ export function ChatBuilderClient() {
           <button
             type="button"
             onClick={() => setHistoryOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white border border-[#0A2647]/10 text-xs text-[#0A2647]/75 hover:bg-[#0A2647]/10 hover:text-[#0A2647] transition-colors"
           >
             <Clock className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">History</span>
             {chats.length > 0 ? (
-              <span className="min-w-[16px] h-[16px] px-1 grid place-items-center rounded-full bg-white/15 text-[10px] text-white/80">
+              <span className="min-w-[16px] h-[16px] px-1 grid place-items-center rounded-full bg-[#0A2647]/10 text-[10px] text-[#0A2647]/80">
                 {chats.length}
               </span>
             ) : null}
@@ -639,7 +639,7 @@ export function ChatBuilderClient() {
           <button
             type="button"
             onClick={newChat}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/75 hover:bg-white/15 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white border border-[#0A2647]/10 text-xs text-[#0A2647]/75 hover:bg-[#0A2647]/10 hover:text-[#0A2647] transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">New chat</span>
@@ -647,7 +647,7 @@ export function ChatBuilderClient() {
           <button
             type="button"
             onClick={onFinish}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1a1a1a] text-xs font-semibold hover:bg-white/90 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A2647] text-[#fff] text-xs font-semibold hover:bg-[#0d3259] transition-colors"
           >
             <Download className="h-3.5 w-3.5" />
             Finish & export
@@ -658,12 +658,12 @@ export function ChatBuilderClient() {
       {/* Mobile tab switch — only when the preview is open */}
       {previewOpen ? (
       <div className="md:hidden flex-shrink-0 px-4 pb-2">
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white/10 border border-glass-border">
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-[#0A2647]/[0.05] border border-[#0A2647]/10">
           <button
             type="button"
             onClick={() => setMobileTab("chat")}
             className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm transition-colors ${
-              mobileTab === "chat" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70"
+              mobileTab === "chat" ? "bg-[#0A2647] text-[#fff] font-medium" : "text-[#0A2647]/70"
             }`}
           >
             {leftMode === "edit" ? <Pencil className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
@@ -676,13 +676,13 @@ export function ChatBuilderClient() {
               setUnseenUpdates(0);
             }}
             className={`relative flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm transition-colors ${
-              mobileTab === "preview" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70"
+              mobileTab === "preview" ? "bg-[#0A2647] text-[#fff] font-medium" : "text-[#0A2647]/70"
             }`}
           >
             <Eye className="h-4 w-4" />
             Preview
             {unseenUpdates > 0 && mobileTab === "chat" ? (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[#f5b8c8] text-[#1a1a1a] text-[10px] font-bold">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[#B8860B] text-[#1a1a1a] text-[10px] font-bold">
                 {unseenUpdates}
               </span>
             ) : null}
@@ -699,8 +699,8 @@ export function ChatBuilderClient() {
             previewOpen ? "md:w-[44%] md:max-w-[560px]" : "md:max-w-[760px] md:mx-auto"
           } ${mobileTab === "chat" ? "flex" : "hidden"}`}
         >
-          <div className="flex flex-col min-h-0 flex-1 rounded-3xl bg-glass border border-glass-border backdrop-blur-glass shadow-glow overflow-hidden">
-            <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-glass-border">
+          <div className="flex flex-col min-h-0 flex-1 rounded-3xl bg-white border border-[#0A2647]/10 shadow-[0_12px_40px_-16px_rgba(10,38,71,0.18)] overflow-hidden">
+            <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-[#0A2647]/10">
               <BuildProgress data={resumeData} />
             </div>
             {leftMode === "edit" ? (
@@ -715,6 +715,7 @@ export function ChatBuilderClient() {
                 />
                 <div className="flex-shrink-0 px-3 pb-3 pt-1">
                   <ChatComposer
+                    theme="light"
                     onSend={handleSend}
                     onUpload={handleUpload}
                     uploading={uploadingCv}
@@ -746,7 +747,7 @@ export function ChatBuilderClient() {
           <div className="flex-1 min-h-0 min-w-0 flex flex-col gap-2">
             {quickEdits.length > 0 ? (
               <div className="flex-shrink-0 flex items-center gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <span className="inline-flex items-center gap-1 text-[11px] text-white/55 flex-shrink-0">
+                <span className="inline-flex items-center gap-1 text-[11px] text-[#0A2647]/55 flex-shrink-0">
                   <Pencil className="h-3 w-3" />
                   Quick edit:
                 </span>
@@ -755,19 +756,19 @@ export function ChatBuilderClient() {
                     key={q.label}
                     type="button"
                     onClick={() => quickEdit(q.prompt)}
-                    className="flex-shrink-0 px-2.5 py-1 rounded-full bg-white/10 border border-glass-border text-[11px] text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                    className="flex-shrink-0 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[11px] text-[#0A2647]/80 hover:bg-[#0A2647]/10 hover:text-[#0A2647] transition-colors"
                   >
                     {q.label}
                   </button>
                 ))}
               </div>
             ) : null}
-            <div className="flex-shrink-0 self-start inline-flex items-center gap-1 p-1 rounded-full bg-white/10 border border-glass-border">
+            <div className="flex-shrink-0 self-start inline-flex items-center gap-1 p-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10">
               <button
                 type="button"
                 onClick={() => setPreviewView("guided")}
                 className={`px-3 py-1 rounded-full text-[12px] transition-colors ${
-                  previewView === "guided" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70 hover:text-white"
+                  previewView === "guided" ? "bg-[#0A2647] text-[#fff] font-medium" : "text-[#0A2647]/70 hover:text-[#0A2647]"
                 }`}
               >
                 Guided
@@ -776,18 +777,18 @@ export function ChatBuilderClient() {
                 type="button"
                 onClick={() => setPreviewView("document")}
                 className={`px-3 py-1 rounded-full text-[12px] transition-colors ${
-                  previewView === "document" ? "bg-white text-[#1a1a1a] font-medium" : "text-white/70 hover:text-white"
+                  previewView === "document" ? "bg-[#0A2647] text-[#fff] font-medium" : "text-[#0A2647]/70 hover:text-[#0A2647]"
                 }`}
               >
                 Document
               </button>
             </div>
             {previewView === "guided" ? (
-              <div className="flex-1 min-h-0 rounded-3xl bg-glass border border-glass-border backdrop-blur-glass shadow-glow p-3">
+              <div className="flex-1 min-h-0 rounded-3xl bg-white border border-[#0A2647]/10 shadow-[0_12px_40px_-16px_rgba(10,38,71,0.18)] p-3">
                 <GuidedSectionsPreview data={resumeData} />
               </div>
             ) : (
-              <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-glow overflow-hidden">
+              <div className="flex-1 min-h-0 rounded-3xl bg-white/95 shadow-[0_12px_40px_-16px_rgba(10,38,71,0.18)] overflow-hidden">
                 <SmartResumePreview
                   data={previewData}
                   templateId={selectedTemplate}
@@ -808,18 +809,18 @@ export function ChatBuilderClient() {
       {historyOpen ? (
         <div className="fixed inset-0 z-50 flex">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-[#0A2647]/25"
             onClick={() => setHistoryOpen(false)}
             aria-hidden="true"
           />
-          <div className="relative w-full max-w-sm h-full bg-[#241a33]/95 backdrop-blur-glass border-r border-glass-border shadow-glow flex flex-col">
-            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-glass-border">
-              <div className="text-sm font-semibold text-white">Your chats</div>
+          <div className="relative w-full max-w-sm h-full bg-[#FBF9F4]/98 border-r border-[#0A2647]/10 shadow-[0_12px_40px_-16px_rgba(10,38,71,0.18)] flex flex-col">
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[#0A2647]/10">
+              <div className="text-sm font-semibold text-[#0A2647]">Your chats</div>
               <button
                 type="button"
                 onClick={() => setHistoryOpen(false)}
                 aria-label="Close history"
-                className="grid place-items-center h-8 w-8 rounded-lg bg-white/10 text-white/70 hover:text-white hover:bg-white/15 transition-colors"
+                className="grid place-items-center h-8 w-8 rounded-lg bg-[#0A2647]/[0.05] text-[#0A2647]/70 hover:text-[#0A2647] hover:bg-[#0A2647]/10 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -828,7 +829,7 @@ export function ChatBuilderClient() {
               <button
                 type="button"
                 onClick={newChat}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A2647] text-[#fff] text-sm font-semibold hover:bg-[#0d3259] transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 New chat
@@ -836,7 +837,7 @@ export function ChatBuilderClient() {
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-3 space-y-1">
               {chats.length === 0 ? (
-                <p className="text-center text-xs text-white/50 px-4 py-8">
+                <p className="text-center text-xs text-[#0A2647]/50 px-4 py-8">
                   No saved chats yet. Your conversations save automatically as you build.
                 </p>
               ) : (
@@ -844,7 +845,7 @@ export function ChatBuilderClient() {
                   <div
                     key={c.id}
                     className={`group flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
-                      c.id === sessionId ? "bg-white/15" : "hover:bg-white/[0.08]"
+                      c.id === sessionId ? "bg-[#0A2647]/10" : "hover:bg-[#0A2647]/[0.05]"
                     }`}
                   >
                     <button
@@ -852,8 +853,8 @@ export function ChatBuilderClient() {
                       onClick={() => openChat(c.id)}
                       className="flex-1 min-w-0 text-left"
                     >
-                      <div className="text-sm text-white truncate">{c.title}</div>
-                      <div className="text-[11px] text-white/45">
+                      <div className="text-sm text-[#0A2647] truncate">{c.title}</div>
+                      <div className="text-[11px] text-[#0A2647]/45">
                         {new Date(c.updatedAt).toLocaleDateString()} · {c.messageCount} msg
                         {c.messageCount === 1 ? "" : "s"}
                       </div>
@@ -862,7 +863,7 @@ export function ChatBuilderClient() {
                       type="button"
                       onClick={() => deleteChat(c.id)}
                       aria-label="Delete chat"
-                      className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-white/40 hover:text-[#f5b8c8] hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-[#0A2647]/40 hover:text-[#B8860B] hover:bg-[#0A2647]/[0.05] opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

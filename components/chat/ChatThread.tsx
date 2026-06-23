@@ -27,11 +27,11 @@ function ToolChips({ tools }: { tools: BuilderChatMessage["tools"] }) {
       {tools.map((t) => (
         <span
           key={t.id}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-glass-border text-[11px] ${
-            t.pending ? "text-white/60 animate-pulse" : "text-white/85"
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[11px] ${
+            t.pending ? "text-[#0A2647]/60 animate-pulse" : "text-[#0A2647]/85"
           }`}
         >
-          <Sparkles className={`h-3 w-3 ${t.pending ? "text-white/50" : "text-[#f5b8c8]"}`} />
+          <Sparkles className={`h-3 w-3 ${t.pending ? "text-[#0A2647]/50" : "text-[#B8860B]"}`} />
           {t.label}
         </span>
       ))}
@@ -94,19 +94,19 @@ export function ChatThread({
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
               {/* dir=auto: Hebrew/Arabic answers align right within the bubble */}
-              <div dir="auto" className="max-w-[85%] rounded-2xl rounded-br-md bg-white text-[#1a1a1a] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+              <div dir="auto" className="max-w-[85%] rounded-2xl rounded-br-md bg-[#0A2647] text-[#fff] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
                 {m.display ?? m.content}
               </div>
             </div>
           ) : (
             <div key={m.id} className="flex justify-start">
               <div className="max-w-[90%]">
-                <div dir="auto" className="rounded-2xl rounded-bl-md bg-white/10 border border-glass-border text-white px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+                <div dir="auto" className="rounded-2xl rounded-bl-md bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[#0A2647] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
                   {m.content ? renderInlineBold(m.content) : (
                     <span className="inline-flex gap-1 items-center py-1" aria-label="Thinking">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:0ms]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:150ms]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:300ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#0A2647]/40 animate-bounce [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#0A2647]/40 animate-bounce [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#0A2647]/40 animate-bounce [animation-delay:300ms]" />
                     </span>
                   )}
                 </div>

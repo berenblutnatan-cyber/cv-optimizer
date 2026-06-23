@@ -34,14 +34,14 @@ export function BuildProgress({ data }: { data: ResumeData }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] uppercase tracking-[0.18em] text-white/55">
+        <span className="text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/55">
           Your CV
         </span>
-        <span className="text-[11px] text-white/65 tabular-nums">{pct}%</span>
+        <span className="text-[11px] text-[#0A2647]/65 tabular-nums">{pct}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-[#0A2647]/[0.05] overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[#f5b8c8] to-[#8fb3ff] transition-all duration-700"
+          className="h-full rounded-full bg-gradient-to-r from-[#0A2647] to-[#B8860B] transition-all duration-700"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -50,10 +50,10 @@ export function BuildProgress({ data }: { data: ResumeData }) {
           <span
             key={item.key}
             className={`inline-flex items-center gap-1 text-[11px] transition-colors ${
-              item.done ? "text-white/85" : "text-white/40"
+              item.done ? "text-[#0A2647]/85" : "text-[#0A2647]/40"
             }`}
           >
-            <Check className={`h-3 w-3 ${item.done ? "text-[#8fffc1]" : "text-white/25"}`} />
+            <Check className={`h-3 w-3 ${item.done ? "text-[#059669]" : "text-[#0A2647]/25"}`} />
             {item.label}
           </span>
         ))}

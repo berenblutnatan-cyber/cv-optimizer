@@ -10,7 +10,7 @@ export const metadata = { title: "Build your CV · Hired" };
 // are gated behind sign-in inside ChatBuilderClient.
 export default function ChatBuilderPage() {
   return (
-    <GradientShell>
+    <GradientShell tone="light">
       <ChatBuilderClient />
     </GradientShell>
   );

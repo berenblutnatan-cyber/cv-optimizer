@@ -47,8 +47,8 @@ function Bullets({ items }: { items: string[] }) {
   return (
     <ul className="mt-1.5 space-y-1">
       {real.map((b, i) => (
-        <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-white/80">
-          <span className="mt-1.5 h-1 w-1 rounded-full bg-[#f5b8c8] flex-shrink-0" />
+        <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-[#0A2647]/80">
+          <span className="mt-1.5 h-1 w-1 rounded-full bg-[#B8860B] flex-shrink-0" />
           <span>{b}</span>
         </li>
       ))}
@@ -64,7 +64,7 @@ function Chips({ items }: { items: string[] }) {
       {real.map((s, i) => (
         <span
           key={i}
-          className="px-2.5 py-1 rounded-full bg-white/10 border border-glass-border text-[12px] text-white/85"
+          className="px-2.5 py-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[12px] text-[#0A2647]/85"
         >
           {s}
         </span>
@@ -90,10 +90,10 @@ const SECTIONS: SectionDef[] = [
       );
       return (
         <div className="space-y-1">
-          <div className="text-white font-semibold text-[15px]">{p.name || "—"}</div>
-          {p.title ? <div className="text-white/70 text-[13px]">{p.title}</div> : null}
+          <div className="text-[#0A2647] font-semibold text-[15px]">{p.name || "—"}</div>
+          {p.title ? <div className="text-[#0A2647]/70 text-[13px]">{p.title}</div> : null}
           {contacts.length > 0 ? (
-            <div className="text-white/65 text-[12px] flex flex-wrap gap-x-2 gap-y-0.5 pt-0.5">
+            <div className="text-[#0A2647]/65 text-[12px] flex flex-wrap gap-x-2 gap-y-0.5 pt-0.5">
               {contacts.map((c, i) => (
                 <span key={i}>{c}</span>
               ))}
@@ -112,7 +112,7 @@ const SECTIONS: SectionDef[] = [
     hint: "We'll write this last — once I know your story and target role.",
     render: (d) =>
       isPlaceholderSummary(d.summary) ? null : (
-        <p className="text-[13px] leading-relaxed text-white/85">{d.summary}</p>
+        <p className="text-[13px] leading-relaxed text-[#0A2647]/85">{d.summary}</p>
       ),
   },
   {
@@ -127,10 +127,10 @@ const SECTIONS: SectionDef[] = [
       <div className="space-y-3">
         {d.experience.map((e) => (
           <div key={e.id}>
-            <div className="text-white font-medium text-[14px]">
+            <div className="text-[#0A2647] font-medium text-[14px]">
               {[e.role, e.company].filter(Boolean).join(" · ") || "—"}
             </div>
-            <div className="text-white/55 text-[12px]">
+            <div className="text-[#0A2647]/55 text-[12px]">
               {dash(e.startDate, e.current ? "Present" : e.endDate)}
               {e.location ? ` · ${e.location}` : ""}
             </div>
@@ -151,10 +151,10 @@ const SECTIONS: SectionDef[] = [
       <div className="space-y-2">
         {d.education.map((e) => (
           <div key={e.id}>
-            <div className="text-white font-medium text-[14px]">
+            <div className="text-[#0A2647] font-medium text-[14px]">
               {[e.degree, e.field].filter(Boolean).join(", ") || e.institution || "—"}
             </div>
-            <div className="text-white/55 text-[12px]">
+            <div className="text-[#0A2647]/55 text-[12px]">
               {[e.institution, dash(e.startDate, e.endDate)].filter(Boolean).join(" · ")}
               {e.gpa ? ` · GPA ${e.gpa}` : ""}
             </div>
@@ -193,12 +193,12 @@ const SECTIONS: SectionDef[] = [
       <div className="space-y-3">
         {d.projects.length > 0 ? (
           <div>
-            <div className="text-white/55 text-[11px] uppercase tracking-[0.16em] mb-1">Projects</div>
+            <div className="text-[#0A2647]/55 text-[11px] uppercase tracking-[0.16em] mb-1">Projects</div>
             {d.projects.map((p) => (
               <div key={p.id} className="mb-1.5">
-                <div className="text-white font-medium text-[13px]">{p.name}</div>
+                <div className="text-[#0A2647] font-medium text-[13px]">{p.name}</div>
                 {p.description ? (
-                  <div className="text-white/75 text-[12px]">{p.description}</div>
+                  <div className="text-[#0A2647]/75 text-[12px]">{p.description}</div>
                 ) : null}
                 <Bullets items={p.bullets ?? []} />
               </div>
@@ -207,9 +207,9 @@ const SECTIONS: SectionDef[] = [
         ) : null}
         {d.certifications.length > 0 ? (
           <div>
-            <div className="text-white/55 text-[11px] uppercase tracking-[0.16em] mb-1">Certifications</div>
+            <div className="text-[#0A2647]/55 text-[11px] uppercase tracking-[0.16em] mb-1">Certifications</div>
             {d.certifications.map((c) => (
-              <div key={c.id} className="text-white/80 text-[13px]">
+              <div key={c.id} className="text-[#0A2647]/80 text-[13px]">
                 {[c.name, c.issuer, c.date].filter(Boolean).join(" · ")}
               </div>
             ))}
@@ -217,13 +217,13 @@ const SECTIONS: SectionDef[] = [
         ) : null}
         {d.languages.length > 0 ? (
           <div>
-            <div className="text-white/55 text-[11px] uppercase tracking-[0.16em] mb-1">Languages</div>
+            <div className="text-[#0A2647]/55 text-[11px] uppercase tracking-[0.16em] mb-1">Languages</div>
             <Chips items={d.languages} />
           </div>
         ) : null}
         {d.customSections.map((s) => (
           <div key={s.id}>
-            <div className="text-white/55 text-[11px] uppercase tracking-[0.16em] mb-1">{s.title}</div>
+            <div className="text-[#0A2647]/55 text-[11px] uppercase tracking-[0.16em] mb-1">{s.title}</div>
             <Bullets items={s.items.map((i) => i.text)} />
           </div>
         ))}
@@ -272,8 +272,8 @@ export function GuidedSectionsPreview({ data }: { data: ResumeData }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-shrink-0 flex items-center justify-between px-1 pb-2">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-white/55">Guided build</div>
-        <div className="text-[11px] text-white/55">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/55">Guided build</div>
+        <div className="text-[11px] text-[#0A2647]/55">
           {doneCount}/{required} sections
         </div>
       </div>
@@ -288,8 +288,8 @@ export function GuidedSectionsPreview({ data }: { data: ResumeData }) {
               key={s.id}
               className={`rounded-2xl border transition-colors ${
                 open
-                  ? "bg-white/12 border-white/30"
-                  : "bg-white/[0.06] border-glass-border hover:bg-white/10"
+                  ? "bg-[#0A2647]/[0.04] border-[#0A2647]/25"
+                  : "bg-white border-[#0A2647]/10 hover:bg-[#0A2647]/[0.05]"
               }`}
             >
               <button
@@ -300,25 +300,25 @@ export function GuidedSectionsPreview({ data }: { data: ResumeData }) {
               >
                 <span
                   className={`grid place-items-center h-7 w-7 rounded-full flex-shrink-0 ${
-                    complete ? "bg-[#9be7a0]/20 text-[#9be7a0]" : "bg-white/10 text-white/70"
+                    complete ? "bg-[#059669]/20 text-[#059669]" : "bg-[#0A2647]/[0.05] text-[#0A2647]/70"
                   }`}
                 >
                   {complete ? <Check className="h-4 w-4" strokeWidth={2.4} /> : <Icon className="h-4 w-4" />}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[14px] text-white font-medium truncate">{s.label}</span>
-                  <span className="block text-[11px] text-white/50">
+                  <span className="block text-[14px] text-[#0A2647] font-medium truncate">{s.label}</span>
+                  <span className="block text-[11px] text-[#0A2647]/50">
                     {complete ? "Done" : empty ? (s.optional ? "Optional" : "Up next") : "In progress"}
                   </span>
                 </span>
                 <ChevronDown
-                  className={`h-4 w-4 text-white/50 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                  className={`h-4 w-4 text-[#0A2647]/50 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
                 />
               </button>
               {open ? (
                 <div className="px-3.5 pb-3.5 pt-0.5">
                   {empty ? (
-                    <p className="text-[13px] leading-relaxed text-white/55 italic">{s.hint}</p>
+                    <p className="text-[13px] leading-relaxed text-[#0A2647]/55 italic">{s.hint}</p>
                   ) : (
                     s.render(data)
                   )}
@@ -327,7 +327,7 @@ export function GuidedSectionsPreview({ data }: { data: ResumeData }) {
                       <button
                         type="button"
                         onClick={() => advanceFrom(s.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-glass-border text-[12px] text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[12px] text-[#0A2647]/80 hover:bg-[#0A2647]/10 hover:text-[#0A2647] transition-colors"
                       >
                         Next
                         <ArrowRight className="h-3.5 w-3.5" />
