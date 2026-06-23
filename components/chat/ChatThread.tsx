@@ -102,7 +102,10 @@ export function ChatThread({
       }}
       className={`overflow-y-auto ${className}`}
     >
-      <div className="flex flex-col gap-4">
+      {/* Transcript echoes the user's resume content (PII) in both user and
+          assistant bubbles, so mask it in Clarity replays. Behavior is still
+          captured via custom events (chat_message_sent, chat_tool_applied). */}
+      <div className="flex flex-col gap-4" data-clarity-mask="true">
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">

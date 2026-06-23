@@ -288,6 +288,10 @@ export function EditableResumePreview({
     case "ledger":
     case "devfolio":
     case "canvas":
+    case "timeline":
+    case "double-column":
+    case "compact":
+    case "photo-left":
       return <ResumePreview data={data} templateId={templateId} themeColor={themeColor} />;
     default:
       return (

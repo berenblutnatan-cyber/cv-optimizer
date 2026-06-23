@@ -20,3 +20,9 @@ export { SpotlightTemplate } from "./SpotlightTemplate";
 export { LedgerTemplate } from "./LedgerTemplate";
 export { DevfolioTemplate } from "./DevfolioTemplate";
 export { CanvasTemplate } from "./CanvasTemplate";
+
+// Layout expansion: Timeline / Double Column / Compact / Photo Left
+export { TimelineTemplate } from "./TimelineTemplate";
+export { DoubleColumnTemplate } from "./DoubleColumnTemplate";
+export { CompactTemplate } from "./CompactTemplate";
+export { PhotoLeftTemplate } from "./PhotoLeftTemplate";

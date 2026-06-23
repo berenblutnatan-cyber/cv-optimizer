@@ -17,6 +17,10 @@ import {
   LedgerTemplate,
   DevfolioTemplate,
   CanvasTemplate,
+  TimelineTemplate,
+  DoubleColumnTemplate,
+  CompactTemplate,
+  PhotoLeftTemplate,
 } from "@/components/cv-templates/templates";
 
 /**
@@ -136,6 +140,14 @@ export function ResumePreview({
       return <DevfolioTemplate data={templateData} themeColor={themeColor} className={className} />;
     case "canvas":
       return <CanvasTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "timeline":
+      return <TimelineTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "double-column":
+      return <DoubleColumnTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "compact":
+      return <CompactTemplate data={templateData} themeColor={themeColor} className={className} />;
+    case "photo-left":
+      return <PhotoLeftTemplate data={templateData} themeColor={themeColor} className={className} />;
     default:
       return <ModernSidebarTemplate data={templateData} themeColor={themeColor} className={className} />;
   }

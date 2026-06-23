@@ -135,6 +135,10 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; pre
   { id: "ledger", name: "Ledger", icon: "❡", preview: "Editorial serif" },
   { id: "devfolio", name: "Devfolio", icon: "⌗", preview: "Dev / mono" },
   { id: "canvas", name: "Canvas", icon: "◐", preview: "Creative sidebar" },
+  { id: "timeline", name: "Timeline", icon: "❘", preview: "Timeline rail" },
+  { id: "double-column", name: "Double", icon: "▥", preview: "Two columns" },
+  { id: "compact", name: "Compact", icon: "▤", preview: "Dense, ATS" },
+  { id: "photo-left", name: "Photo", icon: "◑", preview: "Photo rail" },
 ];
 
 export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle, onTabChange }: AnalysisResultsProps) {

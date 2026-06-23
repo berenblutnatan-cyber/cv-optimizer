@@ -30,6 +30,10 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string }[] = [
   { id: "ledger", name: "Ledger" },
   { id: "devfolio", name: "Devfolio" },
   { id: "canvas", name: "Canvas" },
+  { id: "timeline", name: "Timeline" },
+  { id: "double-column", name: "Double Column" },
+  { id: "compact", name: "Compact" },
+  { id: "photo-left", name: "Photo Left" },
 ];
 
 // Color options

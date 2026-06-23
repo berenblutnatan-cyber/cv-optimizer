@@ -37,7 +37,6 @@ const NEW_LAYOUTS = new Set<BuilderTemplateId>([
   "double-column",
   "compact",
   "photo-left",
-  "banner",
 ]);
 
 type LayoutMeta = {
@@ -110,7 +109,32 @@ const LAYOUTS: Record<BuilderTemplateId, LayoutMeta> = {
   banner: {
     family: "Banner",
     category: "Creative",
-    tagline: "A bold accent banner header that stands out.",
+    tagline: "A full-width color banner header — confident and modern.",
+  },
+  aurora: {
+    family: "Aurora",
+    category: "Professional",
+    tagline: "Accent rail and a tinted header — colorful but clean.",
+  },
+  spotlight: {
+    family: "Spotlight",
+    category: "Simple",
+    tagline: "Centered, airy and maximally ATS-safe.",
+  },
+  ledger: {
+    family: "Ledger",
+    category: "Classic",
+    tagline: "Editorial serif with a date rail — elegant for finance & law.",
+  },
+  devfolio: {
+    family: "Devfolio",
+    category: "Technical",
+    tagline: "Monospace README style with a skills grid — built for developers.",
+  },
+  canvas: {
+    family: "Canvas",
+    category: "Creative",
+    tagline: "A bold accent sidebar with a photo — personality for creatives.",
   },
 };
 
@@ -142,12 +166,18 @@ const COLOR_ORDER: ThemeColor[] = [
 ];
 
 const LAYOUT_ORDER: BuilderTemplateId[] = [
-  // New layouts lead the gallery.
+  // New layouts (this release) lead the gallery.
   "double-column",
   "timeline",
   "photo-left",
-  "banner",
   "compact",
+  // The recent design drop.
+  "aurora",
+  "banner",
+  "spotlight",
+  "ledger",
+  "devfolio",
+  "canvas",
   // Established archetypes.
   "modern-sidebar",
   "ivy-league",

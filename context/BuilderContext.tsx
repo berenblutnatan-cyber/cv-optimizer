@@ -65,7 +65,11 @@ export type BuilderTemplateId =
   | "spotlight"        // 11. Centered minimal, ATS-safe
   | "ledger"           // 12. Editorial serif, date rail
   | "devfolio"         // 13. Developer / mono
-  | "canvas";          // 14. Creative accent sidebar
+  | "canvas"           // 14. Creative accent sidebar
+  | "timeline"         // 15. Vertical timeline rail
+  | "double-column"    // 16. Full header + two light columns
+  | "compact"          // 17. Dense, ATS-friendly single column
+  | "photo-left";      // 18. Photo rail + content column
 
 export interface BuilderContextState {
   // Active field tracking
