@@ -57,6 +57,19 @@ export const POLAR_PLANS = {
     credits: 20,
     kind: "one_time",
   },
+  // Engagement flash — the same Pro pack (20 credits) at 80% off, surfaced for
+  // 5 minutes AFTER a user has actually used the builder (a few real actions),
+  // not at signup. Polar checkouts are fixed-price (no runtime coupon), so the
+  // discount IS this product's price: create a dedicated Polar product at ~$1.80
+  // and set POLAR_PRODUCT_PRO_FLASH. Until then the offer self-hides — it never
+  // dangles a dead checkout. The strike-through anchor is the real $9 Pro price.
+  pro_flash: {
+    productId: process.env.POLAR_PRODUCT_PRO_FLASH ?? "",
+    name: "Pro Flash",
+    amount: 1.8,
+    credits: 20,
+    kind: "one_time",
+  },
   ultimate: {
     productId: process.env.POLAR_PRODUCT_ULTIMATE ?? "",
     name: "Ultimate",

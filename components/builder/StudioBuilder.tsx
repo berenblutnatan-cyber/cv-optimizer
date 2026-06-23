@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useChatBuilderStore } from "@/stores/chatBuilderStore";
+import { useFlashSaleStore } from "@/stores/flashSaleStore";
 import { applyCvToolCall, pendingToolLabel } from "@/lib/chat/cvTools";
 import { chatGreeting, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
@@ -195,6 +196,8 @@ export function StudioBuilder() {
     addMessage({ id: assistantId, role: "assistant", content: "" });
     setStreaming(true);
     track("chat_message_sent", { length: text.length });
+    // Count this as builder engagement — arms the 5-min flash sale at threshold.
+    useFlashSaleStore.getState().recordAction();
 
     const cv = useResumeStore.getState().resumeData;
     const outgoingCv = isPlaceholderSummary(cv.summary) ? { ...cv, summary: "" } : cv;
@@ -280,6 +283,7 @@ export function StudioBuilder() {
     setPrefill(text);
     setPrefillNonce((n) => n + 1);
     track("chat_quick_edit_clicked");
+    useFlashSaleStore.getState().recordAction();
   }
 
   function switchMode(mode: "chat" | "edit") {
@@ -855,6 +859,7 @@ export function StudioBuilder() {
           setSelectedColor(color);
           setMobileTab("document");
           track("studio_toolbar_action", { action: "template_select" });
+          useFlashSaleStore.getState().recordAction();
         }}
       />
 

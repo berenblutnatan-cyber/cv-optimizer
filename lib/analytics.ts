@@ -26,6 +26,10 @@ export type EventName =
   | "out_of_credits_modal_shown"
   | "out_of_credits_modal_dismissed"
   | "welcome_flash_shown"
+  // Engagement flash sale (5-min, 80%-off Pro, armed after a few builder actions)
+  | "flash_sale_armed"
+  | "flash_sale_shown"
+  | "flash_sale_dismissed"
   | "template_unlock_modal_shown"
   | "template_unlocked"
   | "results_viewed"

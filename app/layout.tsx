@@ -17,6 +17,7 @@ import { InAppBrowserAlert } from "@/components/InAppBrowserAlert";
 import { GclidCapture } from "@/components/GclidCapture";
 import { ClarityRouteTags } from "@/components/analytics/ClarityRouteTags";
 import { WelcomeOfferBanner } from "@/components/WelcomeOfferBanner";
+import { FlashSaleBanner } from "@/components/FlashSaleBanner";
 import "./globals.css";
 
 const GOOGLE_ADS_ID = "AW-18163039044";
@@ -168,6 +169,10 @@ export default function RootLayout({
           <SignedIn>
             <WelcomeOfferBanner />
           </SignedIn>
+          {/* Engagement flash sale — self-hides until the builder arms it (a few
+              real actions). Outside SignedIn so anon builders get it too; claim
+              routes through sign-in. */}
+          <FlashSaleBanner />
           <Toaster position="top-center" richColors />
           {/* Global Feedback Widget */}
           <RatingWidget source="global" />
