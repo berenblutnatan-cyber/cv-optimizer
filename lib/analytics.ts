@@ -84,6 +84,8 @@ export type EventName =
   | "build_onboarding_viewed"
   | "build_onboarding_step"
   | "build_onboarding_completed"
+  | "build_onboarding_path"
+  | "build_onboarding_score_click"
   | "xp_awarded"
   | "level_up";
 

@@ -24,6 +24,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
+  BarChart3,
   FileUp,
   MessageSquareText,
   PencilLine,
@@ -36,8 +37,9 @@ import { useOnboardingStore } from "@/stores/onboardingStore";
 import { track } from "@/lib/analytics";
 import type { BuilderTemplateId } from "@/context/BuilderContext";
 
-type Step = "intro" | "role" | "goal" | "reassurance" | "experience" | "template" | "method" | "handoff";
+type Step = "intro" | "path" | "role" | "goal" | "reassurance" | "experience" | "template" | "method" | "handoff";
 type GoalId = "ats" | "recruiter" | "both";
+type PathChoice = "scratch" | "existing";
 
 const ROLE_SUGGESTIONS = [
   "Software Engineer",
@@ -82,6 +84,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
   const [goal, setGoal] = useState<GoalId | null>(null);
   const [experience, setExperience] = useState<string | null>(null);
   const [template, setTemplate] = useState<BuilderTemplateId>("ivy-league");
+  const [pathChoice, setPathChoice] = useState<PathChoice | null>(null);
   const [handoffLabel, setHandoffLabel] = useState("Putting your first draft together…");
 
   useEffect(() => {
@@ -156,17 +159,16 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
 
   return (
     <div
-      className={`relative w-full overflow-hidden bg-[#FBF9F4] text-[#0A2647] ${
+      className={`relative w-full overflow-hidden bg-white text-[#0A2647] ${
         embedded ? "flex h-full flex-col" : "min-h-dvh"
       }`}
     >
-      {/* Aurora — calm, light, on-brand. Three soft blobs + grain. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-32 -top-24 h-[42rem] w-[42rem] rounded-full bg-[#C9B8FF] opacity-40 blur-[120px]" />
-        <div className="absolute -right-40 top-10 h-[38rem] w-[38rem] rounded-full bg-[#8FB3FF] opacity-30 blur-[130px]" />
-        <div className="absolute bottom-[-12rem] left-1/3 h-[40rem] w-[40rem] rounded-full bg-[#F5C4D4] opacity-30 blur-[130px]" />
-      </div>
-      <div aria-hidden className="grain-overlay absolute inset-0" />
+      {/* Clean & airy (Enhancv-like): white canvas, no aurora wash — a single
+          faint warm halo behind the stage keeps it from feeling sterile. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 h-[34rem] w-[44rem] -translate-x-1/2 rounded-full bg-[#B8860B] opacity-[0.05] blur-[120px]"
+      />
 
       {/* Minimal chrome — only when standalone (/build). On the home the site
           header is already present, so we skip our own to avoid a double bar. */}
@@ -193,7 +195,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
         <div className="relative z-10 mx-auto max-w-xl px-5">
           <div className="h-1 w-full overflow-hidden rounded-full bg-[#0A2647]/10">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-[#0A2647] to-[#B8860B]"
+              className="h-full rounded-full bg-[#B8860B]"
               initial={false}
               animate={{ width: `${Math.max(progress, 0.08) * 100}%` }}
               transition={{ duration: reduce ? 0.001 : 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -226,20 +228,61 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 A few quick questions, and we&rsquo;ll have your first draft together
                 in about two minutes.
               </p>
-              <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row">
+              <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
                 <button
-                  onClick={() => go("role")}
-                  className="group inline-flex items-center gap-2.5 rounded-full bg-[#0A2647] px-8 py-4 text-base font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
+                  onClick={() => go("path")}
+                  className="group inline-flex items-center gap-2.5 rounded-full bg-[#D4A83F] px-8 py-4 text-base font-semibold text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
                 >
-                  Let&rsquo;s begin
+                  Build / Optimize my CV
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" strokeWidth={1.75} />
                 </button>
                 <button
-                  onClick={() => go("method")}
-                  className="text-sm font-medium text-[#0A2647]/60 underline-offset-4 transition-colors hover:text-[#0A2647] hover:underline focus-visible:outline-none"
+                  onClick={() => {
+                    track("build_onboarding_score_click");
+                    router.push("/score");
+                  }}
+                  className="group inline-flex items-center gap-2.5 rounded-full border border-[#0A2647]/15 bg-white/70 px-8 py-4 text-base font-medium text-[#0A2647] shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#0A2647]/30 hover:bg-white hover:shadow-md focus-visible:outline-none"
                 >
-                  I already have a CV
+                  <BarChart3 className="h-5 w-5 text-[#B8860B]" strokeWidth={1.75} />
+                  Check my CV score
                 </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ---------- FORK: SCRATCH vs EXISTING ---------- */}
+          {step === "path" && (
+            <motion.div key="path" {...fade} className="w-full">
+              <h2 className="mt-4 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+                Building from scratch, or improving one you have?
+              </h2>
+              <p className="mx-auto mt-3 max-w-md text-[#0A2647]/55">
+                Either way, we&rsquo;ll tailor it to the role you&rsquo;re going after.
+              </p>
+              <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
+                <MethodCard
+                  icon={<PencilLine className="h-5 w-5" strokeWidth={1.75} />}
+                  title="Build from scratch"
+                  desc="No CV yet — we&rsquo;ll build it with you, section by section."
+                  onClick={() => {
+                    setPathChoice("scratch");
+                    track("build_onboarding_path", { path: "scratch" });
+                    go("role");
+                  }}
+                />
+                <MethodCard
+                  icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
+                  title="I have an existing CV"
+                  desc="Upload it and we&rsquo;ll optimize it for the role you want."
+                  onClick={() => {
+                    setPathChoice("existing");
+                    track("build_onboarding_path", { path: "existing" });
+                    go("role");
+                  }}
+                />
+              </div>
+              <div className="mt-8 flex justify-center">
+                <BackButton onClick={() => go("intro")} />
               </div>
             </motion.div>
           )}
@@ -282,11 +325,11 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   ))}
                 </div>
                 <div className="mt-8 flex items-center justify-center gap-3">
-                  <BackButton onClick={() => go("intro")} />
+                  <BackButton onClick={() => go("path")} />
                   <button
                     type="submit"
                     disabled={!role.trim()}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#0A2647] px-7 py-3.5 text-sm font-medium text-white transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 focus-visible:outline-none"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#D4A83F] px-7 py-3.5 text-sm font-semibold text-[#0A2647] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 focus-visible:outline-none"
                   >
                     Continue
                     <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
@@ -364,7 +407,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 <BackButton onClick={() => go("goal")} />
                 <button
                   onClick={() => go("experience")}
-                  className="group inline-flex items-center gap-2 rounded-full bg-[#0A2647] px-7 py-3.5 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
+                  className="group inline-flex items-center gap-2 rounded-full bg-[#D4A83F] px-7 py-3.5 text-sm font-semibold text-[#0A2647] transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
                 >
                   Makes sense
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.75} />
@@ -438,7 +481,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 <BackButton onClick={() => go("experience")} />
                 <button
                   onClick={() => go("method")}
-                  className="group inline-flex items-center gap-2 rounded-full bg-[#0A2647] px-7 py-3.5 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
+                  className="group inline-flex items-center gap-2 rounded-full bg-[#D4A83F] px-7 py-3.5 text-sm font-semibold text-[#0A2647] transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.75} />
@@ -455,19 +498,32 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 How would you like to start?
               </h2>
               <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
+                {/* Existing-CV path leads with upload; from-scratch path leads with
+                    the chat coach. Both keep the manual builder as an option. */}
+                {pathChoice === "existing" && (
+                  <MethodCard
+                    icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
+                    title="Upload my CV"
+                    desc="Drop in a PDF or DOCX and we&rsquo;ll optimize it for your role."
+                    badge="Recommended"
+                    onClick={() => fileRef.current?.click()}
+                  />
+                )}
                 <MethodCard
                   icon={<MessageSquareText className="h-5 w-5" strokeWidth={1.75} />}
                   title="Answer a few questions"
                   desc="Chat with your coach — it writes each section as you talk."
-                  badge="Recommended"
+                  badge={pathChoice === "existing" ? undefined : "Recommended"}
                   onClick={() => finish("chat", "/build/chat", "Putting your first draft together…")}
                 />
-                <MethodCard
-                  icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
-                  title="I have a CV to improve"
-                  desc="Upload a PDF or DOCX and we&rsquo;ll tailor it to your role."
-                  onClick={() => fileRef.current?.click()}
-                />
+                {pathChoice !== "existing" && (
+                  <MethodCard
+                    icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
+                    title="I have a CV to improve"
+                    desc="Upload a PDF or DOCX and we&rsquo;ll tailor it to your role."
+                    onClick={() => fileRef.current?.click()}
+                  />
+                )}
                 <MethodCard
                   icon={<PencilLine className="h-5 w-5" strokeWidth={1.75} />}
                   title="Start from a blank template"
@@ -519,8 +575,8 @@ function Orb({ reduce, busy = false }: { reduce: boolean; busy?: boolean }) {
           style={{ animation: busy ? "pulse 1.1s ease-in-out infinite" : "pulse 2.6s ease-in-out infinite" }}
         />
       )}
-      <span className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[#0A2647] to-[#143a63] shadow-[0_12px_30px_-8px_rgba(10,38,71,0.6)]">
-        <Sparkles className="h-7 w-7 text-[#F4D58D]" strokeWidth={1.6} />
+      <span className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[#B8860B] to-[#d4a83f] shadow-[0_12px_30px_-8px_rgba(184,134,11,0.45)]">
+        <Sparkles className="h-7 w-7 text-white" strokeWidth={1.6} />
       </span>
     </div>
   );
@@ -633,7 +689,7 @@ function MethodCard({
       onClick={onClick}
       className="group flex items-center gap-4 rounded-2xl border border-[#0A2647]/12 bg-white/70 px-5 py-4 text-left backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#0A2647]/30 hover:bg-white hover:shadow-lg focus-visible:outline-none"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#0A2647]/5 text-[#0A2647] transition-colors group-hover:bg-[#0A2647] group-hover:text-white">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#B8860B]/10 text-[#B8860B] transition-colors group-hover:bg-[#B8860B] group-hover:text-white">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
