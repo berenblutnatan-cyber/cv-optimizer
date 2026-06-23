@@ -10,6 +10,8 @@ export function SiteFooter() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
           <Logo variant="light" size="md" />
           <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 text-xs sm:text-sm font-light tracking-wide">
+            <Link href="/resume-examples" className={linkClass}>Resume Examples</Link>
+            <Link href="/interview-prep" className={linkClass}>Interview Prep</Link>
             <Link href="/pricing" className={linkClass}>Pricing</Link>
             <Link href="/privacy" className={linkClass}>Privacy</Link>
             <Link href="/terms" className={linkClass}>Terms</Link>

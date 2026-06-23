@@ -33,6 +33,8 @@ import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { generateId, type ResumeData } from "@/types/resume";
 import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
 import { ResumePreview } from "@/components/builder/ResumePreview";
+import { ResumeScorePanel } from "@/components/builder/ResumeScorePanel";
+import type { LocalProblem } from "@/lib/optimizer/localChecks";
 import { TemplateGalleryModal } from "@/components/builder/TemplateGalleryModal";
 import { SAMPLE_RESUME, SAMPLE_RESUME_DATA, isEmptyResume } from "@/lib/builder/sampleResume";
 import { exportToPdf } from "@/utils/exportToPdf";
@@ -64,6 +66,8 @@ export function StudioBuilder() {
   const resumeData = useResumeStore((s) => s.resumeData);
   const setResumeData = useResumeStore((s) => s.setResumeData);
   const resetResume = useResumeStore((s) => s.resetResume);
+  const scoringGoal = useResumeStore((s) => s.scoringGoal);
+  const setScoringGoal = useResumeStore((s) => s.setScoringGoal);
   const {
     messages,
     addMessage,
@@ -80,7 +84,7 @@ export function StudioBuilder() {
   // the same useResumeStore, so switching never loses work.
   const [leftMode, setLeftMode] = useState<"chat" | "edit">("chat");
   const [chatOpen, setChatOpen] = useState(true);
-  const [mobileTab, setMobileTab] = useState<"chat" | "document">("chat");
+  const [mobileTab, setMobileTab] = useState<"chat" | "document" | "score">("chat");
   const [fetchingJob, setFetchingJob] = useState(false);
   const [prefill, setPrefill] = useState("");
   const [prefillNonce, setPrefillNonce] = useState(0);
@@ -89,6 +93,17 @@ export function StudioBuilder() {
   const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
   const [docControls, setDocControls] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [scoreOpen, setScoreOpen] = useState(false);
+  const [applyingFixId, setApplyingFixId] = useState<string | null>(null);
+  // Last job posting text the user pasted (folded into the score panel + deep
+  // check so "Job match" reflects the real JD). Transient — not persisted.
+  const [lastJobText, setLastJobText] = useState("");
+  // Entitlement for gating AI fixes ("free hook, paywall the payoff"). Refreshed
+  // on mount and after sign-in.
+  const [entitlement, setEntitlement] = useState<{ credits: number; unlimited: boolean }>({
+    credits: 0,
+    unlimited: false,
+  });
   const [exporting, setExporting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -119,6 +134,20 @@ export function StudioBuilder() {
       /* ignore */
     }
     void loadChats();
+    void loadEntitlement();
+    // First reader of the onboarding kickoff: bias the live score toward what the
+    // user said they're optimizing for (ATS vs recruiter).
+    try {
+      const raw = sessionStorage.getItem("builder-kickoff");
+      if (raw) {
+        const g = String((JSON.parse(raw)?.goal ?? "")).toLowerCase();
+        if (g.includes("ats")) setScoringGoal("ats");
+        else if (g.includes("recruit")) setScoringGoal("recruiter");
+        else if (g) setScoringGoal("both");
+      }
+    } catch {
+      /* ignore */
+    }
     if (useChatBuilderStore.getState().messages.some((m) => m.role === "user")) {
       scheduleSave();
     }
@@ -139,6 +168,7 @@ export function StudioBuilder() {
   // Seamless gate: if a download was blocked on sign-up, run it the instant the
   // user is signed in (their first free credit covers this first CV).
   useEffect(() => {
+    if (isSignedIn) void loadEntitlement();
     if (isSignedIn && pendingExportRef.current) {
       pendingExportRef.current = false;
       void onExport();
@@ -154,6 +184,17 @@ export function StudioBuilder() {
       if (Array.isArray(data.chats)) setChats(data.chats as ChatListItem[]);
     } catch {
       /* offline / unauth — keep what we have */
+    }
+  }
+
+  async function loadEntitlement() {
+    try {
+      const res = await fetch("/api/get-credits");
+      if (!res.ok) return;
+      const d = await res.json();
+      setEntitlement({ credits: Number(d.credits) || 0, unlimited: Boolean(d.unlimited) });
+    } catch {
+      /* keep defaults — gating falls back to sign-up */
     }
   }
 
@@ -307,6 +348,48 @@ export function StudioBuilder() {
     track("chat_builder_mode_switched", { mode });
   }
 
+  // Apply a fix from the score panel. Seeing the problem is always free; the
+  // payoff (applying an AI rewrite) is the paywall: anon → sign-up, out-of-credits
+  // → arm the flash sale. Deterministic cleanups stay free.
+  async function applyFix(p: LocalProblem) {
+    if (!p.fix) return;
+    if (p.fix.kind === "deterministic") {
+      const current = useResumeStore.getState().resumeData;
+      setResumeData(applyCvToolCall(current, p.fix.tool, p.fix.input));
+      track("score_fix_applied", { category: p.category });
+      useFlashSaleStore.getState().recordAction();
+      return;
+    }
+    // AI fix — gate the payoff.
+    if (!isSignedIn) {
+      track("score_fix_gated", { reason: "anon" });
+      useFlashSaleStore.getState().recordAction();
+      toast.message("Create a free account to apply AI fixes.", { description: "Your first one's on us." });
+      openSignUp?.();
+      return;
+    }
+    if (!entitlement.unlimited && entitlement.credits <= 0) {
+      track("score_fix_gated", { reason: "no_credits" });
+      useFlashSaleStore.getState().recordAction();
+      toast.message("Unlock AI fixes to apply this", {
+        description: "Top up or grab the Pro offer — your work is saved.",
+      });
+      return;
+    }
+    // Entitled → run the fix through the existing chat pipeline (free per message),
+    // so the live CV patches via the same deterministic reducer.
+    setApplyingFixId(p.id);
+    setLeftMode("chat");
+    setChatOpen(true);
+    setMobileTab("chat");
+    track("score_fix_applied", { category: p.category });
+    try {
+      await send(p.fix.instruction);
+    } finally {
+      setApplyingFixId(null);
+    }
+  }
+
   async function handleSend(text: string) {
     if (streaming || uploadingCv || fetchingJob) return;
     const url = firstUrl(text);
@@ -320,6 +403,8 @@ export function StudioBuilder() {
       const job = await fetchJobPosting(url);
       toast.dismiss(tid);
       if (job.ok) {
+        // Keep the JD so the score panel's "Job match" + deep check use it.
+        setLastJobText(job.text ?? "");
         toast.success("Got the job post — tailoring to it now");
         await send(withJobPosting(text, url, job), text);
       } else {
@@ -614,7 +699,18 @@ export function StudioBuilder() {
             <span className="mx-1 h-5 w-px bg-stone-200 hidden sm:block" />
             <div className="flex items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <ToolBtn icon={WandSparkles} label="Improve text" onClick={() => runAssistant("Improve the writing across my whole CV — tighten every line, lead with impact, and quantify where you can.", "improve")} />
-              <ToolBtn icon={ShieldCheck} label="Check" badge="ATS" onClick={() => runAssistant("Check my CV the way an ATS and a recruiter would. Flag missing keywords, weak bullets and gaps, then fix what you can.", "check")} />
+              <ToolBtn
+                icon={ShieldCheck}
+                label="Score"
+                badge="ATS"
+                active={scoreOpen}
+                onClick={() => {
+                  const next = !scoreOpen;
+                  setScoreOpen(next);
+                  if (next) setMobileTab("score");
+                  track(next ? "score_panel_opened" : "score_panel_closed");
+                }}
+              />
               <ToolBtn icon={ListChecks} label="Rearrange" onClick={() => runAssistant("Reorder my sections and bullets into the strongest order for my target role, most relevant first.", "rearrange")} />
               <ToolBtn icon={LayoutTemplate} label="Templates" active={galleryOpen} onClick={() => { setGalleryOpen(true); setMobileTab("document"); }} />
               <ToolBtn icon={Contrast} label="Design & Font" active={docControls} onClick={() => { setDocControls((v) => !v); setMobileTab("document"); }} />
@@ -648,17 +744,17 @@ export function StudioBuilder() {
         </div>
       </header>
 
-      {/* Mobile chat/document switch */}
+      {/* Mobile chat/document/score switch */}
       <div className="md:hidden flex-shrink-0 px-3 py-2 bg-white border-b border-stone-200">
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-stone-100">
+        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-stone-100">
           <button
             type="button"
             onClick={() => setMobileTab("chat")}
-            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-colors ${
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[13px] transition-colors ${
               mobileTab === "chat" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
             }`}
           >
-            <Sparkles className="h-4 w-4" /> Assistant
+            <Sparkles className="h-4 w-4" /> Chat
           </button>
           <button
             type="button"
@@ -666,16 +762,29 @@ export function StudioBuilder() {
               setMobileTab("document");
               setUnseenUpdates(0);
             }}
-            className={`relative flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-colors ${
+            className={`relative flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[13px] transition-colors ${
               mobileTab === "document" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
             }`}
           >
-            <LayoutTemplate className="h-4 w-4" /> Document
-            {unseenUpdates > 0 && mobileTab === "chat" ? (
+            <LayoutTemplate className="h-4 w-4" /> CV
+            {unseenUpdates > 0 && mobileTab !== "document" ? (
               <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[#B8860B] text-white text-[10px] font-bold">
                 {unseenUpdates}
               </span>
             ) : null}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTab("score");
+              setScoreOpen(true);
+              track("score_panel_opened");
+            }}
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[13px] transition-colors ${
+              mobileTab === "score" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4" /> Score
           </button>
         </div>
       </div>
@@ -801,6 +910,25 @@ export function StudioBuilder() {
             />
           </div>
         </section>
+
+        {/* Resume score rail — Enhancv-style live content-intelligence */}
+        {scoreOpen ? (
+          <aside
+            className={`flex-col min-h-0 w-full md:w-[340px] lg:w-[380px] md:flex flex-shrink-0 border-l border-stone-200 ${
+              mobileTab === "score" ? "flex" : "hidden"
+            }`}
+          >
+            <ResumeScorePanel
+              resumeData={resumeData}
+              jobText={lastJobText || undefined}
+              jobTitle={resumeData.personalInfo.title || undefined}
+              goal={scoringGoal}
+              onApplyFix={applyFix}
+              applyingFixId={applyingFixId}
+              onClose={() => setScoreOpen(false)}
+            />
+          </aside>
+        ) : null}
       </div>
 
       {/* History drawer */}

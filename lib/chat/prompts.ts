@@ -66,6 +66,27 @@ CURRENT CV STATE (zero-based indices for update/remove tools):
 ${snapshotForPrompt(resumeData)}`;
 }
 
+/**
+ * System prompt for the single-shot inline assist endpoint (/api/assist). Reuses
+ * the same writing-quality + NEVER-INVENT-FACTS rules as the chat builder, but
+ * for one scoped transformation. The model returns its result via the
+ * emit_suggestion tool (text for a single value, items for a list).
+ */
+export function buildAssistSystemPrompt(cvContext: string): string {
+  return `You are a sharp resume writer improving ONE part of someone's CV. You make their real experience sound its strongest — you never embellish it into fiction.
+
+RULES:
+- NEVER invent facts: no made-up numbers, metrics, employers, dates, titles, team sizes, or technologies the person didn't provide. If a bullet has no metric and none is implied by their CV, write the strongest version WITHOUT a number — do not fabricate one.
+- Resume voice: lead with a strong action verb, name the concrete impact, drop first-person pronouns ("I", "my", "we"), cut clichés and filler.
+- Keep it tight and ATS-friendly. Bullets are one punchy line each.
+- Match the language of the person's existing CV content.
+
+OUTPUT: call the emit_suggestion tool. Use "text" for a single value (a summary, a headline, one bullet) and "items" for a list (multiple bullets, or a skills list). Return ONLY the tool call — no commentary.
+
+THE PERSON'S CV (ground every word in these facts):
+${cvContext}`;
+}
+
 /** Greeting the client seeds locally as the first assistant message (no API call). */
 export function chatGreeting(hasExistingCv: boolean): string {
   if (hasExistingCv) {

@@ -16,6 +16,7 @@ import { useState } from "react";
 import { Plus, Trash2, GripVertical, Sparkles, X } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
+import { InlineAssist } from "@/components/chat/InlineAssist";
 
 const fieldCls =
   "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] text-[#1a1a1a] placeholder-stone-400 outline-none focus:border-[#0A2647]/50 focus:ring-2 focus:ring-[#0A2647]/10 transition-colors";
@@ -86,6 +87,12 @@ export function InlineCvEditor() {
               onChange={(e) => updatePersonalInfo({ title: e.target.value })}
               placeholder="Senior Product Designer"
             />
+            <InlineAssist
+              action="suggest_headline"
+              getTarget={() => ({ currentTitle: personalInfo.title })}
+              label="Suggest headline"
+              className="mt-1.5"
+            />
           </div>
           <div>
             <label className={labelCls}>Email</label>
@@ -143,6 +150,12 @@ export function InlineCvEditor() {
           onChange={(e) => updateSummary(e.target.value)}
           placeholder="A short, punchy overview of who you are and the value you bring."
         />
+        <InlineAssist
+          action={summaryValue ? "improve_summary" : "write_summary"}
+          getTarget={() => ({ text: summaryValue, currentSummary: summaryValue })}
+          label={summaryValue ? "Improve with AI" : "Write with AI"}
+          className="mt-2"
+        />
       </SectionCard>
 
       {/* Experience */}
@@ -162,7 +175,7 @@ export function InlineCvEditor() {
           <p className="text-[13px] text-stone-500">No roles yet — add one, or ask the AI in Chat to pull them from your CV.</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {experience.map((exp) => (
+            {experience.map((exp, expIndex) => (
               <div key={exp.id} className="rounded-xl bg-white border border-stone-200 p-3">
                 <div className="flex items-start gap-2">
                   <GripVertical className="h-4 w-4 text-stone-300 mt-2 flex-shrink-0" />
@@ -225,6 +238,39 @@ export function InlineCvEditor() {
                           })
                         }
                         placeholder="Led a team of 6 to ship…&#10;Cut load time 40% by…"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex flex-wrap gap-2">
+                      {exp.description.some((b) => b.trim()) ? (
+                        <>
+                          <InlineAssist
+                            action="improve_bullets"
+                            getTarget={() => ({
+                              expIndex,
+                              role: exp.role,
+                              company: exp.company,
+                              existingBullets: exp.description.filter((b) => b.trim()),
+                            })}
+                          />
+                          <InlineAssist
+                            action="quantify_bullets"
+                            getTarget={() => ({
+                              expIndex,
+                              role: exp.role,
+                              company: exp.company,
+                              existingBullets: exp.description.filter((b) => b.trim()),
+                            })}
+                          />
+                        </>
+                      ) : null}
+                      <InlineAssist
+                        action="generate_bullets"
+                        getTarget={() => ({
+                          expIndex,
+                          role: exp.role,
+                          company: exp.company,
+                          existingBullets: exp.description.filter((b) => b.trim()),
+                        })}
                       />
                     </div>
                   </div>
@@ -353,6 +399,12 @@ export function InlineCvEditor() {
           }}
           onBlur={commitSkill}
           placeholder="Type a skill and press Enter"
+        />
+        <InlineAssist
+          action="suggest_skills"
+          getTarget={() => ({ currentSkills: skills })}
+          label="Suggest missing skills"
+          className="mt-2.5"
         />
       </SectionCard>
 

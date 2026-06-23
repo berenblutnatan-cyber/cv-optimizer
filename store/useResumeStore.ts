@@ -13,11 +13,16 @@ import {
   generateId,
   TOTAL_STEPS,
 } from "@/types/resume";
+import type { GoalWeighting } from "@/lib/optimizer/localChecks";
 
 interface ResumeStore {
   // State
   resumeData: ResumeData;
   currentStep: number;
+  // What the user optimizes for (from the onboarding funnel). Shifts the live
+  // Resume Score weighting (ATS-heavy vs recruiter-heavy). Kept OFF ResumeData
+  // so the CV payload sent to the AI / persisted in chats stays clean.
+  scoringGoal: GoalWeighting;
 
   // Step Navigation Actions
   nextStep: () => void;
@@ -71,6 +76,7 @@ interface ResumeStore {
 
   // Bulk Actions
   setResumeData: (data: ResumeData) => void;
+  setScoringGoal: (goal: GoalWeighting) => void;
   resetResume: () => void;
 }
 
@@ -81,6 +87,7 @@ export const useResumeStore = create<ResumeStore>()(
         // Initial State
         resumeData: initialResumeState,
         currentStep: 0,
+        scoringGoal: "both",
 
         // Step Navigation
         nextStep: () =>
@@ -538,6 +545,9 @@ export const useResumeStore = create<ResumeStore>()(
         // Bulk Actions
         setResumeData: (data) =>
           set({ resumeData: data }, false, "setResumeData"),
+
+        setScoringGoal: (goal) =>
+          set({ scoringGoal: goal }, false, "setScoringGoal"),
 
         resetResume: () =>
           set({ resumeData: initialResumeState, currentStep: 0 }, false, "resetResume"),

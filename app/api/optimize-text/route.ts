@@ -7,6 +7,13 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Opus calls can exceed Vercel's default function timeout; give headroom so the
+// route returns a result instead of a mid-flight 504 (matches every other Opus
+// route — analyze, score-teaser, cover-letter).
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 // Stays public: the /builder page is a "try before signup" experience and its
 // improve-text buttons call this anonymously. Spend is bounded by a KV rate
 // limit (per user when signed in, per IP otherwise) and an input-size cap.

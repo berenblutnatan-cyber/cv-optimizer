@@ -92,6 +92,33 @@ export type EventName =
   | "build_onboarding_completed"
   | "build_onboarding_path"
   | "build_onboarding_score_click"
+  // Live Resume Score panel (Enhancv-style content-intelligence sidebar)
+  | "score_panel_opened"
+  | "score_panel_closed"
+  | "score_deep_check_run"
+  | "score_deep_check_succeeded"
+  | "score_deep_check_failed"
+  | "score_problem_fix_clicked"
+  | "score_fix_applied"
+  | "score_fix_gated"
+  // Inline per-section AI assist (Edit pane ✨ buttons)
+  | "inline_assist_generated"
+  | "inline_assist_applied"
+  | "inline_assist_blocked"
+  | "inline_assist_discarded"
+  // Resume Examples Library (SEO funnel)
+  | "resume_example_viewed"
+  | "resume_example_used"
+  // Job application tracker
+  | "application_created"
+  | "application_status_changed"
+  | "application_tailor_clicked"
+  | "application_cover_letter_generated"
+  | "application_cover_letter_blocked"
+  // Interview prep
+  | "interview_prep_generated"
+  | "interview_prep_unlocked"
+  | "interview_prep_blocked"
   | "xp_awarded"
   | "level_up";
 

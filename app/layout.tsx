@@ -74,6 +74,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hiredcv.app"),
   title: "Hired - AI Resume Builder & Optimizer",
   description: "Don't just apply. Get Hired. Build a resume that gets you hired with our AI-powered resume builder and optimizer.",
 };

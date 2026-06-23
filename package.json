@@ -9,7 +9,9 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "eval:optimizer": "tsx scripts/optimizer-eval.ts",
-    "eval:chat": "tsx scripts/chat-builder-eval.ts"
+    "eval:chat": "tsx scripts/chat-builder-eval.ts",
+    "eval:localchecks": "tsx scripts/local-checks-eval.ts",
+    "eval:assist": "tsx scripts/assist-actions-eval.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

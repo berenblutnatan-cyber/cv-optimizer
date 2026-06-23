@@ -2,10 +2,12 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import {
   Briefcase,
+  ClipboardList,
   CreditCard,
   FileText,
   LayoutGrid,
   MessageCircle,
+  MessageSquareQuote,
   Mic,
   Wand2,
 } from "lucide-react";
@@ -171,6 +173,18 @@ export default async function DashboardPage() {
             href="/roles"
             badge={data.activity.rolesGenerated}
             gradient={["#f5b8c8", "#f5b8c8"]}
+          />
+          <SquircleIcon
+            icon={ClipboardList}
+            label="Job Tracker"
+            href="/applications"
+            gradient={["#8fb3ff", "#c9b8ff"]}
+          />
+          <SquircleIcon
+            icon={MessageSquareQuote}
+            label="Interview Prep"
+            href="/interview-prep"
+            gradient={["#f5b8c8", "#c9b8ff"]}
           />
           <SquircleIcon
             icon={FileText}
