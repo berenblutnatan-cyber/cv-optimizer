@@ -119,18 +119,33 @@ export default function RootLayout({
               gtag('config', '${GOOGLE_ADS_ID}');
             `}
           </Script>
-          <Script id="meta-pixel" strategy="lazyOnload">
+          {/* Meta Pixel — split exactly like the gtag init above, for the same
+              reason. The fbq() stub + queue and the init/PageView run
+              `afterInteractive`, so `window.fbq` is a function before any
+              conversion event fires from a page-mount effect (CompleteRegistration
+              + Lead in UserSyncProvider, InitiateCheckout in PolarCheckoutButton,
+              Purchase on /purchase-success). Previously the whole snippet was
+              `lazyOnload`, so any of those events that fired before the browser
+              went idle hit the `typeof window.fbq !== "function"` guard in
+              lib/fbq.ts and were silently dropped — the same class of bug the
+              gtag init fixes for Google Ads. The heavy fbevents.js bundle still
+              loads `lazyOnload` below so LCP is unaffected; events queued on the
+              stub replay when it loads. */}
+          <Script id="meta-pixel-init" strategy="afterInteractive">
             {`
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              !function(f,n){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
               n.callMethod.apply(n,arguments):n.queue.push(arguments)};
               if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
+              n.queue=[]}(window);
               fbq('init', '${META_PIXEL_ID}');
               fbq('track', 'PageView');
+            `}
+          </Script>
+          <Script id="meta-pixel-lib" strategy="lazyOnload">
+            {`
+              !function(b,e,v,t,s){t=b.createElement(e);t.async=!0;t.src=v;
+              s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+              (document,'script','https://connect.facebook.net/en_US/fbevents.js');
             `}
           </Script>
           <noscript>
