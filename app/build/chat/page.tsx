@@ -1,17 +1,10 @@
-import { GradientShell } from "@/components/shell/GradientShell";
-import { ChatBuilderClient } from "@/components/chat/ChatBuilderClient";
+import { StudioBuilder } from "@/components/builder/StudioBuilder";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Build your CV · Hired" };
 
-// Anonymous-capable: visitors draft + edit their CV with the AI before signing
-// up (Enhancv-style "build first, sign up to save"). The chat engine
-// (/api/chat/build) already serves anonymous users; saving to history + export
-// are gated behind sign-in inside ChatBuilderClient.
+// The unified builder. Anonymous-friendly (build first, sign up to save) — the
+// chat endpoint enforces the usage ladder, so no hard page-level sign-in gate.
 export default function ChatBuilderPage() {
-  return (
-    <GradientShell tone="light">
-      <ChatBuilderClient />
-    </GradientShell>
-  );
+  return <StudioBuilder />;
 }

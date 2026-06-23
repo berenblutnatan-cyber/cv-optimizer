@@ -20,18 +20,27 @@ function renderInlineBold(text: string) {
   );
 }
 
-function ToolChips({ tools }: { tools: BuilderChatMessage["tools"] }) {
+type Theme = "dark" | "light";
+
+function ToolChips({ tools, theme = "dark" }: { tools: BuilderChatMessage["tools"]; theme?: Theme }) {
   if (!tools || tools.length === 0) return null;
+  const light = theme === "light";
   return (
     <div className="flex flex-wrap gap-1.5 mt-2">
       {tools.map((t) => (
         <span
           key={t.id}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[11px] ${
-            t.pending ? "text-[#0A2647]/60 animate-pulse" : "text-[#0A2647]/85"
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] ${
+            light
+              ? `bg-[#0A2647]/[0.05] border-[#0A2647]/12 ${t.pending ? "text-[#0A2647]/55 animate-pulse" : "text-[#0A2647]"}`
+              : `bg-white/10 border-glass-border ${t.pending ? "text-white/60 animate-pulse" : "text-white/85"}`
           }`}
         >
-          <Sparkles className={`h-3 w-3 ${t.pending ? "text-[#0A2647]/50" : "text-[#B8860B]"}`} />
+          <Sparkles
+            className={`h-3 w-3 ${
+              t.pending ? (light ? "text-[#0A2647]/40" : "text-white/50") : light ? "text-[#B8860B]" : "text-[#f5b8c8]"
+            }`}
+          />
           {t.label}
         </span>
       ))}
@@ -44,6 +53,7 @@ export function ChatThread({
   streaming,
   className = "",
   emptyExtras,
+  theme = "dark",
 }: {
   messages: BuilderChatMessage[];
   streaming: boolean;
@@ -51,7 +61,10 @@ export function ChatThread({
   /** Rendered under the greeting while the conversation is empty —
    * tappable starter cards (upload CV, tailor to a job, interview me). */
   emptyExtras?: ReactNode;
+  /** "dark" for the glass shells, "light" for the Enhancv-style studio. */
+  theme?: Theme;
 }) {
+  const light = theme === "light";
   const scrollRef = useRef<HTMLDivElement>(null);
   // Follow the stream unless the user deliberately scrolled up. Unsticking
   // only on upward scrollTop movement (not on distance-from-bottom) keeps
@@ -91,30 +104,43 @@ export function ChatThread({
     >
       {/* Transcript echoes the user's resume content (PII) in both user and
           assistant bubbles, so mask it in Clarity replays. Behavior is still
-          captured via custom events (chat_message_sent, chat_tool_applied) and
-          the surrounding UI chrome. */}
+          captured via custom events (chat_message_sent, chat_tool_applied). */}
       <div className="flex flex-col gap-4" data-clarity-mask="true">
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
               {/* dir=auto: Hebrew/Arabic answers align right within the bubble */}
-              <div dir="auto" className="max-w-[85%] rounded-2xl rounded-br-md bg-[#0A2647] text-[#fff] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+              <div
+                dir="auto"
+                className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
+                  light ? "bg-stone-100 text-[#1a1a1a]" : "bg-white text-[#1a1a1a]"
+                }`}
+              >
                 {m.display ?? m.content}
               </div>
             </div>
           ) : (
             <div key={m.id} className="flex justify-start">
-              <div className="max-w-[90%]">
-                <div dir="auto" className="rounded-2xl rounded-bl-md bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[#0A2647] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+              <div className="max-w-[92%]">
+                {/* Enhancv-style: assistant speaks as plain text (no bubble) in
+                    the light studio; keeps the glass bubble in the dark shells. */}
+                <div
+                  dir="auto"
+                  className={`text-[15px] leading-relaxed whitespace-pre-wrap ${
+                    light
+                      ? "text-[#1f2937] px-0.5"
+                      : "rounded-2xl rounded-bl-md bg-white/10 border border-glass-border text-white px-4 py-2.5"
+                  }`}
+                >
                   {m.content ? renderInlineBold(m.content) : (
                     <span className="inline-flex gap-1 items-center py-1" aria-label="Thinking">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#0A2647]/40 animate-bounce [animation-delay:0ms]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#0A2647]/40 animate-bounce [animation-delay:150ms]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#0A2647]/40 animate-bounce [animation-delay:300ms]" />
+                      <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:0ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
+                      <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:150ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
+                      <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:300ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
                     </span>
                   )}
                 </div>
-                <ToolChips tools={m.tools} />
+                <ToolChips tools={m.tools} theme={theme} />
               </div>
             </div>
           )

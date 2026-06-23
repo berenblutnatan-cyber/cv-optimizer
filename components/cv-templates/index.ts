@@ -74,7 +74,11 @@ export type AllTemplateId =
   | "spotlight"
   | "ledger"
   | "devfolio"
-  | "canvas";
+  | "canvas"
+  | "timeline"
+  | "double-column"
+  | "compact"
+  | "photo-left";
 
 /** Template props interface - all templates must accept these */
 export interface TemplateProps {
@@ -206,6 +210,34 @@ export const ALL_TEMPLATES: Record<AllTemplateId, {
     description: "Bold accent sidebar with photo. Personality for designers & creatives.",
     preview: "linear-gradient(120deg, #6366f1 34%, #ffffff 34%)",
     category: "creative",
+    isPremium: true,
+  },
+  "timeline": {
+    name: "Timeline",
+    description: "A vertical timeline rail that tells your career as a story.",
+    preview: "linear-gradient(90deg, #6366f1 6%, #ffffff 6%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "double-column": {
+    name: "Double Column",
+    description: "Full header over two balanced light columns. Clean and compact.",
+    preview: "linear-gradient(90deg, #ffffff 60%, #f1f5f9 60%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "compact": {
+    name: "Compact",
+    description: "Dense, ATS-friendly single column. Fits more on one page.",
+    preview: "linear-gradient(180deg, #6366f1 5%, #ffffff 5%)",
+    category: "professional",
+    isPremium: true,
+  },
+  "photo-left": {
+    name: "Photo Left",
+    description: "Photo rail with contact & skills beside your story.",
+    preview: "linear-gradient(90deg, #e0e7ff 34%, #ffffff 34%)",
+    category: "professional",
     isPremium: true,
   },
 };

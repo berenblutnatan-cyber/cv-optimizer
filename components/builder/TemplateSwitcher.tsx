@@ -142,6 +142,34 @@ export const TEMPLATE_OPTIONS: TemplateOption[] = [
     preview: "linear-gradient(120deg, #6366f1 34%, #ffffff 34%)",
     category: "creative",
   },
+  {
+    id: "timeline",
+    name: "Timeline",
+    description: "Vertical timeline rail",
+    preview: "linear-gradient(90deg, #6366f1 6%, #ffffff 6%)",
+    category: "professional",
+  },
+  {
+    id: "double-column",
+    name: "Double Column",
+    description: "Full header + two columns",
+    preview: "linear-gradient(90deg, #ffffff 60%, #f1f5f9 60%)",
+    category: "professional",
+  },
+  {
+    id: "compact",
+    name: "Compact",
+    description: "Dense, ATS-friendly",
+    preview: "linear-gradient(180deg, #6366f1 5%, #ffffff 5%)",
+    category: "professional",
+  },
+  {
+    id: "photo-left",
+    name: "Photo Left",
+    description: "Photo rail + content",
+    preview: "linear-gradient(90deg, #e0e7ff 34%, #ffffff 34%)",
+    category: "professional",
+  },
 ];
 
 // Color swatches - Updated for Indigo/Violet rebrand
@@ -373,7 +401,7 @@ function LayoutTab({
                 {/* Mini layout indicator */}
                 <div className="absolute inset-2 opacity-20">
                   <div className="h-full rounded-sm bg-white/40 flex">
-                    {template.id === "modern-sidebar" || template.id === "creative" || template.id === "international" ? (
+                    {template.id === "modern-sidebar" || template.id === "creative" || template.id === "international" || template.id === "double-column" || template.id === "photo-left" ? (
                       <>
                         <div className="w-1/3 bg-slate-800/30 rounded-l-sm" />
                         <div className="flex-1" />

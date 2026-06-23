@@ -13,14 +13,13 @@
  */
 
 import { useState } from "react";
-import Link from "next/link";
-import { Plus, Trash2, GripVertical, ExternalLink, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, Sparkles, X } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 
 const fieldCls =
-  "w-full rounded-xl bg-white border border-[#0A2647]/10 px-3 py-2 text-[14px] text-[#0A2647] placeholder-[#0A2647]/30 outline-none focus:border-[#0A2647]/40 focus:bg-[#0A2647]/[0.04] transition-colors";
-const labelCls = "block text-[11px] font-medium uppercase tracking-wide text-[#0A2647]/45 mb-1";
+  "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] text-[#1a1a1a] placeholder-stone-400 outline-none focus:border-[#0A2647]/50 focus:ring-2 focus:ring-[#0A2647]/10 transition-colors";
+const labelCls = "block text-[11px] font-medium uppercase tracking-wide text-stone-500 mb-1";
 
 function SectionCard({
   title,
@@ -32,9 +31,9 @@ function SectionCard({
   action?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-white border border-[#0A2647]/10 p-4">
+    <section className="rounded-2xl bg-stone-50 border border-stone-200 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-semibold tracking-wide text-[#0A2647]/90">{title}</h3>
+        <h3 className="text-[13px] font-semibold tracking-wide text-[#0A2647]">{title}</h3>
         {action}
       </div>
       {children}
@@ -153,20 +152,20 @@ export function InlineCvEditor() {
           <button
             type="button"
             onClick={() => addExperience()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[11px] text-[#0A2647]/80 hover:bg-[#0A2647]/10 hover:text-[#0A2647] transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.07] border border-[#0A2647]/15 text-[11px] text-[#0A2647] hover:bg-[#0A2647]/[0.12] transition-colors"
           >
             <Plus className="h-3 w-3" /> Add
           </button>
         }
       >
         {experience.length === 0 ? (
-          <p className="text-[13px] text-[#0A2647]/45">No roles yet — add one, or ask the AI in Chat to pull them from your CV.</p>
+          <p className="text-[13px] text-stone-500">No roles yet — add one, or ask the AI in Chat to pull them from your CV.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {experience.map((exp) => (
-              <div key={exp.id} className="rounded-xl bg-white border border-[#0A2647]/10 p-3">
+              <div key={exp.id} className="rounded-xl bg-white border border-stone-200 p-3">
                 <div className="flex items-start gap-2">
-                  <GripVertical className="h-4 w-4 text-[#0A2647]/25 mt-2 flex-shrink-0" />
+                  <GripVertical className="h-4 w-4 text-stone-300 mt-2 flex-shrink-0" />
                   <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <input
                       className={fieldCls}
@@ -201,7 +200,7 @@ export function InlineCvEditor() {
                         placeholder="End"
                       />
                     </div>
-                    <label className="sm:col-span-2 inline-flex items-center gap-2 text-[12px] text-[#0A2647]/65">
+                    <label className="sm:col-span-2 inline-flex items-center gap-2 text-[12px] text-stone-600">
                       <input
                         type="checkbox"
                         checked={exp.current}
@@ -233,7 +232,7 @@ export function InlineCvEditor() {
                     type="button"
                     onClick={() => removeExperience(exp.id)}
                     aria-label="Remove role"
-                    className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-[#0A2647]/35 hover:text-[#B8860B] hover:bg-[#0A2647]/[0.05] transition-colors"
+                    className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -251,18 +250,18 @@ export function InlineCvEditor() {
           <button
             type="button"
             onClick={() => addEducation()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[11px] text-[#0A2647]/80 hover:bg-[#0A2647]/10 hover:text-[#0A2647] transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.07] border border-[#0A2647]/15 text-[11px] text-[#0A2647] hover:bg-[#0A2647]/[0.12] transition-colors"
           >
             <Plus className="h-3 w-3" /> Add
           </button>
         }
       >
         {education.length === 0 ? (
-          <p className="text-[13px] text-[#0A2647]/45">No schools yet.</p>
+          <p className="text-[13px] text-stone-500">No schools yet.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {education.map((edu) => (
-              <div key={edu.id} className="rounded-xl bg-white border border-[#0A2647]/10 p-3">
+              <div key={edu.id} className="rounded-xl bg-white border border-stone-200 p-3">
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <input
@@ -308,7 +307,7 @@ export function InlineCvEditor() {
                     type="button"
                     onClick={() => removeEducation(edu.id)}
                     aria-label="Remove education"
-                    className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-[#0A2647]/35 hover:text-[#B8860B] hover:bg-[#0A2647]/[0.05] transition-colors"
+                    className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -325,21 +324,21 @@ export function InlineCvEditor() {
           {skills.map((skill) => (
             <span
               key={skill}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.05] border border-[#0A2647]/10 text-[12px] text-[#0A2647]/85"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.06] border border-[#0A2647]/15 text-[12px] text-[#0A2647]"
             >
               {skill}
               <button
                 type="button"
                 onClick={() => removeSkill(skill)}
                 aria-label={`Remove ${skill}`}
-                className="grid place-items-center h-4 w-4 rounded-full text-[#0A2647]/45 hover:text-[#0A2647] hover:bg-[#0A2647]/10"
+                className="grid place-items-center h-4 w-4 rounded-full text-[#0A2647]/50 hover:text-[#0A2647] hover:bg-[#0A2647]/12"
               >
                 <X className="h-3 w-3" />
               </button>
             </span>
           ))}
           {skills.length === 0 ? (
-            <span className="text-[13px] text-[#0A2647]/45">Add skills below — they show as tags on your CV.</span>
+            <span className="text-[13px] text-stone-500">Add skills below — they show as tags on your CV.</span>
           ) : null}
         </div>
         <input
@@ -357,14 +356,12 @@ export function InlineCvEditor() {
         />
       </SectionCard>
 
-      {/* Deep extras live in the full wizard */}
-      <Link
-        href="/builder?from=chat"
-        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white border border-[#0A2647]/10 text-[13px] text-[#0A2647]/70 hover:bg-[#0A2647]/[0.05] hover:text-[#0A2647] transition-colors"
-      >
-        <ExternalLink className="h-3.5 w-3.5" />
-        Projects, certifications &amp; more in the full editor
-      </Link>
+      {/* Deeper sections (projects, certifications, custom blocks) are added
+          through the AI — Edit covers the core fields by hand. */}
+      <p className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-[13px] text-stone-500">
+        <Sparkles className="h-3.5 w-3.5 text-[#B8860B]" />
+        Want projects, certifications or custom sections? Ask in Chat.
+      </p>
     </div>
   );
 }

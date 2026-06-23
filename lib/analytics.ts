@@ -65,6 +65,8 @@ export type EventName =
   | "chat_quick_edit_clicked"
   | "chat_builder_mode_switched"
   | "chat_error"
+  // Unified Enhancv-style studio builder
+  | "studio_toolbar_action"
   // Chat-first home (public landing chat)
   | "home_chat_opened"
   | "home_chat_message_sent"
