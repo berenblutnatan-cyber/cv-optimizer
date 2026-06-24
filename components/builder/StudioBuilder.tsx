@@ -28,7 +28,7 @@ import { useResumeStore } from "@/store/useResumeStore";
 import { useChatBuilderStore } from "@/stores/chatBuilderStore";
 import { useFlashSaleStore } from "@/stores/flashSaleStore";
 import { applyCvToolCall, pendingToolLabel } from "@/lib/chat/cvTools";
-import { chatGreeting, isPlaceholderSummary } from "@/lib/chat/prompts";
+import { chatGreeting, cvUploadIntake, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { generateId, type ResumeData } from "@/types/resume";
 import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
@@ -120,6 +120,9 @@ export function StudioBuilder() {
   // were mid-export — so the download resumes itself the moment they're in,
   // instead of making them hunt for the Export button again.
   const pendingExportRef = useRef(false);
+  // Guards the one-time onboarding CV handoff against React 18 Strict Mode's
+  // double-mount (dev), so we don't fire the kickoff draft twice.
+  const kickoffRef = useRef(false);
 
   useEffect(() => {
     setHydrated(true);
@@ -151,8 +154,28 @@ export function StudioBuilder() {
     if (useChatBuilderStore.getState().messages.some((m) => m.role === "user")) {
       scheduleSave();
     }
+    // Onboarding "optimize existing" handoff: the funnel already parsed the user's
+    // CV and stashed the text for us. Draft from it immediately via the same intake
+    // the in-chat upload uses — so picking "I have an existing CV" actually optimizes
+    // it instead of dropping the user into an empty chat.
+    let pendingIntake: { content: string; display: string } | null = null;
+    try {
+      const rawCv = sessionStorage.getItem("builder-cv-intake");
+      if (rawCv && !kickoffRef.current) {
+        kickoffRef.current = true;
+        sessionStorage.removeItem("builder-cv-intake");
+        const parsed = JSON.parse(rawCv);
+        if (parsed?.text) pendingIntake = cvUploadIntake(parsed.fileName ?? "your CV", parsed.text);
+      }
+    } catch {
+      /* ignore — fall through to the normal greeting */
+    }
     const { messages: current } = useChatBuilderStore.getState();
-    if (current.length === 0) {
+    // Skip the greeting when a CV handoff is in flight. kickoffRef (not just
+    // pendingIntake) guards this: under Strict Mode's second mount the session
+    // key is already consumed, so pendingIntake is null but the kickoff is still
+    // pending — without this the greeting would slip in above the upload.
+    if (current.length === 0 && !pendingIntake && !kickoffRef.current) {
       const { resumeData: cv } = useResumeStore.getState();
       const hasCv = Boolean(cv.personalInfo.name.trim()) || cv.experience.length > 0;
       useChatBuilderStore.getState().addMessage({
@@ -160,6 +183,13 @@ export function StudioBuilder() {
         role: "assistant",
         content: chatGreeting(hasCv),
       });
+    }
+    if (pendingIntake) {
+      // Defer one tick: Strict Mode runs setup→cleanup→setup on mount, and the
+      // cleanup below aborts abortRef. Starting the stream after that settles
+      // means the kickoff send isn't cancelled the instant it begins.
+      const intake = pendingIntake;
+      window.setTimeout(() => void send(intake.content, intake.display), 30);
     }
     return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -426,10 +456,8 @@ export function StudioBuilder() {
       const res = await fetch("/api/chat/parse-cv", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Couldn't read that file");
-      await send(
-        `I'm uploading my existing CV (${data.fileName}). Here's its full text — pull everything useful into the builder, then tell me what's missing or weak:\n\n"""\n${data.text}\n"""`,
-        `📎 ${data.fileName}`
-      );
+      const intake = cvUploadIntake(data.fileName, data.text);
+      await send(intake.content, intake.display);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {

@@ -26,6 +26,7 @@ import {
   ArrowRight,
   BarChart3,
   FileUp,
+  Loader2,
   MessageSquareText,
   PencilLine,
   Sparkles,
@@ -37,9 +38,8 @@ import { useOnboardingStore } from "@/stores/onboardingStore";
 import { track } from "@/lib/analytics";
 import type { BuilderTemplateId } from "@/context/BuilderContext";
 
-type Step = "intro" | "path" | "role" | "goal" | "reassurance" | "experience" | "template" | "method" | "handoff";
+type Step = "intro" | "path" | "upload" | "role" | "goal" | "reassurance" | "experience" | "template" | "method" | "handoff";
 type GoalId = "ats" | "recruiter" | "both";
-type PathChoice = "scratch" | "existing";
 
 const ROLE_SUGGESTIONS = [
   "Software Engineer",
@@ -84,8 +84,9 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
   const [goal, setGoal] = useState<GoalId | null>(null);
   const [experience, setExperience] = useState<string | null>(null);
   const [template, setTemplate] = useState<BuilderTemplateId>("ivy-league");
-  const [pathChoice, setPathChoice] = useState<PathChoice | null>(null);
   const [handoffLabel, setHandoffLabel] = useState("Putting your first draft together…");
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     track("build_onboarding_viewed");
@@ -134,19 +135,39 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
   }
 
   async function handleFile(file: File) {
+    if (uploading) return;
+    setUploading(true);
     try {
-      const text = await file.text().catch(() => "");
-      useOnboardingStore.getState().setCv(file.name, text);
+      // Parse via the same endpoint the in-chat upload uses (unpdf / mammoth) so a
+      // PDF/DOCX becomes real text — not the binary garbage file.text() returns.
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/chat/parse-cv", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.text) {
+        throw new Error(data?.error ?? "Couldn't read that file — try a PDF or DOCX.");
+      }
       seedRole();
-      stashKickoff(text || null);
+      useOnboardingStore.getState().setCv(data.fileName, data.text);
+      stashKickoff(null);
+      // Hand the parsed CV to the builder so it drafts from it the instant it opens.
+      try {
+        sessionStorage.setItem(
+          "builder-cv-intake",
+          JSON.stringify({ fileName: data.fileName, text: data.text }),
+        );
+      } catch {
+        /* ignore — the builder still opens, just without the auto-draft */
+      }
       track("build_onboarding_completed", { method: "upload", role: role.trim() || null, goal, experience, template });
-      setHandoffLabel(`Reading ${file.name}…`);
+      setHandoffLabel("Optimizing your CV…");
       go("handoff");
       // The uploaded CV drafts live in the (anonymous) builder — not the old
-      // optimizer — so the experience matches "answer a few questions, watch it build".
+      // optimizer — so the experience matches "upload it, watch it optimize".
       window.setTimeout(() => router.push("/build/chat"), reduce ? 150 : 900);
-    } catch {
-      toast.error("Couldn't read that file — try a PDF or DOCX.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't read that file — try a PDF or DOCX.");
+      setUploading(false);
     }
   }
 
@@ -213,6 +234,19 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
         {/* Steps mount/unmount directly — enter animation only, so transitions
             never depend on framer-motion's exit-complete callback (which can
             stall under Strict Mode and freeze the funnel). */}
+        {/* Shared upload input — used by both the "optimize existing" upload step
+            and the from-scratch method step's "I have a CV" option. */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          className="sr-only"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+            e.target.value = "";
+          }}
+        />
         {/* ---------- INTRO ---------- */}
           {step === "intro" && (
             <motion.div key="intro" {...fade} className="flex flex-col items-center">
@@ -265,7 +299,6 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   title="Build from scratch"
                   desc="No CV yet — we&rsquo;ll build it with you, section by section."
                   onClick={() => {
-                    setPathChoice("scratch");
                     track("build_onboarding_path", { path: "scratch" });
                     go("role");
                   }}
@@ -273,16 +306,92 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 <MethodCard
                   icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
                   title="I have an existing CV"
-                  desc="Upload it and we&rsquo;ll optimize it for the role you want."
+                  desc="Upload it and we&rsquo;ll optimize it for the role you want — no questions first."
                   onClick={() => {
-                    setPathChoice("existing");
                     track("build_onboarding_path", { path: "existing" });
-                    go("role");
+                    // Already have a CV? Skip the questions — the CV has the
+                    // answers. Go straight to upload and optimize.
+                    go("upload");
                   }}
                 />
               </div>
               <div className="mt-8 flex justify-center">
                 <BackButton onClick={() => go("intro")} />
+              </div>
+            </motion.div>
+          )}
+
+          {/* ---------- OPTIMIZE EXISTING: UPLOAD (skips the questions) ---------- */}
+          {step === "upload" && (
+            <motion.div key="upload" {...fade} className="w-full">
+              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#0A2647]/5 text-[#B8860B]">
+                <FileUp className="h-7 w-7" strokeWidth={1.6} />
+              </span>
+              <h2 className="mt-6 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+                Upload your CV — we&rsquo;ll take it from here
+              </h2>
+              <p className="mx-auto mt-3 max-w-md text-pretty text-[#0A2647]/55">
+                No questions to answer. Drop your current CV in and we&rsquo;ll read it,
+                score it, and start optimizing right away.
+              </p>
+              <div
+                role="button"
+                tabIndex={uploading ? -1 : 0}
+                aria-disabled={uploading}
+                onClick={() => {
+                  if (!uploading) fileRef.current?.click();
+                }}
+                onKeyDown={(e) => {
+                  if (uploading) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileRef.current?.click();
+                  }
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!uploading) setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragging(false);
+                  if (uploading) return;
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) handleFile(f);
+                }}
+                className={`mx-auto mt-8 flex w-full max-w-md flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-12 text-center transition-all focus-visible:outline-none ${
+                  uploading
+                    ? "cursor-wait border-[#0A2647]/15 bg-white/60"
+                    : dragging
+                      ? "border-[#B8860B] bg-[#B8860B]/5"
+                      : "cursor-pointer border-[#0A2647]/20 bg-white/60 hover:border-[#0A2647]/40 hover:bg-white"
+                }`}
+              >
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#B8860B]/10 text-[#B8860B]">
+                  {uploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" strokeWidth={1.75} />
+                  ) : (
+                    <FileUp className="h-6 w-6" strokeWidth={1.75} />
+                  )}
+                </span>
+                <span className="text-base font-medium text-[#0A2647]">
+                  {uploading ? "Reading your CV…" : "Drop your CV here, or click to browse"}
+                </span>
+                <span className="text-xs text-[#0A2647]/45">PDF or DOCX, up to 5&nbsp;MB</span>
+              </div>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => finish("chat", "/build/chat", "Putting your first draft together…")}
+                  className="text-sm font-medium text-[#0A2647]/55 underline-offset-4 transition-colors hover:text-[#0A2647] hover:underline disabled:opacity-40 focus-visible:outline-none"
+                >
+                  I don&rsquo;t have it handy — build with the coach instead
+                </button>
+              </div>
+              <div className="mt-6 flex justify-center">
+                <BackButton onClick={() => go("path")} />
               </div>
             </motion.div>
           )}
@@ -501,32 +610,22 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 How would you like to start?
               </h2>
               <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
-                {/* Existing-CV path leads with upload; from-scratch path leads with
-                    the chat coach. Both keep the manual builder as an option. */}
-                {pathChoice === "existing" && (
-                  <MethodCard
-                    icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
-                    title="Upload my CV"
-                    desc="Drop in a PDF or DOCX and we&rsquo;ll optimize it for your role."
-                    badge="Recommended"
-                    onClick={() => fileRef.current?.click()}
-                  />
-                )}
+                {/* From-scratch path: lead with the chat coach, keep upload and the
+                    manual builder as options. (The "I have an existing CV" path
+                    skips straight to upload, so it never lands here.) */}
                 <MethodCard
                   icon={<MessageSquareText className="h-5 w-5" strokeWidth={1.75} />}
                   title="Answer a few questions"
                   desc="Chat with your coach — it writes each section as you talk."
-                  badge={pathChoice === "existing" ? undefined : "Recommended"}
+                  badge="Recommended"
                   onClick={() => finish("chat", "/build/chat", "Putting your first draft together…")}
                 />
-                {pathChoice !== "existing" && (
-                  <MethodCard
-                    icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
-                    title="I have a CV to improve"
-                    desc="Upload a PDF or DOCX and we&rsquo;ll tailor it to your role."
-                    onClick={() => fileRef.current?.click()}
-                  />
-                )}
+                <MethodCard
+                  icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
+                  title="I have a CV to improve"
+                  desc="Upload a PDF or DOCX and we&rsquo;ll tailor it to your role."
+                  onClick={() => fileRef.current?.click()}
+                />
                 <MethodCard
                   icon={<PencilLine className="h-5 w-5" strokeWidth={1.75} />}
                   title="Start from a blank template"
@@ -534,16 +633,6 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   onClick={() => finish("manual", "/builder", "Opening your builder…")}
                 />
               </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="sr-only"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleFile(f);
-                }}
-              />
               <div className="mt-8 flex justify-center">
                 <BackButton onClick={() => go("template")} />
               </div>

@@ -94,3 +94,15 @@ export function chatGreeting(hasExistingCv: boolean): string {
   }
   return "Hey, I'm Hired. Two ways to do this: tell me your story and I'll build your CV from scratch, or upload your current CV and tell me the role you want — I'll optimize it for that job. Type, talk, or tap the paperclip to upload.\n\nLet's start easy: what's your name, and what kind of role are you going after?";
 }
+
+/**
+ * The user message + chip we hand to the agent when an existing CV is uploaded,
+ * so it mines the text into the builder. Single source of truth shared by the
+ * in-chat upload button and the onboarding "optimize existing" handoff.
+ */
+export function cvUploadIntake(fileName: string, text: string): { content: string; display: string } {
+  return {
+    content: `I'm uploading my existing CV (${fileName}). Here's its full text — pull everything useful into the builder, then tell me what's missing or weak:\n\n"""\n${text}\n"""`,
+    display: `📎 ${fileName}`,
+  };
+}
