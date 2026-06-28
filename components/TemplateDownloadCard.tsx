@@ -13,6 +13,7 @@ import { Watermark } from "@/components/Watermark";
 import Link from "next/link";
 import { FreeCreditToast } from "@/components/FreeCreditToast";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface TemplateDownloadCardProps {
   templateId: AllTemplateId;
@@ -49,6 +50,7 @@ export function TemplateDownloadCard({
   fileName = "My-CV",
   themeColor = "indigo",
 }: TemplateDownloadCardProps) {
+  const { t } = useT();
   const printRef = useRef<HTMLDivElement>(null);
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
@@ -132,13 +134,13 @@ export function TemplateDownloadCard({
       // Restore watermark after download
       setShowWatermark(true);
       
-      toast.success("Success!", {
-        description: "Your CV has been downloaded.",
+      toast.success(t("Success!"), {
+        description: t("Your CV has been downloaded."),
       });
     } catch (error) {
       console.error("PDF export failed:", error);
-      toast.error("PDF export failed", {
-        description: "Please try again.",
+      toast.error(t("PDF export failed"), {
+        description: t("Please try again."),
       });
       setShowWatermark(true); // Restore watermark on error
     } finally {
@@ -189,13 +191,13 @@ export function TemplateDownloadCard({
       // Restore watermark after download
       setShowWatermark(true);
       
-      toast.success("Success!", {
-        description: "Your CV has been downloaded.",
+      toast.success(t("Success!"), {
+        description: t("Your CV has been downloaded."),
       });
     } catch (error) {
       console.error("Word export failed:", error);
-      toast.error("Word export failed", {
-        description: "Please try again.",
+      toast.error(t("Word export failed"), {
+        description: t("Please try again."),
       });
       setShowWatermark(true); // Restore watermark on error
     } finally {
@@ -243,7 +245,7 @@ export function TemplateDownloadCard({
           <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg text-slate-800 text-sm font-medium shadow-md">
               <Maximize2 className="w-4 h-4" />
-              Preview
+              {t("Preview")}
             </span>
           </div>
         </div>
@@ -300,7 +302,7 @@ export function TemplateDownloadCard({
             className="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-medium rounded-lg transition-colors shadow-lg"
           >
             <X className="w-5 h-5" />
-            Close
+            {t("Close")}
           </button>
 
           <div 
@@ -311,7 +313,7 @@ export function TemplateDownloadCard({
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">{info.name}</h3>
-                <p className="text-sm text-slate-500">Press ESC or click outside to close</p>
+                <p className="text-sm text-slate-500">{t("Press ESC or click outside to close")}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -376,22 +378,22 @@ export function TemplateDownloadCard({
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
                 <Download className="w-8 h-8 text-indigo-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Sign in to Download</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{t("Sign in to Download")}</h3>
               <p className="text-slate-600">
-                Create a free account to download your CV in PDF or Word format.
+                {t("Create a free account to download your CV in PDF or Word format.")}
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <SignInButton mode="modal">
                 <button className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors">
-                  Sign In
+                  {t("Sign In")}
                 </button>
               </SignInButton>
               <button
                 onClick={() => setShowSignInPrompt(false)}
                 className="w-full px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors"
               >
-                Maybe Later
+                {t("Maybe Later")}
               </button>
             </div>
           </div>
@@ -418,9 +420,9 @@ export function TemplateDownloadCard({
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
                 <FileText className="w-8 h-8 text-amber-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Out of Credits</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{t("Out of Credits")}</h3>
               <p className="text-slate-600 mb-4">
-                You need credits to download your CV. Get started with our Starter pack for just $3 and receive 5 credits!
+                {t("You need credits to download your CV. Get started with our Starter pack for just $3 and receive 5 credits!")}
               </p>
             </div>
             <div className="flex flex-col gap-3">
@@ -429,13 +431,13 @@ export function TemplateDownloadCard({
                 onClick={() => setShowNoCreditsModal(false)}
                 className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors text-center"
               >
-                Get Starter Pack ($3)
+                {t("Get Starter Pack ($3)")}
               </Link>
               <button
                 onClick={() => setShowNoCreditsModal(false)}
                 className="w-full px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors"
               >
-                Maybe Later
+                {t("Maybe Later")}
               </button>
             </div>
           </div>

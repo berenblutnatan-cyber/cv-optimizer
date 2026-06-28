@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ResumeData } from "@/types/resume";
 
 export function UseExampleButton({
@@ -23,6 +24,7 @@ export function UseExampleButton({
   className?: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const setResumeData = useResumeStore((s) => s.setResumeData);
 
   function onClick() {
@@ -40,7 +42,7 @@ export function UseExampleButton({
         "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
       }
     >
-      {label}
+      {t(label)}
       <ArrowRight className="h-4 w-4" />
     </button>
   );

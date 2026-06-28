@@ -2,6 +2,7 @@
 
 import React from "react";
 import { parseCV, isBulletLine, isJobTitleLine, splitSections } from "@/hooks/useCVDensity";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface CreativeTemplateProps {
   data: string;
@@ -28,6 +29,7 @@ interface CreativeTemplateProps {
  * - Headers: 9px uppercase, emerald accent
  */
 export function CreativeTemplate({ data, photo }: CreativeTemplateProps) {
+  const { t } = useT();
   const parsed = parseCV(data);
   const { name, contact, sections } = parsed;
   const { sidebar: sidebarSections, main: mainSections } = splitSections(sections);
@@ -171,7 +173,7 @@ export function CreativeTemplate({ data, photo }: CreativeTemplateProps) {
                 flexShrink: 0,
               }}
             />
-            Contact
+            {t("Contact")}
           </h2>
           <div
             style={{

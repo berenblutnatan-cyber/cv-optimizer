@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Loader2, Mic, MicOff, Paperclip, Sparkles } from "lucide-react";
 import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const DEFAULT_CHIPS = [
   "Skip this question",
@@ -61,7 +62,7 @@ export function ChatComposer({
   prefillNonce = 0,
   chips = DEFAULT_CHIPS,
   placeholder,
-  uploadingLabel = "Reading your CV…",
+  uploadingLabel,
   theme = "dark",
   minRows = 1,
   sendLabel,
@@ -88,6 +89,7 @@ export function ChatComposer({
   /** Minimum textarea rows — bump to 2-3 for a roomier base44-style box. */
   minRows?: number;
 }) {
+  const { t } = useT();
   const [draft, setDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const skin = SKIN[theme];
@@ -140,7 +142,7 @@ export function ChatComposer({
               onClick={() => send(chip)}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full border text-xs transition-colors disabled:opacity-40 ${skin.chip}`}
             >
-              {chip}
+              {t(chip)}
             </button>
           ))}
         </div>
@@ -162,8 +164,8 @@ export function ChatComposer({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={disabled || uploading}
-          aria-label="Upload your current CV (PDF or Word)"
-          title="Upload your current CV (PDF or Word)"
+          aria-label={t("Upload your current CV (PDF or Word)")}
+          title={t("Upload your current CV (PDF or Word)")}
           className={`grid place-items-center h-10 w-10 rounded-xl transition-colors disabled:opacity-40 ${skin.iconBtn}`}
         >
           {uploading ? (
@@ -186,10 +188,10 @@ export function ChatComposer({
           rows={Math.min(6, Math.max(minRows, draft.split("\n").length))}
           placeholder={
             uploading
-              ? uploadingLabel
+              ? uploadingLabel ?? t("Reading your CV…")
               : listening
-                ? "Listening — just talk…"
-                : placeholder ?? "Type your answer, or tap the mic and say it"
+                ? t("Listening — just talk…")
+                : placeholder ?? t("Type your answer, or tap the mic and say it")
           }
           className={`flex-1 resize-none bg-transparent text-[15px] leading-relaxed px-2 py-1.5 focus:outline-none ${skin.textarea}`}
         />
@@ -197,7 +199,7 @@ export function ChatComposer({
           <button
             type="button"
             onClick={onMicClick}
-            aria-label={listening ? "Stop dictation" : "Dictate your answer"}
+            aria-label={listening ? t("Stop dictation") : t("Dictate your answer")}
             aria-pressed={listening}
             className={`grid place-items-center h-10 w-10 rounded-xl transition-colors ${
               listening ? skin.micOn : skin.micIdle
@@ -210,7 +212,7 @@ export function ChatComposer({
           type="button"
           onClick={() => send(draft)}
           disabled={disabled || !draft.trim()}
-          aria-label={sendLabel ?? "Send"}
+          aria-label={sendLabel ?? t("Send")}
           className={`inline-flex items-center justify-center gap-1.5 h-10 rounded-xl disabled:opacity-40 transition-colors ${
             sendLabel ? "px-4 w-auto" : "w-10"
           } ${skin.send}`}

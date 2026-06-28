@@ -15,8 +15,10 @@ import {
   type JobApplicationStatus,
 } from "@/lib/applications";
 import { AddApplicationDialog } from "@/components/applications/AddApplicationDialog";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function ApplicationsBoard() {
+  const { t } = useT();
   const router = useRouter();
   const [apps, setApps] = useState<ApplicationDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export function ApplicationsBoard() {
         body: JSON.stringify({ status }),
       });
     } catch {
-      toast.error("Couldn't save that move.");
+      toast.error(t("Couldn't save that move."));
     }
   }
 
@@ -64,7 +66,7 @@ export function ApplicationsBoard() {
   function tailor(app: ApplicationDTO) {
     const cvText = resumeToText(useResumeStore.getState().resumeData);
     if (!cvText.trim()) {
-      toast.message("Build your CV first, then tailor it to this job.");
+      toast.message(t("Build your CV first, then tailor it to this job."));
       router.push("/build/chat");
       return;
     }
@@ -86,7 +88,7 @@ export function ApplicationsBoard() {
     if (clBusyId) return;
     const cvText = resumeToText(useResumeStore.getState().resumeData);
     if (!cvText.trim()) {
-      toast.message("Build your CV first, then generate a cover letter.");
+      toast.message(t("Build your CV first, then generate a cover letter."));
       router.push("/build/chat");
       return;
     }
@@ -101,11 +103,11 @@ export function ApplicationsBoard() {
       if (res.status === 402 || data?.code === "INSUFFICIENT_CREDITS") {
         track("application_cover_letter_blocked", { reason: "no_credits" });
         useFlashSaleStore.getState().recordAction();
-        toast.message("You're out of credits", { description: "Top up or grab the Pro offer to generate." });
+        toast.message(t("You're out of credits"), { description: t("Top up or grab the Pro offer to generate.") });
         return;
       }
       if (!res.ok) {
-        toast.error(data?.error ?? "Couldn't generate — try again.");
+        toast.error(data?.error ?? t("Couldn't generate — try again."));
         return;
       }
       setCoverLetter({ app, text: data.coverLetter as string });
@@ -127,15 +129,15 @@ export function ApplicationsBoard() {
     <div>
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#0A2647]">Job tracker</h1>
-          <p className="text-sm text-stone-500 mt-0.5">Every role you&apos;re chasing, in one board.</p>
+          <h1 className="text-2xl font-bold text-[#0A2647]">{t("Job tracker")}</h1>
+          <p className="text-sm text-stone-500 mt-0.5">{t("Every role you're chasing, in one board.")}</p>
         </div>
         <button
           type="button"
           onClick={() => setAdding(true)}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
         >
-          <Plus className="h-4 w-4" /> Add application
+          <Plus className="h-4 w-4" /> {t("Add application")}
         </button>
       </div>
 
@@ -145,7 +147,7 @@ export function ApplicationsBoard() {
           return (
             <div key={status} className="rounded-2xl bg-stone-50 border border-stone-200 p-2.5 min-h-[120px]">
               <div className="flex items-center justify-between px-1 pb-2">
-                <span className="text-[12px] font-semibold text-[#0A2647]">{STATUS_LABEL[status]}</span>
+                <span className="text-[12px] font-semibold text-[#0A2647]">{t(STATUS_LABEL[status])}</span>
                 <span className="text-[11px] text-stone-400 tabular-nums">{col.length}</span>
               </div>
               <div className="space-y-2">
@@ -162,7 +164,7 @@ export function ApplicationsBoard() {
                     >
                       {APPLICATION_STATUSES.map((s) => (
                         <option key={s} value={s}>
-                          {STATUS_LABEL[s]}
+                          {t(STATUS_LABEL[s])}
                         </option>
                       ))}
                     </select>
@@ -174,14 +176,14 @@ export function ApplicationsBoard() {
                           onClick={() => tailor(app)}
                           className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-[#B8860B]/10 text-[#8a6608] text-[11px] font-semibold hover:bg-[#B8860B]/20 transition-colors"
                         >
-                          <WandSparkles className="h-3 w-3" /> Tailor CV
+                          <WandSparkles className="h-3 w-3" /> {t("Tailor CV")}
                         </button>
                         {app.url ? (
                           <a
                             href={app.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label="Open job posting"
+                            aria-label={t("Open job posting")}
                             className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
@@ -190,7 +192,7 @@ export function ApplicationsBoard() {
                         <button
                           type="button"
                           onClick={() => remove(app)}
-                          aria-label="Delete application"
+                          aria-label={t("Delete application")}
                           className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-rose-500 transition-colors"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -203,12 +205,12 @@ export function ApplicationsBoard() {
                         className="w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-[#0A2647]/[0.06] text-[#0A2647] text-[11px] font-semibold hover:bg-[#0A2647]/[0.12] disabled:opacity-50 transition-colors"
                       >
                         {clBusyId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
-                        Cover letter
+                        {t("Cover letter")}
                       </button>
                     </div>
                   </div>
                 ))}
-                {col.length === 0 ? <p className="px-1 py-3 text-[11px] text-stone-400">Nothing here yet.</p> : null}
+                {col.length === 0 ? <p className="px-1 py-3 text-[11px] text-stone-400">{t("Nothing here yet.")}</p> : null}
               </div>
             </div>
           );
@@ -231,14 +233,14 @@ export function ApplicationsBoard() {
           <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl p-5 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
-                <h2 className="text-base font-semibold text-[#0A2647]">Cover letter</h2>
+                <h2 className="text-base font-semibold text-[#0A2647]">{t("Cover letter")}</h2>
                 <p className="text-[12px] text-stone-500 truncate">
                   {coverLetter.app.title} · {coverLetter.app.company}
                 </p>
               </div>
               <button
                 onClick={() => setCoverLetter(null)}
-                aria-label="Close"
+                aria-label={t("Close")}
                 className="grid place-items-center h-8 w-8 rounded-lg text-stone-400 hover:bg-stone-100"
               >
                 <X className="h-4 w-4" />
@@ -254,11 +256,11 @@ export function ApplicationsBoard() {
                 type="button"
                 onClick={() => {
                   navigator.clipboard?.writeText(coverLetter.text);
-                  toast.success("Copied to clipboard");
+                  toast.success(t("Copied to clipboard"));
                 }}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A2647] text-white text-[13px] font-semibold hover:bg-[#0d3259] transition-colors"
               >
-                <Copy className="h-3.5 w-3.5" /> Copy
+                <Copy className="h-3.5 w-3.5" /> {t("Copy")}
               </button>
             </div>
           </div>

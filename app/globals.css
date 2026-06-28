@@ -135,6 +135,27 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* ==============================================
+   RTL / HEBREW SUPPORT
+   ============================================== */
+
+/* When the UI is Hebrew, swap the body font to Rubik (Latin + Hebrew glyphs)
+   so Hebrew text renders cleanly while Latin runs (names, brands) stay sharp. */
+html[dir="rtl"] body {
+  font-family: var(--font-hebrew), var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* A rendered CV is a standalone document: its layout and reading direction must
+   follow the résumé's own content, NOT the surrounding UI language. Pin the A4
+   preview/print containers to LTR so toggling the UI to Hebrew never mirrors a
+   user's (usually English) résumé. A future Hebrew-résumé feature can opt an
+   individual document back into RTL via an explicit dir attribute. */
+.a4-page,
+.a4-wrapper {
+  direction: ltr;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

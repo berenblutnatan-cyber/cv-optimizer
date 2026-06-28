@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Ledger
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  * well-set ledger. Conservative and elegant for finance / law / consulting.
  */
 export function LedgerTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   return (
@@ -76,7 +78,7 @@ export function LedgerTemplate({ data, themeColor, className }: TemplateProps) {
 
         {data.skills && data.skills.length > 0 && (
           <section style={{ marginTop: "14px" }}>
-            <h2 style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: colors.dark, fontFamily: FONTS.serif.heading, marginBottom: "8px" }}>Skills</h2>
+            <h2 style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: colors.dark, fontFamily: FONTS.serif.heading, marginBottom: "8px" }}>{t("Skills")}</h2>
             <LedgerRow meta={null} colors={colors}>
               <p style={{ fontSize: "9px", color: "#292524", lineHeight: 1.5 }}>{data.skills.filter(hasContent).join("  ·  ")}</p>
             </LedgerRow>
@@ -85,7 +87,7 @@ export function LedgerTemplate({ data, themeColor, className }: TemplateProps) {
 
         {data.languages && data.languages.length > 0 && (
           <section style={{ marginTop: "10px" }}>
-            <LedgerRow meta={<div style={{ fontSize: "8.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: colors.dark }}>Languages</div>} colors={colors}>
+            <LedgerRow meta={<div style={{ fontSize: "8.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: colors.dark }}>{t("Languages")}</div>} colors={colors}>
               <p style={{ fontSize: "9px", color: "#292524", lineHeight: 1.5 }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
             </LedgerRow>
           </section>

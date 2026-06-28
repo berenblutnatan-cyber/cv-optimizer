@@ -10,6 +10,7 @@ import { Sparkles, Loader2, Check, X } from "lucide-react";
 import { useInlineAssist } from "@/hooks/useInlineAssist";
 import { track } from "@/lib/analytics";
 import { ASSIST_LABEL, type AssistAction, type AssistTarget, type AssistSuggestion } from "@/lib/assist/actions";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function InlineAssist({
   action,
@@ -23,6 +24,7 @@ export function InlineAssist({
   label?: string;
   className?: string;
 }) {
+  const { t } = useT();
   const { generate, apply } = useInlineAssist();
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -59,7 +61,7 @@ export function InlineAssist({
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#B8860B]/10 border border-[#B8860B]/25 text-[11px] font-medium text-[#8a6608] hover:bg-[#B8860B]/20 disabled:opacity-50 transition-colors"
       >
         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-        {loading ? "Thinking…" : label ?? ASSIST_LABEL[action]}
+        {loading ? t("Thinking…") : label ?? t(ASSIST_LABEL[action])}
       </button>
 
       {suggestion ? (
@@ -85,7 +87,7 @@ export function InlineAssist({
               className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#0A2647] text-white text-[12px] font-semibold hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
             >
               {applying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-              {applying ? "Applying…" : "Accept"}
+              {applying ? t("Applying…") : t("Accept")}
             </button>
             <button
               type="button"
@@ -93,7 +95,7 @@ export function InlineAssist({
               disabled={applying}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] text-stone-500 hover:bg-stone-100 disabled:opacity-60 transition-colors"
             >
-              <X className="h-3 w-3" /> Discard
+              <X className="h-3 w-3" /> {t("Discard")}
             </button>
           </div>
         </div>

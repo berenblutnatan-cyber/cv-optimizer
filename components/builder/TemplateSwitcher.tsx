@@ -15,6 +15,7 @@ import { getUnlockedTemplates, unlockTemplate } from "@/lib/templateUnlocks";
 import { TemplateUnlockModal } from "@/components/TemplateUnlockModal";
 import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * TemplateSwitcher
@@ -195,6 +196,7 @@ function useTemplateGating(
   setTemplate: (id: BuilderTemplateId) => void,
   currentTemplateId: BuilderTemplateId,
 ) {
+  const { t: translate } = useT();
   const { userId } = useAuth();
   const oocModal = useOutOfCreditsModal();
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
@@ -240,8 +242,8 @@ function useTemplateGating(
         setPendingTemplate(null);
         oocModal.open({
           trigger: "template_unlock",
-          title: `Unlock ${target.name}?`,
-          subtitle: "You're out of credits. Top up to unlock this and any other premium template.",
+          title: translate("Unlock {name}?", { name: translate(target.name) }),
+          subtitle: translate("You're out of credits. Top up to unlock this and any other premium template."),
         });
         return;
       }
@@ -256,11 +258,13 @@ function useTemplateGating(
       track("template_unlocked", { template_id: target.id });
       setTemplate(target.id);
       setPendingTemplate(null);
-      toast.success(`${target.name} unlocked`, { description: "You can switch back to it anytime." });
+      toast.success(translate("{name} unlocked", { name: translate(target.name) }), {
+        description: translate("You can switch back to it anytime."),
+      });
     } catch (err) {
       console.error("Template unlock failed:", err);
-      toast.error("Couldn't unlock template", {
-        description: "Please try again — no credit was charged.",
+      toast.error(translate("Couldn't unlock template"), {
+        description: translate("Please try again — no credit was charged."),
       });
     } finally {
       setUnlockLoading(false);
@@ -279,6 +283,7 @@ function useTemplateGating(
 }
 
 export function TemplateSwitcher({ variant = "sidebar", showColors = true }: TemplateSwitcherProps) {
+  const { t: translate } = useT();
   const { selectedTemplateId, themeColor, setTemplate, setThemeColor } = useBuilder();
   const [activeTab, setActiveTab] = useState<"layout" | "design">("layout");
   const gating = useTemplateGating(setTemplate, selectedTemplateId);
@@ -300,7 +305,7 @@ export function TemplateSwitcher({ variant = "sidebar", showColors = true }: Tem
           }`}
         >
           <Layout className="w-4 h-4" />
-          Layout
+          {translate("Layout")}
         </button>
         {showColors && (
           <button
@@ -312,7 +317,7 @@ export function TemplateSwitcher({ variant = "sidebar", showColors = true }: Tem
             }`}
           >
             <Palette className="w-4 h-4" />
-            Design
+            {translate("Design")}
           </button>
         )}
       </div>
@@ -373,10 +378,11 @@ function LayoutTab({
   onSelect: (id: BuilderTemplateId) => void;
   isLocked: (id: string) => boolean;
 }) {
+  const { t: translate } = useT();
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-500 mb-4">
-        Choose a layout that fits your industry and style.
+        {translate("Choose a layout that fits your industry and style.")}
       </p>
       <div className="grid grid-cols-2 gap-3">
         {templates.map((template) => {
@@ -386,7 +392,7 @@ function LayoutTab({
             <button
               key={template.id}
               onClick={() => onSelect(template.id)}
-              aria-label={locked ? `${template.name} — unlock for 1 credit` : template.name}
+              aria-label={locked ? translate("{name} — unlock for 1 credit", { name: translate(template.name) }) : translate(template.name)}
               className={`group relative rounded-lg overflow-hidden transition-all duration-200 ${
                 isSelected
                   ? "ring-2 ring-indigo-500 ring-offset-2"
@@ -422,7 +428,7 @@ function LayoutTab({
                     <div className="flex flex-col items-center gap-1.5 px-3 py-2 bg-white/95 rounded-sm shadow-md">
                       <Lock className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
                       <span className="text-[10px] uppercase tracking-[0.18em] text-[#B8860B] font-semibold">
-                        1 Credit
+                        {translate("1 Credit")}
                       </span>
                     </div>
                   </div>
@@ -431,8 +437,8 @@ function LayoutTab({
 
               {/* Info */}
               <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900/90 to-transparent p-2 pt-6">
-                <p className="text-xs font-semibold text-white truncate">{template.name}</p>
-                <p className="text-[10px] text-slate-300 truncate">{template.description}</p>
+                <p className="text-xs font-semibold text-white truncate">{translate(template.name)}</p>
+                <p className="text-[10px] text-slate-300 truncate">{translate(template.description)}</p>
               </div>
 
               {/* Selected Check */}
@@ -445,7 +451,7 @@ function LayoutTab({
               {/* Free badge on the default template */}
               {template.id === DEFAULT_FREE_TEMPLATE_ID && !locked && (
                 <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-emerald-500/95 rounded-sm">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white">Free</span>
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white">{translate("Free")}</span>
                 </div>
               )}
             </button>
@@ -466,16 +472,17 @@ function DesignTab({
   selectedColor: ThemeColor;
   onSelectColor: (color: ThemeColor) => void;
 }) {
+  const { t: translate } = useT();
   return (
     <div className="space-y-6">
       {/* Accent Color */}
       <div>
         <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-500" />
-          Accent Color
+          {translate("Accent Color")}
         </h3>
         <p className="text-xs text-slate-500 mb-4">
-          Pick a color that represents your personal brand.
+          {translate("Pick a color that represents your personal brand.")}
         </p>
         
         {/* Color Swatches Grid */}
@@ -491,7 +498,7 @@ function DesignTab({
                 className={`group relative flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all ${
                   isSelected ? "bg-slate-100" : "hover:bg-slate-50"
                 }`}
-                title={color.name}
+                title={translate(color.name)}
               >
                 <div
                   className={`w-8 h-8 rounded-full transition-transform group-hover:scale-110 ${
@@ -505,7 +512,7 @@ function DesignTab({
                     </div>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-600 font-medium">{color.name}</span>
+                <span className="text-[10px] text-slate-600 font-medium">{translate(color.name)}</span>
               </button>
             );
           })}
@@ -514,7 +521,7 @@ function DesignTab({
 
       {/* Preview */}
       <div className="p-4 bg-slate-50 rounded-xl">
-        <p className="text-xs font-medium text-slate-600 mb-2">Preview</p>
+        <p className="text-xs font-medium text-slate-600 mb-2">{translate("Preview")}</p>
         <div className="flex items-center gap-3">
           <div
             className="w-12 h-12 rounded-lg"
@@ -538,6 +545,7 @@ function DesignTab({
 
 // Compact Toolbar variant
 function ToolbarSwitcher() {
+  const { t: translate } = useT();
   const { selectedTemplateId, themeColor, setTemplate, setThemeColor } = useBuilder();
   const gating = useTemplateGating(setTemplate, selectedTemplateId);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -554,7 +562,7 @@ function ToolbarSwitcher() {
           className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
         >
           <Layout className="w-4 h-4 text-slate-500" />
-          {selectedTemplate?.name || "Template"}
+          {selectedTemplate ? translate(selectedTemplate.name) : translate("Template")}
           <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -588,16 +596,16 @@ function ToolbarSwitcher() {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 text-start">
                     <p className="text-sm font-medium flex items-center gap-1.5">
-                      {template.name}
+                      {translate(template.name)}
                       {locked && (
                         <span className="text-[9px] uppercase tracking-[0.14em] text-[#B8860B] font-semibold bg-[#B8860B]/10 px-1.5 py-0.5 rounded-sm">
-                          1 cr
+                          {translate("1 cr")}
                         </span>
                       )}
                     </p>
-                    <p className="text-xs text-slate-500">{template.description}</p>
+                    <p className="text-xs text-slate-500">{translate(template.description)}</p>
                   </div>
                   {selectedTemplateId === template.id && !locked && (
                     <Check className="w-4 h-4 text-indigo-500" />
@@ -627,7 +635,7 @@ function ToolbarSwitcher() {
 
         {showColors && (
           <div className="absolute top-full right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
-            <p className="text-xs font-medium text-slate-600 mb-2">Accent Color</p>
+            <p className="text-xs font-medium text-slate-600 mb-2">{translate("Accent Color")}</p>
             <div className="grid grid-cols-5 gap-2">
               {COLOR_OPTIONS.map((color) => {
                 const colorValue = THEME_COLOR_VALUES[color.id];
@@ -639,7 +647,7 @@ function ToolbarSwitcher() {
                       themeColor === color.id ? "ring-2 ring-offset-2 ring-slate-400" : ""
                     }`}
                     style={{ backgroundColor: colorValue.primary }}
-                    title={color.name}
+                    title={translate(color.name)}
                   >
                     {themeColor === color.id && (
                       <Check className="w-3 h-3 text-white mx-auto" />

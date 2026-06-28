@@ -8,8 +8,10 @@ import { AnalysisResults } from "@/components/AnalysisResults";
 import { AnalysisSessionPayload, clearAnalysisSession, loadAnalysisFromSession, saveAnalysisToSession } from "@/lib/analysisSession";
 import { ShellNav } from "@/components/ShellNav";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export default function ResultsPage() {
+  const { t } = useT();
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const [payload, setPayload] = useState<AnalysisSessionPayload | null>(null);
@@ -65,16 +67,15 @@ export default function ResultsPage() {
               <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
                 <ArrowLeft className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />
               </div>
-              <h1 className="font-serif text-2xl text-[#1a1a1a] mb-3">No analysis yet</h1>
+              <h1 className="font-serif text-2xl text-[#1a1a1a] mb-3">{t("No analysis yet")}</h1>
               <p className="text-stone-500 font-light mb-8">
-                Run an analysis first to see your tailored results, suggested
-                changes, and downloadable resume.
+                {t("Run an analysis first to see your tailored results, suggested changes, and downloadable resume.")}
               </p>
               <button
                 onClick={() => router.push("/optimize")}
                 className="inline-flex items-center gap-3 px-8 py-3.5 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
               >
-                Start an Analysis
+                {t("Start an Analysis")}
               </button>
             </div>
           </div>
@@ -95,7 +96,7 @@ export default function ResultsPage() {
             }}
             className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-[#0A2647] hover:text-white hover:bg-[#0A2647] border border-[#0A2647]/30 hover:border-[#0A2647] rounded-sm transition-colors tracking-wide focus-visible:outline-none"
           >
-            New Analysis
+            {t("New Analysis")}
           </button>
         }
       />
@@ -107,8 +108,8 @@ export default function ResultsPage() {
           coverLetterTab={
             payload.meta.mode === "specific_role"
               ? {
-                  title: "Cover Letter",
-                  subtitle: `Tailored to ${payload.meta.companyName} — ${cleanTitleForUi(payload.meta.jobTitle)}`,
+                  title: t("Cover Letter"),
+                  subtitle: t("Tailored to {company} — {role}", { company: payload.meta.companyName ?? "", role: cleanTitleForUi(payload.meta.jobTitle) }),
                   text: coverLetter,
                   onTextChange: setCoverLetter,
                   onGenerate: async () => {
@@ -127,13 +128,13 @@ export default function ResultsPage() {
                       });
                       const data = await res.json();
                       if (!res.ok) {
-                        const errorMsg = data?.error || "Cover letter generation failed";
+                        const errorMsg = data?.error || t("Cover letter generation failed");
                         if (errorMsg.includes("API key") || errorMsg.includes("OPENAI")) {
-                          setCoverLetterError("AI service is temporarily unavailable. Please try again later.");
+                          setCoverLetterError(t("AI service is temporarily unavailable. Please try again later."));
                         } else if (errorMsg.includes("cvText") || errorMsg.includes("Missing")) {
-                          setCoverLetterError("Please ensure your CV text is available. Try re-analyzing your resume first.");
+                          setCoverLetterError(t("Please ensure your CV text is available. Try re-analyzing your resume first."));
                         } else if (errorMsg.includes("rate limit") || errorMsg.includes("429")) {
-                          setCoverLetterError("Too many requests. Please wait a moment and try again.");
+                          setCoverLetterError(t("Too many requests. Please wait a moment and try again."));
                         } else {
                           setCoverLetterError(errorMsg);
                         }
@@ -144,9 +145,9 @@ export default function ResultsPage() {
                       setPayload(nextPayload);
                       saveAnalysisToSession(nextPayload);
                     } catch (e) {
-                      const errorMsg = e instanceof Error ? e.message : "Cover letter generation failed";
+                      const errorMsg = e instanceof Error ? e.message : t("Cover letter generation failed");
                       if (errorMsg.includes("fetch") || errorMsg.includes("network") || errorMsg.includes("Failed to fetch")) {
-                        setCoverLetterError("Network error. Please check your internet connection and try again.");
+                        setCoverLetterError(t("Network error. Please check your internet connection and try again."));
                       } else {
                         setCoverLetterError(errorMsg);
                       }
@@ -177,7 +178,7 @@ export default function ResultsPage() {
                       });
                       if (!res.ok) {
                         const data = await res.json().catch(() => ({}));
-                        throw new Error(data?.error || "PDF export failed");
+                        throw new Error(data?.error || t("PDF export failed"));
                       }
                       const blob = await res.blob();
                       const url = URL.createObjectURL(blob);
@@ -189,7 +190,7 @@ export default function ResultsPage() {
                       a.remove();
                       URL.revokeObjectURL(url);
                     } catch (e) {
-                      alert(e instanceof Error ? e.message : "PDF export failed");
+                      alert(e instanceof Error ? e.message : t("PDF export failed"));
                     } finally {
                       setDownloadingCoverLetterPdf(false);
                     }
@@ -261,7 +262,7 @@ export default function ResultsPage() {
 
       <footer className="w-full border-t border-stone-200/60 py-5 bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-8 lg:px-16 text-center text-stone-500 text-xs font-light tracking-wide">
-          Powered by AI • Your data is secure and never stored
+          {t("Powered by AI • Your data is secure and never stored")}
         </div>
       </footer>
 
@@ -280,7 +281,7 @@ export default function ResultsPage() {
           >
             <button
               onClick={closeSignInPrompt}
-              aria-label="Close"
+              aria-label={t("Close")}
               className="absolute top-4 right-4 p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors focus-visible:outline-none"
             >
               <X className="w-5 h-5" strokeWidth={1.5} />
@@ -290,23 +291,23 @@ export default function ResultsPage() {
                 <Download className="w-7 h-7 text-[#0A2647]" strokeWidth={1.5} />
               </div>
               <h3 id="signin-prompt-title" className="font-serif text-2xl text-[#1a1a1a] mb-3">
-                Sign in to Download
+                {t("Sign in to Download")}
               </h3>
               <p className="text-stone-500 font-light">
-                Create a free account to download your cover letter as a PDF.
+                {t("Create a free account to download your cover letter as a PDF.")}
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <SignInButton mode="modal">
                 <button className="w-full px-6 py-3.5 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none">
-                  Sign In
+                  {t("Sign In")}
                 </button>
               </SignInButton>
               <button
                 onClick={closeSignInPrompt}
                 className="w-full px-6 py-3.5 text-stone-600 hover:text-stone-900 hover:bg-stone-50 font-medium rounded-sm transition-colors focus-visible:outline-none"
               >
-                Maybe Later
+                {t("Maybe Later")}
               </button>
             </div>
           </div>

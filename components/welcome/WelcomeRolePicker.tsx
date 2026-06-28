@@ -7,8 +7,10 @@ import { motion } from "framer-motion";
 import { GlassCard } from "@/components/shell/GlassCard";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
+  const { t } = useT();
   const router = useRouter();
   const { roles, setRoles } = useOnboardingStore();
   const [draft, setDraft] = useState("");
@@ -47,12 +49,12 @@ export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
               key={role}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-white/15 border border-glass-border text-sm text-white"
+              className="inline-flex items-center gap-1.5 ps-3 pe-1.5 py-1.5 rounded-full bg-white/15 border border-glass-border text-sm text-white"
             >
               {role}
               <button
                 type="button"
-                aria-label={`Remove ${role}`}
+                aria-label={t("Remove {role}", { role })}
                 onClick={() => removeRole(role)}
                 className="h-5 w-5 grid place-items-center rounded-full hover:bg-white/15"
               >
@@ -82,8 +84,10 @@ export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
                 }}
                 placeholder={
                   roles.length === 0
-                    ? "Product Manager, Software Engineer…"
-                    : `Add another${remaining > 1 ? ` (${remaining} left)` : ""}`
+                    ? t("Product Manager, Software Engineer…")
+                    : remaining > 1
+                      ? t("Add another ({remaining} left)", { remaining })
+                      : t("Add another")
                 }
                 className="bg-transparent text-base text-white placeholder:text-white/45 w-full focus:outline-none py-1.5"
                 autoFocus
@@ -94,7 +98,7 @@ export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
       </GlassCard>
 
       <div>
-        <div className="text-xs uppercase tracking-[0.18em] text-white/55 mb-3">Quick picks</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-white/55 mb-3">{t("Quick picks")}</div>
         <div className="flex flex-wrap gap-2">
           {suggestions.map((s) => {
             const picked = roles.some((r) => r.toLowerCase() === s.toLowerCase());
@@ -114,7 +118,7 @@ export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
                       : "bg-white/8 border-glass-border text-white/85 hover:bg-white/15",
                 ].join(" ")}
               >
-                {s}
+                {t(s)}
               </button>
             );
           })}
@@ -123,7 +127,7 @@ export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
 
       <div className="flex items-center justify-between pt-2">
         <div className="text-xs text-white/55">
-          {roles.length}/{max} roles
+          {t("{count}/{max} roles", { count: roles.length, max })}
         </div>
         <button
           type="button"
@@ -131,7 +135,7 @@ export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
           disabled={roles.length === 0 || busy}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#1a1a1a] font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/95 active:scale-[0.98] transition-all"
         >
-          Continue
+          {t("Continue")}
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>

@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Wand2, CheckCircle, Type, Briefcase, Loader2, X } from "lucide-react";
 import { useAIAssistant } from "@/context/BuilderContext";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * FloatingAIAssistant Component
@@ -86,6 +87,7 @@ export function FloatingAIAssistant({
   offset = { x: -12, y: -8 },
   zIndex = 50,
 }: FloatingAIAssistantProps) {
+  const { t } = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -202,7 +204,7 @@ export function FloatingAIAssistant({
             <Sparkles className="w-4 h-4 text-indigo-600" />
           )}
           <span className="text-slate-700">
-            {isThinking ? "Improving..." : "AI Assistant"}
+            {isThinking ? t("Improving...") : t("AI Assistant")}
           </span>
         </motion.button>
 
@@ -219,7 +221,7 @@ export function FloatingAIAssistant({
               {/* Header */}
               <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  AI Actions
+                  {t("AI Actions")}
                 </span>
                 <button
                   onClick={() => setIsOpen(false)}
@@ -239,7 +241,7 @@ export function FloatingAIAssistant({
                     className={`
                       w-full px-3 py-2.5
                       flex items-center gap-3
-                      text-left
+                      text-start
                       transition-colors
                       ${processingAction === action.id 
                         ? "bg-indigo-50" 
@@ -262,10 +264,10 @@ export function FloatingAIAssistant({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-800">
-                        {action.label}
+                        {t(action.label)}
                       </p>
                       <p className="text-xs text-slate-500 truncate">
-                        {action.description}
+                        {t(action.description)}
                       </p>
                     </div>
                   </button>
@@ -275,7 +277,7 @@ export function FloatingAIAssistant({
               {/* Footer Tip */}
               <div className="px-3 py-2 bg-slate-50 border-t border-slate-100">
                 <p className="text-[10px] text-slate-400 text-center">
-                  Tip: Select text before clicking for better results
+                  {t("Tip: Select text before clicking for better results")}
                 </p>
               </div>
             </motion.div>

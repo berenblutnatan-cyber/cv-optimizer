@@ -5,6 +5,7 @@
 // up once the visitor clicks into the builder.
 
 import type { ResumeData } from "@/types/resume";
+import { getServerT } from "@/lib/i18n/server";
 
 function ContactLine({ data }: { data: ResumeData }) {
   const p = data.personalInfo;
@@ -20,7 +21,8 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ExampleResume({ data }: { data: ResumeData }) {
+export async function ExampleResume({ data }: { data: ResumeData }) {
+  const { t } = await getServerT();
   const p = data.personalInfo;
   return (
     <article className="rounded-2xl bg-white border border-stone-200 shadow-sm p-6 sm:p-8">
@@ -34,14 +36,14 @@ export function ExampleResume({ data }: { data: ResumeData }) {
 
       {data.summary ? (
         <section>
-          <SectionHeading>Summary</SectionHeading>
+          <SectionHeading>{t("Summary")}</SectionHeading>
           <p className="text-[14px] text-stone-700 leading-relaxed">{data.summary}</p>
         </section>
       ) : null}
 
       {data.experience.length > 0 ? (
         <section>
-          <SectionHeading>Experience</SectionHeading>
+          <SectionHeading>{t("Experience")}</SectionHeading>
           <div className="space-y-4">
             {data.experience.map((exp) => (
               <div key={exp.id}>
@@ -53,7 +55,7 @@ export function ExampleResume({ data }: { data: ResumeData }) {
                   <span className="text-[12px] text-stone-400 tabular-nums">
                     {exp.startDate}
                     {exp.startDate || exp.endDate ? " – " : ""}
-                    {exp.current ? "Present" : exp.endDate}
+                    {exp.current ? t("Present") : exp.endDate}
                   </span>
                 </div>
                 <ul className="mt-1.5 space-y-1">
@@ -72,7 +74,7 @@ export function ExampleResume({ data }: { data: ResumeData }) {
 
       {data.skills.length > 0 ? (
         <section>
-          <SectionHeading>Skills</SectionHeading>
+          <SectionHeading>{t("Skills")}</SectionHeading>
           <div className="flex flex-wrap gap-1.5">
             {data.skills.map((s) => (
               <span key={s} className="px-2.5 py-1 rounded-full bg-[#0A2647]/[0.06] border border-[#0A2647]/12 text-[12px] text-[#0A2647]">
@@ -85,14 +87,14 @@ export function ExampleResume({ data }: { data: ResumeData }) {
 
       {data.education.length > 0 ? (
         <section>
-          <SectionHeading>Education</SectionHeading>
+          <SectionHeading>{t("Education")}</SectionHeading>
           <div className="space-y-2">
             {data.education.map((edu) => (
               <div key={edu.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <h3 className="text-[14px] text-[#1a1a1a]">
                   <span className="font-semibold">
                     {edu.degree}
-                    {edu.field ? ` in ${edu.field}` : ""}
+                    {edu.field ? ` ${t("in")} ${edu.field}` : ""}
                   </span>
                   {edu.institution ? <span className="text-stone-500"> · {edu.institution}</span> : null}
                   {edu.gpa ? <span className="text-stone-400 text-[12px]"> · {edu.gpa}</span> : null}
@@ -110,7 +112,7 @@ export function ExampleResume({ data }: { data: ResumeData }) {
 
       {data.languages.length > 0 ? (
         <section>
-          <SectionHeading>Languages</SectionHeading>
+          <SectionHeading>{t("Languages")}</SectionHeading>
           <p className="text-[13.5px] text-stone-700">{data.languages.join("  ·  ")}</p>
         </section>
       ) : null}

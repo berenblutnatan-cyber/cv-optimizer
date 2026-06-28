@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import posthog from "posthog-js";
 import type { PolarPlanKey } from "@/lib/polar";
 import { trackMetaEvent } from "@/lib/fbq";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface PolarCheckoutButtonProps {
   plan: PolarPlanKey;
@@ -19,6 +20,7 @@ export function PolarCheckoutButton({
   amount,
   variant = "primary",
 }: PolarCheckoutButtonProps) {
+  const { t } = useT();
   const [loading, setLoading] = useState(false);
 
   const baseClasses =
@@ -53,10 +55,10 @@ export function PolarCheckoutButton({
       {loading ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
-          Redirecting to checkout…
+          {t("Redirecting to checkout…")}
         </>
       ) : (
-        <>Buy {planName} — ${amount}</>
+        <>{t("Buy {planName} — ${amount}", { planName: t(planName), amount })}</>
       )}
     </button>
   );

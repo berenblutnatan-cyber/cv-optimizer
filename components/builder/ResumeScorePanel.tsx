@@ -13,6 +13,7 @@ import {
   type ScoreBand,
 } from "@/lib/optimizer/localChecks";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type DeepResult = {
   overallScore: number;
@@ -90,6 +91,7 @@ export function ResumeScorePanel({
   applyingFixId,
   onClose,
 }: ResumeScorePanelProps) {
+  const { t } = useT();
   const [deep, setDeep] = useState<DeepResult | null>(null);
   const [deepLoading, setDeepLoading] = useState(false);
 
@@ -126,14 +128,14 @@ export function ResumeScorePanel({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         track("score_deep_check_failed", { reason: res.status === 429 ? "rate_limit" : "error" });
-        toast.message(data?.error ?? "Couldn't run the full check — try again.");
+        toast.message(data?.error ?? t("Couldn't run the full check — try again."));
         return;
       }
       setDeep(data as DeepResult);
       track("score_deep_check_succeeded");
     } catch {
       track("score_deep_check_failed", { reason: "network" });
-      toast.error("Network error running the full check.");
+      toast.error(t("Network error running the full check."));
     } finally {
       setDeepLoading(false);
     }
@@ -150,13 +152,13 @@ export function ResumeScorePanel({
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-stone-100">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[#B8860B]" />
-          <span className="text-sm font-semibold text-[#0A2647]">Resume score</span>
+          <span className="text-sm font-semibold text-[#0A2647]">{t("Resume score")}</span>
         </div>
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close score panel"
+            aria-label={t("Close score panel")}
             className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
           >
             <X className="h-4 w-4" />
@@ -171,7 +173,7 @@ export function ResumeScorePanel({
           <div className="min-w-0">
             <div className="text-lg font-semibold text-[#0A2647]">{BAND_LABEL[result.band]}</div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              Updates live as you edit. Fixes apply with AI.
+              {t("Updates live as you edit. Fixes apply with AI.")}
             </p>
             {deep?.summary ? (
               <p className="text-xs text-[#0A2647] mt-2 leading-relaxed">{deep.summary}</p>
@@ -205,19 +207,23 @@ export function ResumeScorePanel({
           className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
         >
           {deepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-          {deepLoading ? "Analyzing…" : deep ? "Re-run full AI check" : "Run full AI check"}
+          {deepLoading ? t("Analyzing…") : deep ? t("Re-run full AI check") : t("Run full AI check")}
         </button>
 
         {/* Problem list */}
         <div className="space-y-2">
           <div className="text-[11px] uppercase tracking-[0.14em] text-stone-400">
-            {problems.length > 0 ? `${problems.length} thing${problems.length === 1 ? "" : "s"} to improve` : "Looking sharp"}
+            {problems.length > 0
+              ? problems.length === 1
+                ? t("1 thing to improve")
+                : t("{count} things to improve", { count: problems.length })
+              : t("Looking sharp")}
           </div>
           {problems.length === 0 ? (
             <div className="flex items-start gap-2 rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-3">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-emerald-800">
-                No mechanical issues found. Run the full AI check for deeper, role-specific feedback.
+                {t("No mechanical issues found. Run the full AI check for deeper, role-specific feedback.")}
               </p>
             </div>
           ) : (
@@ -238,7 +244,7 @@ export function ResumeScorePanel({
                           className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#B8860B]/10 text-[#8a6608] text-[11px] font-semibold hover:bg-[#B8860B]/20 disabled:opacity-50 transition-colors"
                         >
                           {applying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                          {p.fix.kind === "deterministic" ? "Fix" : applying ? "Fixing…" : "Fix with AI"}
+                          {p.fix.kind === "deterministic" ? t("Fix") : applying ? t("Fixing…") : t("Fix with AI")}
                           {!applying ? <ChevronRight className="h-3 w-3" /> : null}
                         </button>
                       ) : null}
@@ -253,7 +259,7 @@ export function ResumeScorePanel({
         {/* Deep-check extras */}
         {deep && deep.missingKeySkills.length > 0 ? (
           <div className="rounded-xl border border-stone-200 px-3 py-2.5">
-            <div className="text-[11px] uppercase tracking-[0.14em] text-stone-400 mb-1.5">Missing key skills</div>
+            <div className="text-[11px] uppercase tracking-[0.14em] text-stone-400 mb-1.5">{t("Missing key skills")}</div>
             <div className="flex flex-wrap gap-1.5">
               {deep.missingKeySkills.map((s) => (
                 <span key={s} className="px-2 py-0.5 rounded-full bg-stone-100 text-[11px] text-stone-600">

@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 12: Photo Left
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  * for international / EU-style resumes that expect a photo.
  */
 export function PhotoLeftTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
   const initial = (data.name || "?").trim().charAt(0).toUpperCase();
 
@@ -33,7 +35,7 @@ export function PhotoLeftTemplate({ data, themeColor, className }: TemplateProps
             )}
           </div>
 
-          <RailHeading color={colors.dark}>Contact</RailHeading>
+          <RailHeading color={colors.dark}>{t("Contact")}</RailHeading>
           <div style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.9, marginBottom: "18px", wordBreak: "break-word" }}>
             {[data.contact.email, data.contact.phone, data.contact.location, data.contact.linkedin, data.contact.website, data.contact.github]
               .filter(hasContent)
@@ -44,7 +46,7 @@ export function PhotoLeftTemplate({ data, themeColor, className }: TemplateProps
 
           {data.skills && data.skills.length > 0 && (
             <>
-              <RailHeading color={colors.dark}>Skills</RailHeading>
+              <RailHeading color={colors.dark}>{t("Skills")}</RailHeading>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "18px" }}>
                 {data.skills.filter(hasContent).map((s, i) => (
                   <span key={i} style={{ fontSize: "9px", color: colors.dark, backgroundColor: "#ffffff", padding: "3px 8px", borderRadius: "4px" }}>
@@ -57,7 +59,7 @@ export function PhotoLeftTemplate({ data, themeColor, className }: TemplateProps
 
           {data.languages && data.languages.length > 0 && (
             <>
-              <RailHeading color={colors.dark}>Languages</RailHeading>
+              <RailHeading color={colors.dark}>{t("Languages")}</RailHeading>
               <div style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.8 }}>
                 {data.languages.filter(hasContent).map((l, i) => (
                   <div key={i}>{l}</div>
@@ -82,7 +84,7 @@ export function PhotoLeftTemplate({ data, themeColor, className }: TemplateProps
 
           {hasContent(data.summary) && (
             <section style={{ marginBottom: "16px" }}>
-              <ColHeading color={colors.primary}>Profile</ColHeading>
+              <ColHeading color={colors.primary}>{t("Profile")}</ColHeading>
               <p style={{ fontSize: "10.5px", color: "#4b5563", lineHeight: 1.65 }}>{data.summary}</p>
             </section>
           )}

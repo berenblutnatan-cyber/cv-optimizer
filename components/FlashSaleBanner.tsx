@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Zap, X, ArrowRight } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useFlashSaleStore, FLASH_WINDOW_MS } from "@/stores/flashSaleStore";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type Offer = {
   available: boolean;
@@ -34,6 +35,7 @@ function fmtPrice(n: number): string {
 }
 
 export function FlashSaleBanner() {
+  const { t } = useT();
   const status = useFlashSaleStore((s) => s.status);
   const armedAt = useFlashSaleStore((s) => s.armedAt);
   const expire = useFlashSaleStore((s) => s.expire);
@@ -129,14 +131,13 @@ export function FlashSaleBanner() {
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold leading-tight flex items-center gap-2">
               <span className="inline-flex items-center rounded-sm bg-[#B8860B]/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9c7409]">
-                {off}% off
+                {t("{off}% off", { off })}
               </span>
-              Flash sale — Pro
+              {t("Flash sale — Pro")}
             </div>
             <div className="text-xs text-stone-500 mt-0.5">
               <span className="font-semibold text-[#0A2647]">{fmtPrice(price)}</span>{" "}
-              <span className="line-through text-stone-400">{fmtPrice(anchor)}</span> · {credits}{" "}
-              credits · ends in{" "}
+              <span className="line-through text-stone-400">{fmtPrice(anchor)}</span> · {t("{credits} credits · ends in", { credits })}{" "}
               <span className="font-semibold tabular-nums text-[#B8860B]">{remaining}</span>
             </div>
           </div>
@@ -145,13 +146,13 @@ export function FlashSaleBanner() {
             onClick={claim}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-[#B8860B] hover:bg-[#a3760a] text-white text-sm font-medium transition-colors"
           >
-            Claim
+            {t("Claim")}
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
           <button
             type="button"
             onClick={close}
-            aria-label="Dismiss offer"
+            aria-label={t("Dismiss offer")}
             className="flex-shrink-0 grid place-items-center h-8 w-8 rounded-sm text-stone-400 hover:text-[#0A2647] hover:bg-stone-100 transition-colors"
           >
             <X className="h-4 w-4" />

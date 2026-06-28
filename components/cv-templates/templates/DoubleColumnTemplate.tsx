@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps, ResumeSection, ResumeSectionItem } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 10: Double Column
@@ -16,6 +17,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
 const SIDE_TYPES = new Set(["education", "certifications"]);
 
 export function DoubleColumnTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
   const mainSections = data.sections.filter((s) => !SIDE_TYPES.has(s.type ?? ""));
   const sideSections = data.sections.filter((s) => SIDE_TYPES.has(s.type ?? ""));
@@ -46,7 +48,7 @@ export function DoubleColumnTemplate({ data, themeColor, className }: TemplatePr
           <div style={{ flex: "1 1 62%", minWidth: 0 }}>
             {hasContent(data.summary) && (
               <section style={{ marginBottom: "20px" }}>
-                <h2 style={heading(colors.primary)}>Summary</h2>
+                <h2 style={heading(colors.primary)}>{t("Summary")}</h2>
                 <p style={{ fontSize: "10.5px", color: "#4b5563", lineHeight: 1.7 }}>{data.summary}</p>
               </section>
             )}
@@ -59,7 +61,7 @@ export function DoubleColumnTemplate({ data, themeColor, className }: TemplatePr
           <div style={{ flex: "1 1 38%", minWidth: 0, borderLeft: `1px solid ${colors.light}`, paddingLeft: "24px" }}>
             {data.skills && data.skills.length > 0 && (
               <section style={{ marginBottom: "20px" }}>
-                <h2 style={heading(colors.primary)}>Skills</h2>
+                <h2 style={heading(colors.primary)}>{t("Skills")}</h2>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                   {data.skills.filter(hasContent).map((s, i) => (
                     <span key={i} style={{ fontSize: "9px", color: colors.dark, padding: "3px 8px", borderRadius: "4px", backgroundColor: colors.light }}>
@@ -74,7 +76,7 @@ export function DoubleColumnTemplate({ data, themeColor, className }: TemplatePr
             ))}
             {data.languages && data.languages.length > 0 && (
               <section>
-                <h2 style={heading(colors.primary)}>Languages</h2>
+                <h2 style={heading(colors.primary)}>{t("Languages")}</h2>
                 {data.languages.filter(hasContent).map((l, i) => (
                   <p key={i} style={{ fontSize: "10px", color: "#4b5563", marginBottom: "3px" }}>{l}</p>
                 ))}

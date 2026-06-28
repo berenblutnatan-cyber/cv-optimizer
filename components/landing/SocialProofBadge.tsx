@@ -7,8 +7,10 @@
 
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function SocialProofBadge({ className = "" }: { className?: string }) {
+  const { t } = useT();
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function SocialProofBadge({ className = "" }: { className?: string }) {
     >
       <Users className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
       <span>
-        Trusted by <strong className="font-medium text-[#1a1a1a]">{count.toLocaleString()}+</strong> job seekers in the last 30 days
+        {t("Trusted by")} <strong className="font-medium text-[#1a1a1a]">{count.toLocaleString()}+</strong> {t("job seekers in the last 30 days")}
       </span>
     </div>
   );

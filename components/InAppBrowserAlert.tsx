@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AlertTriangle, Copy, Check, ExternalLink, X } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface InAppBrowserAlertProps {
   className?: string;
@@ -10,6 +11,7 @@ interface InAppBrowserAlertProps {
 type InAppBrowserType = "linkedin" | "instagram" | "facebook" | "tiktok" | "twitter" | null;
 
 export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
+  const { t } = useT();
   const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserType>(null);
   const [copied, setCopied] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -95,11 +97,10 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
           {/* Content */}
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-amber-900 text-sm sm:text-base">
-              Login Issue Detected
+              {t("Login Issue Detected")}
             </h3>
             <p className="text-amber-800 text-xs sm:text-sm mt-0.5 leading-relaxed">
-              Google Sign-in is not supported inside the {appName} app.
-              Please open this page in your system browser (Safari/Chrome) to sign in.
+              {t("Google Sign-in is not supported inside the {appName} app. Please open this page in your system browser (Safari/Chrome) to sign in.", { appName })}
             </p>
 
             {/* Actions */}
@@ -111,18 +112,18 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
                 {copied ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    Copied!
+                    {t("Copied!")}
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    Copy Link
+                    {t("Copy Link")}
                   </>
                 )}
               </button>
 
               <span className="text-amber-700 text-xs">
-                Then paste in Safari or Chrome
+                {t("Then paste in Safari or Chrome")}
               </span>
             </div>
 
@@ -130,7 +131,7 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
             <p className="text-amber-700 text-xs mt-2 flex items-center gap-1.5">
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
               <span>
-                Tip: Tap the <strong>...</strong> or <strong>menu</strong> icon and select "Open in Browser"
+                {t("Tip: Tap the")} <strong>...</strong> {t("or")} <strong>{t("menu")}</strong> {t("icon and select \"Open in Browser\"")}
               </span>
             </p>
           </div>
@@ -139,7 +140,7 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
           <button
             onClick={() => setDismissed(true)}
             className="flex-shrink-0 p-2.5 hover:bg-amber-200 rounded-lg transition-colors focus-visible:outline-none"
-            aria-label="Dismiss"
+            aria-label={t("Dismiss")}
           >
             <X className="w-4 h-4 text-amber-600" />
           </button>

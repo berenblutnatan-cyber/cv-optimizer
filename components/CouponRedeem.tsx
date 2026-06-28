@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Gift, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function CouponRedeem() {
+  const { t } = useT();
   const [code, setCode] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -13,7 +15,7 @@ export function CouponRedeem() {
     e.preventDefault();
     
     if (!code.trim()) {
-      setMessage({ type: "error", text: "Please enter a coupon code" });
+      setMessage({ type: "error", text: t("Please enter a coupon code") });
       return;
     }
 
@@ -32,28 +34,28 @@ export function CouponRedeem() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success("Coupon Redeemed!", {
-          description: `${data.message} You now have ${data.totalCredits} credits!`,
+        toast.success(t("Coupon Redeemed!"), {
+          description: `${data.message} ${t("You now have {credits} credits!", { credits: data.totalCredits })}`,
         });
         setCode(""); // Clear input on success
         setMessage(null); // Clear message state
       } else {
-        toast.error("Invalid Coupon", {
-          description: data.error || "Failed to redeem coupon. Please try again.",
+        toast.error(t("Invalid Coupon"), {
+          description: data.error || t("Failed to redeem coupon. Please try again."),
         });
         setMessage({
           type: "error",
-          text: data.error || "Failed to redeem coupon. Please try again.",
+          text: data.error || t("Failed to redeem coupon. Please try again."),
         });
       }
     } catch (error) {
       console.error("Coupon redeem error:", error);
-      toast.error("Error", {
-        description: "An error occurred. Please try again.",
+      toast.error(t("Error"), {
+        description: t("An error occurred. Please try again."),
       });
       setMessage({
         type: "error",
-        text: "An error occurred. Please try again.",
+        text: t("An error occurred. Please try again."),
       });
     } finally {
       setIsRedeeming(false);
@@ -66,7 +68,7 @@ export function CouponRedeem() {
         <div className="w-10 h-10 rounded-full bg-[#0A2647]/5 flex items-center justify-center flex-shrink-0">
           <Gift className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
         </div>
-        <h3 className="font-serif text-lg text-[#1a1a1a]">Redeem Promo Code</h3>
+        <h3 className="font-serif text-lg text-[#1a1a1a]">{t("Redeem Promo Code")}</h3>
       </div>
 
       <form onSubmit={handleRedeem} className="space-y-4">
@@ -78,7 +80,7 @@ export function CouponRedeem() {
               setCode(e.target.value.toUpperCase());
               setMessage(null); // Clear message when typing
             }}
-            placeholder="Enter promo code"
+            placeholder={t("Enter promo code")}
             className="min-w-0 flex-1 px-4 py-2.5 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] text-base sm:text-sm font-light text-[#1a1a1a] placeholder:text-stone-500"
             disabled={isRedeeming}
           />
@@ -90,12 +92,12 @@ export function CouponRedeem() {
             {isRedeeming ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
-                Applying...
+                {t("Applying...")}
               </>
             ) : (
               <>
                 <Gift className="w-4 h-4" strokeWidth={1.5} />
-                Apply
+                {t("Apply")}
               </>
             )}
           </button>
@@ -120,7 +122,7 @@ export function CouponRedeem() {
       </form>
 
       <p className="text-xs text-stone-500 font-light">
-        Have a promo code? Enter it above to get free credits!
+        {t("Have a promo code? Enter it above to get free credits!")}
       </p>
     </div>
   );

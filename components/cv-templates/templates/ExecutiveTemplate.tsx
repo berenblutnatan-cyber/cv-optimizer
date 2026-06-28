@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 4: Executive
@@ -15,6 +16,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
 
 export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps) {
   const colors = getThemeColors(themeColor);
+  const { t } = useT();
 
   return (
     <A4PageWrapper className={className}>
@@ -139,7 +141,7 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
                 borderBottom: `3px solid ${colors.primary}`,
                 display: "inline-block",
               }}>
-                Executive Summary
+                {t("Executive Summary")}
               </h2>
               <p style={{ fontSize: "11px", color: "#374151", lineHeight: 1.8 }}>
                 {data.summary}
@@ -163,7 +165,7 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
             {/* Right - Skills/Languages */}
             <div>
               {data.skills && data.skills.length > 0 && (
-                <ExecSection title="Core Competencies" color={colors.primary}>
+                <ExecSection title={t("Core Competencies")} color={colors.primary}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {data.skills.filter(hasContent).map((skill, idx) => (
                       <span key={idx} style={{
@@ -183,7 +185,7 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
               )}
 
               {data.languages && data.languages.length > 0 && (
-                <ExecSection title="Languages" color={colors.primary}>
+                <ExecSection title={t("Languages")} color={colors.primary}>
                   {data.languages.filter(hasContent).map((lang, idx) => (
                     <div key={idx} style={{
                       display: "flex",

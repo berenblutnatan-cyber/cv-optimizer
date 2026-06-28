@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Gift, X } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface FreeCreditToastProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface FreeCreditToastProps {
 }
 
 export function FreeCreditToast({ isOpen, onClose }: FreeCreditToastProps) {
+  const { t } = useT();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -38,9 +40,9 @@ export function FreeCreditToast({ isOpen, onClose }: FreeCreditToastProps) {
           <Gift className="w-6 h-6" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm">🎁 Sign up now & get 1 FREE Credit!</p>
+          <p className="font-semibold text-sm">🎁 {t("Sign up now & get 1 FREE Credit!")}</p>
           <p className="text-xs text-indigo-100 mt-0.5">
-            Use it to download or optimize your resume
+            {t("Use it to download or optimize your resume")}
           </p>
         </div>
         <button
@@ -48,7 +50,7 @@ export function FreeCreditToast({ isOpen, onClose }: FreeCreditToastProps) {
             setIsVisible(false);
             setTimeout(onClose, 300);
           }}
-          aria-label="Dismiss"
+          aria-label={t("Dismiss")}
           className="flex-shrink-0 p-2 hover:bg-white/20 rounded transition-colors focus-visible:outline-none"
         >
           <X className="w-4 h-4" />

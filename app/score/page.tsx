@@ -27,6 +27,7 @@ import { isValidJobTitle } from "@/constants/jobTitles";
 import posthog from "posthog-js";
 import { trackConversion } from "@/lib/gtag";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type Step = "input" | "processing" | "result";
 
@@ -35,6 +36,7 @@ type Step = "input" | "processing" | "result";
  * Light theme matching the main site design
  */
 export default function ScoreTeaserPage() {
+  const { t } = useT();
   const [step, setStep] = useState<Step>("input");
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -87,7 +89,7 @@ export default function ScoreTeaserPage() {
       setFile(droppedFile);
       setError("");
     } else {
-      setError("Please upload a PDF file");
+      setError(t("Please upload a PDF file"));
     }
   };
 
@@ -97,18 +99,18 @@ export default function ScoreTeaserPage() {
       setFile(selectedFile);
       setError("");
     } else {
-      setError("Please upload a PDF file");
+      setError(t("Please upload a PDF file"));
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleAnalyze = async () => {
     if (!file) {
-      setError("Please upload your resume");
+      setError(t("Please upload your resume"));
       return;
     }
     if (!targetRole || !isValidJobTitle(targetRole)) {
-      setError("Please select a target role from the list");
+      setError(t("Please select a target role from the list"));
       return;
     }
 
@@ -129,7 +131,7 @@ export default function ScoreTeaserPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Analysis failed");
+        throw new Error(data.error || t("Analysis failed"));
       }
 
       const data = await response.json();
@@ -144,7 +146,7 @@ export default function ScoreTeaserPage() {
       posthog.capture?.("score_generated", { score: data.score, band: scoreBand, target_role: targetRole });
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("Something went wrong"));
       setStep("input");
     } finally {
       setIsAnalyzing(false);
@@ -180,8 +182,8 @@ export default function ScoreTeaserPage() {
             className="flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none"
           >
             <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-            <span className="hidden sm:inline">Back to Home</span>
-            <span className="sm:hidden">Home</span>
+            <span className="hidden sm:inline">{t("Back to Home")}</span>
+            <span className="sm:hidden">{t("Home")}</span>
           </Link>
         </div>
       </header>
@@ -193,36 +195,36 @@ export default function ScoreTeaserPage() {
           <div className="text-center mb-10 sm:mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A2647]/5 text-[#0A2647] rounded-sm text-sm font-medium mb-6 sm:mb-8 tracking-wide">
               <Sparkles className="w-4 h-4" strokeWidth={1.5} />
-              Free Resume Analysis
+              {t("Free Resume Analysis")}
             </div>
             <h1 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
-              Get Your Resume Score
+              {t("Get Your Resume Score")}
             </h1>
             <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
             <p className="text-base sm:text-lg text-stone-500 max-w-xl mx-auto font-light">
-              See how your resume stacks up for your target role. No sign-up required.
+              {t("See how your resume stacks up for your target role. No sign-up required.")}
             </p>
 
             {/* Sample-report preview — answers "what will I actually get?" before I upload */}
             <details className="mt-8 max-w-md mx-auto text-left group">
               <summary className="cursor-pointer text-sm font-medium text-[#0A2647] hover:text-[#0d3259] tracking-wide flex items-center gap-2 justify-center">
-                <span className="group-open:hidden">Preview a sample report</span>
-                <span className="hidden group-open:inline">Hide sample report</span>
+                <span className="group-open:hidden">{t("Preview a sample report")}</span>
+                <span className="hidden group-open:inline">{t("Hide sample report")}</span>
                 <ArrowRight className="w-3 h-3 transition-transform group-open:rotate-90" strokeWidth={2} />
               </summary>
               <div className="mt-4 p-5 bg-white rounded-sm border border-stone-200 shadow-sm">
                 <div className="flex items-baseline justify-between mb-3">
-                  <span className="text-xs text-stone-500 uppercase tracking-wider font-medium">Match Score</span>
+                  <span className="text-xs text-stone-500 uppercase tracking-wider font-medium">{t("Match Score")}</span>
                   <span className="font-serif text-3xl text-[#0A2647]">72<span className="text-base text-stone-500">/100</span></span>
                 </div>
                 <div className="space-y-2 text-xs text-stone-600 font-light">
-                  <div className="flex items-center justify-between"><span>Keyword coverage</span><span className="font-medium text-[#1a1a1a]">68%</span></div>
-                  <div className="flex items-center justify-between"><span>ATS readability</span><span className="font-medium text-[#1a1a1a]">85%</span></div>
-                  <div className="flex items-center justify-between"><span>Impact phrasing</span><span className="font-medium text-[#1a1a1a]">63%</span></div>
+                  <div className="flex items-center justify-between"><span>{t("Keyword coverage")}</span><span className="font-medium text-[#1a1a1a]">68%</span></div>
+                  <div className="flex items-center justify-between"><span>{t("ATS readability")}</span><span className="font-medium text-[#1a1a1a]">85%</span></div>
+                  <div className="flex items-center justify-between"><span>{t("Impact phrasing")}</span><span className="font-medium text-[#1a1a1a]">63%</span></div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-stone-100">
                   <p className="text-xs text-stone-500 font-light leading-relaxed">
-                    + a free list of the top missing keywords for your target role.
+                    {t("+ a free list of the top missing keywords for your target role.")}
                   </p>
                 </div>
               </div>
@@ -260,7 +262,7 @@ export default function ScoreTeaserPage() {
                       <div className="text-left">
                         <p className="font-serif text-base text-[#1a1a1a]">{file.name}</p>
                         <p className="text-sm text-stone-500 font-light">
-                          {(file.size / 1024).toFixed(1)} KB • Ready to analyze
+                          {(file.size / 1024).toFixed(1)} {t("KB • Ready to analyze")}
                         </p>
                       </div>
                       <button
@@ -274,18 +276,18 @@ export default function ScoreTeaserPage() {
                     <>
                       <Upload className="w-12 h-12 text-stone-500 mx-auto mb-4" strokeWidth={1.5} />
                       <p className="font-serif text-lg text-[#1a1a1a] mb-2">
-                        Drop your resume here
+                        {t("Drop your resume here")}
                       </p>
-                      <p className="text-stone-500 mb-4 font-light">PDF format only (max 5MB)</p>
+                      <p className="text-stone-500 mb-4 font-light">{t("PDF format only (max 5MB)")}</p>
                       {/* Programmatic file picker — `<label>` + `display:none`
                           file inputs are dead on iOS Safari / in-app browsers. */}
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        aria-label="Browse for resume PDF"
+                        aria-label={t("Browse for resume PDF")}
                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
                       >
-                        <span>Browse Files</span>
+                        <span>{t("Browse Files")}</span>
                       </button>
                       <input
                         ref={fileInputRef}
@@ -304,7 +306,7 @@ export default function ScoreTeaserPage() {
                 <div className="bg-white rounded-sm p-6 border border-stone-200 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)]">
                   <label className="flex items-center gap-2 text-sm font-medium text-[#1a1a1a] mb-3 tracking-wide">
                     <Target className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
-                    Target Role
+                    {t("Target Role")}
                   </label>
                   <GoalSelector
                     value={targetRole}
@@ -329,12 +331,12 @@ export default function ScoreTeaserPage() {
                   {isAnalyzing ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.5} />
-                      Calculating...
+                      {t("Calculating...")}
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                      Calculate My Score
+                      {t("Calculate My Score")}
                     </>
                   )}
                 </button>
@@ -368,13 +370,13 @@ export default function ScoreTeaserPage() {
                         <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
                           <Target className="w-5 h-5 text-white/80" strokeWidth={1.5} />
                           <span className="text-white/80 text-sm font-medium uppercase tracking-wider">
-                            Analysis Complete
+                            {t("Analysis Complete")}
                           </span>
                         </div>
                         <h2 className="font-serif text-2xl md:text-3xl font-light text-white mb-3">
-                          {result.score <= 50 ? "Room for Improvement" : 
-                           result.score <= 75 ? "Good Foundation!" : 
-                           "Excellent Resume!"}
+                          {result.score <= 50 ? t("Room for Improvement") :
+                           result.score <= 75 ? t("Good Foundation!") :
+                           t("Excellent Resume!")}
                         </h2>
                         <p className="text-white/90 text-lg leading-relaxed font-light">
                           {result.summary}
@@ -430,7 +432,7 @@ export default function ScoreTeaserPage() {
                       className="w-full flex items-center justify-center gap-2 py-3 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 font-medium rounded-sm transition-colors tracking-wide"
                     >
                       <RotateCcw className="w-4 h-4" strokeWidth={1.5} />
-                      Analyze Another Resume
+                      {t("Analyze Another Resume")}
                     </button>
                   </div>
                 </div>
@@ -439,28 +441,28 @@ export default function ScoreTeaserPage() {
                 <div className="bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] p-8 md:p-10">
                   <div className="text-center max-w-2xl mx-auto">
                     <h3 className="font-serif text-2xl md:text-3xl font-light text-[#1a1a1a] mb-3">
-                      Now let's actually fix it.
+                      {t("Now let's actually fix it.")}
                     </h3>
                     <p className="text-stone-600 font-light mb-8">
-                      Hired-CV rewrites your resume with AI — tailored to the job you want, ATS-optimized, and ready to download in minutes.
+                      {t("Hired-CV rewrites your resume with AI — tailored to the job you want, ATS-optimized, and ready to download in minutes.")}
                     </p>
 
                     <ul className="text-left grid sm:grid-cols-2 gap-x-8 gap-y-3 mb-8 max-w-lg mx-auto">
                       <li className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                        <span className="text-stone-700 text-sm font-light">AI rewrite, tailored per job</span>
+                        <span className="text-stone-700 text-sm font-light">{t("AI rewrite, tailored per job")}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                        <span className="text-stone-700 text-sm font-light">ATS keyword optimization</span>
+                        <span className="text-stone-700 text-sm font-light">{t("ATS keyword optimization")}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                        <span className="text-stone-700 text-sm font-light">Modern templates, PDF & DOCX</span>
+                        <span className="text-stone-700 text-sm font-light">{t("Modern templates, PDF & DOCX")}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                        <span className="text-stone-700 text-sm font-light">1 free credit to start</span>
+                        <span className="text-stone-700 text-sm font-light">{t("1 free credit to start")}</span>
                       </li>
                     </ul>
 
@@ -473,7 +475,7 @@ export default function ScoreTeaserPage() {
                           className="inline-flex items-center gap-2 px-8 py-4 bg-[#B8860B] hover:bg-[#9c7409] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
                         >
                           <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                          Fix My Resume — Plans from $3
+                          {t("Fix My Resume — Plans from $3")}
                           <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
                         </Link>
                         <div className="mt-3">
@@ -482,7 +484,7 @@ export default function ScoreTeaserPage() {
                               onClick={() => track("score_upsell_clicked", { cta: "signup_free", score_band: "low", target_role: targetRole || null, match_score: result.score })}
                               className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light"
                             >
-                              Or try 1 credit free →
+                              {t("Or try 1 credit free →")}
                             </button>
                           </SignUpButton>
                         </div>
@@ -496,7 +498,7 @@ export default function ScoreTeaserPage() {
                             className="inline-flex items-center gap-2 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
                           >
                             <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                            Optimize My Resume — Free
+                            {t("Optimize My Resume — Free")}
                             <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
                           </button>
                         </SignUpButton>
@@ -506,7 +508,7 @@ export default function ScoreTeaserPage() {
                             onClick={() => track("score_upsell_clicked", { cta: "pricing", score_band: "high", target_role: targetRole || null, match_score: result.score })}
                             className="text-sm text-[#0A2647] hover:text-[#0d3259] underline underline-offset-4 font-light"
                           >
-                            Or see all plans →
+                            {t("Or see all plans →")}
                           </Link>
                         </div>
                       </>
@@ -515,11 +517,11 @@ export default function ScoreTeaserPage() {
                     <p className="text-sm text-stone-500 mt-4 flex items-center justify-center gap-4 font-light flex-wrap">
                       <span className="flex items-center gap-1">
                         <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
-                        No credit card
+                        {t("No credit card")}
                       </span>
                       <span className="flex items-center gap-1">
                         <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} />
-                        14-day money-back
+                        {t("14-day money-back")}
                       </span>
                     </p>
                   </div>

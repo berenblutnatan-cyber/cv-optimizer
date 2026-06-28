@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 9: Timeline
@@ -13,6 +14,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  * marked by an accent dot on the line. Reads as a clean career story.
  */
 export function TimelineTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   return (
@@ -88,7 +90,7 @@ export function TimelineTemplate({ data, themeColor, className }: TemplateProps)
 
         {data.skills && data.skills.length > 0 && (
           <section style={{ marginBottom: "18px" }}>
-            <h2 style={sectionHeading(colors.primary)}>Skills</h2>
+            <h2 style={sectionHeading(colors.primary)}>{t("Skills")}</h2>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {data.skills.filter(hasContent).map((s, i) => (
                 <span key={i} style={{ fontSize: "9.5px", color: colors.dark, padding: "3px 10px", borderRadius: "4px", backgroundColor: colors.light }}>
@@ -101,7 +103,7 @@ export function TimelineTemplate({ data, themeColor, className }: TemplateProps)
 
         {data.languages && data.languages.length > 0 && (
           <section>
-            <h2 style={sectionHeading(colors.primary)}>Languages</h2>
+            <h2 style={sectionHeading(colors.primary)}>{t("Languages")}</h2>
             <p style={{ fontSize: "10px", color: "#4b5563" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
           </section>
         )}

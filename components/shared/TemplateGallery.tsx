@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { BuilderTemplateId } from "@/context/BuilderContext";
 import { Check } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface TemplateGalleryProps {
   selectedId: BuilderTemplateId;
@@ -94,11 +95,12 @@ function TemplatePreviewMini({ structure, color }: { structure: string; color: s
 }
 
 export function TemplateGallery({ selectedId, onSelect, className }: TemplateGalleryProps) {
+  const { t } = useT();
   return (
     <div className={cn("w-full", className)}>
       <h3 className="text-sm font-medium text-slate-600 mb-3 flex items-center gap-2">
-        <span>Choose Template</span>
-        <span className="text-xs text-slate-400 font-normal">({TEMPLATES.length} styles)</span>
+        <span>{t("Choose Template")}</span>
+        <span className="text-xs text-slate-400 font-normal">{t("({count} styles)", { count: TEMPLATES.length })}</span>
       </h3>
       
       {/* Horizontal scrollable gallery */}
@@ -142,7 +144,7 @@ export function TemplateGallery({ selectedId, onSelect, className }: TemplateGal
                   {template.name}
                 </span>
                 <span className="text-[10px] text-slate-400 leading-tight block">
-                  {template.description}
+                  {t(template.description)}
                 </span>
               </div>
             </button>

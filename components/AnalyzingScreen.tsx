@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Wand2,
 } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type Stage = {
   label: string;
@@ -44,6 +45,7 @@ type Props = {
 };
 
 export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
+  const { t } = useT();
   const stages = mode === "quick" ? QUICK_STAGES : TARGETED_STAGES;
   const [stageIdx, setStageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -91,7 +93,7 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
           className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-8"
           aria-live="polite"
           role="dialog"
-          aria-label="Analyzing your resume"
+          aria-label={t("Analyzing your resume")}
         >
           {/* Backdrop with gradient + soft animated orbs */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0A2647] via-[#0d3259] to-[#0A2647]" />
@@ -123,17 +125,17 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
             <div className="text-center mb-7 sm:mb-8">
               <h2 className="font-serif text-2xl sm:text-3xl font-light text-[#1a1a1a] mb-2 tracking-tight">
                 {mode === "quick"
-                  ? "Polishing your resume"
+                  ? t("Polishing your resume")
                   : jobTitle?.trim()
-                    ? "Tailoring your resume"
-                    : "Analyzing your resume"}
+                    ? t("Tailoring your resume")
+                    : t("Analyzing your resume")}
               </h2>
               <p className="text-sm sm:text-base text-stone-500 font-light">
                 {mode === "quick"
-                  ? "Recruiter-grade polish in under a minute"
+                  ? t("Recruiter-grade polish in under a minute")
                   : jobTitle?.trim()
-                    ? `Optimizing for ${jobTitle.trim()}`
-                    : "Optimizing for your target role"}
+                    ? t("Optimizing for {role}", { role: jobTitle.trim() })
+                    : t("Optimizing for your target role")}
               </p>
             </div>
 
@@ -148,7 +150,7 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
                 />
               </div>
               <div className="mt-2 flex justify-between text-[10px] uppercase tracking-[0.18em] text-stone-400 font-medium">
-                <span>Analyzing</span>
+                <span>{t("Analyzing")}</span>
                 <span>{Math.round(progress)}%</span>
               </div>
             </div>
@@ -195,10 +197,10 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
                           active ? "text-[#0A2647]" : "text-[#1a1a1a]"
                         }`}
                       >
-                        {stage.label}
+                        {t(stage.label)}
                       </div>
                       <div className="text-xs sm:text-[13px] text-stone-500 font-light leading-snug">
-                        {stage.hint}
+                        {t(stage.hint)}
                       </div>
                     </div>
                   </li>
@@ -208,7 +210,7 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
 
             {/* Footnote */}
             <p className="mt-7 sm:mt-8 text-center text-[11px] sm:text-xs text-stone-400 font-light tracking-wide">
-              This usually takes 20-40 seconds. Hang tight — we're being thorough.
+              {t("This usually takes 20-40 seconds. Hang tight — we're being thorough.")}
             </p>
           </motion.div>
         </motion.div>

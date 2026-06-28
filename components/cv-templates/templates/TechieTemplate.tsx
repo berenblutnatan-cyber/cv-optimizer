@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 5: Techie
@@ -15,6 +16,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
 
 export function TechieTemplate({ data, themeColor, className }: TemplateProps) {
   const colors = getThemeColors(themeColor);
+  const { t } = useT();
 
   return (
     <A4PageWrapper className={className}>
@@ -66,19 +68,19 @@ export function TechieTemplate({ data, themeColor, className }: TemplateProps) {
           flexWrap: "wrap",
         }}>
           {hasContent(data.contact.email) && (
-            <span><span style={{ color: colors.primary }}>email:</span> &quot;{data.contact.email}&quot;</span>
+            <span><span style={{ color: colors.primary }}>{t("email:")}</span> &quot;{data.contact.email}&quot;</span>
           )}
           {hasContent(data.contact.phone) && (
-            <span><span style={{ color: colors.primary }}>phone:</span> &quot;{data.contact.phone}&quot;</span>
+            <span><span style={{ color: colors.primary }}>{t("phone:")}</span> &quot;{data.contact.phone}&quot;</span>
           )}
           {hasContent(data.contact.location) && (
-            <span><span style={{ color: colors.primary }}>location:</span> &quot;{data.contact.location}&quot;</span>
+            <span><span style={{ color: colors.primary }}>{t("location:")}</span> &quot;{data.contact.location}&quot;</span>
           )}
           {hasContent(data.contact.github) && (
-            <span><span style={{ color: colors.primary }}>github:</span> &quot;{data.contact.github}&quot;</span>
+            <span><span style={{ color: colors.primary }}>{t("github:")}</span> &quot;{data.contact.github}&quot;</span>
           )}
           {hasContent(data.contact.linkedin) && (
-            <span><span style={{ color: colors.primary }}>linkedin:</span> &quot;{data.contact.linkedin}&quot;</span>
+            <span><span style={{ color: colors.primary }}>{t("linkedin:")}</span> &quot;{data.contact.linkedin}&quot;</span>
           )}
         </div>
 
@@ -87,7 +89,7 @@ export function TechieTemplate({ data, themeColor, className }: TemplateProps) {
           {/* Skills Grid - Prominent */}
           {data.skills && data.skills.length > 0 && (
             <section style={{ marginBottom: "24px" }}>
-              <TechHeader title="tech_stack" color={colors.primary} />
+              <TechHeader title={t("tech_stack")} color={colors.primary} />
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
@@ -122,7 +124,7 @@ export function TechieTemplate({ data, themeColor, className }: TemplateProps) {
           {/* Summary */}
           {hasContent(data.summary) && (
             <section style={{ marginBottom: "20px" }}>
-              <TechHeader title="about_me" color={colors.primary} />
+              <TechHeader title={t("about_me")} color={colors.primary} />
               <p style={{
                 fontSize: "10px",
                 color: "#475569",
@@ -150,7 +152,7 @@ export function TechieTemplate({ data, themeColor, className }: TemplateProps) {
           {/* Languages */}
           {data.languages && data.languages.length > 0 && (
             <section>
-              <TechHeader title="languages" color={colors.primary} />
+              <TechHeader title={t("languages")} color={colors.primary} />
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 {data.languages.filter(hasContent).map((lang, idx) => (
                   <span key={idx} style={{

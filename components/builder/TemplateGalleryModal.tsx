@@ -11,6 +11,7 @@ import {
   type PresetCategory,
   type TemplatePreset,
 } from "@/lib/builder/templatePresets";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const A4_W = 794;
 
@@ -31,6 +32,7 @@ function PresetCard({
   onSelect: () => void;
   onMakeDemo: () => void;
 }) {
+  const { t } = useT();
   const frameRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [scale, setScale] = useState(0.26);
@@ -65,12 +67,12 @@ function PresetCard({
 
   return (
     <div
-      className={`group relative text-left rounded-xl border bg-white overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+      className={`group relative text-start rounded-xl border bg-white overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg ${
         selected ? "border-[#0A2647] ring-2 ring-[#0A2647]/30" : "border-stone-200 hover:border-[#0A2647]/40"
       }`}
     >
       {/* The whole card applies the design to the user's current CV. */}
-      <button type="button" onClick={onSelect} className="block w-full text-left focus-visible:outline-none">
+      <button type="button" onClick={onSelect} className="block w-full text-start focus-visible:outline-none">
         {/* A4-ratio thumbnail — kept clear of badges so the design is never hidden. */}
         <div ref={frameRef} className="relative w-full overflow-hidden bg-stone-100" style={{ aspectRatio: "210 / 297" }}>
           {visible ? (
@@ -93,7 +95,7 @@ function PresetCard({
           {/* Signals the preview is sample content (shown only while the demo CV is on screen). */}
           {isDemo ? (
             <div className="absolute bottom-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/85 backdrop-blur text-[#0A2647] text-[8.5px] font-bold uppercase tracking-wide shadow-sm group-hover:opacity-0 transition-opacity">
-              demo CV
+              {t("demo CV")}
             </div>
           ) : null}
         </div>
@@ -103,16 +105,16 @@ function PresetCard({
             <div className="text-[12.5px] font-semibold text-[#0A2647] truncate flex-1 min-w-0">{preset.name}</div>
             {preset.isNew ? (
               <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#0A2647] text-white text-[8.5px] font-bold tracking-wide">
-                <Sparkles className="h-2 w-2" /> NEW
+                <Sparkles className="h-2 w-2" /> {t("NEW")}
               </span>
             ) : null}
             {preset.premium ? (
               <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#B8860B] text-white text-[8.5px] font-bold tracking-wide">
-                <Crown className="h-2 w-2" /> PRO
+                <Crown className="h-2 w-2" /> {t("PRO")}
               </span>
             ) : (
               <span className="flex-shrink-0 inline-flex items-center px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[8.5px] font-bold tracking-wide">
-                FREE
+                {t("FREE")}
               </span>
             )}
           </div>
@@ -129,7 +131,7 @@ function PresetCard({
         }}
         className="absolute left-1/2 top-[42%] z-10 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-[#0A2647] shadow-lg ring-1 ring-black/5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto hover:bg-[#0A2647] hover:text-white focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none"
       >
-        <Sparkles className="h-3 w-3" /> Make a demo CV
+        <Sparkles className="h-3 w-3" /> {t("Make a demo CV")}
       </button>
     </div>
   );
@@ -156,6 +158,7 @@ export function TemplateGalleryModal({
   /** Apply this design AND load the sample CV into the builder. */
   onMakeDemo: (layout: BuilderTemplateId, color: ThemeColor) => void;
 }) {
+  const { t } = useT();
   const [category, setCategory] = useState<"All" | PresetCategory>("All");
   const [query, setQuery] = useState("");
 
@@ -182,9 +185,12 @@ export function TemplateGalleryModal({
       {/* Header */}
       <div className="flex-shrink-0 bg-white border-b border-stone-200 px-4 sm:px-6 py-3 flex items-center gap-4">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-[#0A2647] leading-tight">Templates</h2>
+          <h2 className="text-lg font-semibold text-[#0A2647] leading-tight">{t("Templates")}</h2>
           <p className="text-[12px] text-stone-500">
-            {TEMPLATE_PRESETS.length} designs across {new Set(TEMPLATE_PRESETS.map((p) => p.layout)).size} layouts — pick one to apply it instantly.
+            {t("{count} designs across {layouts} layouts — pick one to apply it instantly.", {
+              count: TEMPLATE_PRESETS.length,
+              layouts: new Set(TEMPLATE_PRESETS.map((p) => p.layout)).size,
+            })}
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -193,14 +199,14 @@ export function TemplateGalleryModal({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search templates or roles"
+              placeholder={t("Search templates or roles")}
               className="flex-1 bg-transparent text-[13px] text-[#1a1a1a] placeholder:text-stone-400 outline-none"
             />
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close templates"
+            aria-label={t("Close templates")}
             className="grid place-items-center h-9 w-9 rounded-full text-stone-500 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
           >
             <X className="h-5 w-5" />
@@ -232,7 +238,7 @@ export function TemplateGalleryModal({
       {/* Grid */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5">
         {list.length === 0 ? (
-          <p className="text-center text-sm text-stone-400 py-16">No templates match “{query}”.</p>
+          <p className="text-center text-sm text-stone-400 py-16">{t("No templates match “{query}”.", { query })}</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
             {list.map((preset) => (

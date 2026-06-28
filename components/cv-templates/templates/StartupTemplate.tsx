@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 7: Startup
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  */
 
 export function StartupTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   return (
@@ -34,7 +36,7 @@ export function StartupTemplate({ data, themeColor, className }: TemplateProps) 
             marginBottom: "8px",
           }}>
             <span style={{ fontSize: "10px", fontWeight: 600, color: colors.primary, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              {formatJobTitle(data.title || "Professional")}
+              {formatJobTitle(data.title || t("Professional"))}
             </span>
           </div>
           
@@ -91,7 +93,7 @@ export function StartupTemplate({ data, themeColor, className }: TemplateProps) 
         {/* Skills - Horizontal Badges */}
         {data.skills && data.skills.length > 0 && (
           <section style={{ marginBottom: "28px" }}>
-            <StartupSectionHeader title="What I Bring" color={colors.primary} />
+            <StartupSectionHeader title={t("What I Bring")} color={colors.primary} />
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               {data.skills.filter(hasContent).map((skill, idx) => (
                 <span key={idx} style={{
@@ -139,7 +141,7 @@ export function StartupTemplate({ data, themeColor, className }: TemplateProps) 
             gap: "16px",
           }}>
             <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Languages:
+              {t("Languages:")}
             </span>
             <div style={{ display: "flex", gap: "12px" }}>
               {data.languages.filter(hasContent).map((lang, idx) => (

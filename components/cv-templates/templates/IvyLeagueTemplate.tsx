@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 2: Ivy League
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  */
 
 export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   return (
@@ -68,7 +70,7 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
 
         {/* Summary */}
         {hasContent(data.summary) && (
-          <ClassicSection title="Professional Summary">
+          <ClassicSection title={t("Professional Summary")}>
             <p style={{ fontSize: "9px", color: "#374151", lineHeight: 1.4, textAlign: "justify" }}>
               {data.summary}
             </p>
@@ -86,7 +88,7 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
 
         {/* Skills */}
         {data.skills && data.skills.length > 0 && (
-          <ClassicSection title="Skills & Competencies">
+          <ClassicSection title={t("Skills & Competencies")}>
             <p style={{ fontSize: "9px", color: "#374151", lineHeight: 1.3 }}>
               {data.skills.filter(hasContent).join(" • ")}
             </p>
@@ -95,7 +97,7 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
 
         {/* Languages */}
         {data.languages && data.languages.length > 0 && (
-          <ClassicSection title="Languages">
+          <ClassicSection title={t("Languages")}>
             <p style={{ fontSize: "9px", color: "#374151", lineHeight: 1.3 }}>
               {data.languages.filter(hasContent).join(" • ")}
             </p>

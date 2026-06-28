@@ -15,8 +15,10 @@ import { track } from "@/lib/analytics";
 import { VoiceOrb } from "./VoiceOrb";
 import { Transcript } from "./Transcript";
 import { VoiceControls } from "./VoiceControls";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function VoiceBuilderClient() {
+  const { t } = useT();
   const router = useRouter();
   const resumeData = useResumeStore((s) => s.resumeData);
   const setResumeData = useResumeStore((s) => s.setResumeData);
@@ -72,7 +74,7 @@ export function VoiceBuilderClient() {
 
   async function onDone() {
     if (turns.length === 0) {
-      toast.message("Talk for a bit first — give us something to work with.");
+      toast.message(t("Talk for a bit first — give us something to work with."));
       return;
     }
     track("voice_session_completed", { duration_sec: elapsed, turns: turns.length });
@@ -96,14 +98,14 @@ export function VoiceBuilderClient() {
       if (data?.resumeData) {
         setResumeData(data.resumeData);
         track("voice_finalized", { duration_sec: elapsed });
-        toast.success("Got it — review your CV below.");
+        toast.success(t("Got it — review your CV below."));
         router.push("/builder?step=6&from=voice");
       } else {
         throw new Error("No resume data returned");
       }
     } catch (err) {
       track("voice_error", { stage: "finalize" });
-      toast.error(err instanceof Error ? err.message : "Something broke");
+      toast.error(err instanceof Error ? err.message : t("Something broke"));
       reset();
     }
   }
@@ -152,8 +154,7 @@ export function VoiceBuilderClient() {
         </GlassCard>
 
         <div className="text-center text-[11px] text-white/45">
-          About 3 minutes · 1 credit on finalize · transcript stays on this
-          device until you confirm
+          {t("About 3 minutes · 1 credit on finalize · transcript stays on this device until you confirm")}
         </div>
       </div>
 

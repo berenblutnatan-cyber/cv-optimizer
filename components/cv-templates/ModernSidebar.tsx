@@ -3,6 +3,7 @@
 import React from "react";
 import { A4PageWrapper, A4Grid } from "./A4PageWrapper";
 import { parseCV, isBulletLine, isJobTitleLine, splitSections } from "@/hooks/useCVDensity";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * ModernSidebar Template - "The Modern Professional"
@@ -209,6 +210,7 @@ function SectionHeader({
 }
 
 export function ModernSidebar({ data, photo }: ModernSidebarProps) {
+  const { t } = useT();
   const parsed = parseCV(data);
   const { name, contact, sections } = parsed;
   const { sidebar: sidebarSections, main: mainSections } = splitSections(sections);
@@ -278,7 +280,7 @@ export function ModernSidebar({ data, photo }: ModernSidebarProps) {
           {/* Contact Section */}
           {contact.length > 0 && (
             <div style={{ marginBottom: "24px" }}>
-              <SectionHeader variant="sidebar">Contact</SectionHeader>
+              <SectionHeader variant="sidebar">{t("Contact")}</SectionHeader>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {contact.map((c, idx) => (
                   <div
@@ -419,7 +421,7 @@ export function ModernSidebar({ data, photo }: ModernSidebarProps) {
                   margin: 0,
                 }}
               >
-                Professional Summary
+                {t("Professional Summary")}
               </p>
             )}
           </header>

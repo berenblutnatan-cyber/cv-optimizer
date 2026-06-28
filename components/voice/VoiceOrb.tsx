@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Mic, Square } from "lucide-react";
 import type { VoiceState } from "@/hooks/useVoiceSession";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const STATE_COPY: Record<VoiceState, string> = {
   idle: "Tap to start",
@@ -23,6 +24,7 @@ export function VoiceOrb({
   amplitude: number;
   onClick: () => void;
 }) {
+  const { t } = useT();
   const active = state !== "idle" && state !== "error";
   const scale = 1 + Math.min(0.35, amplitude * 1.2);
   const isUserTurn = state === "listening";
@@ -33,7 +35,7 @@ export function VoiceOrb({
       <button
         type="button"
         onClick={onClick}
-        aria-label={STATE_COPY[state]}
+        aria-label={t(STATE_COPY[state])}
         className="relative grid place-items-center focus:outline-none"
       >
         {/* Glow ring */}
@@ -94,7 +96,7 @@ export function VoiceOrb({
 
       <div className="text-center">
         <div className="text-[11px] uppercase tracking-[0.22em] text-white/55">
-          {STATE_COPY[state]}
+          {t(STATE_COPY[state])}
         </div>
       </div>
     </div>

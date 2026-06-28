@@ -17,8 +17,11 @@ import { SocialProofBadge } from "@/components/landing/SocialProofBadge";
 import { RewriteShowcase } from "@/components/landing/RewriteShowcase";
 import { TwoReaders } from "@/components/landing/TwoReaders";
 import { TemplateGallery } from "@/components/landing/TemplateGallery";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { getServerT } from "@/lib/i18n/server";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { t } = await getServerT();
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#0A2647]">
       <ScrollDepthTracker page="landing" />
@@ -34,19 +37,21 @@ export default function LandingPage() {
               className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none"
             >
               <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
-              <span className="sm:hidden">Score</span>
-              <span className="hidden sm:inline">CV Score Check</span>
+              <span className="sm:hidden">{t("Score")}</span>
+              <span className="hidden sm:inline">{t("CV Score Check")}</span>
             </Link>
+
+            <LanguageToggle className="hidden sm:inline-flex" />
 
             <SignedOut>
               <SignInButton mode="modal">
                 <button className="hidden md:inline-flex px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none">
-                  Sign In
+                  {t("Sign In")}
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
                 <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
-                  Get Started
+                  {t("Get Started")}
                 </button>
               </SignUpButton>
             </SignedOut>
@@ -78,7 +83,7 @@ export default function LandingPage() {
           className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 lg:flex flex-col items-center gap-1.5 text-[#0A2647]/40 transition-colors hover:text-[#0A2647] focus-visible:outline-none"
         >
           <span className="font-mono text-[10px] uppercase tracking-[0.24em]">
-            See how it works
+            {t("See how it works")}
           </span>
           <ChevronDown className="h-4 w-4 animate-bounce" strokeWidth={1.75} />
         </a>
@@ -98,14 +103,13 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
-              The rewrite engine
+              {t("The rewrite engine")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
-              One line decides whether they keep reading.
+              {t("One line decides whether they keep reading.")}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-[#0A2647]/55 sm:text-lg">
-              Hired turns the lines you&rsquo;d actually write into the ones a
-              recruiter repeats out loud. Same job — sharper proof.
+              {t("Hired turns the lines you’d actually write into the ones a recruiter repeats out loud. Same job — sharper proof.")}
             </p>
           </div>
 
@@ -125,15 +129,13 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#D4A83F]">
-              Before a human ever sees it
+              {t("Before a human ever sees it")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-white sm:text-4xl md:text-[2.7rem]">
-              Your résumé is read twice.
+              {t("Your résumé is read twice.")}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-white/60 sm:text-lg">
-              First by software deciding if you&rsquo;re worth forwarding. Then by
-              a person deciding if you&rsquo;re worth meeting. Most tools write for
-              one. Hired writes for both.
+              {t("First by software deciding if you’re worth forwarding. Then by a person deciding if you’re worth meeting. Most tools write for one. Hired writes for both.")}
             </p>
           </div>
 
@@ -150,14 +152,13 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
-              The templates
+              {t("The templates")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
-              Built to survive the scan and earn the read.
+              {t("Built to survive the scan and earn the read.")}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-[#0A2647]/55 sm:text-lg">
-              Every layout parses cleanly for the software and looks composed to
-              the person. Start with one — switch anytime, nothing&rsquo;s locked in.
+              {t("Every layout parses cleanly for the software and looks composed to the person. Start with one — switch anytime, nothing’s locked in.")}
             </p>
           </div>
 
@@ -167,13 +168,13 @@ export default function LandingPage() {
 
           <div className="mt-10 flex flex-col items-center gap-4">
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#0A2647]/40">
-              + 9 more in the studio
+              {t("+ 9 more in the studio")}
             </p>
             <Link
               href="/build/chat"
               className="group inline-flex items-center gap-2.5 rounded-full bg-[#0A2647] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#0d3259] hover:shadow-md focus-visible:outline-none"
             >
-              Start with a template
+              {t("Start with a template")}
               <ArrowRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-1"
                 strokeWidth={1.75}
@@ -190,10 +191,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
-              Early signals
+              {t("Early signals")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
-              What people tell us after the rewrite.
+              {t("What people tell us after the rewrite.")}
             </h2>
             <div className="mt-6 flex justify-center">
               <SocialProofBadge />
@@ -248,7 +249,7 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-10 text-center font-mono text-[11px] tracking-wide text-[#0A2647]/40">
-            Quotes from anonymized user interviews. Outcomes vary.
+            {t("Quotes from anonymized user interviews. Outcomes vary.")}
           </p>
         </div>
       </section>
@@ -264,11 +265,11 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-2xl px-4 text-center sm:px-8">
           <HiredSeal />
           <h2 className="mt-9 text-balance font-serif text-4xl leading-[1.05] text-white sm:text-5xl">
-            Stop tweaking. Get{" "}
-            <span className="italic text-[#D4A83F]">hired.</span>
+            {t("Stop tweaking. Get")}{" "}
+            <span className="italic text-[#D4A83F]">{t("hired.")}</span>
           </h2>
           <p className="mx-auto mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-white/70">
-            See where your résumé stands in 60 seconds — no signup, no card.
+            {t("See where your résumé stands in 60 seconds — no signup, no card.")}
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-5">
@@ -277,7 +278,7 @@ export default function LandingPage() {
                 href="/score"
                 className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
               >
-                Check your score — free
+                {t("Check your score — free")}
                 <ArrowRight
                   className="h-5 w-5 transition-transform group-hover:translate-x-1"
                   strokeWidth={1.5}
@@ -287,7 +288,7 @@ export default function LandingPage() {
                 href="#hero"
                 className="text-sm font-light tracking-wide text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:outline-none"
               >
-                or build one from scratch
+                {t("or build one from scratch")}
               </Link>
             </SignedOut>
             <SignedIn>
@@ -295,7 +296,7 @@ export default function LandingPage() {
                 href="/build/chat"
                 className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
               >
-                Continue building
+                {t("Continue building")}
                 <ArrowRight
                   className="h-5 w-5 transition-transform group-hover:translate-x-1"
                   strokeWidth={1.5}

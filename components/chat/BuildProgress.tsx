@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import type { ResumeData } from "@/types/resume";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export type ProgressItem = { key: string; label: string; done: boolean };
 
@@ -27,6 +28,7 @@ export function computeProgress(data: ResumeData): ProgressItem[] {
 }
 
 export function BuildProgress({ data }: { data: ResumeData }) {
+  const { t } = useT();
   const items = computeProgress(data);
   const done = items.filter((i) => i.done).length;
   const pct = Math.round((done / items.length) * 100);
@@ -35,7 +37,7 @@ export function BuildProgress({ data }: { data: ResumeData }) {
     <div>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/55">
-          Your CV
+          {t("Your CV")}
         </span>
         <span className="text-[11px] text-[#0A2647]/65 tabular-nums">{pct}%</span>
       </div>
@@ -54,7 +56,7 @@ export function BuildProgress({ data }: { data: ResumeData }) {
             }`}
           >
             <Check className={`h-3 w-3 ${item.done ? "text-[#059669]" : "text-[#0A2647]/25"}`} />
-            {item.label}
+            {t(item.label)}
           </span>
         ))}
       </div>

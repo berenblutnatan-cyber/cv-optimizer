@@ -9,6 +9,7 @@ import parseRawCV from "@/lib/cvParser";
 import { exportToPdf } from "@/utils/exportToPdf";
 import { exportToWord } from "@/utils/exportToWord";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -142,6 +143,7 @@ const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; pre
 ];
 
 export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle, onTabChange }: AnalysisResultsProps) {
+  const { t } = useT();
   const [activeTab, setActiveTab] = useState<"overview" | "changes" | "skills" | "optimized" | "cover-letter" | "enhance">("overview");
   const [copiedOptimized, setCopiedOptimized] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
@@ -249,10 +251,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
         document.body.removeChild(ta);
       }
       setCopiedOptimized(true);
-      toast.success("Copied to clipboard");
+      toast.success(t("Copied to clipboard"));
       setTimeout(() => setCopiedOptimized(false), 2000);
     } catch (err) {
-      toast.error("Couldn't copy — please long-press the resume and copy manually");
+      toast.error(t("Couldn't copy — please long-press the resume and copy manually"));
     }
   };
 
@@ -290,8 +292,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
       await exportToPdf(pdfCaptureRef.current, `Optimized_Resume_${Date.now()}`);
     } catch (error) {
       console.error("PDF export failed:", error);
-      toast.error("PDF export failed", {
-        description: "Please try again.",
+      toast.error(t("PDF export failed"), {
+        description: t("Please try again."),
       });
     } finally {
       setIsDownloading(false);
@@ -307,13 +309,13 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
     try {
       await exportToWord(resumeData, `Optimized_Resume_${Date.now()}`);
       
-      toast.success("Success!", {
-        description: "Your CV has been downloaded.",
+      toast.success(t("Success!"), {
+        description: t("Your CV has been downloaded."),
       });
     } catch (error) {
       console.error("Word export failed:", error);
-      toast.error("Word export failed", {
-        description: "Please try again.",
+      toast.error(t("Word export failed"), {
+        description: t("Please try again."),
       });
     } finally {
       setIsDownloading(false);
@@ -326,12 +328,12 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   const acceptedChangesCount = Object.values(changeStatuses).filter(s => s === "accepted").length;
   
   const tabs = [
-    { id: "overview" as const, label: "Overview", step: 1 },
+    { id: "overview" as const, label: t("Overview"), step: 1 },
     // ENHANCE FEATURE TEMPORARILY HIDDEN
     // ...(onEnhanceWithDeepDive ? [{ id: "enhance" as const, label: "Enhance", step: 2, highlight: true }] : []),
-    { id: "changes" as const, label: `Review Changes`, step: 2, count: pendingChangesCount > 0 ? pendingChangesCount : undefined, badge: acceptedChangesCount > 0 ? `${acceptedChangesCount} accepted` : undefined },
-    { id: "optimized" as const, label: "Optimized CV", step: 3 },
-    ...(coverLetterTab ? [{ id: "cover-letter" as const, label: "Cover Letter", step: 4 }] : []),
+    { id: "changes" as const, label: t("Review Changes"), step: 2, count: pendingChangesCount > 0 ? pendingChangesCount : undefined, badge: acceptedChangesCount > 0 ? t("{n} accepted", { n: acceptedChangesCount }) : undefined },
+    { id: "optimized" as const, label: t("Optimized CV"), step: 3 },
+    ...(coverLetterTab ? [{ id: "cover-letter" as const, label: t("Cover Letter"), step: 4 }] : []),
   ];
 
   return (
@@ -406,7 +408,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <div className="bg-[#FAFAF8] rounded-sm p-5 sm:p-8 border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <Target className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
-                <h3 className="font-serif text-xl text-[#1a1a1a]">Match Analysis</h3>
+                <h3 className="font-serif text-xl text-[#1a1a1a]">{t("Match Analysis")}</h3>
               </div>
               <p className="text-stone-600 leading-relaxed font-light">{results.summary}</p>
             </div>
@@ -420,8 +422,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       <TrendingUp className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-slate-900">Score Improvement</h3>
-                      <p className="text-xs sm:text-sm text-slate-600 truncate">How your CV improved after optimization</p>
+                      <h3 className="font-semibold text-slate-900">{t("Score Improvement")}</h3>
+                      <p className="text-xs sm:text-sm text-slate-600 truncate">{t("How your CV improved after optimization")}</p>
                     </div>
                   </div>
                   
@@ -430,7 +432,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     <button
                       onClick={() => setShowScoreBreakdown((v) => !v)}
                       aria-expanded={showScoreBreakdown}
-                      aria-label="Show score breakdown"
+                      aria-label={t("Show score breakdown")}
                       className="w-8 h-8 rounded-full bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors focus-visible:outline-none"
                     >
                       <Info className="w-4 h-4 text-emerald-600" />
@@ -441,13 +443,13 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       showScoreBreakdown ? "opacity-100 visible" : "opacity-0 invisible"
                     }`}>
                       <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-slate-200 transform rotate-45"></div>
-                      <h4 className="font-semibold text-slate-900 text-sm mb-3">Detailed Breakdown</h4>
+                      <h4 className="font-semibold text-slate-900 text-sm mb-3">{t("Detailed Breakdown")}</h4>
                       <div className="space-y-3">
                         {/* ATS Score */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Zap className="w-4 h-4 text-blue-500" />
-                            <span className="text-xs font-medium text-slate-700">ATS</span>
+                            <span className="text-xs font-medium text-slate-700">{t("ATS")}</span>
                           </div>
                           <div className="flex items-baseline gap-1">
                             <span className="text-slate-400 text-sm">{results.scoreComparison.original.breakdown.ats}</span>
@@ -463,7 +465,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Target className="w-4 h-4 text-purple-500" />
-                            <span className="text-xs font-medium text-slate-700">Impact</span>
+                            <span className="text-xs font-medium text-slate-700">{t("Impact")}</span>
                           </div>
                           <div className="flex items-baseline gap-1">
                             <span className="text-slate-400 text-sm">{results.scoreComparison.original.breakdown.impact}</span>
@@ -479,7 +481,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <BarChart3 className="w-4 h-4 text-amber-500" />
-                            <span className="text-xs font-medium text-slate-700">Clarity</span>
+                            <span className="text-xs font-medium text-slate-700">{t("Clarity")}</span>
                           </div>
                           <div className="flex items-baseline gap-1">
                             <span className="text-slate-400 text-sm">{results.scoreComparison.original.breakdown.clarity}</span>
@@ -499,7 +501,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <div className="grid grid-cols-3 gap-2 sm:gap-4">
                   {/* Original Score */}
                   <div className="bg-white rounded-lg p-3 sm:p-4 text-center border border-slate-200">
-                    <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider mb-1">Original</p>
+                    <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider mb-1">{t("Original")}</p>
                     <p className="text-2xl sm:text-3xl font-bold text-slate-400">{results.scoreComparison.original.total}</p>
                   </div>
 
@@ -511,12 +513,12 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     <span className="text-base sm:text-lg font-bold text-emerald-600">
                       +{results.scoreComparison.improvement}
                     </span>
-                    <span className="text-[10px] sm:text-xs text-emerald-600">points</span>
+                    <span className="text-[10px] sm:text-xs text-emerald-600">{t("points")}</span>
                   </div>
 
                   {/* Optimized Score */}
                   <div className="bg-emerald-500 rounded-lg p-3 sm:p-4 text-center">
-                    <p className="text-[10px] sm:text-xs text-emerald-100 uppercase tracking-wider mb-1">Optimized</p>
+                    <p className="text-[10px] sm:text-xs text-emerald-100 uppercase tracking-wider mb-1">{t("Optimized")}</p>
                     <p className="text-2xl sm:text-3xl font-bold text-white">{results.scoreComparison.optimized.total}</p>
                   </div>
                 </div>
@@ -531,7 +533,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-indigo-600" />
                   </div>
-                Strengths
+                {t("Strengths")}
               </h4>
                 <ul className="space-y-3">
                 {results.strengths.map((strength, index) => (
@@ -549,7 +551,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-amber-600" />
                   </div>
-                Areas to Improve
+                {t("Areas to Improve")}
               </h4>
                 <ul className="space-y-3">
                 {(results.improvements ?? []).map((improvement, index) => (
@@ -570,7 +572,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                     <Check className="w-5 h-5 text-indigo-600" />
                   </div>
-                  Keywords Found
+                  {t("Keywords Found")}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {results.keywords.present.map((keyword, index) => (
@@ -582,7 +584,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     </span>
                   ))}
                   {results.keywords.present.length === 0 && (
-                    <span className="text-slate-400 text-sm">No keywords found</span>
+                    <span className="text-slate-400 text-sm">{t("No keywords found")}</span>
                   )}
                 </div>
               </div>
@@ -593,7 +595,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-rose-600" />
                   </div>
-                  Missing Keywords
+                  {t("Missing Keywords")}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {results.keywords.missing.map((keyword, index) => (
@@ -605,7 +607,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     </span>
                   ))}
                   {results.keywords.missing.length === 0 && (
-                    <span className="text-slate-400 text-sm">No missing keywords</span>
+                    <span className="text-slate-400 text-sm">{t("No missing keywords")}</span>
                   )}
                 </div>
               </div>
@@ -632,7 +634,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {regularChanges.length === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-                <p className="text-slate-500">No suggested changes - your CV looks great!</p>
+                <p className="text-slate-500">{t("No suggested changes - your CV looks great!")}</p>
               </div>
             ) : (
               regularChanges.map((change, index) => (
@@ -644,14 +646,14 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   
                   <div className="p-5 space-y-4">
                   <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Original</p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">{t("Original")}</p>
                       <p className="p-4 rounded-lg border leading-relaxed text-slate-600 bg-rose-50 border-rose-100 line-through">
                       {change.original}
                     </p>
                   </div>
 
                   <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">Suggested</p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">{t("Suggested")}</p>
                       <p className="p-4 rounded-lg border leading-relaxed text-slate-800 bg-indigo-50 border-indigo-100">
                       {change.suggested}
                     </p>
@@ -672,7 +674,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 onClick={() => goToTab("optimized")}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg focus-visible:outline-none"
               >
-                View Optimized CV
+                {t("View Optimized CV")}
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -685,9 +687,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <div className="flex-shrink-0 mb-4">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div>
-                  <h3 className="text-slate-900 font-semibold mb-1">Your Optimized Resume</h3>
+                  <h3 className="text-slate-900 font-semibold mb-1">{t("Your Optimized Resume")}</h3>
                   <p className="text-slate-500 text-sm">
-                    {isEditMode ? "Click any text to edit directly" : "Adjust font & spacing from the toolbar below"}
+                    {isEditMode ? t("Click any text to edit directly") : t("Adjust font & spacing from the toolbar below")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -701,7 +703,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       }`}
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      Preview
+                      {t("Preview")}
                     </button>
                     <button
                       onClick={() => setIsEditMode(true)}
@@ -711,23 +713,23 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       }`}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
-                      Edit
+                      {t("Edit")}
                     </button>
                   </div>
                   <button
                     onClick={handleCopyOptimized}
-                    aria-label={copiedOptimized ? "Copied" : "Copy optimized resume text"}
+                    aria-label={copiedOptimized ? t("Copied") : t("Copy optimized resume text")}
                     className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
                   >
                     {copiedOptimized ? <Check className="w-4 h-4 text-indigo-500" /> : <Copy className="w-4 h-4" />}
-                    {copiedOptimized ? "Copied!" : "Copy"}
+                    {copiedOptimized ? t("Copied!") : t("Copy")}
                   </button>
 
                   {/* PDF Download */}
                   <button
                     onClick={handleDownloadPdf}
                     disabled={isDownloading}
-                    aria-label="Download as PDF"
+                    aria-label={t("Download as PDF")}
                     className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
                   >
                     {isDownloading && downloadType === "pdf" ? (
@@ -742,7 +744,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <button
                     onClick={handleDownloadWord}
                     disabled={isDownloading}
-                    aria-label="Download as Word document"
+                    aria-label={t("Download as Word document")}
                     className="flex items-center gap-2 px-3 py-2 border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 rounded-lg transition-colors text-sm font-medium focus-visible:outline-none"
                   >
                     {isDownloading && downloadType === "word" ? (
@@ -760,7 +762,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <div className="flex items-center gap-3 px-4 py-2.5 mt-3 bg-indigo-50 border border-indigo-200 rounded-lg">
                   <Sparkles className="w-4 h-4 text-indigo-600" />
                   <span className="text-sm text-indigo-800">
-                    <strong>Editing Mode:</strong> Click any text in the resume to edit it directly.
+                    <strong>{t("Editing Mode:")}</strong> {t("Click any text in the resume to edit it directly.")}
                   </span>
                 </div>
               )}
@@ -800,8 +802,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         <Camera className="w-4 h-4 text-violet-600" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-slate-900 text-sm">Profile Photo</h3>
-                        <p className="text-xs text-slate-500">Optional - for templates with photo support</p>
+                        <h3 className="font-medium text-slate-900 text-sm">{t("Profile Photo")}</h3>
+                        <p className="text-xs text-slate-500">{t("Optional - for templates with photo support")}</p>
                       </div>
                     </div>
                     
@@ -809,13 +811,13 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       <div className="flex items-center gap-3">
                         <img 
                           src={photoPreview} 
-                          alt="Profile preview" 
+                          alt={t("Profile preview")}
                           className="w-10 h-10 rounded-lg object-cover border-2 border-violet-200"
                         />
                         <button
                           onClick={removePhoto}
                           className="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
-                          title="Remove photo"
+                          title={t("Remove photo")}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -823,7 +825,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     ) : (
                       <label className="flex items-center gap-2 px-3 py-1.5 bg-violet-100 hover:bg-violet-200 text-violet-700 text-sm font-medium rounded-lg cursor-pointer transition-colors">
                         <User className="w-4 h-4" />
-                        <span>Add Photo</span>
+                        <span>{t("Add Photo")}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -857,7 +859,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       onClick={() => goToTab("cover-letter")}
                       className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide focus-visible:outline-none"
                     >
-                      Generate Cover Letter
+                      {t("Generate Cover Letter")}
                       <ChevronRight className="w-5 h-5" strokeWidth={1.5} />
                     </button>
                   </div>
@@ -1137,9 +1139,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
               </div>
               <div>
                 <h4 className="font-serif text-lg text-[#1a1a1a]">
-                  {coverLetterTab.title || "AI Cover Letter Generator"}
+                  {coverLetterTab.title || t("AI Cover Letter Generator")}
                 </h4>
-                <p className="text-stone-500 text-sm font-light">{coverLetterTab.subtitle || "Generate a tailored cover letter for this position"}</p>
+                <p className="text-stone-500 text-sm font-light">{coverLetterTab.subtitle || t("Generate a tailored cover letter for this position")}</p>
               </div>
             </div>
 
@@ -1149,7 +1151,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <div className="flex items-start gap-3">
                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
                   <div className="flex-1">
-                    <h4 className="font-medium text-red-800 mb-1">Unable to Generate Cover Letter</h4>
+                    <h4 className="font-medium text-red-800 mb-1">{t("Unable to Generate Cover Letter")}</h4>
                     <p className="text-sm text-red-700 font-light">{coverLetterTab.error}</p>
                   </div>
                   {coverLetterTab.onDismissError && (
@@ -1173,22 +1175,22 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
               {coverLetterTab.isGenerating ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Generating cover letter...
+                  {t("Generating cover letter...")}
                 </>
               ) : coverLetterTab.text ? (
                 <>
                   <CheckCircle2 className="w-5 h-5" strokeWidth={1.5} />
-                  Cover Letter Generated
+                  {t("Cover Letter Generated")}
                 </>
               ) : coverLetterTab.error ? (
                 <>
                   <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                  Try Again
+                  {t("Try Again")}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                  Generate Cover Letter
+                  {t("Generate Cover Letter")}
                 </>
               )}
             </button>
@@ -1202,7 +1204,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-sm font-medium rounded-sm transition-colors shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.1)]"
                   >
                     {coverLetterTab.copied ? <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} /> : <Copy className="w-4 h-4" strokeWidth={1.5} />}
-                    {coverLetterTab.copied ? "Copied" : "Copy"}
+                    {coverLetterTab.copied ? t("Copied") : t("Copy")}
                   </button>
                   <button
                     onClick={coverLetterTab.onDownloadPdf}
@@ -1210,7 +1212,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-stone-50 disabled:bg-stone-100 border border-stone-200 text-stone-700 text-sm font-medium rounded-sm transition-colors shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.1)] disabled:shadow-none"
                   >
                     <FileText className="w-4 h-4" strokeWidth={1.5} />
-                    {coverLetterTab.isDownloadingPdf ? "Downloading..." : "Download PDF"}
+                    {coverLetterTab.isDownloadingPdf ? t("Downloading...") : t("Download PDF")}
                   </button>
                 </div>
                 <textarea

@@ -9,6 +9,8 @@
  * Static + CSS hover only (fail-safe, no scroll-reveal gating).
  */
 
+import { getServerT } from "@/lib/i18n/server";
+
 type Kind = "ivy" | "modern" | "executive" | "aurora";
 
 const DOCS: { kind: Kind; name: string; tag: string; badge?: string }[] = [
@@ -18,7 +20,8 @@ const DOCS: { kind: Kind; name: string; tag: string; badge?: string }[] = [
   { kind: "aurora", name: "Aurora", tag: "Creative", badge: "New" },
 ];
 
-export function TemplateGallery() {
+export async function TemplateGallery() {
+  const { t } = await getServerT();
   return (
     <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
       {DOCS.map((d) => (
@@ -26,15 +29,15 @@ export function TemplateGallery() {
           <div className="relative overflow-hidden rounded-xl border border-[#0A2647]/10 bg-white shadow-[0_22px_50px_-30px_rgba(10,38,71,0.5)] transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_36px_70px_-30px_rgba(10,38,71,0.55)]">
             {d.badge && (
               <span className="absolute right-2.5 top-2.5 z-10 rounded-full bg-[#0A2647] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[#F3D58A]">
-                {d.badge}
+                {t(d.badge)}
               </span>
             )}
             <Doc kind={d.kind} />
           </div>
           <figcaption className="mt-3 flex items-baseline justify-between px-0.5">
-            <span className="font-serif text-[15px] text-[#0A2647]">{d.name}</span>
+            <span className="font-serif text-[15px] text-[#0A2647]">{t(d.name)}</span>
             <span className="font-mono text-[10px] uppercase tracking-wider text-[#0A2647]/40">
-              {d.tag}
+              {t(d.tag)}
             </span>
           </figcaption>
         </figure>

@@ -14,6 +14,7 @@ import {
   FONTS,
 } from "@/utils/formatting";
 import { ResumePreview, ResumePreviewData, ResumeSection, ResumeSectionItem, ResumeContact } from "./ResumePreview";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * EditableResumePreview Component
@@ -345,6 +346,7 @@ function ModernSidebarEditable({
   updateSectionItem,
   updateBullet,
 }: EditableTemplateProps) {
+  const { t } = useT();
   const sidebarBg = "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)";
   const ringClass = "ring-2 ring-indigo-400/50";
 
@@ -411,7 +413,7 @@ function ModernSidebarEditable({
 
           {/* Contact Section */}
           <div style={{ padding: "16px 20px 16px 24px" }}>
-            <SidebarSectionPremium title="Contact" color={colors.primary}>
+            <SidebarSectionPremium title={t("Contact")} color={colors.primary}>
               <ContactFieldPremium
                 icon={<Icons.Email />}
                 value={data.contact.email || ""}
@@ -457,7 +459,7 @@ function ModernSidebarEditable({
           {/* Skills Section - Tag Cloud */}
           {(data.skills && data.skills.length > 0) && (
             <div style={{ padding: "0 20px 16px 24px" }}>
-              <SidebarSectionPremium title="Expertise" color={colors.primary}>
+              <SidebarSectionPremium title={t("Expertise")} color={colors.primary}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {data.skills.map((skill, idx) => (
                     <div 
@@ -472,7 +474,7 @@ function ModernSidebarEditable({
                         id={`skill-${idx}`}
                         value={skill}
                         onChange={(v) => updateSkill?.(idx, v)}
-                        placeholder="Skill"
+                        placeholder={t("Skill")}
                         className="text-[9px] font-medium"
                         style={{ color: colors.primary }}
                         focusRingClass={ringClass}
@@ -488,7 +490,7 @@ function ModernSidebarEditable({
           {/* Languages Section */}
           {(data.languages && data.languages.length > 0) && (
             <div style={{ padding: "0 20px 20px 24px" }}>
-              <SidebarSectionPremium title="Languages" color={colors.primary}>
+              <SidebarSectionPremium title={t("Languages")} color={colors.primary}>
                 {data.languages.map((lang, idx) => (
                   <div key={idx} style={{ 
                     display: "flex", 
@@ -510,7 +512,7 @@ function ModernSidebarEditable({
                       id={`language-${idx}`}
                       value={lang}
                       onChange={(v) => updateLanguage?.(idx, v)}
-                      placeholder="Language - Level"
+                      placeholder={t("Language - Level")}
                       className="text-[10px] text-slate-300"
                       focusRingClass={ringClass}
                       disabled={readOnly}
@@ -539,7 +541,7 @@ function ModernSidebarEditable({
               id="header-name"
               value={data.name}
               onChange={(v) => updateField("name", v)}
-              placeholder="Your Full Name"
+              placeholder={t("Your Full Name")}
               className="text-[32px] font-bold text-slate-900 tracking-tight leading-none capitalize"
               style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif" }}
               focusRingClass="ring-2 ring-indigo-500/50"
@@ -561,7 +563,7 @@ function ModernSidebarEditable({
                 id="header-title"
                 value={data.title || ""}
                 onChange={(v) => updateField("title", v)}
-                placeholder="PROFESSIONAL TITLE"
+                placeholder={t("PROFESSIONAL TITLE")}
                 className="text-[12px] font-semibold tracking-[0.2em] uppercase"
                 style={{ color: colors.primary }}
                 focusRingClass="ring-2 ring-indigo-500/50"
@@ -572,12 +574,12 @@ function ModernSidebarEditable({
 
           {/* Professional Summary */}
           {(hasContent(data.summary) || !readOnly) && (
-            <MainSectionPremium title="Profile" color={colors.primary} icon="◉">
+            <MainSectionPremium title={t("Profile")} color={colors.primary} icon="◉">
               <EditableField
                 id="summary"
                 value={data.summary || ""}
                 onChange={(v) => updateField("summary", v)}
-                placeholder="Write a compelling professional summary that highlights your key strengths and career objectives..."
+                placeholder={t("Write a compelling professional summary that highlights your key strengths and career objectives...")}
                 className="text-[11px] text-slate-600 leading-[1.7]"
                 type="textarea"
                 multiline
@@ -628,6 +630,7 @@ function IvyLeagueEditable({
   updateSectionItem,
   updateBullet,
 }: EditableTemplateProps) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-slate-400/50";
 
   return (
@@ -644,7 +647,7 @@ function IvyLeagueEditable({
             id="ivy-name"
             value={data.name}
             onChange={(v) => updateField("name", v)}
-            placeholder="Your Name"
+            placeholder={t("Your Name")}
             className="text-[26px] font-bold tracking-wide uppercase text-center"
             focusRingClass={ringClass}
             disabled={readOnly}
@@ -653,7 +656,7 @@ function IvyLeagueEditable({
             id="ivy-title"
             value={data.title || ""}
             onChange={(v) => updateField("title", v)}
-            placeholder="Professional Title"
+            placeholder={t("Professional Title")}
             className="text-[12px] text-slate-600 italic mt-2 text-center"
             focusRingClass={ringClass}
             disabled={readOnly}
@@ -673,7 +676,7 @@ function IvyLeagueEditable({
               id="ivy-phone"
               value={data.contact.phone || ""}
               onChange={(v) => updateContact("phone", v)}
-              placeholder="Phone"
+              placeholder={t("Phone")}
               className="text-[10px] text-slate-600"
               focusRingClass={ringClass}
               disabled={readOnly}
@@ -682,7 +685,7 @@ function IvyLeagueEditable({
               id="ivy-location"
               value={data.contact.location || ""}
               onChange={(v) => updateContact("location", v)}
-              placeholder="Location"
+              placeholder={t("Location")}
               className="text-[10px] text-slate-600"
               focusRingClass={ringClass}
               disabled={readOnly}
@@ -693,12 +696,12 @@ function IvyLeagueEditable({
         {/* Summary */}
         {(hasContent(data.summary) || !readOnly) && (
           <section style={{ marginBottom: "16px" }}>
-            <h2 style={ivySectionHeader}>Summary</h2>
+            <h2 style={ivySectionHeader}>{t("Summary")}</h2>
             <EditableField
               id="ivy-summary"
               value={data.summary || ""}
               onChange={(v) => updateField("summary", v)}
-              placeholder="Professional summary..."
+              placeholder={t("Professional summary...")}
               className="text-[11px] leading-relaxed text-slate-700 text-justify"
               type="textarea"
               multiline
@@ -719,7 +722,7 @@ function IvyLeagueEditable({
                     id={`ivy-${sIdx}-${iIdx}-title`}
                     value={item.title || ""}
                     onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
-                    placeholder="Position / Degree"
+                    placeholder={t("Position / Degree")}
                     className="text-[11px] font-bold text-slate-900"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -728,7 +731,7 @@ function IvyLeagueEditable({
                     id={`ivy-${sIdx}-${iIdx}-date`}
                     value={item.date || ""}
                     onChange={(v) => updateSectionItem(sIdx, iIdx, { date: v })}
-                    placeholder="Date"
+                    placeholder={t("Date")}
                     className="text-[10px] text-slate-500 italic"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -738,7 +741,7 @@ function IvyLeagueEditable({
                   id={`ivy-${sIdx}-${iIdx}-subtitle`}
                   value={item.subtitle || ""}
                   onChange={(v) => updateSectionItem(sIdx, iIdx, { subtitle: v })}
-                  placeholder="Company / Institution"
+                  placeholder={t("Company / Institution")}
                   className="text-[10px] text-slate-600 italic"
                   focusRingClass={ringClass}
                   disabled={readOnly}
@@ -750,7 +753,7 @@ function IvyLeagueEditable({
                       id={`ivy-${sIdx}-${iIdx}-bullet-${bIdx}`}
                       value={bullet}
                       onChange={(v) => updateBullet(sIdx, iIdx, bIdx, v)}
-                      placeholder="Achievement..."
+                      placeholder={t("Achievement...")}
                       className="text-[10px] text-slate-600 leading-relaxed flex-1"
                       focusRingClass={ringClass}
                       disabled={readOnly}
@@ -765,7 +768,7 @@ function IvyLeagueEditable({
         {/* Skills */}
         {data.skills && data.skills.length > 0 && (
           <section>
-            <h2 style={ivySectionHeader}>Skills</h2>
+            <h2 style={ivySectionHeader}>{t("Skills")}</h2>
             <p style={{ fontSize: "10px", color: "#444" }}>
               {data.skills.filter(hasContent).join(" • ")}
             </p>
@@ -800,6 +803,7 @@ function MinimalistEditable({
   updateSectionItem,
   updateBullet,
 }: EditableTemplateProps) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-slate-400/50";
 
   return (
@@ -816,7 +820,7 @@ function MinimalistEditable({
             id="min-name"
             value={data.name}
             onChange={(v) => updateField("name", v)}
-            placeholder="Your Name"
+            placeholder={t("Your Name")}
             className="text-[32px] font-light text-slate-900"
             focusRingClass={ringClass}
             disabled={readOnly}
@@ -859,7 +863,7 @@ function MinimalistEditable({
               id="min-summary"
               value={data.summary || ""}
               onChange={(v) => updateField("summary", v)}
-              placeholder="Professional summary..."
+              placeholder={t("Professional summary...")}
               className="text-[11px] text-slate-600 leading-relaxed"
               type="textarea"
               multiline
@@ -889,7 +893,7 @@ function MinimalistEditable({
                     id={`min-${sIdx}-${iIdx}-title`}
                     value={item.title || ""}
                     onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
-                    placeholder="Position"
+                    placeholder={t("Position")}
                     className="text-[11px] font-semibold text-slate-800"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -898,7 +902,7 @@ function MinimalistEditable({
                     id={`min-${sIdx}-${iIdx}-date`}
                     value={item.date || ""}
                     onChange={(v) => updateSectionItem(sIdx, iIdx, { date: v })}
-                    placeholder="Date"
+                    placeholder={t("Date")}
                     className="text-[9px] text-slate-400"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -908,7 +912,7 @@ function MinimalistEditable({
                   id={`min-${sIdx}-${iIdx}-subtitle`}
                   value={item.subtitle || ""}
                   onChange={(v) => updateSectionItem(sIdx, iIdx, { subtitle: v })}
-                  placeholder="Company"
+                  placeholder={t("Company")}
                   className="text-[10px] text-slate-500"
                   focusRingClass={ringClass}
                   disabled={readOnly}
@@ -919,7 +923,7 @@ function MinimalistEditable({
                     id={`min-${sIdx}-${iIdx}-bullet-${bIdx}`}
                     value={bullet}
                     onChange={(v) => updateBullet(sIdx, iIdx, bIdx, v)}
-                    placeholder="Achievement..."
+                    placeholder={t("Achievement...")}
                     className="text-[10px] text-slate-600 leading-relaxed mt-1"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -950,6 +954,7 @@ function CreativeEditable({
   updateSectionItem,
   updateBullet,
 }: EditableTemplateProps) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-white/50";
 
   return (
@@ -978,7 +983,7 @@ function CreativeEditable({
               id="creative-name"
               value={data.name}
               onChange={(v) => updateField("name", v)}
-              placeholder="Your Name"
+              placeholder={t("Your Name")}
               className="text-[24px] font-bold text-white"
               focusRingClass={ringClass}
               disabled={readOnly}
@@ -987,7 +992,7 @@ function CreativeEditable({
               id="creative-title"
               value={data.title || ""}
               onChange={(v) => updateField("title", v)}
-              placeholder="Professional Title"
+              placeholder={t("Professional Title")}
               className="text-[12px] text-white/90 mt-1"
               focusRingClass={ringClass}
               disabled={readOnly}
@@ -1007,12 +1012,12 @@ function CreativeEditable({
           {/* Summary */}
           {(hasContent(data.summary) || !readOnly) && (
             <section style={{ marginBottom: "18px" }}>
-              <h2 style={creativeSectionHeader(colors.primary)}>About Me</h2>
+              <h2 style={creativeSectionHeader(colors.primary)}>{t("About Me")}</h2>
               <EditableField
                 id="creative-summary"
                 value={data.summary || ""}
                 onChange={(v) => updateField("summary", v)}
-                placeholder="About yourself..."
+                placeholder={t("About yourself...")}
                 className="text-[11px] text-slate-600 leading-relaxed"
                 type="textarea"
                 multiline
@@ -1036,7 +1041,7 @@ function CreativeEditable({
                           id={`cr-${sIdx}-${iIdx}-title`}
                           value={item.title || ""}
                           onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
-                          placeholder="Position"
+                          placeholder={t("Position")}
                           className="text-[11px] font-semibold text-slate-800"
                           focusRingClass="ring-2 ring-indigo-500/50"
                           disabled={readOnly}
@@ -1045,7 +1050,7 @@ function CreativeEditable({
                           id={`cr-${sIdx}-${iIdx}-date`}
                           value={item.date || ""}
                           onChange={(v) => updateSectionItem(sIdx, iIdx, { date: v })}
-                          placeholder="Date"
+                          placeholder={t("Date")}
                           className="text-[9px] font-semibold"
                           style={{ color: colors.primary }}
                           focusRingClass="ring-2 ring-indigo-500/50"
@@ -1056,7 +1061,7 @@ function CreativeEditable({
                         id={`cr-${sIdx}-${iIdx}-subtitle`}
                         value={item.subtitle || ""}
                         onChange={(v) => updateSectionItem(sIdx, iIdx, { subtitle: v })}
-                        placeholder="Company"
+                        placeholder={t("Company")}
                         className="text-[10px]"
                         style={{ color: colors.dark }}
                         focusRingClass="ring-2 ring-indigo-500/50"
@@ -1069,7 +1074,7 @@ function CreativeEditable({
                             id={`cr-${sIdx}-${iIdx}-bullet-${bIdx}`}
                             value={bullet}
                             onChange={(v) => updateBullet(sIdx, iIdx, bIdx, v)}
-                            placeholder="Achievement..."
+                            placeholder={t("Achievement...")}
                             className="text-[10px] text-slate-600 flex-1"
                             focusRingClass="ring-2 ring-indigo-500/50"
                             disabled={readOnly}
@@ -1086,7 +1091,7 @@ function CreativeEditable({
             <div>
               {data.skills && data.skills.length > 0 && (
                 <section style={{ marginBottom: "16px" }}>
-                  <h2 style={creativeSectionHeader(colors.primary)}>Skills</h2>
+                  <h2 style={creativeSectionHeader(colors.primary)}>{t("Skills")}</h2>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {data.skills.filter(hasContent).map((skill, idx) => (
                       <span key={idx} style={{
@@ -1105,7 +1110,7 @@ function CreativeEditable({
               )}
               {data.languages && data.languages.length > 0 && (
                 <section>
-                  <h2 style={creativeSectionHeader(colors.primary)}>Languages</h2>
+                  <h2 style={creativeSectionHeader(colors.primary)}>{t("Languages")}</h2>
                   {data.languages.filter(hasContent).map((lang, idx) => (
                     <p key={idx} style={{ fontSize: "10px", color: "#555", margin: "4px 0" }}>• {lang}</p>
                   ))}
@@ -1388,11 +1393,12 @@ function EditableSectionItemPremium({
   onUpdate: (updates: Partial<ResumeSectionItem>) => void;
   onBulletUpdate: (bulletIndex: number, value: string) => void;
 }) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-indigo-500/50";
 
   return (
-    <div style={{ 
-      marginBottom: "16px", 
+    <div style={{
+      marginBottom: "16px",
       paddingLeft: "8px",
       borderLeft: `3px solid ${color}20`,
       paddingBottom: "4px",
@@ -1402,7 +1408,7 @@ function EditableSectionItemPremium({
           id={`item-${item.id}-title`}
           value={item.title || ""}
           onChange={(v) => onUpdate({ title: v })}
-          placeholder="Position / Role"
+          placeholder={t("Position / Role")}
           className="text-[12px] font-bold text-slate-900"
           style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif" }}
           focusRingClass={ringClass}
@@ -1412,7 +1418,7 @@ function EditableSectionItemPremium({
           id={`item-${item.id}-date`}
           value={item.date || ""}
           onChange={(v) => onUpdate({ date: v })}
-          placeholder="2020 - Present"
+          placeholder={t("2020 - Present")}
           className="text-[10px] font-medium"
           style={{ 
             color,
@@ -1428,7 +1434,7 @@ function EditableSectionItemPremium({
         id={`item-${item.id}-subtitle`}
         value={item.subtitle || ""}
         onChange={(v) => onUpdate({ subtitle: v })}
-        placeholder="Company Name"
+        placeholder={t("Company Name")}
         className="text-[11px] font-semibold text-slate-600 mb-2"
         focusRingClass={ringClass}
         disabled={readOnly}
@@ -1438,7 +1444,7 @@ function EditableSectionItemPremium({
           id={`item-${item.id}-desc`}
           value={item.description}
           onChange={(v) => onUpdate({ description: v })}
-          placeholder="Brief description..."
+          placeholder={t("Brief description...")}
           className="text-[10px] text-slate-500 leading-relaxed mt-1"
           type="textarea"
           multiline
@@ -1466,7 +1472,7 @@ function EditableSectionItemPremium({
                 id={`item-${item.id}-bullet-${bIdx}`}
                 value={bullet}
                 onChange={(v) => onBulletUpdate(bIdx, v)}
-                placeholder="Key achievement or responsibility..."
+                placeholder={t("Key achievement or responsibility...")}
                 className="text-[10px] text-slate-600 leading-[1.6] flex-1"
                 focusRingClass={ringClass}
                 disabled={readOnly}
@@ -1492,6 +1498,7 @@ function EditableSectionItem({
   onUpdate: (updates: Partial<ResumeSectionItem>) => void;
   onBulletUpdate: (bulletIndex: number, value: string) => void;
 }) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-indigo-500/50";
 
   return (
@@ -1501,7 +1508,7 @@ function EditableSectionItem({
           id={`item-${item.id}-title`}
           value={item.title || ""}
           onChange={(v) => onUpdate({ title: v })}
-          placeholder="Position / Degree"
+          placeholder={t("Position / Degree")}
           className="text-[11px] font-semibold text-slate-800"
           focusRingClass={ringClass}
           disabled={readOnly}
@@ -1510,7 +1517,7 @@ function EditableSectionItem({
           id={`item-${item.id}-date`}
           value={item.date || ""}
           onChange={(v) => onUpdate({ date: v })}
-          placeholder="Date"
+          placeholder={t("Date")}
           className="text-[10px] text-slate-500 italic"
           focusRingClass={ringClass}
           disabled={readOnly}
@@ -1520,7 +1527,7 @@ function EditableSectionItem({
         id={`item-${item.id}-subtitle`}
         value={item.subtitle || ""}
         onChange={(v) => onUpdate({ subtitle: v })}
-        placeholder="Company / Institution"
+        placeholder={t("Company / Institution")}
         className="text-[10px] font-medium"
         style={{ color }}
         focusRingClass={ringClass}
@@ -1531,7 +1538,7 @@ function EditableSectionItem({
           id={`item-${item.id}-desc`}
           value={item.description}
           onChange={(v) => onUpdate({ description: v })}
-          placeholder="Description..."
+          placeholder={t("Description...")}
           className="text-[10px] text-slate-600 leading-relaxed mt-1"
           type="textarea"
           multiline
@@ -1548,7 +1555,7 @@ function EditableSectionItem({
                 id={`item-${item.id}-bullet-${bIdx}`}
                 value={bullet}
                 onChange={(v) => onBulletUpdate(bIdx, v)}
-                placeholder="Achievement..."
+                placeholder={t("Achievement...")}
                 className="text-[10px] text-slate-600 leading-relaxed flex-1"
                 focusRingClass={ringClass}
                 disabled={readOnly}
@@ -1577,6 +1584,7 @@ function ExecutiveEditable({
   updateSectionItem,
   updateBullet,
 }: EditableTemplateProps) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-indigo-500/50";
 
   return (
@@ -1610,7 +1618,7 @@ function ExecutiveEditable({
               id="exec-name"
               value={data.name}
               onChange={(v) => updateField("name", v)}
-              placeholder="Your Full Name"
+              placeholder={t("Your Full Name")}
               className="text-[28px] font-bold text-white"
               style={{ fontFamily: FONTS.heading.sans }}
               focusRingClass={ringClass}
@@ -1620,7 +1628,7 @@ function ExecutiveEditable({
               id="exec-title"
               value={data.title || ""}
               onChange={(v) => updateField("title", v)}
-              placeholder="Professional Title"
+              placeholder={t("Professional Title")}
               className="text-[12px] font-medium uppercase tracking-wider mt-1"
               style={{ color: colors.primary }}
               focusRingClass={ringClass}
@@ -1665,7 +1673,7 @@ function ExecutiveEditable({
               id="exec-location"
               value={data.contact.location || ""}
               onChange={(v) => updateContact("location", v)}
-              placeholder="City, Country"
+              placeholder={t("City, Country")}
               className="text-[10px] font-medium text-white"
               focusRingClass={ringClass}
               disabled={readOnly}
@@ -1689,13 +1697,13 @@ function ExecutiveEditable({
                 borderBottom: `2px solid ${colors.primary}`,
                 display: "inline-block",
               }}>
-                Executive Summary
+                {t("Executive Summary")}
               </h2>
               <EditableField
                 id="exec-summary"
                 value={data.summary || ""}
                 onChange={(v) => updateField("summary", v)}
-                placeholder="Write a compelling executive summary..."
+                placeholder={t("Write a compelling executive summary...")}
                 className="text-[11px] text-slate-700 leading-[1.7]"
                 type="textarea"
                 multiline
@@ -1751,7 +1759,7 @@ function ExecutiveEditable({
                     color: "#111827",
                     marginBottom: "10px",
                   }}>
-                    Core Competencies
+                    {t("Core Competencies")}
                   </h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {data.skills.map((skill, idx) => (
@@ -1760,7 +1768,7 @@ function ExecutiveEditable({
                         id={`exec-skill-${idx}`}
                         value={skill}
                         onChange={(v) => updateSkill?.(idx, v)}
-                        placeholder="Skill"
+                        placeholder={t("Skill")}
                         className="text-[10px] font-medium text-slate-700"
                         style={{
                           backgroundColor: "#f9fafb",
@@ -1786,7 +1794,7 @@ function ExecutiveEditable({
                     color: "#111827",
                     marginBottom: "10px",
                   }}>
-                    Languages
+                    {t("Languages")}
                   </h2>
                   {data.languages.map((lang, idx) => (
                     <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
@@ -1800,7 +1808,7 @@ function ExecutiveEditable({
                         id={`exec-lang-${idx}`}
                         value={lang}
                         onChange={(v) => updateLanguage?.(idx, v)}
-                        placeholder="Language - Level"
+                        placeholder={t("Language - Level")}
                         className="text-[10px] text-slate-600"
                         focusRingClass={ringClass}
                         disabled={readOnly}
@@ -1831,6 +1839,7 @@ function TechieEditable({
   updateSectionItem,
   updateBullet,
 }: Omit<EditableTemplateProps, "updateLanguage" | "photo">) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-indigo-500/50";
   const monoFont = "var(--font-mono), 'JetBrains Mono', monospace";
 
@@ -1857,7 +1866,7 @@ function TechieEditable({
             id="tech-name"
             value={data.name}
             onChange={(v) => updateField("name", v)}
-            placeholder="Your Name"
+            placeholder={t("Your Name")}
             className="text-[24px] font-bold text-white"
             style={{ fontFamily: monoFont }}
             focusRingClass={ringClass}
@@ -1869,7 +1878,7 @@ function TechieEditable({
               id="tech-title"
               value={data.title || ""}
               onChange={(v) => updateField("title", v)}
-              placeholder="Developer Title"
+              placeholder={t("Developer Title")}
               className="text-[12px] text-slate-400 ml-1"
               style={{ display: "inline-block" }}
               focusRingClass={ringClass}
@@ -1953,7 +1962,7 @@ function TechieEditable({
                     id={`tech-skill-${idx}`}
                     value={skill}
                     onChange={(v) => updateSkill?.(idx, v)}
-                    placeholder="Skill"
+                    placeholder={t("Skill")}
                     className="text-[10px] font-medium text-slate-700"
                     style={{
                       backgroundColor: "#f8fafc",
@@ -1990,7 +1999,7 @@ function TechieEditable({
                 id="tech-summary"
                 value={data.summary || ""}
                 onChange={(v) => updateField("summary", v)}
-                placeholder="Brief about yourself..."
+                placeholder={t("Brief about yourself...")}
                 className="text-[10px] text-slate-600 leading-[1.6]"
                 style={{
                   backgroundColor: "#fafafa",
@@ -2036,7 +2045,7 @@ function TechieEditable({
                       id={`tech-item-${item.id}-title`}
                       value={item.title || ""}
                       onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
-                      placeholder="Position"
+                      placeholder={t("Position")}
                       className="text-[12px] font-semibold text-slate-900"
                       style={{ fontFamily: monoFont }}
                       focusRingClass={ringClass}
@@ -2046,7 +2055,7 @@ function TechieEditable({
                       id={`tech-item-${item.id}-date`}
                       value={item.date || ""}
                       onChange={(v) => updateSectionItem(sIdx, iIdx, { date: v })}
-                      placeholder="Date"
+                      placeholder={t("Date")}
                       className="text-[9px] font-medium"
                       style={{
                         color: colors.primary,
@@ -2063,7 +2072,7 @@ function TechieEditable({
                     id={`tech-item-${item.id}-subtitle`}
                     value={item.subtitle || ""}
                     onChange={(v) => updateSectionItem(sIdx, iIdx, { subtitle: v })}
-                    placeholder="Company"
+                    placeholder={t("Company")}
                     className="text-[10px] text-slate-500 mt-1"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -2077,7 +2086,7 @@ function TechieEditable({
                             id={`tech-item-${item.id}-bullet-${bIdx}`}
                             value={bullet}
                             onChange={(v) => updateBullet(sIdx, iIdx, bIdx, v)}
-                            placeholder="Achievement..."
+                            placeholder={t("Achievement...")}
                             className="text-[10px] text-slate-600 leading-[1.5] flex-1"
                             focusRingClass={ringClass}
                             disabled={readOnly}
@@ -2111,6 +2120,7 @@ function StartupEditable({
   updateSectionItem,
   updateBullet,
 }: Omit<EditableTemplateProps, "photo">) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-indigo-500/50";
 
   return (
@@ -2134,7 +2144,7 @@ function StartupEditable({
               id="startup-title"
               value={data.title || ""}
               onChange={(v) => updateField("title", v)}
-              placeholder="Professional Title"
+              placeholder={t("Professional Title")}
               className="text-[10px] font-semibold uppercase tracking-wider"
               style={{ color: colors.primary }}
               focusRingClass={ringClass}
@@ -2146,7 +2156,7 @@ function StartupEditable({
             id="startup-name"
             value={data.name}
             onChange={(v) => updateField("name", v)}
-            placeholder="Your Name"
+            placeholder={t("Your Name")}
             className="text-[38px] font-extrabold text-slate-900 leading-none"
             style={{ fontFamily: FONTS.heading.sans, letterSpacing: "-0.02em" }}
             focusRingClass={ringClass}
@@ -2218,7 +2228,7 @@ function StartupEditable({
               id="startup-summary"
               value={data.summary || ""}
               onChange={(v) => updateField("summary", v)}
-              placeholder="Write an impactful summary..."
+              placeholder={t("Write an impactful summary...")}
               className="text-[13px] text-slate-700 leading-[1.7]"
               type="textarea"
               multiline
@@ -2247,7 +2257,7 @@ function StartupEditable({
                 backgroundColor: colors.primary,
                 borderRadius: "2px",
               }} />
-              What I Bring
+              {t("What I Bring")}
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {data.skills.map((skill, idx) => (
@@ -2272,7 +2282,7 @@ function StartupEditable({
                     id={`startup-skill-${idx}`}
                     value={skill}
                     onChange={(v) => updateSkill?.(idx, v)}
-                    placeholder="Skill"
+                    placeholder={t("Skill")}
                     className="text-[10px] font-semibold text-slate-700"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -2316,7 +2326,7 @@ function StartupEditable({
                       id={`startup-item-${item.id}-title`}
                       value={item.title || ""}
                       onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
-                      placeholder="Position"
+                      placeholder={t("Position")}
                       className="text-[13px] font-bold text-slate-900"
                       style={{ fontFamily: FONTS.heading.sans }}
                       focusRingClass={ringClass}
@@ -2326,7 +2336,7 @@ function StartupEditable({
                       id={`startup-item-${item.id}-subtitle`}
                       value={item.subtitle || ""}
                       onChange={(v) => updateSectionItem(sIdx, iIdx, { subtitle: v })}
-                      placeholder="Company"
+                      placeholder={t("Company")}
                       className="text-[11px] font-medium mt-1"
                       style={{ color: colors.primary }}
                       focusRingClass={ringClass}
@@ -2337,7 +2347,7 @@ function StartupEditable({
                     id={`startup-item-${item.id}-date`}
                     value={item.date || ""}
                     onChange={(v) => updateSectionItem(sIdx, iIdx, { date: v })}
-                    placeholder="Date"
+                    placeholder={t("Date")}
                     className="text-[10px] font-semibold text-slate-500"
                     style={{
                       backgroundColor: "#f3f4f6",
@@ -2377,7 +2387,7 @@ function StartupEditable({
                           id={`startup-item-${item.id}-bullet-${bIdx}`}
                           value={bullet}
                           onChange={(v) => updateBullet(sIdx, iIdx, bIdx, v)}
-                          placeholder="Achievement..."
+                          placeholder={t("Achievement...")}
                           className="text-[10px] text-slate-600 leading-[1.5] flex-1"
                           focusRingClass={ringClass}
                           disabled={readOnly}
@@ -2402,7 +2412,7 @@ function StartupEditable({
             gap: "14px",
           }}>
             <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Languages:
+              {t("Languages:")}
             </span>
             <div style={{ display: "flex", gap: "10px" }}>
               {data.languages.map((lang, idx) => (
@@ -2411,7 +2421,7 @@ function StartupEditable({
                   id={`startup-lang-${idx}`}
                   value={lang}
                   onChange={(v) => updateLanguage?.(idx, v)}
-                  placeholder="Language"
+                  placeholder={t("Language")}
                   className="text-[10px] text-slate-600"
                   focusRingClass={ringClass}
                   disabled={readOnly}
@@ -2441,6 +2451,7 @@ function InternationalEditable({
   updateSectionItem,
   updateBullet,
 }: EditableTemplateProps) {
+  const { t } = useT();
   const ringClass = "ring-2 ring-indigo-500/50";
 
   return (
@@ -2484,7 +2495,7 @@ function InternationalEditable({
               textAlign: "center",
               flexShrink: 0,
             }}>
-              Photo
+              {t("Photo")}
             </div>
           )}
 
@@ -2494,7 +2505,7 @@ function InternationalEditable({
               id="intl-name"
               value={data.name}
               onChange={(v) => updateField("name", v)}
-              placeholder="Full Name"
+              placeholder={t("Full Name")}
               className="text-[24px] font-bold text-slate-800"
               style={{ fontFamily: FONTS.heading.sans }}
               focusRingClass={ringClass}
@@ -2504,7 +2515,7 @@ function InternationalEditable({
               id="intl-title"
               value={data.title || ""}
               onChange={(v) => updateField("title", v)}
-              placeholder="Professional Title"
+              placeholder={t("Professional Title")}
               className="text-[12px] font-medium mt-1"
               style={{ color: colors.primary }}
               focusRingClass={ringClass}
@@ -2520,7 +2531,7 @@ function InternationalEditable({
             }}>
               {(hasContent(data.contact.email) || !readOnly) && (
                 <div style={{ display: "flex", gap: "6px" }}>
-                  <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "50px" }}>Email:</span>
+                  <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "50px" }}>{t("Email:")}</span>
                   <EditableField
                     id="intl-email"
                     value={data.contact.email || ""}
@@ -2534,7 +2545,7 @@ function InternationalEditable({
               )}
               {(hasContent(data.contact.phone) || !readOnly) && (
                 <div style={{ display: "flex", gap: "6px" }}>
-                  <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "50px" }}>Phone:</span>
+                  <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "50px" }}>{t("Phone:")}</span>
                   <EditableField
                     id="intl-phone"
                     value={data.contact.phone || ""}
@@ -2548,12 +2559,12 @@ function InternationalEditable({
               )}
               {(hasContent(data.contact.location) || !readOnly) && (
                 <div style={{ display: "flex", gap: "6px" }}>
-                  <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "50px" }}>Address:</span>
+                  <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "50px" }}>{t("Address:")}</span>
                   <EditableField
                     id="intl-location"
                     value={data.contact.location || ""}
                     onChange={(v) => updateContact("location", v)}
-                    placeholder="City, Country"
+                    placeholder={t("City, Country")}
                     className="text-[10px] text-slate-700"
                     focusRingClass={ringClass}
                     disabled={readOnly}
@@ -2582,13 +2593,13 @@ function InternationalEditable({
                   borderBottom: `2px solid ${colors.primary}`,
                   display: "inline-block",
                 }}>
-                  Profile
+                  {t("Profile")}
                 </h2>
                 <EditableField
                   id="intl-summary"
                   value={data.summary || ""}
                   onChange={(v) => updateField("summary", v)}
-                  placeholder="Professional summary..."
+                  placeholder={t("Professional summary...")}
                   className="text-[10px] text-slate-600 leading-[1.7]"
                   type="textarea"
                   multiline
@@ -2622,7 +2633,7 @@ function InternationalEditable({
                           id={`intl-item-${item.id}-title`}
                           value={item.title || ""}
                           onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
-                          placeholder="Position/Degree"
+                          placeholder={t("Position/Degree")}
                           className="text-[11px] font-semibold text-slate-800"
                           focusRingClass={ringClass}
                           disabled={readOnly}
@@ -2631,7 +2642,7 @@ function InternationalEditable({
                           id={`intl-item-${item.id}-subtitle`}
                           value={item.subtitle || ""}
                           onChange={(v) => updateSectionItem(sIdx, iIdx, { subtitle: v })}
-                          placeholder="Company/Institution"
+                          placeholder={t("Company/Institution")}
                           className="text-[10px] text-slate-500 mt-1"
                           focusRingClass={ringClass}
                           disabled={readOnly}
@@ -2641,7 +2652,7 @@ function InternationalEditable({
                         id={`intl-item-${item.id}-date`}
                         value={item.date || ""}
                         onChange={(v) => updateSectionItem(sIdx, iIdx, { date: v })}
-                        placeholder="Date"
+                        placeholder={t("Date")}
                         className="text-[10px] font-medium"
                         style={{ color: colors.primary }}
                         focusRingClass={ringClass}
@@ -2656,7 +2667,7 @@ function InternationalEditable({
                               id={`intl-item-${item.id}-bullet-${bIdx}`}
                               value={bullet}
                               onChange={(v) => updateBullet(sIdx, iIdx, bIdx, v)}
-                              placeholder="Achievement..."
+                              placeholder={t("Achievement...")}
                               className="text-[10px] text-slate-600 leading-[1.5]"
                               focusRingClass={ringClass}
                               disabled={readOnly}
@@ -2687,7 +2698,7 @@ function InternationalEditable({
                   borderBottom: `2px solid ${colors.primary}`,
                   display: "inline-block",
                 }}>
-                  Skills
+                  {t("Skills")}
                 </h2>
                 {data.skills.map((skill, idx) => (
                   <div key={idx} style={{ marginBottom: "6px" }}>
@@ -2695,7 +2706,7 @@ function InternationalEditable({
                       id={`intl-skill-${idx}`}
                       value={skill}
                       onChange={(v) => updateSkill?.(idx, v)}
-                      placeholder="Skill"
+                      placeholder={t("Skill")}
                       className="text-[10px] text-slate-600"
                       focusRingClass={ringClass}
                       disabled={readOnly}
@@ -2732,7 +2743,7 @@ function InternationalEditable({
                   borderBottom: `2px solid ${colors.primary}`,
                   display: "inline-block",
                 }}>
-                  Languages
+                  {t("Languages")}
                 </h2>
                 {data.languages.map((lang, idx) => (
                   <div key={idx} style={{
@@ -2746,7 +2757,7 @@ function InternationalEditable({
                       id={`intl-lang-${idx}`}
                       value={lang}
                       onChange={(v) => updateLanguage?.(idx, v)}
-                      placeholder="Language - Level"
+                      placeholder={t("Language - Level")}
                       className="text-[10px] text-slate-600"
                       focusRingClass={ringClass}
                       disabled={readOnly}

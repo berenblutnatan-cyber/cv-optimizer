@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type Example = {
   role: string;
@@ -104,6 +105,7 @@ function usePrefersReducedMotion() {
 }
 
 export function RewriteShowcase() {
+  const { t } = useT();
   const reduce = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const [auto, setAuto] = useState(true);
@@ -171,30 +173,30 @@ export function RewriteShowcase() {
         <div className="p-6 sm:p-9">
           {/* BEFORE — the machine register */}
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#0A2647]/40">
-            The line you'd write
+            {t("The line you'd write")}
           </p>
           <p className="mt-3 min-h-[3.5rem] font-mono text-[15px] leading-relaxed text-[#0A2647]/45 sm:text-base">
-            {ex.before}
+            {t(ex.before)}
           </p>
 
           {/* seam */}
           <div className="my-6 flex items-center gap-3" aria-hidden>
             <span className="h-px flex-1 bg-[#0A2647]/10" />
             <span className="inline-flex items-center gap-2 rounded-full bg-[#B8860B]/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9a6b08]">
-              Hired rewrites
+              {t("Hired rewrites")}
             </span>
             <span className="h-px flex-1 bg-[#0A2647]/10" />
           </div>
 
           {/* AFTER — the human register */}
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#9a6b08]">
-            What a recruiter remembers
+            {t("What a recruiter remembers")}
           </p>
           <p
             key={`after-${index}`}
             className="mt-3 min-h-[3.5rem] animate-fade-in font-serif text-xl leading-snug text-[#0A2647] sm:text-2xl"
           >
-            <Quantified text={ex.after} />
+            <Quantified text={t(ex.after)} />
           </p>
 
           {/* keyword chips the parser was hunting for */}
@@ -205,7 +207,7 @@ export function RewriteShowcase() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-[#B8860B]/30 bg-[#B8860B]/[0.08] px-3 py-1 font-mono text-xs text-[#9a6b08]"
               >
                 <span className="text-[#B8860B]">✓</span>
-                {k}
+                {t(k)}
               </span>
             ))}
           </div>
@@ -214,7 +216,7 @@ export function RewriteShowcase() {
           <div className="mt-7 rounded-2xl bg-[#0A2647]/[0.035] p-4 sm:p-5">
             <div className="flex items-baseline justify-between">
               <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#0A2647]/50">
-                ATS match score
+                {t("ATS match score")}
               </span>
               <span className="flex items-baseline gap-2 font-mono tabular-nums">
                 <span className="text-2xl font-semibold text-[#0A2647]">{score}</span>
@@ -236,8 +238,8 @@ export function RewriteShowcase() {
 
       {/* Role pills — proof it works for any career, and the way to drive it */}
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-        <span className="mr-1 hidden font-mono text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/40 sm:inline">
-          Try a role
+        <span className="me-1 hidden font-mono text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/40 sm:inline">
+          {t("Try a role")}
         </span>
         {EXAMPLES.map((e, i) => (
           <button
@@ -250,7 +252,7 @@ export function RewriteShowcase() {
                 : "border-[#0A2647]/15 bg-white text-[#0A2647]/70 hover:border-[#0A2647]/40 hover:text-[#0A2647]"
             }`}
           >
-            {e.role}
+            {t(e.role)}
           </button>
         ))}
       </div>

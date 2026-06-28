@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 3: Minimalist
@@ -15,6 +16,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
 
 export function MinimalistTemplate({ data, themeColor, className }: TemplateProps) {
   const colors = getThemeColors(themeColor);
+  const { t } = useT();
 
   return (
     <A4PageWrapper className={className}>
@@ -85,7 +87,7 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
 
         {/* Skills - Horizontal Tags */}
         {data.skills && data.skills.length > 0 && (
-          <MinimalSection title="Skills" color={colors.primary}>
+          <MinimalSection title={t("Skills")} color={colors.primary}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
               {data.skills.filter(hasContent).map((skill, idx) => (
                 <span key={idx} style={{
@@ -105,7 +107,7 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
 
         {/* Languages */}
         {data.languages && data.languages.length > 0 && (
-          <MinimalSection title="Languages" color={colors.primary}>
+          <MinimalSection title={t("Languages")} color={colors.primary}>
             <div style={{ textAlign: "center", fontSize: "10px", color: "#6b7280" }}>
               {data.languages.filter(hasContent).join("  ·  ")}
             </div>

@@ -10,8 +10,10 @@ import { GlassCard } from "@/components/shell/GlassCard";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function StartChoice() {
+  const { t } = useT();
   const router = useRouter();
   const search = useSearchParams();
   const { setRoles, setCv, cvFileName } = useOnboardingStore();
@@ -38,10 +40,10 @@ export function StartChoice() {
       const text = await file.text().catch(() => "");
       setCv(file.name, text);
       track("start_choice", { choice: "upload", file_size: file.size });
-      toast.success(`Got ${file.name} — opening optimizer…`);
+      toast.success(t("Got {fileName} — opening optimizer…", { fileName: file.name }));
       router.push("/optimize?source=upload");
     } catch (e) {
-      toast.error("Couldn't read that file — try a PDF or DOCX.");
+      toast.error(t("Couldn't read that file — try a PDF or DOCX."));
     } finally {
       setParsing(false);
     }
@@ -59,8 +61,8 @@ export function StartChoice() {
               <UploadCloud className="h-7 w-7 text-[#1a1a1a]" strokeWidth={1.7} />
             </span>
             <div>
-              <div className="font-serif italic text-2xl text-white">Upload my CV</div>
-              <div className="mt-1 text-sm text-white/65">PDF or DOCX, under 5MB</div>
+              <div className="font-serif italic text-2xl text-white">{t("Upload my CV")}</div>
+              <div className="mt-1 text-sm text-white/65">{t("PDF or DOCX, under 5MB")}</div>
             </div>
             <input
               ref={fileRef}
@@ -74,7 +76,7 @@ export function StartChoice() {
               }}
             />
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm">
-              {parsing ? "Reading…" : cvFileName ? `Replace (${cvFileName})` : "Choose file"}
+              {parsing ? t("Reading…") : cvFileName ? t("Replace ({fileName})", { fileName: cvFileName }) : t("Choose file")}
             </span>
           </label>
         </GlassCard>
@@ -87,9 +89,9 @@ export function StartChoice() {
               <Wand2 className="h-7 w-7 text-white" strokeWidth={1.7} />
             </span>
             <div>
-              <div className="font-serif italic text-2xl text-white">Build a new CV</div>
+              <div className="font-serif italic text-2xl text-white">{t("Build a new CV")}</div>
               <div className="mt-1 text-sm text-white/65">
-                Chat with our coach — type or talk — and watch your CV build itself.
+                {t("Chat with our coach — type or talk — and watch your CV build itself.")}
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center justify-center flex-wrap">
@@ -100,7 +102,7 @@ export function StartChoice() {
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  Tell your story (5 min)
+                  {t("Tell your story (5 min)")}
                 </Link>
                 <Link
                   href="/build/voice"
@@ -108,32 +110,32 @@ export function StartChoice() {
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-glass-border text-white font-medium text-sm hover:bg-white/20 transition-colors"
                 >
                   <Mic className="h-4 w-4" />
-                  Voice call
+                  {t("Voice call")}
                 </Link>
                 <Link
                   href="/builder"
                   onClick={() => track("start_choice", { choice: "manual_build" })}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-glass-border text-white font-medium text-sm hover:bg-white/20 transition-colors"
                 >
-                  Step-by-step
+                  {t("Step-by-step")}
                 </Link>
               </SignedIn>
               <SignedOut>
                 <SignUpButton mode="modal" forceRedirectUrl="/build/chat">
                   <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm">
                     <MessageCircle className="h-4 w-4" />
-                    Tell your story (5 min)
+                    {t("Tell your story (5 min)")}
                   </button>
                 </SignUpButton>
                 <SignUpButton mode="modal" forceRedirectUrl="/build/voice">
                   <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-glass-border text-white font-medium text-sm hover:bg-white/20 transition-colors">
                     <Mic className="h-4 w-4" />
-                    Voice call
+                    {t("Voice call")}
                   </button>
                 </SignUpButton>
                 <SignUpButton mode="modal">
                   <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-glass-border text-white font-medium text-sm hover:bg-white/20 transition-colors">
-                    Step-by-step
+                    {t("Step-by-step")}
                   </button>
                 </SignUpButton>
               </SignedOut>

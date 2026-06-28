@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 11: Compact
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  * for senior candidates with a lot to say.
  */
 export function CompactTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   return (
@@ -41,7 +43,7 @@ export function CompactTemplate({ data, themeColor, className }: TemplateProps) 
           </header>
 
           {hasContent(data.summary) && (
-            <Section title="Summary" color={colors.primary} light={colors.light}>
+            <Section title={t("Summary")} color={colors.primary} light={colors.light}>
               <p style={{ fontSize: "9.5px", color: "#4b5563", lineHeight: 1.55 }}>{data.summary}</p>
             </Section>
           )}
@@ -73,13 +75,13 @@ export function CompactTemplate({ data, themeColor, className }: TemplateProps) 
           ))}
 
           {data.skills && data.skills.length > 0 && (
-            <Section title="Skills" color={colors.primary} light={colors.light}>
+            <Section title={t("Skills")} color={colors.primary} light={colors.light}>
               <p style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.6 }}>{data.skills.filter(hasContent).join("  ·  ")}</p>
             </Section>
           )}
 
           {data.languages && data.languages.length > 0 && (
-            <Section title="Languages" color={colors.primary} light={colors.light}>
+            <Section title={t("Languages")} color={colors.primary} light={colors.light}>
               <p style={{ fontSize: "9.5px", color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
             </Section>
           )}

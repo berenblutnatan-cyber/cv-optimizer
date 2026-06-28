@@ -30,6 +30,7 @@ import { saveAnalysisToSession } from "@/lib/analysisSession";
 import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
 import { FreeCreditToast } from "@/components/FreeCreditToast";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const DRAFT_KEY = "optimizer_draft";
 
@@ -56,6 +57,7 @@ const base64ToFile = (base64: string, fileName: string, mimeType: string): File 
 };
 
 export function OptimizerClient() {
+  const { t } = useT();
   const router = useRouter();
   const { isSignedIn, isLoaded } = useUser();
   const [showFreeCreditToast, setShowFreeCreditToast] = useState(false);
@@ -253,15 +255,15 @@ export function OptimizerClient() {
     });
 
     if (!hasResume) {
-      toast.error("Add your resume to continue", {
-        description: "Upload a PDF/DOCX or paste your CV text",
+      toast.error(t("Add your resume to continue"), {
+        description: t("Upload a PDF/DOCX or paste your CV text"),
       });
       focusEmptyField("cv-text");
       return;
     }
     if (!isQuickMode && !hasJobContext) {
-      toast.error("Add the target role to continue", {
-        description: "A job title, description, or LinkedIn URL works — or switch to Quick mode",
+      toast.error(t("Add the target role to continue"), {
+        description: t("A job title, description, or LinkedIn URL works — or switch to Quick mode"),
       });
       focusEmptyField(jobInputMode === "url" ? "job-url" : "job-title");
       return;
@@ -334,7 +336,7 @@ export function OptimizerClient() {
         oocModal.open({ trigger: "optimize" });
         return;
       }
-      if (!response.ok) throw new Error(data.error || "Analysis failed");
+      if (!response.ok) throw new Error(data.error || t("Analysis failed"));
 
       saveAnalysisToSession({ 
         analysis: data.analysis, 
@@ -373,8 +375,8 @@ export function OptimizerClient() {
       track("optimize_failed", {
         message: err instanceof Error ? err.message : "unknown",
       });
-      toast.error("Analysis failed — you weren't charged", {
-        description: err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      toast.error(t("Analysis failed — you weren't charged"), {
+        description: err instanceof Error ? err.message : t("Something went wrong. Please try again."),
       });
     } finally {
       setIsAnalyzing(false);
@@ -400,11 +402,11 @@ export function OptimizerClient() {
               href="/builder"
               className="hidden sm:inline-flex text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none"
             >
-              Resume Builder
+              {t("Resume Builder")}
             </Link>
             <span className="hidden sm:inline-block w-px h-4 bg-stone-300" />
             <span className="hidden sm:inline-flex text-sm font-medium text-[#0A2647] tracking-wide" aria-current="page">
-              Optimizer
+              {t("Optimizer")}
             </span>
             <SignedIn>
               <CreditBalance />
@@ -419,7 +421,7 @@ export function OptimizerClient() {
             <SignedOut>
               <SignInButton mode="modal">
                 <button className="px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-400 rounded-sm transition-colors tracking-wide focus-visible:outline-none">
-                  Sign In
+                  {t("Sign In")}
                 </button>
               </SignInButton>
             </SignedOut>
@@ -433,13 +435,13 @@ export function OptimizerClient() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8 sm:mb-10">
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
-              Optimize Your Resume
+              {t("Optimize Your Resume")}
             </h1>
             <div className="w-16 h-px bg-[#0A2647] mx-auto mb-5" />
             <p className="text-stone-500 text-base sm:text-lg font-light tracking-wide max-w-xl mx-auto">
               {isQuickMode
-                ? "Upload your CV and we'll polish it — no job description needed."
-                : "Upload your resume and provide the target role — we'll tailor it for maximum impact."}
+                ? t("Upload your CV and we'll polish it — no job description needed.")
+                : t("Upload your resume and provide the target role — we'll tailor it for maximum impact.")}
             </p>
           </div>
 
@@ -447,7 +449,7 @@ export function OptimizerClient() {
           <div className="max-w-2xl mx-auto mb-8 sm:mb-12">
             <div
               role="tablist"
-              aria-label="Optimization mode"
+              aria-label={t("Optimization mode")}
               className="grid grid-cols-2 gap-2 p-1.5 bg-white border border-stone-200 rounded-sm shadow-soft"
             >
               <button
@@ -466,9 +468,9 @@ export function OptimizerClient() {
               >
                 <Zap className={`w-4 h-4 sm:w-5 sm:h-5 ${isQuickMode ? "text-[#B8860B]" : ""}`} strokeWidth={2} />
                 <div className="text-left">
-                  <div className="text-sm sm:text-base font-medium tracking-wide">Quick Optimize</div>
+                  <div className="text-sm sm:text-base font-medium tracking-wide">{t("Quick Optimize")}</div>
                   <div className={`hidden sm:block text-[11px] font-light ${isQuickMode ? "text-white/70" : "text-stone-500"}`}>
-                    Just my CV · no role
+                    {t("Just my CV · no role")}
                   </div>
                 </div>
               </button>
@@ -488,9 +490,9 @@ export function OptimizerClient() {
               >
                 <Target className={`w-4 h-4 sm:w-5 sm:h-5 ${!isQuickMode ? "text-[#B8860B]" : ""}`} strokeWidth={2} />
                 <div className="text-left">
-                  <div className="text-sm sm:text-base font-medium tracking-wide">Tailor to Role</div>
+                  <div className="text-sm sm:text-base font-medium tracking-wide">{t("Tailor to Role")}</div>
                   <div className={`hidden sm:block text-[11px] font-light ${!isQuickMode ? "text-white/70" : "text-stone-500"}`}>
-                    Match a specific job
+                    {t("Match a specific job")}
                   </div>
                 </div>
               </button>
@@ -507,8 +509,8 @@ export function OptimizerClient() {
                   <FileText className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">Your Resume</h2>
-                  <p className="text-sm text-stone-500 font-light">PDF, DOCX, or plain text</p>
+                  <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">{t("Your Resume")}</h2>
+                  <p className="text-sm text-stone-500 font-light">{t("PDF, DOCX, or plain text")}</p>
                 </div>
               </div>
 
@@ -544,18 +546,18 @@ export function OptimizerClient() {
                 ) : (
                   <>
                     <Upload className="w-8 h-8 text-stone-500 mx-auto mb-4" strokeWidth={1.5} />
-                    <p className="text-stone-500 mb-2 font-light">Drag and drop your resume here</p>
-                    <p className="text-sm text-stone-500 mb-5">or</p>
+                    <p className="text-stone-500 mb-2 font-light">{t("Drag and drop your resume here")}</p>
+                    <p className="text-sm text-stone-500 mb-5">{t("or")}</p>
                     {/* Programmatic file-picker open. `<label>` wrapping a
                         `display:none` input doesn't dispatch on iOS Safari
                         + in-app webviews (LinkedIn/Instagram/Meta). */}
                     <button
                       type="button"
                       onClick={() => cvFileInputRef.current?.click()}
-                      aria-label="Select resume file"
+                      aria-label={t("Select resume file")}
                       className="inline-flex items-center gap-2 px-6 py-3 bg-transparent border border-[#0A2647] text-[#0A2647] font-medium rounded-sm hover:bg-[#0A2647] hover:text-white transition-all tracking-wide text-sm focus-visible:outline-none"
                     >
-                      <span>Select File</span>
+                      <span>{t("Select File")}</span>
                     </button>
                     <input
                       ref={cvFileInputRef}
@@ -574,17 +576,17 @@ export function OptimizerClient() {
               <div className="relative my-8">
                 <div className="absolute inset-x-0 top-1/2 h-px bg-stone-200" />
                 <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-white px-4 text-sm text-stone-500 font-light">
-                  or paste text
+                  {t("or paste text")}
                 </span>
               </div>
 
               {/* Text Area */}
-              <label htmlFor="cv-text" className="sr-only">Resume content</label>
+              <label htmlFor="cv-text" className="sr-only">{t("Resume content")}</label>
               <textarea
                 id="cv-text"
                 value={cvText}
                 onChange={(e) => { setCvText(e.target.value); if (e.target.value) setCvFile(null); }}
-                placeholder="Please paste your resume contents here..."
+                placeholder={t("Please paste your resume contents here...")}
                 className="w-full h-40 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
               />
 
@@ -593,15 +595,15 @@ export function OptimizerClient() {
                 <div className="flex items-center gap-3 mb-4">
                   <Pen className="w-4 h-4 text-stone-500" strokeWidth={1.5} />
                   <div>
-                    <label htmlFor="summary" className="font-medium text-[#1a1a1a] text-sm tracking-wide block">Professional Summary</label>
-                    <p className="text-xs text-stone-500 font-light">Optional — AI will enhance it</p>
+                    <label htmlFor="summary" className="font-medium text-[#1a1a1a] text-sm tracking-wide block">{t("Professional Summary")}</label>
+                    <p className="text-xs text-stone-500 font-light">{t("Optional — AI will enhance it")}</p>
                   </div>
                 </div>
                 <textarea
                   id="summary"
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
-                  placeholder="A brief 2-4 sentence summary of your experience and goals..."
+                  placeholder={t("A brief 2-4 sentence summary of your experience and goals...")}
                   className="w-full h-24 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                 />
               </div>
@@ -615,8 +617,8 @@ export function OptimizerClient() {
                   <Briefcase className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">Target Role</h2>
-                  <p className="text-sm text-stone-500 font-light">Role details for tailored optimization</p>
+                  <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">{t("Target Role")}</h2>
+                  <p className="text-sm text-stone-500 font-light">{t("Role details for tailored optimization")}</p>
                 </div>
               </div>
 
@@ -629,12 +631,12 @@ export function OptimizerClient() {
                 {hasJobContext ? (
                   <>
                     <Check className="w-4 h-4" strokeWidth={1.5} />
-                    <span>Ready to analyze</span>
+                    <span>{t("Ready to analyze")}</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="w-4 h-4" strokeWidth={1.5} />
-                    <span>Please provide a job title or description</span>
+                    <span>{t("Please provide a job title or description")}</span>
                   </>
                 )}
               </div>
@@ -642,14 +644,14 @@ export function OptimizerClient() {
               {/* Job Title Input */}
               <div className="mb-8">
                 <label htmlFor="job-title" className="block text-sm font-medium text-[#1a1a1a] mb-3 tracking-wide">
-                  Target Job Title
+                  {t("Target Job Title")}
                 </label>
                 <input
                   id="job-title"
                   type="text"
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
-                  placeholder="e.g. Senior Software Engineer"
+                  placeholder={t("e.g. Senior Software Engineer")}
                   className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                 />
               </div>
@@ -657,7 +659,7 @@ export function OptimizerClient() {
               {/* Toggle: URL vs Description */}
               <div className="mb-6">
                 <span className="block text-sm font-medium text-[#1a1a1a] mb-4 tracking-wide">
-                  Job Details
+                  {t("Job Details")}
                 </span>
                 <div className="flex border-b border-stone-200 mb-6">
                   <button
@@ -670,7 +672,7 @@ export function OptimizerClient() {
                     }`}
                   >
                     <FileSearch className="w-4 h-4" strokeWidth={1.5} />
-                    Paste Description
+                    {t("Paste Description")}
                   </button>
                   <button
                     type="button"
@@ -682,13 +684,13 @@ export function OptimizerClient() {
                     }`}
                   >
                     <LinkIcon className="w-4 h-4" strokeWidth={1.5} />
-                    LinkedIn URL
+                    {t("LinkedIn URL")}
                   </button>
                 </div>
 
                 {jobInputMode === "url" ? (
                   <div>
-                    <label htmlFor="job-url" className="sr-only">LinkedIn job URL</label>
+                    <label htmlFor="job-url" className="sr-only">{t("LinkedIn job URL")}</label>
                     <input
                       id="job-url"
                       type="url"
@@ -698,21 +700,21 @@ export function OptimizerClient() {
                       className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                     />
                     <p className="text-xs text-stone-500 mt-3 font-light">
-                      We'll extract the job details automatically
+                      {t("We'll extract the job details automatically")}
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <label htmlFor="job-description" className="sr-only">Job description</label>
+                    <label htmlFor="job-description" className="sr-only">{t("Job description")}</label>
                     <textarea
                       id="job-description"
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
-                      placeholder="Please paste the complete job description here..."
+                      placeholder={t("Please paste the complete job description here...")}
                       className="w-full h-[180px] p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                     />
                     <p className="text-xs text-stone-500 mt-3 font-light">
-                      Include requirements, responsibilities, and qualifications
+                      {t("Include requirements, responsibilities, and qualifications")}
                     </p>
                   </div>
                 )}
@@ -733,17 +735,17 @@ export function OptimizerClient() {
               {isAnalyzing ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.5} />
-                  <span>Analyzing...</span>
+                  <span>{t("Analyzing...")}</span>
                 </>
               ) : isQuickMode ? (
                 <>
                   <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-                  <span>Quick Optimize My CV</span>
+                  <span>{t("Quick Optimize My CV")}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                 </>
               ) : (
                 <>
-                  <span>Analyze & Optimize</span>
+                  <span>{t("Analyze & Optimize")}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                 </>
               )}
@@ -753,13 +755,13 @@ export function OptimizerClient() {
             <div className="flex items-center gap-2 px-4 py-2 bg-[#B8860B]/5 border border-[#B8860B]/20 rounded-sm">
               <Coins className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
               <span className="text-sm text-stone-600 font-light">
-                <span className="font-medium text-[#B8860B]">1 Credit</span> per optimization
+                <span className="font-medium text-[#B8860B]">{t("1 Credit")}</span> {t("per optimization")}
               </span>
-              <Link 
+              <Link
                 href="/pricing"
                 className="text-xs text-[#0A2647] hover:text-[#0d3259] underline font-medium ml-1"
               >
-                Get more
+                {t("Get more")}
               </Link>
             </div>
           </div>
@@ -767,8 +769,8 @@ export function OptimizerClient() {
           {/* Helper Text */}
           <p className="text-center text-sm text-stone-500 mt-6 font-light tracking-wide">
             {isQuickMode
-              ? "Want a job-specific tailor? Switch to Tailor to Role above."
-              : "For best results, provide the complete job description"}
+              ? t("Want a job-specific tailor? Switch to Tailor to Role above.")
+              : t("For best results, provide the complete job description")}
           </p>
         </div>
       </main>

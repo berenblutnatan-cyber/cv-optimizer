@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const sections = [
   { id: "hero", label: "Home" },
@@ -10,6 +11,7 @@ const sections = [
 ];
 
 export function ActiveNavLinks() {
+  const { t } = useT();
   const [activeSection, setActiveSection] = useState("hero");
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function ActiveNavLinks() {
               : "text-stone-500 hover:text-[#0A2647]"
           }`}
         >
-          {section.label}
+          {t(section.label)}
         </a>
       ))}
     </nav>

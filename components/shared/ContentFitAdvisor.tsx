@@ -18,6 +18,7 @@ import {
   TEMPLATE_LIMITS
 } from "@/utils/contentLimits";
 import { ResumeData } from "@/types/resume";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface ContentFitAdvisorProps {
   /** Resume data to analyze */
@@ -42,6 +43,7 @@ export function ContentFitAdvisor({
   compact = false,
   currentDensity = "normal",
 }: ContentFitAdvisorProps) {
+  const { t } = useT();
   // Analyze content fit
   const analysis = useMemo(() => {
     // Convert ResumeData to the format expected by analyzeContentFit
@@ -68,7 +70,7 @@ export function ContentFitAdvisor({
     return (
       <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg">
         <CheckCircle className="w-4 h-4" />
-        <span>Content fits perfectly on one A4 page</span>
+        <span>{t("Content fits perfectly on one A4 page")}</span>
       </div>
     );
   }
@@ -101,9 +103,9 @@ export function ContentFitAdvisor({
           <AlertTriangle className="w-3 h-3" />
         )}
         <span>
-          {analysis.fits 
-            ? "Fits A4" 
-            : `${Math.round(analysis.overflowPercent)}% overflow`
+          {analysis.fits
+            ? t("Fits A4")
+            : t("{percent}% overflow", { percent: Math.round(analysis.overflowPercent) })
           }
         </span>
       </div>
@@ -117,7 +119,7 @@ export function ContentFitAdvisor({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-slate-400" />
-          <h3 className="font-semibold text-slate-800">A4 Content Fit</h3>
+          <h3 className="font-semibold text-slate-800">{t("A4 Content Fit")}</h3>
         </div>
         
         {/* Overflow indicator */}
@@ -128,7 +130,7 @@ export function ContentFitAdvisor({
               ? "bg-red-100 text-red-700"
               : "bg-amber-100 text-amber-700"
         }`}>
-          {analysis.fits ? "✓ Fits" : `${Math.round(analysis.overflowPercent)}% overflow`}
+          {analysis.fits ? t("✓ Fits") : t("{percent}% overflow", { percent: Math.round(analysis.overflowPercent) })}
         </div>
       </div>
 
@@ -148,13 +150,13 @@ export function ContentFitAdvisor({
         <div className="absolute left-[25%] top-0 bottom-0 w-0.5 bg-slate-400" />
       </div>
       <p className="text-xs text-slate-500 -mt-2">
-        ← Within A4 | Overflow →
+        {t("← Within A4 | Overflow →")}
       </p>
 
       {/* Warnings */}
       {analysis.warnings.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-slate-600">Issues Found:</h4>
+          <h4 className="text-sm font-medium text-slate-600">{t("Issues Found:")}</h4>
           {analysis.warnings.slice(0, 3).map((warning, idx) => (
             <div 
               key={idx}
@@ -171,7 +173,7 @@ export function ContentFitAdvisor({
           ))}
           {analysis.warnings.length > 3 && (
             <p className="text-xs text-slate-500">
-              +{analysis.warnings.length - 3} more issues
+              {t("+{count} more issues", { count: analysis.warnings.length - 3 })}
             </p>
           )}
         </div>
@@ -186,7 +188,7 @@ export function ContentFitAdvisor({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
           >
             <Minimize2 className="w-4 h-4" />
-            Use {analysis.recommendedDensity} mode
+            {t("Use {density} mode", { density: analysis.recommendedDensity })}
           </button>
         )}
         
@@ -203,7 +205,7 @@ export function ContentFitAdvisor({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
           >
             <LayoutTemplate className="w-4 h-4" />
-            Try sidebar layout
+            {t("Try sidebar layout")}
           </button>
         )}
       </div>
@@ -215,11 +217,10 @@ export function ContentFitAdvisor({
             <Info className="w-5 h-5 text-blue-500 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-blue-800">
-                Consider Extended Format
+                {t("Consider Extended Format")}
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                Your content may be too extensive for a single A4 page. 
-                Consider creating a 2-page resume or removing less relevant entries.
+                {t("Your content may be too extensive for a single A4 page. Consider creating a 2-page resume or removing less relevant entries.")}
               </p>
             </div>
           </div>

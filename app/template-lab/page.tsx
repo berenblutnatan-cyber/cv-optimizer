@@ -21,6 +21,7 @@ import {
 } from "@/components/cv-templates/templates";
 import { THEME_COLOR_VALUES, ThemeColor } from "@/context/BuilderContext";
 import type { ResumeData } from "@/components/cv-templates/templates/TemplateProps";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 // ── Sample résumé used to fill every template ──────────────────────────────
 const SAMPLE: ResumeData = {
@@ -130,6 +131,7 @@ const SCALE = PREVIEW_W / 794;
 const PREVIEW_H = Math.round(1123 * SCALE);
 
 function TemplateCard({ entry, themeColor }: { entry: Entry; themeColor: ThemeColor }) {
+  const { t } = useT();
   const { Component } = entry;
   return (
     <div className="flex flex-col items-center" style={{ width: PREVIEW_W }}>
@@ -137,10 +139,10 @@ function TemplateCard({ entry, themeColor }: { entry: Entry; themeColor: ThemeCo
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-white">{entry.name}</span>
           {entry.isNew && (
-            <span className="rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">New</span>
+            <span className="rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">{t("New")}</span>
           )}
         </div>
-        <span className="font-mono text-[11px] text-white/40">{entry.tag}</span>
+        <span className="font-mono text-[11px] text-white/40">{t(entry.tag)}</span>
       </div>
       <div
         className="overflow-hidden rounded-lg ring-1 ring-white/10"
@@ -155,6 +157,7 @@ function TemplateCard({ entry, themeColor }: { entry: Entry; themeColor: ThemeCo
 }
 
 export default function TemplateLabPage() {
+  const { t } = useT();
   const [themeColor, setThemeColor] = useState<ThemeColor>("indigo");
 
   return (
@@ -163,18 +166,18 @@ export default function TemplateLabPage() {
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0c0c12]/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-white/40">Hired · résumé templates</p>
-            <h1 className="text-lg font-semibold tracking-tight">Template Lab — {NEW.length} new + {EXISTING.length} current</h1>
+            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-white/40">Hired · {t("résumé templates")}</p>
+            <h1 className="text-lg font-semibold tracking-tight">{t("Template Lab — {newCount} new + {existingCount} current", { newCount: NEW.length, existingCount: EXISTING.length })}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] text-white/40">accent</span>
+            <span className="font-mono text-[11px] text-white/40">{t("accent")}</span>
             <div className="flex items-center gap-1.5">
               {COLORS.map((c) => (
                 <button
                   key={c}
                   onClick={() => setThemeColor(c)}
                   title={c}
-                  aria-label={`Accent ${c}`}
+                  aria-label={t("Accent {color}", { color: c })}
                   className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${themeColor === c ? "ring-2 ring-white ring-offset-2 ring-offset-[#0c0c12]" : ""}`}
                   style={{ backgroundColor: THEME_COLOR_VALUES[c].primary }}
                 />
@@ -185,19 +188,19 @@ export default function TemplateLabPage() {
       </header>
 
       <main className="mx-auto max-w-[1500px] px-5 py-10 sm:px-8">
-        <Section title="New designs" subtitle="Fresh directions — pick the ones to wire into the builder.">
+        <Section title={t("New designs")} subtitle={t("Fresh directions — pick the ones to wire into the builder.")}>
           {NEW.map((e) => <TemplateCard key={e.id} entry={e} themeColor={themeColor} />)}
         </Section>
 
         <div className="my-12 h-px bg-white/10" />
 
-        <Section title="Already in the builder" subtitle="Your current 8, shown with the same résumé for comparison.">
+        <Section title={t("Already in the builder")} subtitle={t("Your current 8, shown with the same résumé for comparison.")}>
           {EXISTING.map((e) => <TemplateCard key={e.id} entry={e} themeColor={themeColor} />)}
         </Section>
       </main>
 
       <footer className="border-t border-white/10 px-5 py-10 text-center font-mono text-[12px] text-white/40 sm:px-8">
-        Same résumé, every template. Tell me which new ones to promote and I'll wire them into the builder + pricing.
+        {t("Same résumé, every template. Tell me which new ones to promote and I'll wire them into the builder + pricing.")}
       </footer>
     </div>
   );

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Gift, X } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const DISMISS_KEY = "welcome-offer-dismissed";
 
@@ -27,6 +28,7 @@ function fmt(ms: number): string {
 }
 
 export function WelcomeOfferBanner() {
+  const { t } = useT();
   const [offer, setOffer] = useState<Offer | null>(null);
   const [dismissed, setDismissed] = useState(true); // hidden until we know
   const [remaining, setRemaining] = useState("");
@@ -86,11 +88,11 @@ export function WelcomeOfferBanner() {
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium leading-tight">
-              Welcome offer — {credits} credits for ${price}{" "}
+              {t("Welcome offer — {credits} credits for ${price}", { credits, price })}{" "}
               <span className="text-white/45 line-through font-normal">${anchor}</span>
             </div>
             <div className="text-xs text-[#e7c66a] mt-0.5">
-              70% off · ends in <span className="tabular-nums">{remaining}</span>
+              {t("70% off · ends in")} <span className="tabular-nums">{remaining}</span>
             </div>
           </div>
           <Link
@@ -98,12 +100,12 @@ export function WelcomeOfferBanner() {
             onClick={() => track("checkout_started", { plan: "welcome" })}
             className="flex-shrink-0 inline-flex items-center px-4 py-2 rounded-sm bg-[#B8860B] hover:bg-[#a3760a] text-white text-sm font-medium transition-colors"
           >
-            Claim
+            {t("Claim")}
           </Link>
           <button
             type="button"
             onClick={dismiss}
-            aria-label="Dismiss offer"
+            aria-label={t("Dismiss offer")}
             className="flex-shrink-0 grid place-items-center h-8 w-8 rounded-sm text-white/50 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="h-4 w-4" />

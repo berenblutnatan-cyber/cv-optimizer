@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Spotlight
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  * one clean column. The "default you'd actually be proud to send."
  */
 export function SpotlightTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   const contacts = [
@@ -57,7 +59,7 @@ export function SpotlightTemplate({ data, themeColor, className }: TemplateProps
         <div style={{ height: "1px", backgroundColor: "#e4e4e7", margin: "14px 0 18px" }} />
 
         {hasContent(data.summary) && (
-          <SpotlightSection title="Summary" colors={colors}>
+          <SpotlightSection title={t("Summary")} colors={colors}>
             <p style={{ fontSize: "9.5px", color: "#3f3f46", lineHeight: 1.6, textAlign: "center", maxWidth: "560px", margin: "0 auto" }}>{data.summary}</p>
           </SpotlightSection>
         )}
@@ -88,13 +90,13 @@ export function SpotlightTemplate({ data, themeColor, className }: TemplateProps
         ))}
 
         {data.skills && data.skills.length > 0 && (
-          <SpotlightSection title="Skills" colors={colors}>
+          <SpotlightSection title={t("Skills")} colors={colors}>
             <p style={{ fontSize: "9px", color: "#3f3f46", textAlign: "center", lineHeight: 1.6 }}>{data.skills.filter(hasContent).join("   ·   ")}</p>
           </SpotlightSection>
         )}
 
         {data.languages && data.languages.length > 0 && (
-          <SpotlightSection title="Languages" colors={colors}>
+          <SpotlightSection title={t("Languages")} colors={colors}>
             <p style={{ fontSize: "9px", color: "#3f3f46", textAlign: "center" }}>{data.languages.filter(hasContent).join("   ·   ")}</p>
           </SpotlightSection>
         )}

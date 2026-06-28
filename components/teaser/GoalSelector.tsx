@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Search, ChevronDown, X, Briefcase } from "lucide-react";
 import { JOB_TITLES, searchJobTitles, isValidJobTitle } from "@/constants/jobTitles";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface GoalSelectorProps {
   value: string;
@@ -20,6 +21,7 @@ interface GoalSelectorProps {
  * - Clear button
  */
 export function GoalSelector({ value, onChange, error }: GoalSelectorProps) {
+  const { t } = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -147,7 +149,7 @@ export function GoalSelector({ value, onChange, error }: GoalSelectorProps) {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="What is your target role?"
+          placeholder={t("What is your target role?")}
           className="flex-1 bg-transparent outline-none text-slate-800 text-base placeholder:text-slate-400"
         />
 
@@ -185,7 +187,7 @@ export function GoalSelector({ value, onChange, error }: GoalSelectorProps) {
         >
           {filteredTitles.length === 0 ? (
             <li className="px-4 py-3 text-slate-500 text-sm text-center">
-              No matching roles found
+              {t("No matching roles found")}
             </li>
           ) : (
             filteredTitles.map((title, index) => {

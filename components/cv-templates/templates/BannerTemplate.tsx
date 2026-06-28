@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Banner
@@ -15,6 +16,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  */
 export function BannerTemplate({ data, themeColor, className }: TemplateProps) {
   const colors = getThemeColors(themeColor);
+  const { t } = useT();
 
   return (
     <A4PageWrapper className={className}>
@@ -56,7 +58,7 @@ export function BannerTemplate({ data, themeColor, className }: TemplateProps) {
 
         <div style={{ padding: "20px 34px" }}>
           {hasContent(data.summary) && (
-            <BannerSection title="Summary" colors={colors}>
+            <BannerSection title={t("Summary")} colors={colors}>
               <p style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.5 }}>{data.summary}</p>
             </BannerSection>
           )}
@@ -87,7 +89,7 @@ export function BannerTemplate({ data, themeColor, className }: TemplateProps) {
           ))}
 
           {data.skills && data.skills.length > 0 && (
-            <BannerSection title="Skills" colors={colors}>
+            <BannerSection title={t("Skills")} colors={colors}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                 {data.skills.filter(hasContent).map((s, i) => (
                   <span key={i} style={{ fontSize: "8.5px", fontWeight: 600, color: "#ffffff", backgroundColor: colors.primary, padding: "3px 9px", borderRadius: "4px" }}>{s}</span>
@@ -97,7 +99,7 @@ export function BannerTemplate({ data, themeColor, className }: TemplateProps) {
           )}
 
           {data.languages && data.languages.length > 0 && (
-            <BannerSection title="Languages" colors={colors}>
+            <BannerSection title={t("Languages")} colors={colors}>
               <p style={{ fontSize: "9px", color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
             </BannerSection>
           )}

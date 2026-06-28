@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Lock, Coins, Check, ArrowRight } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type Props = {
   open: boolean;
@@ -24,6 +25,7 @@ export function TemplateUnlockModal({
   onConfirm,
   onClose,
 }: Props) {
+  const { t } = useT();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -49,7 +51,7 @@ export function TemplateUnlockModal({
         >
           <button
             type="button"
-            aria-label="Close"
+            aria-label={t("Close")}
             onClick={() => !loading && onClose()}
             className="absolute inset-0 bg-[#0A2647]/65 backdrop-blur-sm"
           />
@@ -64,7 +66,7 @@ export function TemplateUnlockModal({
             <button
               type="button"
               onClick={() => !loading && onClose()}
-              aria-label="Close"
+              aria-label={t("Close")}
               className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30"
             >
               <X className="w-4 h-4 text-stone-500" strokeWidth={2} />
@@ -88,7 +90,7 @@ export function TemplateUnlockModal({
                 id="unlock-title"
                 className="font-serif text-xl sm:text-2xl text-[#1a1a1a] font-light text-center tracking-tight mb-2"
               >
-                Unlock{" "}
+                {t("Unlock")}{" "}
                 <span className="text-[#B8860B] font-normal">{templateName}</span>
               </h2>
               {templateDescription && (
@@ -101,7 +103,7 @@ export function TemplateUnlockModal({
               <div className="flex items-center justify-center gap-2 px-4 py-3 mb-5 bg-[#B8860B]/5 border border-[#B8860B]/20 rounded-sm">
                 <Coins className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
                 <span className="text-sm text-stone-700 font-light">
-                  <span className="font-medium text-[#B8860B]">1 credit</span> · unlocks this template forever
+                  <span className="font-medium text-[#B8860B]">{t("1 credit")}</span> {t("· unlocks this template forever")}
                 </span>
               </div>
 
@@ -109,15 +111,15 @@ export function TemplateUnlockModal({
               <ul className="space-y-2 mb-7 max-w-xs mx-auto">
                 <li className="flex items-center gap-2 text-xs text-stone-500 font-light">
                   <Check className="w-3.5 h-3.5 text-[#0A2647] flex-shrink-0" strokeWidth={2} />
-                  One-time charge — keep it forever
+                  {t("One-time charge — keep it forever")}
                 </li>
                 <li className="flex items-center gap-2 text-xs text-stone-500 font-light">
                   <Check className="w-3.5 h-3.5 text-[#0A2647] flex-shrink-0" strokeWidth={2} />
-                  Switch back to free template anytime
+                  {t("Switch back to free template anytime")}
                 </li>
                 <li className="flex items-center gap-2 text-xs text-stone-500 font-light">
                   <Check className="w-3.5 h-3.5 text-[#0A2647] flex-shrink-0" strokeWidth={2} />
-                  Works with PDF + DOCX export
+                  {t("Works with PDF + DOCX export")}
                 </li>
               </ul>
 
@@ -128,7 +130,7 @@ export function TemplateUnlockModal({
                   disabled={loading}
                   className="flex-1 px-5 py-3 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-400 rounded-sm transition-colors tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300 disabled:opacity-60"
                 >
-                  Not now
+                  {t("Not now")}
                 </button>
                 <button
                   type="button"
@@ -137,10 +139,10 @@ export function TemplateUnlockModal({
                   className="group flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#B8860B] hover:bg-[#9c7409] disabled:opacity-70 disabled:cursor-wait text-white text-sm font-medium rounded-sm transition-all tracking-wide shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8860B]/40"
                 >
                   {loading ? (
-                    <span>Unlocking…</span>
+                    <span>{t("Unlocking…")}</span>
                   ) : (
                     <>
-                      Unlock for 1 credit
+                      {t("Unlock for 1 credit")}
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" strokeWidth={2} />
                     </>
                   )}

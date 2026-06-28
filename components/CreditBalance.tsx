@@ -4,8 +4,10 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { Coins } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function CreditBalance() {
+  const { t } = useT();
   const { userId, isLoaded } = useAuth();
   const [credits, setCredits] = useState<number | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -76,7 +78,7 @@ export function CreditBalance() {
 
   const displayCredits = credits ?? 0;
   const isEmpty = displayCredits === 0;
-  const label = displayCredits === 1 ? "Credit" : "Credits";
+  const label = displayCredits === 1 ? t("Credit") : t("Credits");
 
   // When credits are 0, switch to a red/urgent style with "Add credits" hint.
   const styleClasses = isEmpty
@@ -89,16 +91,16 @@ export function CreditBalance() {
       className={`${baseClass} ${minWidth} ${styleClasses}`}
       aria-label={
         isEmpty
-          ? "Out of credits — open pricing"
-          : `${displayCredits} ${label} — view pricing`
+          ? t("Out of credits — open pricing")
+          : t("{count} {label} — view pricing", { count: displayCredits, label })
       }
-      title={isEmpty ? "Out of credits — view pricing" : "Credit balance — view pricing"}
+      title={isEmpty ? t("Out of credits — view pricing") : t("Credit balance — view pricing")}
     >
       <Coins className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
       {isEmpty ? (
         <>
-          <span className="hidden sm:inline text-xs font-medium">Add credits</span>
-          <span className="sm:hidden text-xs font-semibold">Add</span>
+          <span className="hidden sm:inline text-xs font-medium">{t("Add credits")}</span>
+          <span className="sm:hidden text-xs font-semibold">{t("Add")}</span>
         </>
       ) : (
         <>

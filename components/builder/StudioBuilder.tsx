@@ -46,6 +46,7 @@ import { computeProgress } from "@/components/chat/BuildProgress";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { InlineCvEditor } from "@/components/chat/InlineCvEditor";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type ChatListItem = { id: string; title: string; updatedAt: string; messageCount: number };
 const ACTIVE_KEY = "chat-active-session-id";
@@ -60,6 +61,7 @@ const ACTIVE_KEY = "chat-active-session-id";
  * chat builder — only the shell changed.
  */
 export function StudioBuilder() {
+  const { t } = useT();
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { openSignUp } = useClerk();
@@ -301,7 +303,7 @@ export function StudioBuilder() {
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error ?? "Couldn't reach the assistant");
+        throw new Error(data?.error ?? t("Couldn't reach the assistant"));
       }
       let toolCount = 0;
       await readSse(res.body, (evt) => {
@@ -329,12 +331,12 @@ export function StudioBuilder() {
         }
       });
       if (toolCount === 0 && !useChatBuilderStore.getState().messages.find((m) => m.id === assistantId)?.content) {
-        updateMessage(assistantId, { content: "Hmm, I lost my train of thought — say that again?" });
+        updateMessage(assistantId, { content: t("Hmm, I lost my train of thought — say that again?") });
       }
     } catch (err) {
       if ((err as Error)?.name !== "AbortError") {
         track("chat_error", { stage: "stream" });
-        const msg = err instanceof Error ? err.message : "Something broke";
+        const msg = err instanceof Error ? err.message : t("Something broke");
         updateMessage(assistantId, { content: `⚠️ ${msg}` });
         toast.error(msg);
       }
@@ -394,15 +396,15 @@ export function StudioBuilder() {
     if (!isSignedIn) {
       track("score_fix_gated", { reason: "anon" });
       useFlashSaleStore.getState().recordAction();
-      toast.message("Create a free account to apply AI fixes.", { description: "Your first one's on us." });
+      toast.message(t("Create a free account to apply AI fixes."), { description: t("Your first one's on us.") });
       openSignUp?.();
       return;
     }
     if (!entitlement.unlimited && entitlement.credits <= 0) {
       track("score_fix_gated", { reason: "no_credits" });
       useFlashSaleStore.getState().recordAction();
-      toast.message("Unlock AI fixes to apply this", {
-        description: "Top up or grab the Pro offer — your work is saved.",
+      toast.message(t("Unlock AI fixes to apply this"), {
+        description: t("Top up or grab the Pro offer — your work is saved."),
       });
       return;
     }
@@ -428,17 +430,17 @@ export function StudioBuilder() {
       return;
     }
     setFetchingJob(true);
-    const tid = toast.loading("Reading the job post…");
+    const tid = toast.loading(t("Reading the job post…"));
     try {
       const job = await fetchJobPosting(url);
       toast.dismiss(tid);
       if (job.ok) {
         // Keep the JD so the score panel's "Job match" + deep check use it.
         setLastJobText(job.text ?? "");
-        toast.success("Got the job post — tailoring to it now");
+        toast.success(t("Got the job post — tailoring to it now"));
         await send(withJobPosting(text, url, job), text);
       } else {
-        toast.message(job.error ?? "Couldn't open that link — paste the description and I'll use it.");
+        toast.message(job.error ?? t("Couldn't open that link — paste the description and I'll use it."));
         await send(text);
       }
     } finally {
@@ -455,11 +457,11 @@ export function StudioBuilder() {
       fd.append("file", file);
       const res = await fetch("/api/chat/parse-cv", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? "Couldn't read that file");
+      if (!res.ok) throw new Error(data?.error ?? t("Couldn't read that file"));
       const intake = cvUploadIntake(data.fileName, data.text);
       await send(intake.content, intake.display);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      toast.error(err instanceof Error ? err.message : t("Upload failed"));
     } finally {
       setUploadingCv(false);
     }
@@ -470,15 +472,15 @@ export function StudioBuilder() {
   // render is rasterized to a PDF.
   async function onExport() {
     if (isEmpty) {
-      toast.message("Add your details first — then export your CV.");
+      toast.message(t("Add your details first — then export your CV."));
       setLeftMode("chat");
       setMobileTab("chat");
       return;
     }
     if (!isSignedIn) {
       pendingExportRef.current = true;
-      toast.message("Your CV's ready — create a free account to download it.", {
-        description: "Your first one's on us.",
+      toast.message(t("Your CV's ready — create a free account to download it."), {
+        description: t("Your first one's on us."),
       });
       openSignUp?.();
       return;
@@ -490,15 +492,15 @@ export function StudioBuilder() {
       const credit = await fetch("/api/use-credit", { method: "POST", headers: { "Content-Type": "application/json" } });
       const result = await credit.json().catch(() => ({ success: false }));
       if (!result?.success) {
-        toast.error("You're out of credits", { description: "Top up to download — your work is saved." });
+        toast.error(t("You're out of credits"), { description: t("Top up to download — your work is saved.") });
         router.push("/pricing");
         return;
       }
-      if (!exportRef.current) throw new Error("Nothing to export yet");
+      if (!exportRef.current) throw new Error(t("Nothing to export yet"));
       await exportToPdf(exportRef.current, `${(previewData.name || "My").replace(/\s+/g, "-")}-CV`);
-      toast.success("Downloaded", { description: "Your CV PDF is in your downloads." });
+      toast.success(t("Downloaded"), { description: t("Your CV PDF is in your downloads.") });
     } catch (err) {
-      toast.error("Export failed", { description: err instanceof Error ? err.message : "Please try again." });
+      toast.error(t("Export failed"), { description: err instanceof Error ? err.message : t("Please try again.") });
     } finally {
       setExporting(false);
     }
@@ -530,7 +532,7 @@ export function StudioBuilder() {
     try {
       const res = await fetch(`/api/chats/${id}`);
       if (!res.ok) {
-        toast.error("Couldn't open that chat");
+        toast.error(t("Couldn't open that chat"));
         return;
       }
       const { chat } = await res.json();
@@ -561,7 +563,7 @@ export function StudioBuilder() {
       setHistoryOpen(false);
       track("chat_opened_history");
     } catch {
-      toast.error("Couldn't open that chat");
+      toast.error(t("Couldn't open that chat"));
     }
   }
 
@@ -589,13 +591,13 @@ export function StudioBuilder() {
 
   const quickEdits: { label: string; prompt: string }[] = [
     ...(!isPlaceholderSummary(resumeData.summary)
-      ? [{ label: "Summary", prompt: "Punch up my summary — " }]
+      ? [{ label: t("Summary"), prompt: "Punch up my summary — " }]
       : []),
     ...(resumeData.experience.length > 0
-      ? [{ label: "Experience", prompt: "Strengthen my experience bullets — " }]
+      ? [{ label: t("Experience"), prompt: "Strengthen my experience bullets — " }]
       : []),
-    ...(resumeData.skills.length > 0 ? [{ label: "Skills", prompt: "Rework my skills list — " }] : []),
-    ...(resumeData.education.length > 0 ? [{ label: "Education", prompt: "Update my education — " }] : []),
+    ...(resumeData.skills.length > 0 ? [{ label: t("Skills"), prompt: "Rework my skills list — " }] : []),
+    ...(resumeData.education.length > 0 ? [{ label: t("Education"), prompt: "Update my education — " }] : []),
   ];
 
   const emptyExtras = (
@@ -603,8 +605,8 @@ export function StudioBuilder() {
       <label className="cursor-pointer rounded-2xl bg-white border border-stone-200 hover:border-[#0A2647]/30 hover:shadow-sm transition-all p-3.5 flex items-start gap-3">
         <Download className="h-5 w-5 text-[#0A2647] flex-shrink-0 mt-0.5" />
         <span>
-          <span className="block text-sm text-[#1a1a1a] font-medium">Upload my current CV</span>
-          <span className="block text-xs text-stone-500 mt-0.5">PDF or Word in, everything pulled into the builder</span>
+          <span className="block text-sm text-[#1a1a1a] font-medium">{t("Upload my current CV")}</span>
+          <span className="block text-xs text-stone-500 mt-0.5">{t("PDF or Word in, everything pulled into the builder")}</span>
         </span>
         <input
           type="file"
@@ -620,12 +622,12 @@ export function StudioBuilder() {
       <button
         type="button"
         onClick={() => send("Interview me — ask me what's new and help me build this CV.")}
-        className="text-left rounded-2xl bg-white border border-stone-200 hover:border-[#B8860B]/40 hover:shadow-sm transition-all p-3.5 flex items-start gap-3"
+        className="text-start rounded-2xl bg-white border border-stone-200 hover:border-[#B8860B]/40 hover:shadow-sm transition-all p-3.5 flex items-start gap-3"
       >
         <Sparkles className="h-5 w-5 text-[#B8860B] flex-shrink-0 mt-0.5" />
         <span>
-          <span className="block text-sm text-[#1a1a1a] font-medium">Interview me</span>
-          <span className="block text-xs text-stone-500 mt-0.5">Not sure what to add? I&apos;ll ask the right questions</span>
+          <span className="block text-sm text-[#1a1a1a] font-medium">{t("Interview me")}</span>
+          <span className="block text-xs text-stone-500 mt-0.5">{t("Not sure what to add? I'll ask the right questions")}</span>
         </span>
       </button>
     </div>
@@ -676,7 +678,7 @@ export function StudioBuilder() {
               <SignUpButton mode="modal">
                 <button className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium text-[#B8860B] hover:bg-[#B8860B]/10 transition-colors">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#B8860B]" />
-                  Sign up to save your work
+                  {t("Sign up to save your work")}
                 </button>
               </SignUpButton>
             ) : null}
@@ -686,7 +688,7 @@ export function StudioBuilder() {
               href="/pricing"
               className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-[13px] text-stone-600 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
             >
-              Help
+              {t("Help")}
             </Link>
             {isSignedIn ? (
               <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 ring-1 ring-stone-200" } }} />
@@ -694,12 +696,12 @@ export function StudioBuilder() {
               <>
                 <SignInButton mode="modal">
                   <button className="px-3 py-1.5 rounded-full text-[13px] font-medium text-[#0A2647] border border-stone-300 hover:border-[#0A2647]/40 hover:bg-stone-50 transition-colors">
-                    Login
+                    {t("Login")}
                   </button>
                 </SignInButton>
                 <SignUpButton mode="modal">
                   <button className="px-3.5 py-1.5 rounded-full text-[13px] font-semibold bg-[#0A2647] text-white hover:bg-[#0d3259] transition-colors">
-                    Sign Up
+                    {t("Sign Up")}
                   </button>
                 </SignUpButton>
               </>
@@ -722,15 +724,15 @@ export function StudioBuilder() {
               }`}
             >
               <PanelLeft className="h-[15px] w-[15px]" strokeWidth={1.8} />
-              <span className="hidden sm:inline">AI Assistant</span>
+              <span className="hidden sm:inline">{t("AI Assistant")}</span>
             </button>
             <span className="mx-1 h-5 w-px bg-stone-200 hidden sm:block" />
             <div className="flex items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <ToolBtn icon={WandSparkles} label="Improve text" onClick={() => runAssistant("Improve the writing across my whole CV — tighten every line, lead with impact, and quantify where you can.", "improve")} />
+              <ToolBtn icon={WandSparkles} label={t("Improve text")} onClick={() => runAssistant("Improve the writing across my whole CV — tighten every line, lead with impact, and quantify where you can.", "improve")} />
               <ToolBtn
                 icon={ShieldCheck}
-                label="Score"
-                badge="ATS"
+                label={t("Score")}
+                badge={t("ATS")}
                 active={scoreOpen}
                 onClick={() => {
                   const next = !scoreOpen;
@@ -739,16 +741,16 @@ export function StudioBuilder() {
                   track(next ? "score_panel_opened" : "score_panel_closed");
                 }}
               />
-              <ToolBtn icon={ListChecks} label="Rearrange" onClick={() => runAssistant("Reorder my sections and bullets into the strongest order for my target role, most relevant first.", "rearrange")} />
-              <ToolBtn icon={LayoutTemplate} label="Templates" active={galleryOpen} onClick={() => { setGalleryOpen(true); setMobileTab("document"); }} />
-              <ToolBtn icon={Contrast} label="Design & Font" active={docControls} onClick={() => { setDocControls((v) => !v); setMobileTab("document"); }} />
+              <ToolBtn icon={ListChecks} label={t("Rearrange")} onClick={() => runAssistant("Reorder my sections and bullets into the strongest order for my target role, most relevant first.", "rearrange")} />
+              <ToolBtn icon={LayoutTemplate} label={t("Templates")} active={galleryOpen} onClick={() => { setGalleryOpen(true); setMobileTab("document"); }} />
+              <ToolBtn icon={Contrast} label={t("Design & Font")} active={docControls} onClick={() => { setDocControls((v) => !v); setMobileTab("document"); }} />
             </div>
           </div>
           <div className="flex items-center gap-0.5 flex-shrink-0">
-            <button type="button" disabled aria-label="Undo" className="grid place-items-center h-8 w-8 rounded-lg text-stone-300 cursor-not-allowed">
+            <button type="button" disabled aria-label={t("Undo")} className="grid place-items-center h-8 w-8 rounded-lg text-stone-300 cursor-not-allowed">
               <Undo2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
             </button>
-            <button type="button" disabled aria-label="Redo" className="grid place-items-center h-8 w-8 rounded-lg text-stone-300 cursor-not-allowed">
+            <button type="button" disabled aria-label={t("Redo")} className="grid place-items-center h-8 w-8 rounded-lg text-stone-300 cursor-not-allowed">
               <Redo2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
             </button>
             <button
@@ -757,7 +759,7 @@ export function StudioBuilder() {
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] text-stone-600 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
             >
               <Clock className="h-[15px] w-[15px]" strokeWidth={1.8} />
-              <span className="hidden md:inline">History</span>
+              <span className="hidden md:inline">{t("History")}</span>
             </button>
             <button
               type="button"
@@ -766,7 +768,7 @@ export function StudioBuilder() {
               className="ml-1 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold bg-[#0A2647] text-white hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
             >
               {exporting ? <Loader2 className="h-[15px] w-[15px] animate-spin" /> : <Download className="h-[15px] w-[15px]" strokeWidth={2} />}
-              <span className="hidden sm:inline">{exporting ? "Exporting…" : "Export"}</span>
+              <span className="hidden sm:inline">{exporting ? t("Exporting…") : t("Export")}</span>
             </button>
           </div>
         </div>
@@ -782,7 +784,7 @@ export function StudioBuilder() {
               mobileTab === "chat" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
             }`}
           >
-            <Sparkles className="h-4 w-4" /> Chat
+            <Sparkles className="h-4 w-4" /> {t("Chat")}
           </button>
           <button
             type="button"
@@ -794,7 +796,7 @@ export function StudioBuilder() {
               mobileTab === "document" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
             }`}
           >
-            <LayoutTemplate className="h-4 w-4" /> CV
+            <LayoutTemplate className="h-4 w-4" /> {t("CV")}
             {unseenUpdates > 0 && mobileTab !== "document" ? (
               <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[#B8860B] text-white text-[10px] font-bold">
                 {unseenUpdates}
@@ -812,7 +814,7 @@ export function StudioBuilder() {
               mobileTab === "score" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
             }`}
           >
-            <ShieldCheck className="h-4 w-4" /> Score
+            <ShieldCheck className="h-4 w-4" /> {t("Score")}
           </button>
         </div>
       </div>
@@ -830,7 +832,7 @@ export function StudioBuilder() {
               <div className="flex items-center justify-between gap-3">
                 <div
                   role="tablist"
-                  aria-label="Assistant mode"
+                  aria-label={t("Assistant mode")}
                   className="inline-flex items-center gap-1 p-1 rounded-full bg-stone-100"
                 >
                   <button
@@ -842,7 +844,7 @@ export function StudioBuilder() {
                       leftMode === "chat" ? "bg-white text-[#0A2647] font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
-                    <Sparkles className="h-3.5 w-3.5" /> Chat
+                    <Sparkles className="h-3.5 w-3.5" /> {t("Chat")}
                   </button>
                   <button
                     type="button"
@@ -853,7 +855,7 @@ export function StudioBuilder() {
                       leftMode === "edit" ? "bg-white text-[#0A2647] font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
-                    <Pencil className="h-3.5 w-3.5" /> Edit
+                    <Pencil className="h-3.5 w-3.5" /> {t("Edit")}
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -861,7 +863,7 @@ export function StudioBuilder() {
                   <button
                     type="button"
                     onClick={newChat}
-                    aria-label="New chat"
+                    aria-label={t("New chat")}
                     className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
                   >
                     <Plus className="h-4 w-4" />
@@ -892,7 +894,7 @@ export function StudioBuilder() {
                     disabled={streaming || uploadingCv || fetchingJob}
                     theme="light"
                     chips={[]}
-                    placeholder="Reply, paste a job link, or tap 📎 to upload"
+                    placeholder={t("Reply, paste a job link, or tap 📎 to upload")}
                     prefill={prefill}
                     prefillNonce={prefillNonce}
                   />
@@ -911,7 +913,7 @@ export function StudioBuilder() {
           {quickEdits.length > 0 ? (
             <div className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-white border-b border-stone-200 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <span className="inline-flex items-center gap-1 text-[11px] text-stone-400 flex-shrink-0">
-                <Pencil className="h-3 w-3" /> Quick edit:
+                <Pencil className="h-3 w-3" /> {t("Quick edit:")}
               </span>
               {quickEdits.map((q) => (
                 <button
@@ -965,11 +967,11 @@ export function StudioBuilder() {
           <div className="absolute inset-0 bg-black/30" onClick={() => setHistoryOpen(false)} aria-hidden="true" />
           <div className="relative w-full max-w-sm h-full bg-white border-r border-stone-200 shadow-2xl flex flex-col">
             <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-stone-200">
-              <div className="text-sm font-semibold text-[#0A2647]">Your CVs</div>
+              <div className="text-sm font-semibold text-[#0A2647]">{t("Your CVs")}</div>
               <button
                 type="button"
                 onClick={() => setHistoryOpen(false)}
-                aria-label="Close history"
+                aria-label={t("Close history")}
                 className="grid place-items-center h-8 w-8 rounded-lg text-stone-500 hover:text-[#0A2647] hover:bg-stone-100 transition-colors"
               >
                 <X className="h-4 w-4" />
@@ -981,13 +983,13 @@ export function StudioBuilder() {
                 onClick={newChat}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
               >
-                <Plus className="h-4 w-4" /> New CV
+                <Plus className="h-4 w-4" /> {t("New CV")}
               </button>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-3 space-y-1">
               {chats.length === 0 ? (
                 <p className="text-center text-xs text-stone-400 px-4 py-8">
-                  No saved CVs yet. Your work saves automatically as you build.
+                  {t("No saved CVs yet. Your work saves automatically as you build.")}
                 </p>
               ) : (
                 chats.map((c) => (
@@ -997,17 +999,19 @@ export function StudioBuilder() {
                       c.id === sessionId ? "bg-[#0A2647]/[0.06]" : "hover:bg-stone-50"
                     }`}
                   >
-                    <button type="button" onClick={() => openChat(c.id)} className="flex-1 min-w-0 text-left">
+                    <button type="button" onClick={() => openChat(c.id)} className="flex-1 min-w-0 text-start">
                       <div className="text-sm text-[#1a1a1a] truncate">{c.title}</div>
                       <div className="text-[11px] text-stone-400">
-                        {new Date(c.updatedAt).toLocaleDateString()} · {c.messageCount} msg
-                        {c.messageCount === 1 ? "" : "s"}
+                        {new Date(c.updatedAt).toLocaleDateString()} ·{" "}
+                        {c.messageCount === 1
+                          ? t("1 msg")
+                          : t("{count} msgs", { count: c.messageCount })}
                       </div>
                     </button>
                     <button
                       type="button"
                       onClick={() => deleteChat(c.id)}
-                      aria-label="Delete CV"
+                      aria-label={t("Delete CV")}
                       className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-stone-300 hover:text-rose-500 hover:bg-stone-100 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1038,7 +1042,7 @@ export function StudioBuilder() {
         onMakeDemo={(layout, color) => {
           // Loads the editable sample so the chosen design shows a finished CV.
           // Guard real work — only replace silently when the CV is still empty.
-          if (!isEmpty && !window.confirm("Replace your current CV with the demo content?")) return;
+          if (!isEmpty && !window.confirm(t("Replace your current CV with the demo content?"))) return;
           setResumeData(SAMPLE_RESUME_DATA);
           setSelectedTemplate(layout);
           setSelectedColor(color);

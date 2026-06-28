@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function RoleChips({ initial }: { initial: string[] }) {
+  const { t } = useT();
   const [roles, setRoles] = useState(initial);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -20,7 +22,7 @@ export function RoleChips({ initial }: { initial: string[] }) {
       if (!res.ok) throw new Error("Failed to update roles");
       setRoles(next);
     } catch (e) {
-      toast.error("Couldn't save roles — try again");
+      toast.error(t("Couldn't save roles — try again"));
     } finally {
       setBusy(false);
     }
@@ -30,7 +32,7 @@ export function RoleChips({ initial }: { initial: string[] }) {
     const trimmed = draft.trim();
     if (!trimmed) return;
     if (roles.length >= 5) {
-      toast.message("Max 5 target roles");
+      toast.message(t("Max 5 target roles"));
       return;
     }
     if (roles.some((r) => r.toLowerCase() === trimmed.toLowerCase())) {
@@ -47,15 +49,15 @@ export function RoleChips({ initial }: { initial: string[] }) {
       {roles.map((role) => (
         <span
           key={role}
-          className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-white/8 border border-glass-border text-sm text-white/90"
+          className="inline-flex items-center gap-1.5 ps-3 pe-1.5 py-1 rounded-full bg-white/8 border border-glass-border text-sm text-white/90"
         >
           {role}
           <button
             type="button"
-            aria-label={`Remove ${role}`}
+            aria-label={t("Remove {role}", { role })}
             disabled={busy}
             onClick={() => persist(roles.filter((r) => r !== role))}
-            className="ml-0.5 h-5 w-5 grid place-items-center rounded-full hover:bg-white/15 transition-colors"
+            className="ms-0.5 h-5 w-5 grid place-items-center rounded-full hover:bg-white/15 transition-colors"
           >
             <X className="h-3 w-3" />
           </button>
@@ -74,7 +76,7 @@ export function RoleChips({ initial }: { initial: string[] }) {
             value={draft}
             disabled={busy}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Add role"
+            placeholder={t("Add role")}
             className="bg-transparent placeholder:text-white/35 text-sm text-white/90 focus:outline-none w-32"
           />
         </form>

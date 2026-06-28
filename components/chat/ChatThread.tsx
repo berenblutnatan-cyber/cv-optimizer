@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import type { BuilderChatMessage } from "@/stores/chatBuilderStore";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 // The agent occasionally bolds key phrases ("Hit **Finish & export**").
 // Render just that — full markdown is overkill for 60-word coach replies.
@@ -64,6 +65,7 @@ export function ChatThread({
   /** "dark" for the glass shells, "light" for the Enhancv-style studio. */
   theme?: Theme;
 }) {
+  const { t } = useT();
   const light = theme === "light";
   const scrollRef = useRef<HTMLDivElement>(null);
   // Follow the stream unless the user deliberately scrolled up. Unsticking
@@ -133,7 +135,7 @@ export function ChatThread({
                   }`}
                 >
                   {m.content ? renderInlineBold(m.content) : (
-                    <span className="inline-flex gap-1 items-center py-1" aria-label="Thinking">
+                    <span className="inline-flex gap-1 items-center py-1" aria-label={t("Thinking")}>
                       <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:0ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
                       <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:150ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
                       <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:300ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
@@ -146,7 +148,7 @@ export function ChatThread({
           )
         )}
         {messages.length <= 1 && !streaming ? emptyExtras : null}
-        {streaming ? <span className="sr-only">Assistant is typing</span> : null}
+        {streaming ? <span className="sr-only">{t("Assistant is typing")}</span> : null}
       </div>
     </div>
   );

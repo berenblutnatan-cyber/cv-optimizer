@@ -10,6 +10,7 @@ import React, {
   ChangeEvent,
 } from "react";
 import { useBuilder } from "@/context/BuilderContext";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * EditableField Component
@@ -71,7 +72,7 @@ export function EditableField({
   value,
   onChange,
   type = "text",
-  placeholder = "Click to edit...",
+  placeholder: placeholderProp,
   className = "",
   multiline = false,
   minHeight = 24,
@@ -83,10 +84,12 @@ export function EditableField({
   as = "span",
   style,
 }: EditableFieldProps) {
+  const { t } = useT();
+  const placeholder = placeholderProp ?? t("Click to edit...");
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  
+
   const { setFocusedField, clearFocus, isEditMode } = useBuilder();
   
   // Determine if we should use textarea
@@ -276,49 +279,53 @@ export function EditableField({
 
 /** Pre-configured for names/headings */
 export function EditableName(props: Omit<EditableFieldProps, "type" | "as">) {
+  const { t } = useT();
   return (
     <EditableField
       {...props}
       type="text"
       as="h1"
-      placeholder={props.placeholder || "Your Name"}
+      placeholder={props.placeholder || t("Your Name")}
     />
   );
 }
 
 /** Pre-configured for job titles */
 export function EditableTitle(props: Omit<EditableFieldProps, "type" | "as">) {
+  const { t } = useT();
   return (
     <EditableField
       {...props}
       type="text"
       as="h2"
-      placeholder={props.placeholder || "Job Title"}
+      placeholder={props.placeholder || t("Job Title")}
     />
   );
 }
 
 /** Pre-configured for paragraphs/descriptions */
 export function EditableParagraph(props: Omit<EditableFieldProps, "type" | "multiline">) {
+  const { t } = useT();
   return (
     <EditableField
       {...props}
       type="textarea"
       multiline
       as="p"
-      placeholder={props.placeholder || "Add description..."}
+      placeholder={props.placeholder || t("Add description...")}
     />
   );
 }
 
 /** Pre-configured for single-line contact info */
 export function EditableContact(props: Omit<EditableFieldProps, "type">) {
+  const { t } = useT();
   return (
     <EditableField
       {...props}
       type="text"
       as="span"
-      placeholder={props.placeholder || "Contact info"}
+      placeholder={props.placeholder || t("Contact info")}
     />
   );
 }

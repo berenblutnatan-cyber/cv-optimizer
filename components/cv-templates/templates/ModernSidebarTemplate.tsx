@@ -5,6 +5,7 @@ import { A4PageWrapper, A4Grid } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 1: Modern Sidebar
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  */
 
 export function ModernSidebarTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   return (
@@ -71,7 +73,7 @@ export function ModernSidebarTemplate({ data, themeColor, className }: TemplateP
           </div>
 
           {/* Contact */}
-          <SidebarSection title="Contact" color={colors.primary}>
+          <SidebarSection title={t("Contact")} color={colors.primary}>
             {hasContent(data.contact.email) && (
               <ContactItem icon="✉" value={data.contact.email!} color={colors.primary} />
             )}
@@ -88,7 +90,7 @@ export function ModernSidebarTemplate({ data, themeColor, className }: TemplateP
 
           {/* Skills - Tag Cloud */}
           {data.skills && data.skills.length > 0 && (
-            <SidebarSection title="Skills" color={colors.primary}>
+            <SidebarSection title={t("Skills")} color={colors.primary}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {data.skills.filter(hasContent).map((skill, idx) => (
                   <span key={idx} style={{
@@ -108,7 +110,7 @@ export function ModernSidebarTemplate({ data, themeColor, className }: TemplateP
 
           {/* Languages */}
           {data.languages && data.languages.length > 0 && (
-            <SidebarSection title="Languages" color={colors.primary}>
+            <SidebarSection title={t("Languages")} color={colors.primary}>
               {data.languages.filter(hasContent).map((lang, idx) => (
                 <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                   <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: colors.primary }} />
@@ -141,7 +143,7 @@ export function ModernSidebarTemplate({ data, themeColor, className }: TemplateP
 
           {/* Summary */}
           {hasContent(data.summary) && (
-            <MainSection title="Profile" color={colors.primary}>
+            <MainSection title={t("Profile")} color={colors.primary}>
               <p style={{ fontSize: "10px", color: "#475569", lineHeight: 1.7 }}>
                 {data.summary}
               </p>

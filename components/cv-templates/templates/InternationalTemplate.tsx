@@ -5,6 +5,7 @@ import { A4PageWrapper, A4Grid } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 8: International
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  */
 
 export function InternationalTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
   const hasPhoto = !!data.photo;
 
@@ -75,19 +77,19 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
               gap: "6px 20px",
             }}>
               {hasContent(data.contact.email) && (
-                <IntlContactItem label="Email" value={data.contact.email!} />
+                <IntlContactItem label={t("Email")} value={data.contact.email!} />
               )}
               {hasContent(data.contact.phone) && (
-                <IntlContactItem label="Phone" value={data.contact.phone!} />
+                <IntlContactItem label={t("Phone")} value={data.contact.phone!} />
               )}
               {hasContent(data.contact.location) && (
-                <IntlContactItem label="Address" value={data.contact.location!} />
+                <IntlContactItem label={t("Address")} value={data.contact.location!} />
               )}
               {hasContent(data.contact.linkedin) && (
-                <IntlContactItem label="LinkedIn" value={data.contact.linkedin!} isLinkedIn />
+                <IntlContactItem label={t("LinkedIn")} value={data.contact.linkedin!} isLinkedIn />
               )}
               {hasContent(data.contact.website) && (
-                <IntlContactItem label="Website" value={data.contact.website!} />
+                <IntlContactItem label={t("Website")} value={data.contact.website!} />
               )}
             </div>
           </div>
@@ -99,7 +101,7 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
           <div>
             {/* Summary / Profile */}
             {hasContent(data.summary) && (
-              <IntlSection title="Profile" color={colors.primary}>
+              <IntlSection title={t("Profile")} color={colors.primary}>
                 <p style={{
                   fontSize: "10px",
                   color: "#374151",
@@ -124,7 +126,7 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
           <div>
             {/* Skills - Tag Cloud */}
             {data.skills && data.skills.length > 0 && (
-              <IntlSection title="Skills" color={colors.primary}>
+              <IntlSection title={t("Skills")} color={colors.primary}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {data.skills.filter(hasContent).map((skill, idx) => (
                     <span key={idx} style={{
@@ -144,7 +146,7 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
 
             {/* Languages */}
             {data.languages && data.languages.length > 0 && (
-              <IntlSection title="Languages" color={colors.primary}>
+              <IntlSection title={t("Languages")} color={colors.primary}>
                 {data.languages.filter(hasContent).map((lang, idx) => (
                   <div key={idx} style={{
                     display: "flex",

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Inter, JetBrains_Mono, Merriweather, Lato, Montserrat, Playfair_Display } from "next/font/google";
+import { cookies } from "next/headers";
+import { Inter, JetBrains_Mono, Merriweather, Lato, Montserrat, Playfair_Display, Rubik } from "next/font/google";
+import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
+import { LANG_COOKIE, dirFor, isLang, DEFAULT_LANG } from "@/lib/i18n/config";
 import {
   ClerkProvider,
   SignInButton,
@@ -36,6 +39,17 @@ const playfair = Playfair_Display({
   weight: ["400", "500", "600", "700"],
   variable: "--font-playfair",
   display: "swap",
+});
+
+// Hebrew-capable UI font. Rubik ships both Latin and Hebrew glyphs, so the RTL
+// UI keeps the same clean geometric feel as Inter. Applied to <body> only when
+// dir="rtl" (see globals.css), so English paint is unaffected — not preloaded.
+const rubik = Rubik({
+  subsets: ["latin", "hebrew"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hebrew",
+  display: "swap",
+  preload: false,
 });
 
 // Resume / code fonts — only used inside the builder + analysis, never in
@@ -86,15 +100,22 @@ export const viewport = {
   themeColor: "#0A2647",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read the persisted language choice so SSR emits the correct lang/dir on the
+  // first paint (no English→Hebrew flash for returning Hebrew users).
+  const cookieStore = await cookies();
+  const cookieLang = cookieStore.get(LANG_COOKIE)?.value;
+  const lang = isLang(cookieLang) ? cookieLang : DEFAULT_LANG;
+  const dir = dirFor(lang);
+
   return (
     <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
-      <html lang="en" className="scroll-smooth">
-        <body className={`${inter.variable} ${jetbrainsMono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable} ${playfair.variable} font-sans`}>
+      <html lang={lang} dir={dir} className="scroll-smooth">
+        <body className={`${inter.variable} ${jetbrainsMono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable} ${playfair.variable} ${rubik.variable} font-sans`}>
           {/* Analytics scripts are `lazyOnload`: they load after the page is
               interactive and idle, so they don't compete with the hero LCP
               paint (Clarity dashboard reports 5.2s LCP on prod — these were
@@ -175,23 +196,25 @@ export default function RootLayout({
               })(window, document, "clarity", "script", "${CLARITY_PROJECT_ID}");
             `}
           </Script>
-          <InAppBrowserAlert />
-          <GclidCapture />
-          <ClarityRouteTags />
-          <UserSyncProvider>
-            {children}
-          </UserSyncProvider>
-          <ResumeSync />
-          <SignedIn>
-            <WelcomeOfferBanner />
-          </SignedIn>
-          {/* Engagement flash sale — self-hides until the builder arms it (a few
-              real actions). Outside SignedIn so anon builders get it too; claim
-              routes through sign-in. */}
-          <FlashSaleBanner />
-          <Toaster position="top-center" richColors />
-          {/* Global Feedback Widget */}
-          <RatingWidget source="global" />
+          <LanguageProvider initialLang={lang}>
+            <InAppBrowserAlert />
+            <GclidCapture />
+            <ClarityRouteTags />
+            <UserSyncProvider>
+              {children}
+            </UserSyncProvider>
+            <ResumeSync />
+            <SignedIn>
+              <WelcomeOfferBanner />
+            </SignedIn>
+            {/* Engagement flash sale — self-hides until the builder arms it (a few
+                real actions). Outside SignedIn so anon builders get it too; claim
+                routes through sign-in. */}
+            <FlashSaleBanner />
+            <Toaster position="top-center" richColors />
+            {/* Global Feedback Widget */}
+            <RatingWidget source="global" />
+          </LanguageProvider>
         </body>
       </html>
     </ClerkProvider>

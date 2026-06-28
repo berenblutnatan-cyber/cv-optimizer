@@ -17,6 +17,7 @@ import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { exportToWord } from "@/utils/exportToWord";
 import { exportToPdf } from "@/utils/exportToPdf";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface AnalysisResultsProps {
   optimizedData: ResumePreviewData;
@@ -25,6 +26,7 @@ interface AnalysisResultsProps {
 }
 
 export default function AnalysisResults({ optimizedData, score, improvements }: AnalysisResultsProps) {
+  const { t } = useT();
   // State for the preview
   const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
   const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
@@ -47,8 +49,8 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
       await exportToPdf(pdfCaptureRef.current, `Resume_${optimizedData.name || "Optimized"}`);
     } catch (error) {
       console.error("PDF export failed:", error);
-      toast.error("PDF export failed", {
-        description: "Please try again.",
+      toast.error(t("PDF export failed"), {
+        description: t("Please try again."),
       });
     } finally {
       setIsDownloading(false);
@@ -65,8 +67,8 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
       await exportToWord(optimizedData, `Resume_${optimizedData.name || "Optimized"}`);
     } catch (error) {
       console.error("Word export failed:", error);
-      toast.error("Word export failed", {
-        description: "Please try again.",
+      toast.error(t("Word export failed"), {
+        description: t("Please try again."),
       });
     } finally {
       setIsDownloading(false);
@@ -77,7 +79,7 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
   if (!optimizedData) {
     return (
       <div className="p-8 text-center text-slate-500">
-        Loading result...
+        {t("Loading result...")}
       </div>
     );
   }
@@ -108,16 +110,16 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
       {/* Header & Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Your Optimized Resume</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{t("Your Optimized Resume")}</h2>
           <p className="text-slate-500 text-sm mt-1">
-            Review the layout, select a template, and download.
+            {t("Review the layout, select a template, and download.")}
           </p>
         </div>
         
         <div className="flex items-center gap-3">
           {/* Score Display */}
           <div className="text-right mr-2 hidden md:block">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Match Score</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("Match Score")}</span>
             <div className="text-2xl font-black text-indigo-600">{score || 85}%</div>
           </div>
           
@@ -134,7 +136,7 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
               ) : (
                 <FileText className="w-4 h-4" />
               )}
-              Download PDF
+              {t("Download PDF")}
             </button>
             
             {/* Word Button - Outline Style */}
@@ -148,7 +150,7 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
               ) : (
                 <FileEdit className="w-4 h-4" />
               )}
-              Download Word
+              {t("Download Word")}
             </button>
           </div>
         </div>
@@ -170,7 +172,7 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
           
           {/* Helper Text */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur text-xs px-3 py-1 rounded-full border shadow-sm z-10 text-slate-500 pointer-events-none">
-            Use Font & Spacing sliders to fit content to 1 page
+            {t("Use Font & Spacing sliders to fit content to 1 page")}
           </div>
 
           {/* Live Preview with Toolbar (NOT captured for PDF) */}
@@ -193,7 +195,7 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
         <div className="bg-white p-6 rounded-xl border border-slate-200">
           <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-500" />
-            Key Improvements Applied
+            {t("Key Improvements Applied")}
           </h3>
           <ul className="grid md:grid-cols-2 gap-3">
             {improvements.map((item, i) => (
@@ -214,8 +216,8 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
               <FileText className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <p className="font-medium text-slate-900 text-sm">PDF Format</p>
-              <p className="text-xs text-slate-500">Best for sharing & ATS systems</p>
+              <p className="font-medium text-slate-900 text-sm">{t("PDF Format")}</p>
+              <p className="text-xs text-slate-500">{t("Best for sharing & ATS systems")}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -223,8 +225,8 @@ export default function AnalysisResults({ optimizedData, score, improvements }: 
               <FileEdit className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="font-medium text-slate-900 text-sm">Word Format</p>
-              <p className="text-xs text-slate-500">Easy to edit & customize</p>
+              <p className="font-medium text-slate-900 text-sm">{t("Word Format")}</p>
+              <p className="text-xs text-slate-500">{t("Easy to edit & customize")}</p>
             </div>
           </div>
         </div>

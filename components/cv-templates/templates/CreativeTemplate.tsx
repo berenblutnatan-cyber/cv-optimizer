@@ -5,6 +5,7 @@ import { A4PageWrapper, A4Grid } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Template 6: Creative
@@ -15,6 +16,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
 
 export function CreativeTemplate({ data, themeColor, className }: TemplateProps) {
   const colors = getThemeColors(themeColor);
+  const { t } = useT();
 
   return (
     <A4PageWrapper className={className}>
@@ -100,7 +102,7 @@ export function CreativeTemplate({ data, themeColor, className }: TemplateProps)
           </div>
 
           {/* Contact */}
-          <CreativeSidebarSection title="Contact">
+          <CreativeSidebarSection title={t("Contact")}>
             {hasContent(data.contact.email) && <CreativeContactItem icon="✉" value={data.contact.email!} />}
             {hasContent(data.contact.phone) && <CreativeContactItem icon="☎" value={data.contact.phone!} />}
             {hasContent(data.contact.location) && <CreativeContactItem icon="📍" value={data.contact.location!} />}
@@ -110,7 +112,7 @@ export function CreativeTemplate({ data, themeColor, className }: TemplateProps)
 
           {/* Skills */}
           {data.skills && data.skills.length > 0 && (
-            <CreativeSidebarSection title="Skills">
+            <CreativeSidebarSection title={t("Skills")}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {data.skills.filter(hasContent).map((skill, idx) => (
                   <span key={idx} style={{
@@ -130,7 +132,7 @@ export function CreativeTemplate({ data, themeColor, className }: TemplateProps)
 
           {/* Languages */}
           {data.languages && data.languages.length > 0 && (
-            <CreativeSidebarSection title="Languages">
+            <CreativeSidebarSection title={t("Languages")}>
               {data.languages.filter(hasContent).map((lang, idx) => (
                 <p key={idx} style={{ fontSize: "10px", color: "rgba(255,255,255,0.9)", marginBottom: "4px" }}>
                   • {lang}

@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Aurora
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  * while the color does the talking. Great for PM / business / marketing.
  */
 export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
 
   return (
@@ -64,7 +66,7 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
           </header>
 
           {hasContent(data.summary) && (
-            <AuroraSection title="Profile" colors={colors}>
+            <AuroraSection title={t("Profile")} colors={colors}>
               <p style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.5 }}>{data.summary}</p>
             </AuroraSection>
           )}
@@ -98,7 +100,7 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
           ))}
 
           {data.skills && data.skills.length > 0 && (
-            <AuroraSection title="Skills" colors={colors}>
+            <AuroraSection title={t("Skills")} colors={colors}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                 {data.skills.filter(hasContent).map((s, i) => (
                   <span key={i} style={{ fontSize: "8.5px", fontWeight: 600, color: colors.dark, backgroundColor: colors.light, padding: "3px 9px", borderRadius: "11px" }}>{s}</span>
@@ -108,7 +110,7 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
           )}
 
           {data.languages && data.languages.length > 0 && (
-            <AuroraSection title="Languages" colors={colors}>
+            <AuroraSection title={t("Languages")} colors={colors}>
               <p style={{ fontSize: "9px", color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
             </AuroraSection>
           )}

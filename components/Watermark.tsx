@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface WatermarkProps {
   className?: string;
 }
 
 export function Watermark({ className = "" }: WatermarkProps) {
+  const { t } = useT();
   return (
     <div
       className={`fixed inset-0 pointer-events-none z-50 ${className}`}
@@ -25,7 +27,7 @@ export function Watermark({ className = "" }: WatermarkProps) {
           userSelect: "none",
         }}
       >
-        Hired - Preview
+        Hired - {t("Preview")}
       </div>
     </div>
   );

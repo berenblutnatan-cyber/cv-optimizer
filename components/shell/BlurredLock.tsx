@@ -2,12 +2,13 @@
 
 import { ReactNode } from "react";
 import { Lock } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function BlurredLock({
   children,
   locked,
   scoreImpact,
-  label = "Unlock",
+  label,
   onUnlock,
 }: {
   children: ReactNode;
@@ -16,6 +17,7 @@ export function BlurredLock({
   label?: string;
   onUnlock?: () => void;
 }) {
+  const { t } = useT();
   if (!locked) return <>{children}</>;
 
   return (
@@ -33,10 +35,10 @@ export function BlurredLock({
       >
         <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 text-[#1a1a1a] text-sm font-medium shadow-glow group-hover:scale-[1.02] transition-transform">
           <Lock className="h-3.5 w-3.5" />
-          {label}
+          {label ?? t("Unlock")}
           {typeof scoreImpact === "number" && scoreImpact > 0 ? (
             <span className="ml-1 px-2 py-0.5 rounded-full bg-[#f5b8c8] text-[11px] font-semibold">
-              +{scoreImpact} pts
+              {t("+{scoreImpact} pts", { scoreImpact })}
             </span>
           ) : null}
         </span>

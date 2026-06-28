@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Devfolio
@@ -14,6 +15,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  * staying a true one-page A4 résumé. A modern upgrade to "Techie".
  */
 export function DevfolioTemplate({ data, themeColor, className }: TemplateProps) {
+  const { t } = useT();
   const colors = getThemeColors(themeColor);
   const mono = FONTS.mono.heading;
 
@@ -48,13 +50,13 @@ export function DevfolioTemplate({ data, themeColor, className }: TemplateProps)
           </header>
 
           {hasContent(data.summary) && (
-            <DevSection title="about" mono={mono} colors={colors}>
+            <DevSection title={t("about")} mono={mono} colors={colors}>
               <p style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.5, fontFamily: FONTS.mono.body }}>{data.summary}</p>
             </DevSection>
           )}
 
           {data.skills && data.skills.length > 0 && (
-            <DevSection title="stack" mono={mono} colors={colors}>
+            <DevSection title={t("stack")} mono={mono} colors={colors}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                 {data.skills.filter(hasContent).map((s, i) => (
                   <span key={i} style={{ fontFamily: mono, fontSize: "8.5px", color: colors.dark, border: `1px solid ${colors.primary}`, backgroundColor: colors.light, padding: "2px 7px", borderRadius: "3px" }}>{s}</span>
@@ -90,7 +92,7 @@ export function DevfolioTemplate({ data, themeColor, className }: TemplateProps)
           ))}
 
           {data.languages && data.languages.length > 0 && (
-            <DevSection title="lang" mono={mono} colors={colors}>
+            <DevSection title={t("lang")} mono={mono} colors={colors}>
               <p style={{ fontFamily: FONTS.mono.body, fontSize: "9px", color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
             </DevSection>
           )}

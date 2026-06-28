@@ -11,8 +11,10 @@ import { POLAR_PLANS, type PolarPlanKey } from "@/lib/polar";
 import { trackConversion } from "@/lib/gtag";
 import { trackMetaEvent } from "@/lib/fbq";
 import { track, setUserProps } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 function PurchaseSuccessContent() {
+  const { t } = useT();
   const searchParams = useSearchParams();
   const { user } = useUser();
   const hasFired = useRef(false);
@@ -72,13 +74,13 @@ function PurchaseSuccessContent() {
       </div>
 
       <h1 className="font-serif text-4xl font-light mb-4">
-        You're in.
+        {t("You're in.")}
       </h1>
       <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
       <p className="text-lg text-stone-600 font-light mb-10">
         {planConfig
-          ? `${planConfig.credits} credits added to your account.`
-          : "Your purchase is complete."}
+          ? t("{credits} credits added to your account.", { credits: planConfig.credits })
+          : t("Your purchase is complete.")}
       </p>
 
       <Link
@@ -86,12 +88,12 @@ function PurchaseSuccessContent() {
         className="inline-flex items-center gap-3 px-8 py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
       >
         <Sparkles className="w-5 h-5" strokeWidth={1.5} />
-        Optimize My Resume Now
+        {t("Optimize My Resume Now")}
         <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
       </Link>
 
       <p className="text-sm text-stone-500 mt-8 font-light">
-        A receipt has been sent to your email. Credits never expire.
+        {t("A receipt has been sent to your email. Credits never expire.")}
       </p>
     </div>
   );

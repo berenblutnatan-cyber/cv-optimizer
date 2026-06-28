@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Sparkles, X } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const DISMISS_KEY = "hired-cv:builder-welcome-dismissed";
 
 export function BuilderWelcomeBanner() {
+  const { t } = useT();
   const { userId, isLoaded } = useAuth();
   const [credits, setCredits] = useState<number | null>(null);
   const [show, setShow] = useState(false);
@@ -52,15 +54,21 @@ export function BuilderWelcomeBanner() {
           <div className="flex items-start sm:items-center gap-3">
             <Sparkles className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5 sm:mt-0" strokeWidth={1.5} />
             <p className="text-sm text-[#1a1a1a] font-light leading-relaxed">
-              <span className="font-medium">Welcome to Hired-CV.</span>{" "}
-              You have <span className="font-medium text-[#0A2647]">{credits} {credits === 1 ? "credit" : "credits"}</span> ready to use. Each credit unlocks one AI-optimized resume download.
+              <span className="font-medium">{t("Welcome to Hired-CV.")}</span>{" "}
+              {t("You have")}{" "}
+              <span className="font-medium text-[#0A2647]">
+                {credits === 1
+                  ? t("{credits} credit", { credits })
+                  : t("{credits} credits", { credits })}
+              </span>{" "}
+              {t("ready to use. Each credit unlocks one AI-optimized resume download.")}
             </p>
           </div>
           <button
             type="button"
             onClick={dismiss}
             className="flex-shrink-0 p-1 -m-1 text-stone-400 hover:text-stone-700 transition-colors"
-            aria-label="Dismiss"
+            aria-label={t("Dismiss")}
           >
             <X className="w-4 h-4" strokeWidth={1.5} />
           </button>

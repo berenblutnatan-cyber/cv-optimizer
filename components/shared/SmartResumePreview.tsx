@@ -9,6 +9,7 @@ import {
   AlertTriangle, Type, ArrowUpDown, Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 // A4 dimensions at 96 DPI
 const A4_WIDTH_PX = 794;
@@ -91,6 +92,7 @@ export function SmartResumePreview({
   minScale = 0.3,
   maxScale = 1,
 }: SmartResumePreviewProps) {
+  const { t } = useT();
   // Measure the container
   const [containerRef, bounds] = useMeasure();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -344,7 +346,7 @@ export function SmartResumePreview({
                 
                 {showColorPicker && (
                   <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-200 p-3 z-50">
-                    <p className="text-xs font-medium text-slate-500 mb-2 px-1">Accent Color</p>
+                    <p className="text-xs font-medium text-slate-500 mb-2 px-1">{t("Accent Color")}</p>
                     <div className="grid grid-cols-5 gap-2">
                       {COLOR_OPTIONS.map((color) => (
                         <button
@@ -355,7 +357,7 @@ export function SmartResumePreview({
                             activeColor === color.id ? "ring-2 ring-offset-2 ring-slate-400" : ""
                           )}
                           style={{ backgroundColor: color.color }}
-                          title={color.name}
+                          title={t(color.name)}
                         />
                       ))}
                     </div>
@@ -372,7 +374,7 @@ export function SmartResumePreview({
                   className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Edit</span>
+                  <span className="hidden sm:inline">{t("Edit")}</span>
                 </button>
               )}
               
@@ -393,7 +395,7 @@ export function SmartResumePreview({
             {/* Font Size Slider */}
             <div className="flex items-center gap-2 flex-1">
               <Type className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className="w-10 text-slate-500 font-medium flex-shrink-0">Font</span>
+              <span className="w-10 text-slate-500 font-medium flex-shrink-0">{t("Font")}</span>
               <input 
                 type="range" 
                 min="1" 
@@ -409,7 +411,7 @@ export function SmartResumePreview({
             {/* Spacing Slider */}
             <div className="flex items-center gap-2 flex-1">
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className="w-14 text-slate-500 font-medium flex-shrink-0">Spacing</span>
+              <span className="w-14 text-slate-500 font-medium flex-shrink-0">{t("Spacing")}</span>
               <input 
                 type="range" 
                 min="1" 
@@ -428,14 +430,14 @@ export function SmartResumePreview({
             <div className="bg-amber-50 border-t border-amber-200 px-4 py-2 flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-2 text-amber-700 text-xs font-medium">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                <span>Resume exceeds 1 page! Reduce font or spacing to fit.</span>
+                <span>{t("Resume exceeds 1 page! Reduce font or spacing to fit.")}</span>
               </div>
               <button 
                 onClick={handleAutoFit}
                 className="flex items-center gap-1.5 h-6 px-3 text-[10px] font-semibold border border-amber-300 text-amber-800 hover:bg-amber-100 bg-white rounded-md transition-colors"
               >
                 <Zap className="w-3 h-3" />
-                Auto Fit
+                {t("Auto Fit")}
               </button>
             </div>
           )}
@@ -486,7 +488,7 @@ export function SmartResumePreview({
               style={{ top: `${A4_HEIGHT_PX}px` }}
             >
               <span className="absolute right-2 -top-4 text-[9px] text-red-400 bg-white/80 px-1.5 py-0.5 rounded">
-                End of Page 1
+                {t("End of Page 1")}
               </span>
             </div>
           </div>

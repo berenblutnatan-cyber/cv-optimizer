@@ -3,8 +3,10 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import type { Turn } from "@/hooks/useVoiceSession";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function Transcript({ turns }: { turns: Turn[] }) {
+  const { t: translate } = useT();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
@@ -13,7 +15,7 @@ export function Transcript({ turns }: { turns: Turn[] }) {
   if (turns.length === 0) {
     return (
       <div className="mt-2 px-4 py-2 rounded-full bg-white/8 border border-glass-border text-xs text-white/55 inline-flex">
-        Start by saying your name and what you do.
+        {translate("Start by saying your name and what you do.")}
       </div>
     );
   }

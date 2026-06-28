@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { X, FileDown, BarChart3, Shield, Check } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -21,8 +22,9 @@ export function AuthModal({
   onClose, 
   trigger,
   title,
-  description 
+  description
 }: AuthModalProps) {
+  const { t } = useT();
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -46,32 +48,32 @@ export function AuthModal({
   const content = {
     download: {
       icon: <FileDown className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
-      title: title || "Download Your Resume",
-      description: description || "Create a free account to download your beautifully formatted resume.",
+      title: title || t("Download Your Resume"),
+      description: description || t("Create a free account to download your beautifully formatted resume."),
       benefits: [
-        "Download unlimited PDFs",
-        "Save multiple versions",
-        "Access all templates",
+        t("Download unlimited PDFs"),
+        t("Save multiple versions"),
+        t("Access all templates"),
       ],
     },
     analyze: {
       icon: <BarChart3 className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
-      title: title || "See Your Full Analysis",
-      description: description || "Create a free account to see your detailed resume score and suggestions.",
+      title: title || t("See Your Full Analysis"),
+      description: description || t("Create a free account to see your detailed resume score and suggestions."),
       benefits: [
-        "Detailed ATS compatibility score",
-        "Personalized improvements",
-        "Track your progress",
+        t("Detailed ATS compatibility score"),
+        t("Personalized improvements"),
+        t("Track your progress"),
       ],
     },
     save: {
       icon: <Shield className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
-      title: title || "Save Your Progress",
-      description: description || "Create a free account to save your resume and access it anywhere.",
+      title: title || t("Save Your Progress"),
+      description: description || t("Create a free account to save your resume and access it anywhere."),
       benefits: [
-        "Cloud-synced storage",
-        "Access from any device",
-        "Never lose your work",
+        t("Cloud-synced storage"),
+        t("Access from any device"),
+        t("Never lose your work"),
       ],
     },
   };
@@ -132,24 +134,24 @@ export function AuthModal({
           <div className="space-y-4">
             <SignUpButton mode="modal">
               <button className="w-full py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all tracking-wide">
-                Create Free Account
+                {t("Create Free Account")}
               </button>
             </SignUpButton>
             
             <div className="flex items-center gap-4">
               <div className="flex-1 h-px bg-stone-200" />
-              <span className="text-xs text-stone-500 font-light tracking-wide">or</span>
+              <span className="text-xs text-stone-500 font-light tracking-wide">{t("or")}</span>
               <div className="flex-1 h-px bg-stone-200" />
             </div>
             
             <SignInButton mode="modal">
               <button className="w-full py-4 rounded-sm font-medium text-[#1a1a1a] border border-stone-300 hover:bg-white hover:border-stone-400 transition-all tracking-wide">
-                Sign In
+                {t("Sign In")}
               </button>
             </SignInButton>
-            
+
             <p className="text-center text-xs text-stone-500 font-light pt-2 tracking-wide">
-              No credit card required
+              {t("No credit card required")}
             </p>
           </div>
         </div>

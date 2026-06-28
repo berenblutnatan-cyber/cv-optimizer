@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, MessageCircle, Mic, Wand2, Briefcase, FileText, CreditCard, LayoutGrid } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 const ITEMS = [
   { href: "/", icon: Home, label: "Home" },
@@ -16,6 +17,7 @@ const ITEMS = [
 ];
 
 export function Sidebar() {
+  const { t } = useT();
   const pathname = usePathname() ?? "/";
   return (
     <>
@@ -27,14 +29,14 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
-              aria-label={label}
+              aria-label={t(label)}
               className={`group relative grid place-items-center h-11 w-11 rounded-xl transition-colors ${
                 active ? "bg-white/15 text-white" : "text-white/65 hover:text-white hover:bg-white/8"
               }`}
             >
               <Icon className="h-5 w-5" strokeWidth={1.7} />
               <span className="pointer-events-none absolute left-full ml-3 px-2 py-1 rounded-md bg-black/70 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {label}
+                {t(label)}
               </span>
             </Link>
           );
@@ -49,7 +51,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
-              aria-label={label}
+              aria-label={t(label)}
               className={`grid place-items-center h-11 w-11 rounded-xl transition-colors ${
                 active ? "bg-white/15 text-white" : "text-white/65"
               }`}

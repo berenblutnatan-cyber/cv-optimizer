@@ -1,6 +1,8 @@
 // Pure SVG sparkline, no client JS. Used in the Career Score card.
 
-export function Sparkline({
+import { getServerT } from "@/lib/i18n/server";
+
+export async function Sparkline({
   values,
   width = 220,
   height = 56,
@@ -14,8 +16,9 @@ export function Sparkline({
   fill?: string;
 }) {
   if (values.length === 0) {
+    const { t } = await getServerT();
     return (
-      <div className="text-xs text-white/40 italic">No data yet — run an optimization to start the trend.</div>
+      <div className="text-xs text-white/40 italic">{t("No data yet — run an optimization to start the trend.")}</div>
     );
   }
   const padded = values.length < 2 ? [...values, values[0]] : values;

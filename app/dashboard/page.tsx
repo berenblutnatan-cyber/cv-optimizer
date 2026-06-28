@@ -18,10 +18,11 @@ import { SquircleIcon } from "@/components/shell/SquircleIcon";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { RoleChips } from "@/components/dashboard/RoleChips";
 import { getDashboardData } from "@/lib/dashboard";
+import { getServerT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-function greeting(now: Date = new Date()): string {
+function greetingKey(now: Date = new Date()): string {
   const h = now.getHours();
   if (h < 5) return "Good night";
   if (h < 12) return "Good morning";
@@ -34,6 +35,7 @@ function formatDay(now: Date = new Date()): string {
 }
 
 export default async function DashboardPage() {
+  const { t } = await getServerT();
   const { userId } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/dashboard");
   const clerkUser = await currentUser();
@@ -44,7 +46,7 @@ export default async function DashboardPage() {
     firstName: clerkUser?.firstName ?? null,
   });
 
-  const name = data.user.firstName?.split(" ")[0] ?? "there";
+  const name = data.user.firstName?.split(" ")[0] ?? t("there");
 
   return (
     <main className="mx-auto max-w-6xl px-4 md:px-8 pt-8 md:pt-12 space-y-6">
@@ -53,14 +55,14 @@ export default async function DashboardPage() {
         <div className="text-sm text-white/60 font-serif italic">{formatDay()}</div>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="font-serif italic text-3xl md:text-5xl tracking-tight text-white">
-            {greeting()}, {name}
+            {t(greetingKey())}, {name}
           </h1>
           <div className="flex items-center gap-3">
             <LevelBadge xp={data.user.xp} />
             {data.user.streakDays > 0 ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/8 border border-glass-border text-xs text-white/85">
                 <span aria-hidden>🔥</span>
-                {data.user.streakDays}-day streak
+                {t("{count}-day streak", { count: data.user.streakDays })}
               </span>
             ) : null}
           </div>
@@ -73,10 +75,10 @@ export default async function DashboardPage() {
           <div className="flex items-start justify-between mb-3">
             <div>
               <div className="text-[11px] uppercase tracking-[0.18em] text-white/55">
-                Career Score
+                {t("Career Score")}
               </div>
               <div className="mt-1 text-xs text-white/70">
-                CV impact, roles tailored, applications launched
+                {t("CV impact, roles tailored, applications launched")}
               </div>
             </div>
             <div className="text-right">
@@ -87,11 +89,11 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <ScoreRing value={data.score.career / 10} label="of 100" size={132} />
+            <ScoreRing value={data.score.career / 10} label={t("of 100")} size={132} />
             <div className="flex-1 min-w-0">
               <Sparkline values={data.activity.last14DaysScores} />
               <div className="mt-2 text-[11px] text-white/55">
-                Last 14 optimizations
+                {t("Last 14 optimizations")}
               </div>
             </div>
           </div>
@@ -99,14 +101,14 @@ export default async function DashboardPage() {
 
         <GlassCard padding="lg">
           <div className="text-[11px] uppercase tracking-[0.18em] text-white/55">
-            This week
+            {t("This week")}
           </div>
           <div className="mt-2 font-serif italic text-3xl text-white tabular-nums">
             {data.activity.applicationsLaunched}
-            <span className="text-base text-white/45 ml-2">runs</span>
+            <span className="text-base text-white/45 ms-2">{t("runs")}</span>
           </div>
           <div className="mt-1 text-xs text-white/70">
-            CV optimizations and role generations to date.
+            {t("CV optimizations and role generations to date.")}
           </div>
           <div className="mt-5 flex items-end gap-1 h-16">
             {Array.from({ length: 7 }).map((_, i) => {
@@ -124,14 +126,14 @@ export default async function DashboardPage() {
 
         <GlassCard padding="lg">
           <div className="text-[11px] uppercase tracking-[0.18em] text-white/55">
-            Roles you're targeting
+            {t("Roles you're targeting")}
           </div>
           <div className="mt-3">
             <RoleChips initial={data.user.targetRoles} />
           </div>
           {data.user.targetRoles.length === 0 ? (
             <div className="mt-3 text-xs text-white/55">
-              Add up to 5 roles and we'll tailor a CV for each.
+              {t("Add up to 5 roles and we'll tailor a CV for each.")}
             </div>
           ) : null}
         </GlassCard>
@@ -140,61 +142,61 @@ export default async function DashboardPage() {
       {/* Squircle launcher dock */}
       <GlassCard padding="lg">
         <div className="text-[11px] uppercase tracking-[0.18em] text-white/55 mb-4">
-          Jump into
+          {t("Jump into")}
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-4 justify-center md:justify-start">
           <SquircleIcon
             icon={MessageCircle}
-            label="Build (chat)"
+            label={t("Build (chat)")}
             href="/build/chat"
             gradient={["#f5b8c8", "#8fb3ff"]}
           />
           <SquircleIcon
             icon={LayoutGrid}
-            label="Optimize"
+            label={t("Optimize")}
             href="/optimize"
             gradient={["#f5b8c8", "#c9b8ff"]}
           />
           <SquircleIcon
             icon={Mic}
-            label="Voice Build"
+            label={t("Voice Build")}
             href="/build/voice"
             gradient={["#c9b8ff", "#8fb3ff"]}
           />
           <SquircleIcon
             icon={Wand2}
-            label="Manual Build"
+            label={t("Manual Build")}
             href="/builder"
             gradient={["#8fb3ff", "#6f8fff"]}
           />
           <SquircleIcon
             icon={Briefcase}
-            label="Roles"
+            label={t("Roles")}
             href="/roles"
             badge={data.activity.rolesGenerated}
             gradient={["#f5b8c8", "#f5b8c8"]}
           />
           <SquircleIcon
             icon={ClipboardList}
-            label="Job Tracker"
+            label={t("Job Tracker")}
             href="/applications"
             gradient={["#8fb3ff", "#c9b8ff"]}
           />
           <SquircleIcon
             icon={MessageSquareQuote}
-            label="Interview Prep"
+            label={t("Interview Prep")}
             href="/interview-prep"
             gradient={["#f5b8c8", "#c9b8ff"]}
           />
           <SquircleIcon
             icon={FileText}
-            label="Templates"
+            label={t("Templates")}
             href="/builder/demo"
             gradient={["#c9b8ff", "#f5b8c8"]}
           />
           <SquircleIcon
             icon={CreditCard}
-            label="Pricing"
+            label={t("Pricing")}
             href="/pricing"
             gradient={["#8fb3ff", "#c9b8ff"]}
           />

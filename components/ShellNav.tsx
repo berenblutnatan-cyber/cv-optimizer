@@ -4,6 +4,8 @@ import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Logo } from "@/components/Logo";
 import { CreditBalance } from "@/components/CreditBalance";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type ShellNavProps = {
   rightSlot?: React.ReactNode;
@@ -12,6 +14,7 @@ type ShellNavProps = {
 };
 
 export function ShellNav({ rightSlot, active = null }: ShellNavProps) {
+  const { t } = useT();
   const linkBase =
     "text-sm font-medium transition-colors tracking-wide focus-visible:outline-none";
   const linkClass = (isActive: boolean) =>
@@ -33,7 +36,7 @@ export function ShellNav({ rightSlot, active = null }: ShellNavProps) {
               aria-current={active === "builder" ? "page" : undefined}
               className={linkClass(active === "builder")}
             >
-              Resume Builder
+              {t("Resume Builder")}
             </Link>
             <span className="w-px h-4 bg-stone-300" />
             <Link
@@ -41,9 +44,11 @@ export function ShellNav({ rightSlot, active = null }: ShellNavProps) {
               aria-current={active === "optimizer" ? "page" : undefined}
               className={linkClass(active === "optimizer")}
             >
-              Optimizer
+              {t("Optimizer")}
             </Link>
           </nav>
+
+          <LanguageToggle />
 
           <SignedIn>
             <CreditBalance />
@@ -56,7 +61,7 @@ export function ShellNav({ rightSlot, active = null }: ShellNavProps) {
           <SignedOut>
             <SignInButton mode="modal">
               <button className="px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-400 rounded-sm transition-colors tracking-wide focus-visible:outline-none">
-                Sign In
+                {t("Sign In")}
               </button>
             </SignInButton>
           </SignedOut>

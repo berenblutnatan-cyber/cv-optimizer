@@ -5,6 +5,7 @@ import { A4PageWrapper } from "../A4PageWrapper";
 import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Canvas
@@ -15,6 +16,7 @@ import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/uti
  */
 export function CanvasTemplate({ data, themeColor, className }: TemplateProps) {
   const colors = getThemeColors(themeColor);
+  const { t } = useT();
   const initials = formatName(data.name).split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("");
 
   return (
@@ -33,7 +35,7 @@ export function CanvasTemplate({ data, themeColor, className }: TemplateProps) {
             )}
           </div>
 
-          <CanvasSideBlock title="Contact">
+          <CanvasSideBlock title={t("Contact")}>
             {hasContent(data.contact.email) && <SideLine>{data.contact.email}</SideLine>}
             {hasContent(data.contact.phone) && <SideLine>{data.contact.phone}</SideLine>}
             {hasContent(data.contact.location) && <SideLine>{data.contact.location}</SideLine>}
@@ -42,7 +44,7 @@ export function CanvasTemplate({ data, themeColor, className }: TemplateProps) {
           </CanvasSideBlock>
 
           {data.skills && data.skills.length > 0 && (
-            <CanvasSideBlock title="Skills">
+            <CanvasSideBlock title={t("Skills")}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                 {data.skills.filter(hasContent).map((s, i) => (
                   <span key={i} style={{ fontSize: "8px", fontWeight: 600, color: "#ffffff", backgroundColor: "rgba(255,255,255,0.18)", padding: "2px 7px", borderRadius: "10px" }}>{s}</span>
@@ -52,7 +54,7 @@ export function CanvasTemplate({ data, themeColor, className }: TemplateProps) {
           )}
 
           {data.languages && data.languages.length > 0 && (
-            <CanvasSideBlock title="Languages">
+            <CanvasSideBlock title={t("Languages")}>
               {data.languages.filter(hasContent).map((l, i) => <SideLine key={i}>{l}</SideLine>)}
             </CanvasSideBlock>
           )}

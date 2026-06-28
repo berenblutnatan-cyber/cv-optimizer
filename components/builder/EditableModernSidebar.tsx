@@ -3,6 +3,7 @@
 import React, { useCallback } from "react";
 import { A4PageWrapper, A4Grid } from "@/components/cv-templates/A4PageWrapper";
 import { EditableField, EditableParagraph } from "./EditableField";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * EditableModernSidebar Template
@@ -201,7 +202,8 @@ export function EditableModernSidebar({
   onDataChange,
   photo,
 }: EditableModernSidebarProps) {
-  
+  const { t } = useT();
+
   // Helper to update a single field
   const updateField = useCallback(<K extends keyof ResumeData>(
     field: K,
@@ -275,7 +277,7 @@ export function EditableModernSidebar({
 
           {/* Contact Section */}
           <div style={{ marginBottom: "24px" }}>
-            <SidebarSectionHeader>Contact</SidebarSectionHeader>
+            <SidebarSectionHeader>{t("Contact")}</SidebarSectionHeader>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {/* Email */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "10px", color: COLORS.sidebarMuted }}>
@@ -316,7 +318,7 @@ export function EditableModernSidebar({
                   id="contact-location"
                   value={data.location}
                   onChange={(v) => updateField("location", v)}
-                  placeholder="City, Country"
+                  placeholder={t("City, Country")}
                   className="text-[10px] text-slate-400"
                   focusRingClass="ring-2 ring-indigo-400/50"
                 />
@@ -344,14 +346,14 @@ export function EditableModernSidebar({
           {/* Skills Section */}
           {data.skills.length > 0 && (
             <div style={{ marginBottom: "24px" }}>
-              <SidebarSectionHeader>Skills</SidebarSectionHeader>
+              <SidebarSectionHeader>{t("Skills")}</SidebarSectionHeader>
               {data.skills.map((skill, idx) => (
                 <div key={idx} style={{ marginBottom: "8px" }}>
                   <EditableField
                     id={`skill-${idx}`}
                     value={skill}
                     onChange={(v) => updateSkill(idx, v)}
-                    placeholder="Add skill..."
+                    placeholder={t("Add skill...")}
                     className="text-[10px] text-slate-200"
                     focusRingClass="ring-2 ring-indigo-400/50"
                   />
@@ -377,7 +379,7 @@ export function EditableModernSidebar({
           {/* Languages Section */}
           {data.languages.length > 0 && (
             <div style={{ marginBottom: "24px" }}>
-              <SidebarSectionHeader>Languages</SidebarSectionHeader>
+              <SidebarSectionHeader>{t("Languages")}</SidebarSectionHeader>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {data.languages.map((lang, idx) => (
                   <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -391,7 +393,7 @@ export function EditableModernSidebar({
                       id={`language-${idx}`}
                       value={lang}
                       onChange={(v) => updateLanguage(idx, v)}
-                      placeholder="Add language..."
+                      placeholder={t("Add language...")}
                       className="text-[10px] text-slate-400"
                       focusRingClass="ring-2 ring-indigo-400/50"
                     />
@@ -423,7 +425,7 @@ export function EditableModernSidebar({
               id="header-name"
               value={data.name}
               onChange={(v) => updateField("name", v)}
-              placeholder="Your Name"
+              placeholder={t("Your Name")}
               className="text-[28px] font-bold text-slate-800 tracking-tight leading-tight"
               focusRingClass="ring-2 ring-indigo-500/50"
             />
@@ -431,7 +433,7 @@ export function EditableModernSidebar({
               id="header-title"
               value={data.title}
               onChange={(v) => updateField("title", v)}
-              placeholder="Professional Title"
+              placeholder={t("Professional Title")}
               className="text-[13px] font-medium text-slate-500 uppercase tracking-widest mt-1"
               focusRingClass="ring-2 ring-indigo-500/50"
             />
@@ -440,12 +442,12 @@ export function EditableModernSidebar({
           {/* Summary Section */}
           {data.summary && (
             <section style={{ marginBottom: "18px" }}>
-              <MainSectionHeader>Professional Summary</MainSectionHeader>
+              <MainSectionHeader>{t("Professional Summary")}</MainSectionHeader>
               <EditableParagraph
                 id="summary"
                 value={data.summary}
                 onChange={(v) => updateField("summary", v)}
-                placeholder="Write a brief professional summary..."
+                placeholder={t("Write a brief professional summary...")}
                 className="text-[11px] text-slate-600 leading-relaxed"
                 minHeight={40}
                 focusRingClass="ring-2 ring-indigo-500/50"
@@ -479,7 +481,7 @@ export function EditableModernSidebar({
                           id={`section-${sIdx}-item-${iIdx}-title`}
                           value={item.title || ""}
                           onChange={(v) => updateSectionItem(sIdx, iIdx, { title: v })}
-                          placeholder="Position / Degree"
+                          placeholder={t("Position / Degree")}
                           className="text-[11px] font-semibold text-slate-800"
                           focusRingClass="ring-2 ring-indigo-500/50"
                         />
@@ -488,7 +490,7 @@ export function EditableModernSidebar({
                             id={`section-${sIdx}-item-${iIdx}-date`}
                             value={item.date || ""}
                             onChange={(v) => updateSectionItem(sIdx, iIdx, { date: v })}
-                            placeholder="Date"
+                            placeholder={t("Date")}
                             className="text-[10px] text-slate-500"
                             focusRingClass="ring-2 ring-indigo-500/50"
                           />
@@ -501,7 +503,7 @@ export function EditableModernSidebar({
                           id={`section-${sIdx}-item-${iIdx}-subtitle`}
                           value={item.subtitle || ""}
                           onChange={(v) => updateSectionItem(sIdx, iIdx, { subtitle: v })}
-                          placeholder="Company / Institution"
+                          placeholder={t("Company / Institution")}
                           className="text-[10px] text-indigo-600 font-medium mb-1"
                           focusRingClass="ring-2 ring-indigo-500/50"
                         />
@@ -513,7 +515,7 @@ export function EditableModernSidebar({
                           id={`section-${sIdx}-item-${iIdx}-desc`}
                           value={item.description || ""}
                           onChange={(v) => updateSectionItem(sIdx, iIdx, { description: v })}
-                          placeholder="Describe your responsibilities and achievements..."
+                          placeholder={t("Describe your responsibilities and achievements...")}
                           className="text-[10px] text-slate-600 leading-relaxed"
                           minHeight={24}
                           focusRingClass="ring-2 ring-indigo-500/50"
@@ -539,7 +541,7 @@ export function EditableModernSidebar({
                                   newBullets[bIdx] = v;
                                   updateSectionItem(sIdx, iIdx, { bullets: newBullets });
                                 }}
-                                placeholder="Achievement or responsibility..."
+                                placeholder={t("Achievement or responsibility...")}
                                 className="text-[10px] text-slate-600 leading-relaxed flex-1"
                                 focusRingClass="ring-2 ring-indigo-500/50"
                               />

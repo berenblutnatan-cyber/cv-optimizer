@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { MessageSquare, X, Star, Check, Loader2 } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type WidgetState = "button" | "rating" | "comment" | "submitting" | "success";
 
@@ -16,6 +17,7 @@ interface RatingWidgetProps {
 const HIDDEN_ROUTES = ["/builder", "/build"];
 
 export function RatingWidget({ source }: RatingWidgetProps) {
+  const { t } = useT();
   const pathname = usePathname();
   const { isSignedIn } = useUser();
   const [state, setState] = useState<WidgetState>("button");
@@ -89,18 +91,18 @@ export function RatingWidget({ source }: RatingWidgetProps) {
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-2 group">
         <button
           onClick={handleDismiss}
-          aria-label="Dismiss feedback prompt"
+          aria-label={t("Dismiss feedback prompt")}
           className="bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full shadow border border-slate-200 transition-all focus-visible:outline-none"
         >
           <X className="w-4 h-4" />
         </button>
         <button
           onClick={() => setState("rating")}
-          aria-label="Open feedback form"
+          aria-label={t("Open feedback form")}
           className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-full shadow-lg transition-all hover:scale-105 focus-visible:outline-none"
         >
           <MessageSquare className="w-5 h-5" />
-          <span>Feedback</span>
+          <span>{t("Feedback")}</span>
         </button>
       </div>
     );
@@ -114,10 +116,10 @@ export function RatingWidget({ source }: RatingWidgetProps) {
             <Check className="w-6 h-6 text-emerald-600" />
           </div>
           <h3 className="font-bold text-slate-800">
-            {creditAwarded ? "Thanks — +1 credit added!" : "Thank you!"}
+            {creditAwarded ? t("Thanks — +1 credit added!") : t("Thank you!")}
           </h3>
           {creditAwarded ? (
-            <p className="text-sm text-slate-500">Your free credit is in your balance.</p>
+            <p className="text-sm text-slate-500">{t("Your free credit is in your balance.")}</p>
           ) : null}
         </div>
       </div>
@@ -128,19 +130,19 @@ export function RatingWidget({ source }: RatingWidgetProps) {
     <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50 bg-white rounded-xl shadow-2xl border border-slate-200 sm:w-80 animate-in fade-in slide-in-from-bottom-4">
       <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/50 rounded-t-xl">
         <span className="font-semibold text-sm text-slate-700">
-          {state === "rating" ? "Rate Experience" : "Add Details"}
+          {state === "rating" ? t("Rate Experience") : t("Add Details")}
         </span>
         <div className="flex gap-1">
           <button
             onClick={() => setState("button")}
-            aria-label="Minimize feedback"
+            aria-label={t("Minimize feedback")}
             className="p-2 hover:bg-slate-200 rounded text-slate-500 focus-visible:outline-none"
           >
             <div className="w-3 h-0.5 bg-current translate-y-1"></div>
           </button>
           <button
             onClick={handleDismiss}
-            aria-label="Dismiss feedback"
+            aria-label={t("Dismiss feedback")}
             className="p-2 hover:bg-red-100 hover:text-red-600 rounded text-slate-400 focus-visible:outline-none"
           >
             <X className="w-4 h-4" />
@@ -171,7 +173,7 @@ export function RatingWidget({ source }: RatingWidgetProps) {
 
         {isSignedIn && state === "rating" ? (
           <p className="text-center text-xs font-medium text-emerald-600 -mt-2 mb-1">
-            ★ Your first review earns a free credit
+            {t("★ Your first review earns a free credit")}
           </p>
         ) : null}
 
@@ -180,7 +182,7 @@ export function RatingWidget({ source }: RatingWidgetProps) {
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Tell us what you think..."
+              placeholder={t("Tell us what you think...")}
               // התיקון כאן: הוספתי text-slate-900 באופן מפורש
               className="w-full p-3 text-sm text-slate-900 border rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none resize-none bg-slate-50 placeholder:text-slate-400"
               rows={3}
@@ -190,7 +192,7 @@ export function RatingWidget({ source }: RatingWidgetProps) {
               disabled={state === "submitting"}
               className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {state === "submitting" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Feedback"}
+              {state === "submitting" ? <Loader2 className="w-4 h-4 animate-spin" /> : t("Send Feedback")}
             </button>
           </div>
         )}
