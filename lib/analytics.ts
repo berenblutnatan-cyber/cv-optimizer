@@ -55,6 +55,7 @@ export type EventName =
   | "voice_finalized"
   | "voice_abandoned"
   | "voice_tool_applied"
+  | "voice_voice_changed"
   | "voice_error"
   // Chat-first builder
   | "chat_builder_opened"

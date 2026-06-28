@@ -192,7 +192,7 @@ export function useVoiceSession(opts?: {
     }
   }
 
-  async function start() {
+  async function start(voice?: string) {
     setError(null);
     setState("connecting");
     setTurns([]);
@@ -203,7 +203,11 @@ export function useVoiceSession(opts?: {
 
     let session: { client_secret: string | null; model: string };
     try {
-      const res = await fetch("/api/voice/session", { method: "POST" });
+      const res = await fetch("/api/voice/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(voice ? { voice } : {}),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error ?? "Couldn't start voice session");

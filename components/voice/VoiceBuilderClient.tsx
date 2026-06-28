@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useVoiceSession } from "@/hooks/useVoiceSession";
 import { applyCvToolCall, describeToolCall } from "@/lib/chat/cvTools";
+import { VOICE_OPTIONS, DEFAULT_VOICE, normalizeVoice } from "@/lib/voice/voices";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
@@ -23,7 +24,28 @@ export function VoiceBuilderClient() {
   const resumeData = useResumeStore((s) => s.resumeData);
   const setResumeData = useResumeStore((s) => s.setResumeData);
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  // Which voice the bot answers in. Persisted so the user's pick sticks across
+  // sessions. Read from localStorage after mount to stay SSR-safe.
+  const [voice, setVoice] = useState<string>(DEFAULT_VOICE);
+  useEffect(() => {
+    setHydrated(true);
+    try {
+      const saved = window.localStorage.getItem("hired_voice");
+      if (saved) setVoice(normalizeVoice(saved));
+    } catch {
+      /* localStorage unavailable — keep default */
+    }
+  }, []);
+
+  function chooseVoice(id: string) {
+    setVoice(id);
+    try {
+      window.localStorage.setItem("hired_voice", id);
+    } catch {
+      /* ignore */
+    }
+    track("voice_voice_changed", { voice: id });
+  }
 
   const {
     state,
@@ -53,8 +75,8 @@ export function VoiceBuilderClient() {
   function onOrbClick() {
     if (state === "idle" || state === "error") {
       track("voice_entry_clicked");
-      start();
-      track("voice_session_started");
+      start(voice);
+      track("voice_session_started", { voice });
       return;
     }
     // Tapping the orb mid-session = pause/stop the stream.
@@ -124,6 +146,37 @@ export function VoiceBuilderClient() {
           <VoiceOrb state={state} amplitude={amplitude} onClick={onOrbClick} />
           {error ? (
             <div className="text-sm text-[#f5b8c8] max-w-md text-center">{error}</div>
+          ) : null}
+
+          {/* Voice picker — only before the call starts; the Realtime API locks
+              the voice in at session-creation, so it can't change mid-call. */}
+          {state === "idle" || state === "error" ? (
+            <div className="w-full max-w-sm">
+              <div className="text-center text-[11px] uppercase tracking-[0.18em] text-white/45 mb-2">
+                {t("Pick a voice")}
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {VOICE_OPTIONS.map((v) => {
+                  const active = v.id === voice;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => chooseVoice(v.id)}
+                      aria-pressed={active}
+                      title={v.blurb}
+                      className={
+                        active
+                          ? "px-3 py-1.5 rounded-full text-xs font-medium bg-white text-[#1a1a1a] shadow-glow"
+                          : "px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 border border-glass-border text-white/80 hover:bg-white/15 transition-colors"
+                      }
+                    >
+                      {t(v.label)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ) : null}
         </div>
 

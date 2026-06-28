@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { kv } from "@vercel/kv";
 import { VOICE_AGENT_SYSTEM_PROMPT } from "@/lib/voice/prompts";
 import { REALTIME_CV_TOOLS } from "@/lib/voice/realtimeTools";
+import { normalizeVoice } from "@/lib/voice/voices";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -18,12 +19,17 @@ const REALTIME_MODEL = "gpt-realtime";
 // been REMOVED by OpenAI (404s), which silently broke voice sessions.
 //
 // Rate-limited per user (HOURLY_SESSION_CAP / hour) via Vercel KV.
-export async function POST() {
+export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
   }
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // The voice the agent will speak in — chosen by the user in the picker.
+  // Validated against the allowlist so we never forward an arbitrary string.
+  const body = await req.json().catch(() => ({}));
+  const voice = normalizeVoice((body as { voice?: unknown })?.voice);
 
   // Sliding-window-ish rate limit. Cheap counter with 1h TTL on first set.
   try {
@@ -66,7 +72,7 @@ export async function POST() {
                 silence_duration_ms: 600,
               },
             },
-            output: { voice: "verse" },
+            output: { voice },
           },
           // Same tool layer as the chat builder — the voice agent patches the
           // live CV preview while the user talks (lib/voice/realtimeTools).
