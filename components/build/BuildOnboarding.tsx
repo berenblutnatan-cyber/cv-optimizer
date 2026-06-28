@@ -82,7 +82,10 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("intro");
-  const [role, setRole] = useState("");
+  // Target roles — plural: people often apply for more than one title, and the
+  // step is skippable, so this can also be empty.
+  const [roles, setRoles] = useState<string[]>([]);
+  const [roleInput, setRoleInput] = useState("");
   const [goal, setGoal] = useState<GoalId | null>(null);
   const [experience, setExperience] = useState<string | null>(null);
   const [template, setTemplate] = useState<BuilderTemplateId>("ivy-league");
@@ -104,12 +107,42 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
     }
   }
 
+  const primaryRole = roles[0] ?? "";
+  const rolesLabel = roles.join(", ");
+
+  /** Add a typed/suggested role (deduped, capped) without leaving the step. */
+  function addRole(value: string) {
+    const v = value.trim();
+    if (!v) return;
+    setRoles((prev) =>
+      prev.some((r) => r.toLowerCase() === v.toLowerCase()) || prev.length >= 5
+        ? prev
+        : [...prev, v],
+    );
+    setRoleInput("");
+  }
+
+  function removeRole(value: string) {
+    setRoles((prev) => prev.filter((r) => r !== value));
+  }
+
+  /** Continue from the role step — commit whatever's typed but not yet added. */
+  function commitRolesAndContinue() {
+    const pending = roleInput.trim();
+    const hasPending =
+      !!pending && !roles.some((r) => r.toLowerCase() === pending.toLowerCase()) && roles.length < 5;
+    if (hasPending) {
+      setRoles((prev) => [...prev, pending]);
+      setRoleInput("");
+    }
+    if (roles.length || hasPending) go("goal");
+  }
+
   /** Seed the real stores so the next surface opens already personalised. */
   function seedRole() {
-    const r = role.trim();
-    if (!r) return;
-    useResumeStore.getState().updatePersonalInfo({ title: r });
-    useOnboardingStore.getState().setRoles([r]);
+    if (!roles.length) return;
+    useResumeStore.getState().updatePersonalInfo({ title: roles[0] });
+    useOnboardingStore.getState().setRoles(roles);
   }
 
   /** Stash the funnel result so the (anonymous) builder drafts the CV at once. */
@@ -117,7 +150,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
     try {
       sessionStorage.setItem(
         "builder-kickoff",
-        JSON.stringify({ role: role.trim(), goal, template, experience, cvText }),
+        JSON.stringify({ role: primaryRole, roles, goal, template, experience, cvText }),
       );
     } catch {
       /* ignore — builder falls back to its greeting */
@@ -126,7 +159,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
 
   function finish(method: "chat" | "manual", destination: string, label: string) {
     seedRole();
-    track("build_onboarding_completed", { method, role: role.trim() || null, goal, experience, template });
+    track("build_onboarding_completed", { method, role: primaryRole || null, roles: rolesLabel || null, goal, experience, template });
     // Build-first, sign up to save: the chat builder is anonymous now, so we
     // hand off straight in and let it draft from what we learned.
     if (method === "chat") stashKickoff(null);
@@ -161,7 +194,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
       } catch {
         /* ignore — the builder still opens, just without the auto-draft */
       }
-      track("build_onboarding_completed", { method: "upload", role: role.trim() || null, goal, experience, template });
+      track("build_onboarding_completed", { method: "upload", role: primaryRole || null, roles: rolesLabel || null, goal, experience, template });
       setHandoffLabel(translate("Optimizing your CV…"));
       go("handoff");
       // The uploaded CV drafts live in the (anonymous) builder — not the old
@@ -227,17 +260,21 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
         </div>
       )}
 
-      {/* Stage */}
+      {/* Stage — scrolls on its own when a step is taller than the viewport
+          (e.g. short mobile screens). The funnel is embedded on the home page
+          inside a fixed-height (100dvh) box, so without an explicit scroll the
+          centered content overflows and the Back / Continue buttons get clipped
+          off the bottom — leaving mobile users with "no way back". */}
       <main
-        className={`relative z-10 mx-auto flex max-w-2xl flex-col items-center justify-center px-5 text-center ${
-          embedded ? "min-h-0 flex-1 pb-8 pt-4" : "min-h-[calc(100dvh-9rem)] pb-16"
+        className={`relative z-10 flex flex-col px-5 ${
+          embedded ? "min-h-0 flex-1 overflow-y-auto" : "min-h-[calc(100dvh-9rem)]"
         }`}
       >
+        <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col items-center justify-center py-8 text-center">
         {/* Steps mount/unmount directly — enter animation only, so transitions
             never depend on framer-motion's exit-complete callback (which can
             stall under Strict Mode and freeze the funnel). */}
-        {/* Shared upload input — used by both the "optimize existing" upload step
-            and the from-scratch method step's "I have a CV" option. */}
+        {/* Shared upload input — used by the "optimize existing" upload step. */}
         <input
           ref={fileRef}
           type="file"
@@ -396,57 +433,104 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
             </motion.div>
           )}
 
-          {/* ---------- Q1: ROLE ---------- */}
+          {/* ---------- Q1: ROLE (optional, multi) ---------- */}
           {step === "role" && (
             <motion.div key="role" {...fade} className="w-full">
               <StepLabel step="role" />
               <h2 className="mt-4 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
                 {translate("What role are you going after?")}
               </h2>
+              <p className="mx-auto mt-3 max-w-md text-[#0A2647]/55">
+                {translate("Add one or more — we’ll tailor your CV to them. Not sure yet? You can skip this.")}
+              </p>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (role.trim()) go("goal");
+                  commitRolesAndContinue();
                 }}
                 className="mx-auto mt-8 w-full max-w-md"
               >
-                <input
-                  autoFocus
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  placeholder={translate("e.g. Product Manager")}
-                  aria-label={translate("Target role")}
-                  className="w-full rounded-2xl border border-[#0A2647]/15 bg-white/80 px-5 py-4 text-center text-xl text-[#0A2647] shadow-sm outline-none backdrop-blur transition-shadow placeholder:text-[#0A2647]/35 focus:border-[#0A2647]/40 focus:shadow-md"
-                />
+                <div className="flex items-stretch gap-2">
+                  <input
+                    autoFocus
+                    value={roleInput}
+                    onChange={(e) => setRoleInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enter / comma adds a role chip without leaving the step,
+                      // so people targeting several titles can list them all.
+                      if (e.key === "Enter" || e.key === ",") {
+                        e.preventDefault();
+                        addRole(roleInput);
+                      }
+                    }}
+                    placeholder={translate("e.g. Product Manager")}
+                    aria-label={translate("Target role")}
+                    className="w-full rounded-2xl border border-[#0A2647]/15 bg-white/80 px-5 py-4 text-center text-xl text-[#0A2647] shadow-sm outline-none backdrop-blur transition-shadow placeholder:text-[#0A2647]/35 focus:border-[#0A2647]/40 focus:shadow-md"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addRole(roleInput)}
+                    disabled={!roleInput.trim()}
+                    className="shrink-0 rounded-2xl border border-[#0A2647]/15 bg-white/70 px-4 text-sm font-semibold text-[#0A2647] transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none"
+                  >
+                    {translate("Add")}
+                  </button>
+                </div>
+
+                {roles.length > 0 && (
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {roles.map((r) => (
+                      <span
+                        key={r}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-[#B8860B]/12 py-1.5 pe-1.5 ps-3.5 text-sm font-medium text-[#9a6b08]"
+                      >
+                        {r}
+                        <button
+                          type="button"
+                          onClick={() => removeRole(r)}
+                          aria-label={translate("Remove {role}", { role: r })}
+                          className="grid h-5 w-5 place-items-center rounded-full text-[#9a6b08]/70 transition-colors hover:bg-[#B8860B]/20 hover:text-[#9a6b08] focus-visible:outline-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
-                  {ROLE_SUGGESTIONS.map((s) => (
+                  {ROLE_SUGGESTIONS.filter((s) => !roles.some((r) => r.toLowerCase() === s.toLowerCase())).map((s) => (
                     <button
                       key={s}
                       type="button"
-                      onClick={() => {
-                        setRole(s);
-                        go("goal");
-                      }}
+                      onClick={() => addRole(s)}
                       className="rounded-full border border-[#0A2647]/12 bg-white/60 px-3.5 py-1.5 text-sm text-[#0A2647]/75 transition-colors hover:border-[#0A2647]/30 hover:bg-white focus-visible:outline-none"
                     >
-                      {translate(s)}
+                      + {translate(s)}
                     </button>
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-[#0A2647]/45">
-                  {translate("These are just examples — type any role.")}
+                  {translate("These are just examples — type any role. You can change these anytime.")}
                 </p>
                 <div className="mt-8 flex items-center justify-center gap-3">
                   <BackButton onClick={() => go("path")} />
                   <button
                     type="submit"
-                    disabled={!role.trim()}
+                    disabled={!roles.length && !roleInput.trim()}
                     className="inline-flex items-center gap-2 rounded-full bg-[#D4A83F] px-7 py-3.5 text-sm font-semibold text-[#0A2647] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 focus-visible:outline-none"
                   >
                     {translate("Continue")}
                     <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => go("goal")}
+                  className="mt-4 text-sm font-medium text-[#0A2647]/50 underline-offset-4 transition-colors hover:text-[#0A2647] hover:underline focus-visible:outline-none"
+                >
+                  {translate("Skip for now")}
+                </button>
               </form>
             </motion.div>
           )}
@@ -507,11 +591,11 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 {goal === "recruiter"
                   ? translate("We'll make every line earn its place — specific, results-first, and easy for a busy recruiter to skim in seconds.")
                   : translate("We'll make sure the screening software can read every section, and still write it so a human wants to keep reading.")}
-                {role.trim() && (
+                {rolesLabel && (
                   <>
                     {" "}
                     {translate("Everything stays tuned for")}{" "}
-                    <span className="font-medium text-[#B8860B]">{role.trim()}</span>.
+                    <span className="font-medium text-[#B8860B]">{rolesLabel}</span>.
                   </>
                 )}
               </p>
@@ -610,21 +694,16 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 {translate("How would you like to start?")}
               </h2>
               <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
-                {/* From-scratch path: lead with the chat coach, keep upload and the
-                    manual builder as options. (The "I have an existing CV" path
-                    skips straight to upload, so it never lands here.) */}
+                {/* From-scratch path: chat coach or the manual builder. Uploading an
+                    existing CV is its own fork up front ("I have an existing CV"),
+                    so we deliberately don't repeat it here — that duplicate just
+                    confused people who already chose to build from scratch. */}
                 <MethodCard
                   icon={<MessageSquareText className="h-5 w-5" strokeWidth={1.75} />}
                   title={translate("Answer a few questions")}
                   desc={translate("Chat with your coach — it writes each section as you talk.")}
                   badge={translate("Recommended")}
                   onClick={() => finish("chat", "/build/chat", translate("Putting your first draft together…"))}
-                />
-                <MethodCard
-                  icon={<FileUp className="h-5 w-5" strokeWidth={1.75} />}
-                  title={translate("I have a CV to improve")}
-                  desc={translate("Upload a PDF or DOCX and we’ll tailor it to your role.")}
-                  onClick={() => fileRef.current?.click()}
                 />
                 <MethodCard
                   icon={<PencilLine className="h-5 w-5" strokeWidth={1.75} />}
@@ -644,13 +723,14 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
             <motion.div key="handoff" {...fade} className="flex flex-col items-center">
               <Orb reduce={!!reduce} busy />
               <p className="mt-8 font-serif text-2xl text-[#0A2647] sm:text-3xl">{handoffLabel}</p>
-              {role.trim() && (
+              {rolesLabel && (
                 <p className="mt-3 text-sm text-[#0A2647]/55">
-                  {translate("Tailoring for")} <span className="font-medium text-[#B8860B]">{role.trim()}</span>
+                  {translate("Tailoring for")} <span className="font-medium text-[#B8860B]">{rolesLabel}</span>
                 </p>
               )}
             </motion.div>
           )}
+        </div>
       </main>
     </div>
   );

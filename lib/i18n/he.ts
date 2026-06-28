@@ -114,6 +114,13 @@ const core: Record<string, string> = {
   "or build one from scratch": "או בנו קורות חיים מאפס",
   "Continue building": "המשיכו לבנות",
 
+  // ── Build onboarding — role step (multi-role + skip) ─────────────────────────
+  "Skip for now": "דלגו לעת עתה",
+  "Add one or more — we’ll tailor your CV to them. Not sure yet? You can skip this.":
+    "הוסיפו אחת או יותר — נתאים את קורות החיים אליהן. עדיין לא בטוחים? אפשר לדלג.",
+  "These are just examples — type any role. You can change these anytime.":
+    "אלה רק דוגמאות — הקלידו כל משרה. תמיד אפשר לשנות.",
+
   // ── Pricing ────────────────────────────────────────────────────────────────
   "Choose your plan": "בחרו את התוכנית שלכם",
   "Most popular": "הכי פופולרי",
