@@ -33,13 +33,13 @@ function ToolChips({ tools, theme = "dark" }: { tools: BuilderChatMessage["tools
           key={t.id}
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] ${
             light
-              ? `bg-[#0A2647]/[0.05] border-[#0A2647]/12 ${t.pending ? "text-[#0A2647]/55 animate-pulse" : "text-[#0A2647]"}`
+              ? `bg-brand-navy/[0.05] border-brand-navy/12 ${t.pending ? "text-brand-navy/55 animate-pulse" : "text-brand-navy"}`
               : `bg-white/10 border-glass-border ${t.pending ? "text-white/60 animate-pulse" : "text-white/85"}`
           }`}
         >
           <Sparkles
             className={`h-3 w-3 ${
-              t.pending ? (light ? "text-[#0A2647]/40" : "text-white/50") : light ? "text-[#B8860B]" : "text-[#f5b8c8]"
+              t.pending ? (light ? "text-brand-navy/40" : "text-white/50") : light ? "text-brand-gold" : "text-[#f5b8c8]"
             }`}
           />
           {t.label}
@@ -146,9 +146,9 @@ export function ChatThread({
                   >
                     {m.content ? renderInlineBold(m.content) : (
                       <span className="inline-flex gap-1 items-center py-1" aria-label={t("Thinking")}>
-                        <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:0ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
-                        <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:150ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
-                        <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:300ms] ${light ? "bg-[#0A2647]/50" : "bg-white/70"}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:0ms] ${light ? "bg-brand-navy/50" : "bg-white/70"}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:150ms] ${light ? "bg-brand-navy/50" : "bg-white/70"}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full animate-bounce [animation-delay:300ms] ${light ? "bg-brand-navy/50" : "bg-white/70"}`} />
                       </span>
                     )}
                   </div>

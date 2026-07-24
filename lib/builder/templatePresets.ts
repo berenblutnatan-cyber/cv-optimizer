@@ -1,5 +1,9 @@
 import type { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
-import { isPremiumTemplate } from "@/components/cv-templates";
+import {
+  TEMPLATE_IDS,
+  TEMPLATE_REGISTRY,
+  isPremiumTemplate,
+} from "@/lib/templates/registry";
 
 /**
  * Template presets — the gallery behind the builder's "Templates" button.
@@ -31,112 +35,9 @@ export interface TemplatePreset {
   isNew: boolean;
 }
 
-// Layouts added in the 2026-06 expansion — flagged "New" and led in the gallery.
-const NEW_LAYOUTS = new Set<BuilderTemplateId>([
-  "timeline",
-  "double-column",
-  "compact",
-  "photo-left",
-]);
-
-type LayoutMeta = {
-  family: string;
-  category: PresetCategory;
-  tagline: string;
-};
-
-const LAYOUTS: Record<BuilderTemplateId, LayoutMeta> = {
-  "modern-sidebar": {
-    family: "Modern Professional",
-    category: "Professional",
-    tagline: "Two-column layout with a bold sidebar — built for tech & business.",
-  },
-  "ivy-league": {
-    family: "Ivy League",
-    category: "Classic",
-    tagline: "Timeless serif elegance that recruiters trust.",
-  },
-  minimalist: {
-    family: "Minimalist",
-    category: "Simple",
-    tagline: "Clean whitespace that lets your work speak.",
-  },
-  executive: {
-    family: "Executive",
-    category: "Executive",
-    tagline: "A commanding dark header for senior roles.",
-  },
-  techie: {
-    family: "Techie",
-    category: "Technical",
-    tagline: "A skills-forward layout made for engineers.",
-  },
-  creative: {
-    family: "Creative",
-    category: "Creative",
-    tagline: "A striking split design for design & marketing.",
-  },
-  startup: {
-    family: "Startup",
-    category: "Modern",
-    tagline: "Punchy modern type for fast-moving teams.",
-  },
-  international: {
-    family: "International",
-    category: "Professional",
-    tagline: "Photo-ready and standardized — the European standard.",
-  },
-  timeline: {
-    family: "Timeline",
-    category: "Modern",
-    tagline: "A vertical timeline that tells your career as a story.",
-  },
-  "double-column": {
-    family: "Double Column",
-    category: "Professional",
-    tagline: "A full header over two balanced columns — clean and compact.",
-  },
-  compact: {
-    family: "Compact",
-    category: "Simple",
-    tagline: "Dense and ATS-friendly — fits more on a single page.",
-  },
-  "photo-left": {
-    family: "Photo Left",
-    category: "Professional",
-    tagline: "A photo rail with contact & skills beside your story.",
-  },
-  banner: {
-    family: "Banner",
-    category: "Creative",
-    tagline: "A full-width color banner header — confident and modern.",
-  },
-  aurora: {
-    family: "Aurora",
-    category: "Professional",
-    tagline: "Accent rail and a tinted header — colorful but clean.",
-  },
-  spotlight: {
-    family: "Spotlight",
-    category: "Simple",
-    tagline: "Centered, airy and maximally ATS-safe.",
-  },
-  ledger: {
-    family: "Ledger",
-    category: "Classic",
-    tagline: "Editorial serif with a date rail — elegant for finance & law.",
-  },
-  devfolio: {
-    family: "Devfolio",
-    category: "Technical",
-    tagline: "Monospace README style with a skills grid — built for developers.",
-  },
-  canvas: {
-    family: "Canvas",
-    category: "Creative",
-    tagline: "A bold accent sidebar with a photo — personality for creatives.",
-  },
-};
+// Family name / category / tagline now live in the canonical registry
+// (lib/templates/registry.ts) — the gallery derives from it so a new template
+// can never be missing here.
 
 // Display name for each accent palette (the "edition").
 const COLOR_NAMES: Record<ThemeColor, string> = {
@@ -165,7 +66,10 @@ const COLOR_ORDER: ThemeColor[] = [
   "orange",
 ];
 
-const LAYOUT_ORDER: BuilderTemplateId[] = [
+// Curated gallery order (featured layouts first). Any registry template NOT
+// listed here is automatically appended below, so a newly-registered template
+// can never silently miss the gallery.
+const FEATURED_ORDER: BuilderTemplateId[] = [
   // New layouts (this release) lead the gallery.
   "double-column",
   "timeline",
@@ -189,19 +93,25 @@ const LAYOUT_ORDER: BuilderTemplateId[] = [
   "international",
 ];
 
-// 80 presets: every layout in every palette.
+const LAYOUT_ORDER: BuilderTemplateId[] = [
+  ...FEATURED_ORDER,
+  // Completeness guard: anything in the registry the curated list forgot.
+  ...TEMPLATE_IDS.filter((id) => !FEATURED_ORDER.includes(id)),
+];
+
+// Presets: every layout in every palette.
 const BASE_PRESETS: TemplatePreset[] = LAYOUT_ORDER.flatMap((layout) => {
-  const meta = LAYOUTS[layout];
+  const meta = TEMPLATE_REGISTRY[layout];
   const premium = isPremiumTemplate(layout);
   return COLOR_ORDER.map((color) => ({
     id: `${layout}--${color}`,
-    name: `${meta.family} · ${COLOR_NAMES[color]}`,
-    category: meta.category,
+    name: `${meta.name} · ${COLOR_NAMES[color]}`,
+    category: meta.galleryCategory,
     layout,
     color,
     tagline: meta.tagline,
     premium,
-    isNew: NEW_LAYOUTS.has(layout),
+    isNew: meta.isNew,
   }));
 });
 
@@ -238,7 +148,7 @@ const SIGNATURE_PRESETS: TemplatePreset[] = SIGNATURE.map((s, i) => ({
   color: s.color,
   tagline: s.tagline,
   premium: isPremiumTemplate(s.layout),
-  isNew: NEW_LAYOUTS.has(s.layout),
+  isNew: TEMPLATE_REGISTRY[s.layout].isNew,
 }));
 
 export const TEMPLATE_PRESETS: TemplatePreset[] = [...BASE_PRESETS, ...SIGNATURE_PRESETS];

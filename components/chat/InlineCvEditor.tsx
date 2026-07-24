@@ -20,7 +20,7 @@ import { InlineAssist } from "@/components/chat/InlineAssist";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 const fieldCls =
-  "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] text-[#1a1a1a] placeholder-stone-400 outline-none focus:border-[#0A2647]/50 focus:ring-2 focus:ring-[#0A2647]/10 transition-colors";
+  "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] text-[#1a1a1a] placeholder-stone-400 outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
 const labelCls = "block text-[11px] font-medium uppercase tracking-wide text-stone-500 mb-1";
 
 function SectionCard({
@@ -35,7 +35,7 @@ function SectionCard({
   return (
     <section className="rounded-2xl bg-stone-50 border border-stone-200 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-semibold tracking-wide text-[#0A2647]">{title}</h3>
+        <h3 className="text-[13px] font-semibold tracking-wide text-brand-navy">{title}</h3>
         {action}
       </div>
       {children}
@@ -76,6 +76,7 @@ export function InlineCvEditor() {
             <label className={labelCls}>{t("Full name")}</label>
             <input
               className={fieldCls}
+              autoComplete="name"
               value={personalInfo.name}
               onChange={(e) => updatePersonalInfo({ name: e.target.value })}
               placeholder={t("Jane Doe")}
@@ -100,6 +101,9 @@ export function InlineCvEditor() {
             <label className={labelCls}>{t("Email")}</label>
             <input
               className={fieldCls}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
               value={personalInfo.email}
               onChange={(e) => updatePersonalInfo({ email: e.target.value })}
               placeholder="jane@email.com"
@@ -109,6 +113,9 @@ export function InlineCvEditor() {
             <label className={labelCls}>{t("Phone")}</label>
             <input
               className={fieldCls}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={personalInfo.phone}
               onChange={(e) => updatePersonalInfo({ phone: e.target.value })}
               placeholder="+1 555 0100"
@@ -127,6 +134,7 @@ export function InlineCvEditor() {
             <label className={labelCls}>LinkedIn</label>
             <input
               className={fieldCls}
+              inputMode="url"
               value={personalInfo.linkedin}
               onChange={(e) => updatePersonalInfo({ linkedin: e.target.value })}
               placeholder="linkedin.com/in/jane"
@@ -136,6 +144,8 @@ export function InlineCvEditor() {
             <label className={labelCls}>{t("Website")}</label>
             <input
               className={fieldCls}
+              inputMode="url"
+              autoComplete="url"
               value={personalInfo.website}
               onChange={(e) => updatePersonalInfo({ website: e.target.value })}
               placeholder="janedoe.com"
@@ -167,7 +177,7 @@ export function InlineCvEditor() {
           <button
             type="button"
             onClick={() => addExperience()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.07] border border-[#0A2647]/15 text-[11px] text-[#0A2647] hover:bg-[#0A2647]/[0.12] transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-navy/[0.07] border border-brand-navy/15 text-[11px] text-brand-navy hover:bg-brand-navy/[0.12] transition-colors"
           >
             <Plus className="h-3 w-3" /> {t("Add")}
           </button>
@@ -225,7 +235,7 @@ export function InlineCvEditor() {
                             endDate: e.target.checked ? "Present" : "",
                           })
                         }
-                        className="accent-[#0A2647]"
+                        className="accent-brand-navy"
                       />
                       {t("I currently work here")}
                     </label>
@@ -298,7 +308,7 @@ export function InlineCvEditor() {
           <button
             type="button"
             onClick={() => addEducation()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.07] border border-[#0A2647]/15 text-[11px] text-[#0A2647] hover:bg-[#0A2647]/[0.12] transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-navy/[0.07] border border-brand-navy/15 text-[11px] text-brand-navy hover:bg-brand-navy/[0.12] transition-colors"
           >
             <Plus className="h-3 w-3" /> {t("Add")}
           </button>
@@ -372,14 +382,14 @@ export function InlineCvEditor() {
           {skills.map((skill) => (
             <span
               key={skill}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A2647]/[0.06] border border-[#0A2647]/15 text-[12px] text-[#0A2647]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/15 text-[12px] text-brand-navy"
             >
               {skill}
               <button
                 type="button"
                 onClick={() => removeSkill(skill)}
                 aria-label={t("Remove {skill}", { skill })}
-                className="grid place-items-center h-4 w-4 rounded-full text-[#0A2647]/50 hover:text-[#0A2647] hover:bg-[#0A2647]/12"
+                className="grid place-items-center h-4 w-4 rounded-full text-brand-navy/50 hover:text-brand-navy hover:bg-brand-navy/12"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -413,7 +423,7 @@ export function InlineCvEditor() {
       {/* Deeper sections (projects, certifications, custom blocks) are added
           through the AI — Edit covers the core fields by hand. */}
       <p className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-[13px] text-stone-500">
-        <Sparkles className="h-3.5 w-3.5 text-[#B8860B]" />
+        <Sparkles className="h-3.5 w-3.5 text-brand-gold" />
         {t("Want projects, certifications or custom sections? Ask in Chat.")}
       </p>
     </div>

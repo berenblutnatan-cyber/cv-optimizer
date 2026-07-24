@@ -20,7 +20,7 @@ export function ShellNav({ rightSlot, active = null }: ShellNavProps) {
   const linkClass = (isActive: boolean) =>
     `${linkBase} ${
       isActive
-        ? "text-[#0A2647]"
+        ? "text-brand-navy"
         : "text-stone-500 hover:text-stone-900"
     }`;
 

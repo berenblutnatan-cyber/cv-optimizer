@@ -1,24 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import { TEMPLATE_COMPONENTS_BY_ID } from "@/components/cv-templates";
 import {
-  // existing 8
-  ModernSidebarTemplate,
-  IvyLeagueTemplate,
-  MinimalistTemplate,
-  ExecutiveTemplate,
-  TechieTemplate,
-  CreativeTemplate,
-  StartupTemplate,
-  InternationalTemplate,
-  // new 6
-  AuroraTemplate,
-  BannerTemplate,
-  SpotlightTemplate,
-  LedgerTemplate,
-  DevfolioTemplate,
-  CanvasTemplate,
-} from "@/components/cv-templates/templates";
+  TEMPLATE_LIST,
+  type TemplateRegistryEntry,
+} from "@/lib/templates/registry";
 import { THEME_COLOR_VALUES, ThemeColor } from "@/context/BuilderContext";
 import type { ResumeData } from "@/components/cv-templates/templates/TemplateProps";
 import { useT } from "@/lib/i18n/LanguageProvider";
@@ -101,27 +88,10 @@ const SAMPLE: ResumeData = {
   ],
 };
 
-type Entry = { id: string; name: string; tag: string; isNew?: boolean; Component: (p: { data: ResumeData; themeColor: ThemeColor }) => JSX.Element };
-
-const NEW: Entry[] = [
-  { id: "aurora", name: "Aurora", tag: "Bold & colorful", isNew: true, Component: AuroraTemplate },
-  { id: "banner", name: "Banner", tag: "Bold & colorful", isNew: true, Component: BannerTemplate },
-  { id: "spotlight", name: "Spotlight", tag: "Minimal · ATS-safe", isNew: true, Component: SpotlightTemplate },
-  { id: "ledger", name: "Ledger", tag: "Editorial serif", isNew: true, Component: LedgerTemplate },
-  { id: "devfolio", name: "Devfolio", tag: "Tech / developer", isNew: true, Component: DevfolioTemplate },
-  { id: "canvas", name: "Canvas", tag: "Creative", isNew: true, Component: CanvasTemplate },
-];
-
-const EXISTING: Entry[] = [
-  { id: "modern-sidebar", name: "Modern Sidebar", tag: "Two-column", Component: ModernSidebarTemplate },
-  { id: "ivy-league", name: "Ivy League", tag: "Classic serif", Component: IvyLeagueTemplate },
-  { id: "minimalist", name: "Minimalist", tag: "Minimal", Component: MinimalistTemplate },
-  { id: "executive", name: "Executive", tag: "Bold header", Component: ExecutiveTemplate },
-  { id: "techie", name: "Techie", tag: "Tech", Component: TechieTemplate },
-  { id: "creative", name: "Creative", tag: "Split", Component: CreativeTemplate },
-  { id: "startup", name: "Startup", tag: "Modern", Component: StartupTemplate },
-  { id: "international", name: "International", tag: "Photo + standard", Component: InternationalTemplate },
-];
+// Rendered straight from the canonical registry (lib/templates/registry.ts),
+// so this page always shows every template — it can never go stale again.
+const NEW: TemplateRegistryEntry[] = TEMPLATE_LIST.filter((e) => e.isNew);
+const CURRENT: TemplateRegistryEntry[] = TEMPLATE_LIST.filter((e) => !e.isNew);
 
 const COLORS: ThemeColor[] = ["indigo", "violet", "blue", "navy", "purple", "orange", "rose", "amber", "slate", "black"];
 
@@ -130,9 +100,9 @@ const PREVIEW_W = 372;
 const SCALE = PREVIEW_W / 794;
 const PREVIEW_H = Math.round(1123 * SCALE);
 
-function TemplateCard({ entry, themeColor }: { entry: Entry; themeColor: ThemeColor }) {
+function TemplateCard({ entry, themeColor }: { entry: TemplateRegistryEntry; themeColor: ThemeColor }) {
   const { t } = useT();
-  const { Component } = entry;
+  const Component = TEMPLATE_COMPONENTS_BY_ID[entry.id];
   return (
     <div className="flex flex-col items-center" style={{ width: PREVIEW_W }}>
       <div className="mb-3 flex w-full items-center justify-between px-1">
@@ -142,7 +112,7 @@ function TemplateCard({ entry, themeColor }: { entry: Entry; themeColor: ThemeCo
             <span className="rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">{t("New")}</span>
           )}
         </div>
-        <span className="font-mono text-[11px] text-white/40">{t(entry.tag)}</span>
+        <span className="font-mono text-[11px] text-white/40">{t(entry.description)}</span>
       </div>
       <div
         className="overflow-hidden rounded-lg ring-1 ring-white/10"
@@ -167,7 +137,7 @@ export default function TemplateLabPage() {
         <div className="mx-auto flex max-w-[1500px] flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-white/40">Hired · {t("résumé templates")}</p>
-            <h1 className="text-lg font-semibold tracking-tight">{t("Template Lab — {newCount} new + {existingCount} current", { newCount: NEW.length, existingCount: EXISTING.length })}</h1>
+            <h1 className="text-lg font-semibold tracking-tight">{t("Template Lab — {newCount} new + {existingCount} current", { newCount: NEW.length, existingCount: CURRENT.length })}</h1>
           </div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] text-white/40">{t("accent")}</span>
@@ -188,19 +158,19 @@ export default function TemplateLabPage() {
       </header>
 
       <main className="mx-auto max-w-[1500px] px-5 py-10 sm:px-8">
-        <Section title={t("New designs")} subtitle={t("Fresh directions — pick the ones to wire into the builder.")}>
+        <Section title={t("New designs")} subtitle={t("Our freshest layouts — every one ready to use in the builder.")}>
           {NEW.map((e) => <TemplateCard key={e.id} entry={e} themeColor={themeColor} />)}
         </Section>
 
         <div className="my-12 h-px bg-white/10" />
 
-        <Section title={t("Already in the builder")} subtitle={t("Your current 8, shown with the same résumé for comparison.")}>
-          {EXISTING.map((e) => <TemplateCard key={e.id} entry={e} themeColor={themeColor} />)}
+        <Section title={t("All templates")} subtitle={t("The full collection, shown with the same résumé for comparison.")}>
+          {CURRENT.map((e) => <TemplateCard key={e.id} entry={e} themeColor={themeColor} />)}
         </Section>
       </main>
 
       <footer className="border-t border-white/10 px-5 py-10 text-center font-mono text-[12px] text-white/40 sm:px-8">
-        {t("Same résumé, every template. Tell me which new ones to promote and I'll wire them into the builder + pricing.")}
+        {t("Same résumé, every template — pick your favorite and make it yours in the builder.")}
       </footer>
     </div>
   );

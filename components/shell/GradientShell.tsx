@@ -27,7 +27,7 @@ export function GradientShell({
   if (tone === "light") {
     return (
       <div
-        className={`relative min-h-dvh w-full overflow-hidden bg-[#FBF9F4] text-[#0A2647] ${noise ? "grain-overlay" : ""} ${className ?? ""}`}
+        className={`relative min-h-dvh w-full overflow-hidden bg-[#FBF9F4] text-brand-navy ${noise ? "grain-overlay" : ""} ${className ?? ""}`}
       >
         {/* Same calm aurora as the funnel — three soft blobs on cream. */}
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">

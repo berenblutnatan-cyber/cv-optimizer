@@ -56,16 +56,16 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <Link
           href="/resume-examples"
-          className="inline-flex items-center gap-1.5 text-[13px] text-stone-500 hover:text-[#0A2647] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[13px] text-stone-500 hover:text-brand-navy transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> {t("All resume examples")}
         </Link>
 
         <header className="mt-5">
-          <p className="text-[12px] uppercase tracking-[0.18em] text-[#B8860B] font-semibold">
+          <p className="text-[12px] uppercase tracking-[0.18em] text-brand-gold font-semibold">
             {ex.category} · {ex.seniority}
           </p>
-          <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-[#0A2647]">{t("{role} resume example", { role: ex.role })}</h1>
+          <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-brand-navy">{t("{role} resume example", { role: ex.role })}</h1>
           <p className="mt-3 text-stone-600 leading-relaxed">{ex.blurb}</p>
           <div className="mt-5">
             <UseExampleButton data={ex.data} slug={ex.slug} />
@@ -76,7 +76,7 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
           <ExampleResume data={ex.data} />
         </div>
 
-        <section className="mt-10 rounded-2xl bg-[#0A2647] text-white p-6 sm:p-8 text-center">
+        <section className="mt-10 rounded-2xl bg-brand-navy text-white p-6 sm:p-8 text-center">
           <h2 className="text-xl font-bold">{t("Make this resume yours")}</h2>
           <p className="mt-2 text-white/80 text-sm leading-relaxed max-w-xl mx-auto">
             {t("Load this example into the builder and our AI tailors it to your experience and target job — rewriting bullets, adding keywords, and scoring it live as you go.")}
@@ -86,7 +86,7 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
               data={ex.data}
               slug={ex.slug}
               label={t("Use this example")}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#0A2647] text-sm font-semibold hover:bg-stone-100 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-brand-navy text-sm font-semibold hover:bg-stone-100 transition-colors"
             />
           </div>
         </section>

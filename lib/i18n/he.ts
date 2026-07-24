@@ -224,6 +224,127 @@ const core: Record<string, string> = {
   // ── Chat builder closings ───────────────────────────────────────────────────
   "Done — your CV's updated in the preview. Want me to tailor it to a specific role? Tell me the job or paste a link and I'll sharpen it.":
     "סיימתי — קורות החיים עודכנו בתצוגה המקדימה. רוצה שאתאים אותם לתפקיד מסוים? ספר/י לי על המשרה או הדבק/י קישור ואחדד אותם.",
+
+  // ── Chat tool chips (streamed "✦ Updated…" labels) ─────────────────────────
+  "Updated your details": "פרטיך עודכנו",
+  "Updating your details…": "מעדכן את הפרטים…",
+  "Wrote your summary": "התקציר נכתב",
+  "Writing your summary…": "כותב את התקציר…",
+  "Added a role": "נוסף תפקיד",
+  "Added {role}": "נוסף תפקיד: {role}",
+  "Added a role at {company}": "נוסף תפקיד ב־{company}",
+  "Added {role} at {company}": "נוסף: {role} ב־{company}",
+  "Adding a role…": "מוסיף תפקיד…",
+  "Polished an experience entry": "רשומת ניסיון לוטשה",
+  "Polishing an experience entry…": "מלטש רשומת ניסיון…",
+  "Removed an experience entry": "רשומת ניסיון הוסרה",
+  "Removing an experience entry…": "מסיר רשומת ניסיון…",
+  "Added education": "נוספה השכלה",
+  "Added education — {institution}": "נוספה השכלה — {institution}",
+  "Adding education…": "מוסיף השכלה…",
+  "Updated education": "ההשכלה עודכנה",
+  "Updating education…": "מעדכן השכלה…",
+  "Removed education": "השכלה הוסרה",
+  "Removing education…": "מסיר השכלה…",
+  "Updated skills ({count})": "כישורים עודכנו ({count})",
+  "Updating skills…": "מעדכן כישורים…",
+  "Added a project": "נוסף פרויקט",
+  "Added project — {project}": "נוסף פרויקט — {project}",
+  "Adding a project…": "מוסיף פרויקט…",
+  "Updated a project": "פרויקט עודכן",
+  "Updating a project…": "מעדכן פרויקט…",
+  "Removed a project": "פרויקט הוסר",
+  "Removing a project…": "מסיר פרויקט…",
+  "Added a certification": "נוספה הסמכה",
+  "Added {cert}": "נוספה הסמכה: {cert}",
+  "Adding a certification…": "מוסיף הסמכה…",
+  "Removed a certification": "הסמכה הוסרה",
+  "Removing a certification…": "מסיר הסמכה…",
+  "Added a section": "נוסף פרק",
+  "Added “{title}”": "נוסף פרק „{title}”",
+  "Adding a section…": "מוסיף פרק…",
+  "Removed a section": "פרק הוסר",
+  "Removing a section…": "מסיר פרק…",
+  "Updated languages": "שפות עודכנו",
+  "Updating languages…": "מעדכן שפות…",
+  "Updated your CV": "קורות החיים עודכנו",
+  "Updating your CV…": "מעדכן את קורות החיים…",
+  "Styled your CV": "עיצוב קורות החיים עודכן",
+  "Styling your CV…": "מעצב את קורות החיים…",
+
+  // ── Streaming / anon-limit / history drawer (studio builder) ───────────────
+  "Stop generating": "עצור יצירה",
+  "Stopped — your CV is unchanged. Ask me anything else.": "נעצר — קורות החיים לא השתנו. אפשר לשאול אותי כל דבר אחר.",
+  "You've used your free messages — nice progress!": "ניצלת את ההודעות החינמיות — התקדמות יפה!",
+  "Sign up free to continue": "הרשמה חינם כדי להמשיך",
+  "Create a free account to keep building. Your CV comes with you, and it saves to the cloud from here on.":
+    "פתחו חשבון חינם כדי להמשיך לבנות. קורות החיים עוברים איתכם ונשמרים בענן מכאן והלאה.",
+  "Your CV only lives on this device for now — clearing your browser loses it. Create a free account to save it to the cloud and open it anywhere.":
+    "קורות החיים שמורים כרגע רק במכשיר הזה — ניקוי הדפדפן ימחק אותם. פתחו חשבון חינם כדי לשמור אותם בענן ולפתוח מכל מקום.",
+  "Start a new CV? Your current one isn't saved to an account and will be cleared. Sign up first to keep it.":
+    "להתחיל קורות חיים חדשים? הנוכחיים אינם שמורים בחשבון ויימחקו. כדאי להירשם קודם כדי לשמור אותם.",
+  "Delete this CV? This can't be undone.": "למחוק את קורות החיים האלה? אי אפשר לבטל את הפעולה.",
+  "Saving…": "שומר…",
+
+  // ── Purchase success (plan-aware) ──────────────────────────────────────────
+  "Unlimited is now active on your account.": "מנוי ללא הגבלה פעיל כעת בחשבונך.",
+  "Your Job Search Pass is active — {days} days of Unlimited on your account.":
+    "כרטיס חיפוש העבודה שלך פעיל — {days} ימים של שימוש ללא הגבלה בחשבונך.",
+  "A receipt has been sent to your email. Cancel anytime.": "קבלה נשלחה למייל שלך. אפשר לבטל בכל עת.",
+  "A receipt has been sent to your email. No auto-renew — the pass simply ends.":
+    "קבלה נשלחה למייל שלך. ללא חידוש אוטומטי — הכרטיס פשוט מסתיים.",
+  "Continue Your Optimization": "המשך האופטימיזציה שלך",
+  "Your resume and job details are saved, right where you left off.": "קורות החיים ופרטי המשרה שמורים, בדיוק היכן שעצרת.",
+  "Unlimited: cancel anytime": "ללא הגבלה: ביטול בכל עת",
+  "/ month": "/ חודש",
+  "Top up from $1 with no commitment — or go Unlimited for the whole search.":
+    "טעינה החל מ־$1 ללא התחייבות — או ללא הגבלה לכל תקופת החיפוש.",
+
+  // ── Analyze / score resilience ─────────────────────────────────────────────
+  "This is taking longer than usual": "זה לוקח יותר זמן מהרגיל",
+  "This is taking longer than usual — please try again.": "זה לוקח יותר זמן מהרגיל — נסו שוב.",
+  "The analysis timed out — your inputs are untouched. Please try again.":
+    "הניתוח חרג מהזמן — הנתונים שלך לא נפגעו. נסו שוב.",
+  "Our analysis service hit a snag. Your inputs are safe — please try again.":
+    "שירות הניתוח נתקל בתקלה. הנתונים שלך שמורים — נסו שוב.",
+  "Our scoring service hit a snag. Your resume is still here — please try again.":
+    "שירות הציונים נתקל בתקלה. קורות החיים עדיין כאן — נסו שוב.",
+
+  // ── Applications tracker safety ────────────────────────────────────────────
+  "Delete this application?": "למחוק את המועמדות הזו?",
+  "This permanently removes it from your board. There's no undo.": "היא תוסר מהלוח לצמיתות. אין ביטול.",
+  "Keep it": "השאר אותה",
+  "Couldn't delete that application — it's been restored.": "לא הצלחנו למחוק את המועמדות — היא שוחזרה.",
+  "Couldn't save that move — it's back where it was.": "לא הצלחנו לשמור את ההעברה — היא חזרה למקומה.",
+
+  // ── Voice builder mobile preview + retry ───────────────────────────────────
+  "Preview CV": "תצוגת קורות חיים",
+  "Close preview": "סגור תצוגה מקדימה",
+  "Live CV preview": "תצוגת קורות חיים חיה",
+  "CV updated": "קורות החיים עודכנו",
+  "We couldn't save your session": "לא הצלחנו לשמור את השיחה",
+  "Your answers are safe on this device.": "התשובות שלך שמורות במכשיר הזה.",
+
+  // ── Template gallery / preview zoom / download honesty ─────────────────────
+  "All templates": "כל התבניות",
+  "Clear search": "נקה חיפוש",
+  "Fit page to screen": "התאם עמוד למסך",
+  "Zoom in to read": "הגדל לקריאה",
+  "Credit packs start at just $3.": "חבילות קרדיטים החל מ־$3 בלבד.",
+  "You're out of credits. Top up to download your CV.": "נגמרו הקרדיטים. טענו מחדש כדי להוריד את קורות החיים.",
+  "You need credits to download your CV. Credit packs start at just $3.":
+    "צריך קרדיטים כדי להוריד את קורות החיים. חבילות החל מ־$3 בלבד.",
+  "Download your CV as a PDF": "הורדת קורות החיים כ־PDF",
+  "Same résumé, every template — pick your favorite and make it yours in the builder.":
+    "אותם קורות חיים, בכל תבנית — בחרו את המועדפת והפכו אותה לשלכם בבונה.",
+  "Our freshest layouts — every one ready to use in the builder.": "הפריסות החדשות ביותר — כולן מוכנות לשימוש בבונה.",
+  "The full collection, shown with the same résumé for comparison.": "האוסף המלא, מוצג עם אותם קורות חיים להשוואה.",
+  "Or open the Resume Builder →": "או פתחו את בונה קורות החיים ←",
+
+  // ── Landing quote + in-app browser tip ─────────────────────────────────────
+  "“I’d been editing the same bullet for a week. Hired rewrote it in one line — and it was the line I actually wanted to say.”":
+    "„שבוע שלם ערכתי את אותה שורה. Hired ניסח אותה מחדש בשורה אחת — וזו הייתה בדיוק השורה שרציתי להגיד.”",
+  "Tip: Tap the ⋯ menu icon and choose \"Open in Browser\".": "טיפ: הקישו על תפריט ⋯ ובחרו „פתיחה בדפדפן”.",
 };
 
 // Final dictionary: bulk auto-generated translations first, curated core last so

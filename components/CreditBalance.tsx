@@ -32,15 +32,13 @@ export function CreditBalance() {
     } catch (error) {
       console.error("Failed to fetch credit balance:", error);
       // Only set to 0 if we don't have a value yet
-      if (credits === null) {
-        setCredits(0);
-      }
+      setCredits((prev) => prev ?? 0);
     } finally {
       if (isInitial) {
         setIsInitialLoading(false);
       }
     }
-  }, [userId, credits]);
+  }, [userId]);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -50,16 +48,36 @@ export function CreditBalance() {
 
     // Initial load
     fetchCredits(true);
+    if (!userId) return;
 
-    // Auto-refresh every 5 seconds to catch manual DB updates
-    // Don't show loading state during refresh - keep current value visible
+    // Gentle background refresh: once a minute, and ONLY while the tab is
+    // actually visible — ~90% of traffic is mobile, where an aggressive
+    // interval burns battery and data for nothing.
     const interval = setInterval(() => {
-      if (userId) {
+      if (document.visibilityState === "visible") {
         fetchCredits(false);
       }
-    }, 5000);
+    }, 60_000);
 
-    return () => clearInterval(interval);
+    // Refetch immediately when the user comes back to the tab (e.g. returning
+    // from checkout or a backgrounded browser) so the balance is never stale
+    // at the moment it matters.
+    const refresh = () => fetchCredits(false);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") fetchCredits(false);
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    // App-level hook: anything that changes the balance (purchase success,
+    // credit spend) can dispatch `credits:refresh` to update the pill at once.
+    window.addEventListener("credits:refresh", refresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("credits:refresh", refresh);
+    };
   }, [userId, isLoaded, fetchCredits]);
 
   // Always render a container with fixed dimensions to prevent layout shift
@@ -83,7 +101,7 @@ export function CreditBalance() {
   // When credits are 0, switch to a red/urgent style with "Add credits" hint.
   const styleClasses = isEmpty
     ? "bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 border border-red-200 hover:border-red-300"
-    : "bg-[#B8860B]/10 hover:bg-[#B8860B]/20 text-[#B8860B] hover:text-[#0A2647] border border-[#B8860B]/30 hover:border-[#B8860B]/50";
+    : "bg-brand-gold/10 hover:bg-brand-gold/20 text-brand-gold hover:text-brand-navy border border-brand-gold/30 hover:border-brand-gold/50";
 
   return (
     <Link

@@ -27,8 +27,8 @@ export function PolarCheckoutButton({
     "w-full inline-flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-sm transition-all tracking-wide text-center disabled:opacity-80 disabled:cursor-wait";
   const colorClasses =
     variant === "gold"
-      ? "bg-[#B8860B] hover:bg-[#9c7409] text-white"
-      : "bg-[#0A2647] hover:bg-[#0d3259] text-white";
+      ? "bg-brand-gold hover:bg-[#9c7409] text-white"
+      : "bg-brand-navy hover:bg-brand-navy-hover text-white";
 
   const handleClick = () => {
     posthog.capture?.("checkout_clicked", { plan, amount, planName });

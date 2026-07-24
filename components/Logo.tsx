@@ -18,7 +18,7 @@ export function Logo({ variant = "dark", size = "md" }: LogoProps) {
     lg: "text-3xl",
   };
 
-  const textColorClass = variant === "dark" ? "text-[#0A2647]" : "text-white";
+  const textColorClass = variant === "dark" ? "text-brand-navy" : "text-white";
 
   return (
     <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-all duration-200 cursor-pointer group">

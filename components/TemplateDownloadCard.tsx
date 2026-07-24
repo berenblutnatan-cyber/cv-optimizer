@@ -90,6 +90,34 @@ export function TemplateDownloadCard({
     };
   }, [showFullPreview, handleKeyDown]);
 
+  // Charge-safety: the export runs BEFORE any credit is charged, so a failed
+  // export can never burn a credit (there is no client refund path). Order:
+  //   1. cheap read-only balance check (no charge) — out of credits? stop.
+  //   2. run the export; if it throws, nothing was charged.
+  //   3. only after the file was produced, charge the credit.
+  // The tiny race (balance spent elsewhere between check and charge) at worst
+  // gives the user one uncharged file — strictly better than charging for a
+  // download that never happened.
+  const hasCreditAvailable = async (): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/get-credits");
+      const info = await res.json();
+      return info?.unlimited === true || (info?.credits ?? 0) >= 1;
+    } catch {
+      // Balance check unreachable — let the charge step be the arbiter.
+      return true;
+    }
+  };
+
+  const chargeCredit = async (): Promise<boolean> => {
+    const creditResponse = await fetch("/api/use-credit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    const creditResult = await creditResponse.json();
+    return creditResult?.success === true;
+  };
+
   // Direct PDF download (no print dialog)
   const handleDownloadPdf = async () => {
     if (!isSignedIn) {
@@ -100,47 +128,44 @@ export function TemplateDownloadCard({
       }, 500); // Small delay to show toast first
       return;
     }
-    
+
     if (!printRef.current) return;
-    
+
     setIsDownloading(true);
     setDownloadType("pdf");
-    
+
     try {
-      // First, use a credit
-      const creditResponse = await fetch("/api/use-credit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const creditResult = await creditResponse.json();
-
-      if (!creditResult.success) {
+      // 1. Read-only balance check — nothing charged, nothing exported yet.
+      if (!(await hasCreditAvailable())) {
         setShowNoCreditsModal(true);
-        setIsDownloading(false);
-        setDownloadType(null);
         return;
       }
 
-      // Hide watermark temporarily
+      // 2. Produce the file first. Hide watermark temporarily.
       setShowWatermark(false);
-      
+
       // Small delay to ensure watermark is hidden
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Generate PDF
       await exportToPdf(printRef.current, `${fileName}-${info.name}`);
-      
+
       // Restore watermark after download
       setShowWatermark(true);
-      
+
+      // 3. The export succeeded — now charge the credit.
+      if (!(await chargeCredit())) {
+        setShowNoCreditsModal(true);
+        return;
+      }
+
       toast.success(t("Success!"), {
         description: t("Your CV has been downloaded."),
       });
     } catch (error) {
       console.error("PDF export failed:", error);
       toast.error(t("PDF export failed"), {
-        description: t("Please try again."),
+        description: t("Please try again — no credit was charged."),
       });
       setShowWatermark(true); // Restore watermark on error
     } finally {
@@ -159,45 +184,42 @@ export function TemplateDownloadCard({
       }, 500); // Small delay to show toast first
       return;
     }
-    
+
     setIsDownloading(true);
     setDownloadType("word");
-    
+
     try {
-      // First, use a credit
-      const creditResponse = await fetch("/api/use-credit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const creditResult = await creditResponse.json();
-
-      if (!creditResult.success) {
+      // 1. Read-only balance check — nothing charged, nothing exported yet.
+      if (!(await hasCreditAvailable())) {
         setShowNoCreditsModal(true);
-        setIsDownloading(false);
-        setDownloadType(null);
         return;
       }
 
-      // Hide watermark temporarily
+      // 2. Produce the file first. Hide watermark temporarily.
       setShowWatermark(false);
-      
+
       // Small delay to ensure watermark is hidden
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Generate Word document
       await exportToWord(formattedData, `${fileName}-${info.name}`);
-      
+
       // Restore watermark after download
       setShowWatermark(true);
-      
+
+      // 3. The export succeeded — now charge the credit.
+      if (!(await chargeCredit())) {
+        setShowNoCreditsModal(true);
+        return;
+      }
+
       toast.success(t("Success!"), {
         description: t("Your CV has been downloaded."),
       });
     } catch (error) {
       console.error("Word export failed:", error);
       toast.error(t("Word export failed"), {
-        description: t("Please try again."),
+        description: t("Please try again — no credit was charged."),
       });
       setShowWatermark(true); // Restore watermark on error
     } finally {
@@ -422,7 +444,7 @@ export function TemplateDownloadCard({
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">{t("Out of Credits")}</h3>
               <p className="text-slate-600 mb-4">
-                {t("You need credits to download your CV. Get started with our Starter pack for just $3 and receive 5 credits!")}
+                {t("You need credits to download your CV. Credit packs start at just $3.")}
               </p>
             </div>
             <div className="flex flex-col gap-3">
@@ -431,7 +453,7 @@ export function TemplateDownloadCard({
                 onClick={() => setShowNoCreditsModal(false)}
                 className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors text-center"
               >
-                {t("Get Starter Pack ($3)")}
+                {t("View Pricing")}
               </Link>
               <button
                 onClick={() => setShowNoCreditsModal(false)}

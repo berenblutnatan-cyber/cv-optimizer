@@ -13,6 +13,7 @@
 
 import type { ResumeData, Experience, Education, Project } from "@/types/resume";
 import { generateId } from "@/types/resume";
+import { TEMPLATE_IDS } from "@/lib/templates/registry";
 
 export type CvToolName =
   | "update_personal_info"
@@ -34,29 +35,11 @@ export type CvToolName =
   | "remove_custom_section"
   | "set_design";
 
-// Design targets the agent can set via set_design. Kept as plain string
-// literals (not imported from the "use client" BuilderContext) so this module
-// stays usable in the server route. Must mirror BuilderTemplateId / ThemeColor.
-export const DESIGN_TEMPLATES = [
-  "modern-sidebar",
-  "ivy-league",
-  "minimalist",
-  "executive",
-  "techie",
-  "creative",
-  "startup",
-  "international",
-  "aurora",
-  "banner",
-  "spotlight",
-  "ledger",
-  "devfolio",
-  "canvas",
-  "timeline",
-  "double-column",
-  "compact",
-  "photo-left",
-] as const;
+// Design targets the agent can set via set_design. Derived from the canonical
+// template registry (lib/templates/registry.ts — pure data, server-safe, no
+// "use client" imports) so the chat agent can never drift from the builder's
+// template list. Must mirror BuilderTemplateId / ThemeColor.
+export const DESIGN_TEMPLATES = TEMPLATE_IDS;
 
 export const DESIGN_COLORS = [
   "indigo",
@@ -601,47 +584,83 @@ export function applyCvToolCall(
   }
 }
 
+/**
+ * Translate function for the chip labels below — same `(source, vars)` shape
+ * as the app-wide English-as-key i18n (`useT().t` on the client,
+ * `getServerT().t` on the server). Callers that don't pass one get plain
+ * English via the identity translator, so lib-level code stays i18n-agnostic
+ * while render sites can localize.
+ */
+export type ChatLabelTranslate = (
+  source: string,
+  vars?: Record<string, string | number>
+) => string;
+
+/** Identity translator: English key + {var} interpolation (mirrors lib/i18n). */
+const englishT: ChatLabelTranslate = (source, vars) =>
+  vars ? source.replace(/\{(\w+)\}/g, (m, key) => (key in vars ? String(vars[key]) : m)) : source;
+
 /** Short label for the "✦ Updated …" chip shown in the chat thread. */
-export function describeToolCall(name: string, input: Record<string, unknown>): string {
+export function describeToolCall(
+  name: string,
+  input: Record<string, unknown>,
+  t: ChatLabelTranslate = englishT
+): string {
   switch (name as CvToolName) {
     case "update_personal_info":
-      return "Updated your details";
+      return t("Updated your details");
     case "update_summary":
-      return "Wrote your summary";
-    case "add_experience":
-      return `Added ${s(input.role) || "a role"}${s(input.company) ? ` at ${s(input.company)}` : ""}`;
+      return t("Wrote your summary");
+    case "add_experience": {
+      const role = s(input.role);
+      const company = s(input.company);
+      if (role && company) return t("Added {role} at {company}", { role, company });
+      if (role) return t("Added {role}", { role });
+      if (company) return t("Added a role at {company}", { company });
+      return t("Added a role");
+    }
     case "update_experience":
-      return "Polished an experience entry";
+      return t("Polished an experience entry");
     case "remove_experience":
-      return "Removed an experience entry";
-    case "add_education":
-      return `Added education${s(input.institution) ? ` — ${s(input.institution)}` : ""}`;
+      return t("Removed an experience entry");
+    case "add_education": {
+      const institution = s(input.institution);
+      return institution
+        ? t("Added education — {institution}", { institution })
+        : t("Added education");
+    }
     case "update_education":
-      return "Updated education";
+      return t("Updated education");
     case "remove_education":
-      return "Removed education";
+      return t("Removed education");
     case "set_skills":
-      return `Updated skills (${sa(input.skills)?.length ?? 0})`;
+      return t("Updated skills ({count})", { count: sa(input.skills)?.length ?? 0 });
     case "set_languages":
-      return "Updated languages";
-    case "add_project":
-      return `Added project${s(input.name) ? ` — ${s(input.name)}` : ""}`;
+      return t("Updated languages");
+    case "add_project": {
+      const project = s(input.name);
+      return project ? t("Added project — {project}", { project }) : t("Added a project");
+    }
     case "update_project":
-      return "Updated a project";
+      return t("Updated a project");
     case "remove_project":
-      return "Removed a project";
-    case "add_certification":
-      return `Added ${s(input.name) || "a certification"}`;
+      return t("Removed a project");
+    case "add_certification": {
+      const cert = s(input.name);
+      return cert ? t("Added {cert}", { cert }) : t("Added a certification");
+    }
     case "remove_certification":
-      return "Removed a certification";
-    case "add_custom_section":
-      return `Added "${s(input.title) || "section"}"`;
+      return t("Removed a certification");
+    case "add_custom_section": {
+      const title = s(input.title);
+      return title ? t("Added “{title}”", { title }) : t("Added a section");
+    }
     case "remove_custom_section":
-      return "Removed a section";
+      return t("Removed a section");
     case "set_design":
-      return "Styled your CV";
+      return t("Styled your CV");
     default:
-      return "Updated your CV";
+      return t("Updated your CV");
   }
 }
 
@@ -692,46 +711,48 @@ export function snapshotForPrompt(data: ResumeData): string {
 }
 
 /** Present-progressive label shown while a tool call's args are still
- * streaming — resolved into describeToolCall's past-tense label on apply. */
-export function pendingToolLabel(name: string): string {
+ * streaming — resolved into describeToolCall's past-tense label on apply.
+ * Pass the app's `t` (see ChatLabelTranslate) to localize; defaults to
+ * English. */
+export function pendingToolLabel(name: string, t: ChatLabelTranslate = englishT): string {
   switch (name as CvToolName) {
     case "update_personal_info":
-      return "Updating your details…";
+      return t("Updating your details…");
     case "update_summary":
-      return "Writing your summary…";
+      return t("Writing your summary…");
     case "add_experience":
-      return "Adding a role…";
+      return t("Adding a role…");
     case "update_experience":
-      return "Polishing an experience entry…";
+      return t("Polishing an experience entry…");
     case "remove_experience":
-      return "Removing an experience entry…";
+      return t("Removing an experience entry…");
     case "add_education":
-      return "Adding education…";
+      return t("Adding education…");
     case "update_education":
-      return "Updating education…";
+      return t("Updating education…");
     case "remove_education":
-      return "Removing education…";
+      return t("Removing education…");
     case "set_skills":
-      return "Updating skills…";
+      return t("Updating skills…");
     case "set_languages":
-      return "Updating languages…";
+      return t("Updating languages…");
     case "add_project":
-      return "Adding a project…";
+      return t("Adding a project…");
     case "update_project":
-      return "Updating a project…";
+      return t("Updating a project…");
     case "remove_project":
-      return "Removing a project…";
+      return t("Removing a project…");
     case "add_certification":
-      return "Adding a certification…";
+      return t("Adding a certification…");
     case "remove_certification":
-      return "Removing a certification…";
+      return t("Removing a certification…");
     case "add_custom_section":
-      return "Adding a section…";
+      return t("Adding a section…");
     case "remove_custom_section":
-      return "Removing a section…";
+      return t("Removing a section…");
     case "set_design":
-      return "Styling your CV…";
+      return t("Styling your CV…");
     default:
-      return "Updating your CV…";
+      return t("Updating your CV…");
   }
 }

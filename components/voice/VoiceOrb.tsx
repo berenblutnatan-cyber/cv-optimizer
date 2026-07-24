@@ -36,7 +36,7 @@ export function VoiceOrb({
         type="button"
         onClick={onClick}
         aria-label={t(STATE_COPY[state])}
-        className="relative grid place-items-center focus:outline-none"
+        className="relative grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-4 focus-visible:ring-offset-transparent"
       >
         {/* Glow ring */}
         <motion.span

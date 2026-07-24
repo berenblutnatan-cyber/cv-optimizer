@@ -6,6 +6,7 @@ import { initialResumeState } from "@/types/resume";
 import { CV_TOOLS, applyCvToolCall, describeToolCall, sanitizeDesign } from "@/lib/chat/cvTools";
 import { buildChatSystemPrompt } from "@/lib/chat/prompts";
 import { chatRateLimit } from "@/lib/chat/rateLimit";
+import { getServerT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
   const { userId } = await auth();
   const rl = await chatRateLimit(request, userId, "build");
   if (!rl.ok) return Response.json({ error: rl.error }, { status: 429 });
+  const { t } = await getServerT();
 
   let body: { messages?: ChatMessage[]; resumeData?: ResumeData };
   try {
@@ -189,7 +191,7 @@ export async function POST(request: NextRequest) {
                         type: "tool",
                         name: buf.name,
                         input,
-                        label: describeToolCall(buf.name, input),
+                        label: describeToolCall(buf.name, input, t),
                       })
                     );
                     roundToolUses.push({ id: buf.id, name: buf.name, input });
@@ -210,7 +212,7 @@ export async function POST(request: NextRequest) {
                       type: "tool",
                       name: buf.name,
                       input,
-                      label: describeToolCall(buf.name, input),
+                      label: describeToolCall(buf.name, input, t),
                     })
                   );
                 } else {

@@ -23,7 +23,7 @@ import { getServerT } from "@/lib/i18n/server";
 export default async function LandingPage() {
   const { t } = await getServerT();
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#0A2647]">
+    <div className="min-h-screen bg-[#FAFAF8] text-brand-navy">
       <ScrollDepthTracker page="landing" />
 
       {/* Header — premium full-width navbar */}
@@ -34,23 +34,24 @@ export default async function LandingPage() {
           <div className="flex items-center gap-2 sm:gap-3 md:gap-5">
             <Link
               href="/score"
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-5 sm:py-2.5 bg-[#0A2647] hover:bg-[#0d3259] text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none"
+              className="inline-flex min-h-11 items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-brand-navy hover:bg-brand-navy-hover text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2"
             >
               <BarChart3 className="w-4 h-4" strokeWidth={1.5} />
               <span className="sm:hidden">{t("Score")}</span>
               <span className="hidden sm:inline">{t("CV Score Check")}</span>
             </Link>
 
+            <LanguageToggle className="sm:hidden" compact />
             <LanguageToggle className="hidden sm:inline-flex" />
 
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="hidden md:inline-flex px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none">
+                <button className="hidden md:inline-flex px-5 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2 rounded-sm">
                   {t("Sign In")}
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-[#0A2647] hover:bg-[#0d3259] text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none">
+                <button className="inline-flex min-h-11 items-center justify-center px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium bg-brand-navy hover:bg-brand-navy-hover text-white rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2">
                   {t("Get Started")}
                 </button>
               </SignUpButton>
@@ -80,7 +81,7 @@ export default async function LandingPage() {
         {/* Quiet scroll affordance into the story */}
         <a
           href="#rewrite"
-          className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 lg:flex flex-col items-center gap-1.5 text-[#0A2647]/40 transition-colors hover:text-[#0A2647] focus-visible:outline-none"
+          className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 lg:flex flex-col items-center gap-1.5 text-brand-navy/40 transition-colors hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2 rounded-md"
         >
           <span className="font-mono text-[10px] uppercase tracking-[0.24em]">
             {t("See how it works")}
@@ -98,17 +99,17 @@ export default async function LandingPage() {
         {/* faint warm halo, echoing the funnel above */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-0 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-[#B8860B] opacity-[0.05] blur-[120px]"
+          className="pointer-events-none absolute left-1/2 top-0 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-brand-gold opacity-[0.05] blur-[120px]"
         />
         <div className="relative mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
               {t("The rewrite engine")}
             </p>
-            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
+            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-brand-navy sm:text-4xl md:text-[2.7rem]">
               {t("One line decides whether they keep reading.")}
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-[#0A2647]/55 sm:text-lg">
+            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-brand-navy/55 sm:text-lg">
               {t("Hired turns the lines you’d actually write into the ones a recruiter repeats out loud. Same job — sharper proof.")}
             </p>
           </div>
@@ -124,11 +125,11 @@ export default async function LandingPage() {
           ============================================================ */}
       <section
         id="two-readers"
-        className="w-full bg-gradient-to-b from-[#0A2647] to-[#061A33] py-20 sm:py-28"
+        className="w-full bg-gradient-to-b from-brand-navy to-[#061A33] py-20 sm:py-28"
       >
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#D4A83F]">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold-soft">
               {t("Before a human ever sees it")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-white sm:text-4xl md:text-[2.7rem]">
@@ -151,13 +152,13 @@ export default async function LandingPage() {
       <section id="templates" className="w-full bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
               {t("The templates")}
             </p>
-            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
+            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-brand-navy sm:text-4xl md:text-[2.7rem]">
               {t("Built to survive the scan and earn the read.")}
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-[#0A2647]/55 sm:text-lg">
+            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-brand-navy/55 sm:text-lg">
               {t("Every layout parses cleanly for the software and looks composed to the person. Start with one — switch anytime, nothing’s locked in.")}
             </p>
           </div>
@@ -167,12 +168,12 @@ export default async function LandingPage() {
           </div>
 
           <div className="mt-10 flex flex-col items-center gap-4">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#0A2647]/40">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-brand-navy/40">
               {t("+ 9 more in the studio")}
             </p>
             <Link
               href="/build/chat"
-              className="group inline-flex items-center gap-2.5 rounded-full bg-[#0A2647] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#0d3259] hover:shadow-md focus-visible:outline-none"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-brand-navy px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand-navy-hover hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2"
             >
               {t("Start with a template")}
               <ArrowRight
@@ -190,10 +191,10 @@ export default async function LandingPage() {
       <section id="stories" className="w-full bg-[#FAFAF8] py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
               {t("Early signals")}
             </p>
-            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-[#0A2647] sm:text-4xl md:text-[2.7rem]">
+            <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-brand-navy sm:text-4xl md:text-[2.7rem]">
               {t("What people tell us after the rewrite.")}
             </h2>
             <div className="mt-6 flex justify-center">
@@ -204,17 +205,15 @@ export default async function LandingPage() {
           {/* Featured pull-quote */}
           <figure className="mx-auto mt-14 max-w-3xl text-center">
             <Quote
-              className="mx-auto h-9 w-9 text-[#B8860B]/40"
+              className="mx-auto h-9 w-9 text-brand-gold/40"
               strokeWidth={1.25}
               aria-hidden
             />
-            <blockquote className="mt-5 text-balance font-serif text-2xl leading-snug text-[#0A2647] sm:text-3xl md:text-[2.1rem] md:leading-[1.25]">
-              &ldquo;I&rsquo;d been editing the same bullet for a week. Hired rewrote
-              it in <span className="italic text-[#9a6b08]">one line</span> — and it
-              was the line I actually wanted to say.&rdquo;
+            <blockquote className="mt-5 text-balance font-serif text-2xl leading-snug text-brand-navy sm:text-3xl md:text-[2.1rem] md:leading-[1.25]">
+              {t("“I’d been editing the same bullet for a week. Hired rewrote it in one line — and it was the line I actually wanted to say.”")}
             </blockquote>
-            <figcaption className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-[#0A2647]/50">
-              Maya G. · Product Manager
+            <figcaption className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-brand-navy/50">
+              Maya G. · {t("Product Manager")}
             </figcaption>
           </figure>
 
@@ -233,22 +232,22 @@ export default async function LandingPage() {
                 name: "Shaked A.",
                 role: "Data Analyst",
               },
-            ].map((t) => (
+            ].map((item) => (
               <blockquote
-                key={t.name}
-                className="rounded-2xl border border-[#0A2647]/8 bg-white p-7 text-left shadow-[0_18px_44px_-30px_rgba(10,38,71,0.4)]"
+                key={item.name}
+                className="rounded-2xl border border-brand-navy/8 bg-white p-7 text-start shadow-[0_18px_44px_-30px_rgba(10,38,71,0.4)]"
               >
-                <p className="text-[15px] leading-relaxed text-[#0A2647]/75">
-                  &ldquo;{t.quote}&rdquo;
+                <p className="text-[15px] leading-relaxed text-brand-navy/75">
+                  &ldquo;{t(item.quote)}&rdquo;
                 </p>
-                <footer className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/45">
-                  {t.name} · {t.role}
+                <footer className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-navy/45">
+                  {item.name} · {t(item.role)}
                 </footer>
               </blockquote>
             ))}
           </div>
 
-          <p className="mt-10 text-center font-mono text-[11px] tracking-wide text-[#0A2647]/40">
+          <p className="mt-10 text-center font-mono text-[11px] tracking-wide text-brand-navy/40">
             {t("Quotes from anonymized user interviews. Outcomes vary.")}
           </p>
         </div>
@@ -260,13 +259,13 @@ export default async function LandingPage() {
       <section className="relative w-full overflow-hidden bg-[#061A33] py-24 sm:py-32">
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B8860B] opacity-[0.08] blur-[130px]"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gold opacity-[0.08] blur-[130px]"
         />
         <div className="relative mx-auto max-w-2xl px-4 text-center sm:px-8">
           <HiredSeal />
           <h2 className="mt-9 text-balance font-serif text-4xl leading-[1.05] text-white sm:text-5xl">
             {t("Stop tweaking. Get")}{" "}
-            <span className="italic text-[#D4A83F]">{t("hired.")}</span>
+            <span className="italic text-brand-gold-soft">{t("hired.")}</span>
           </h2>
           <p className="mx-auto mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-white/70">
             {t("See where your résumé stands in 60 seconds — no signup, no card.")}
@@ -276,7 +275,7 @@ export default async function LandingPage() {
             <SignedOut>
               <Link
                 href="/score"
-                className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
+                className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-brand-navy shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
               >
                 {t("Check your score — free")}
                 <ArrowRight
@@ -286,7 +285,7 @@ export default async function LandingPage() {
               </Link>
               <Link
                 href="#hero"
-                className="text-sm font-light tracking-wide text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:outline-none"
+                className="text-sm font-light tracking-wide text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#061A33] rounded-sm"
               >
                 {t("or build one from scratch")}
               </Link>
@@ -294,7 +293,7 @@ export default async function LandingPage() {
             <SignedIn>
               <Link
                 href="/build/chat"
-                className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
+                className="group inline-flex items-center justify-center gap-3 rounded-sm bg-white px-8 py-4 font-medium text-brand-navy shadow-sm transition-all hover:-translate-y-0.5 hover:bg-stone-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:px-10 sm:py-5"
               >
                 {t("Continue building")}
                 <ArrowRight

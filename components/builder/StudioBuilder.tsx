@@ -71,6 +71,10 @@ export function StudioBuilder() {
   const resetResume = useResumeStore((s) => s.resetResume);
   const scoringGoal = useResumeStore((s) => s.scoringGoal);
   const setScoringGoal = useResumeStore((s) => s.setScoringGoal);
+  const undo = useResumeStore((s) => s.undo);
+  const redo = useResumeStore((s) => s.redo);
+  const canUndo = useResumeStore((s) => s.past.length > 0);
+  const canRedo = useResumeStore((s) => s.future.length > 0);
   const {
     messages,
     addMessage,
@@ -113,6 +117,9 @@ export function StudioBuilder() {
     unlimited: false,
   });
   const [exporting, setExporting] = useState(false);
+  // Anon visitor hit the free-message limit (429) — swap the dead-end error for
+  // a sign-up moment above the composer.
+  const [limitHit, setLimitHit] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -206,13 +213,36 @@ export function StudioBuilder() {
   // Seamless gate: if a download was blocked on sign-up, run it the instant the
   // user is signed in (their first free credit covers this first CV).
   useEffect(() => {
-    if (isSignedIn) void loadEntitlement();
+    if (isSignedIn) {
+      void loadEntitlement();
+      setLimitHit(false);
+    }
     if (isSignedIn && pendingExportRef.current) {
       pendingExportRef.current = false;
       void onExport();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn]);
+
+  // Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z redo — skipped while focus is in a text
+  // field so native input undo keeps working.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z" || e.altKey) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      if (e.shiftKey) useResumeStore.getState().redo();
+      else useResumeStore.getState().undo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   async function loadChats() {
     try {
@@ -309,6 +339,9 @@ export function StudioBuilder() {
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
+        // Anon free-message limit: don't dead-end on a bare error bubble — the
+        // sign-up CTA above the composer takes over (see limitHit).
+        if (res.status === 429 && !isSignedIn) setLimitHit(true);
         throw new Error(data?.error ?? t("Couldn't reach the assistant"));
       }
       let toolCount = 0;
@@ -318,7 +351,7 @@ export function StudioBuilder() {
         } else if (evt.type === "tool_start") {
           addToolToMessage(assistantId, {
             id: generateId(),
-            label: pendingToolLabel(evt.name),
+            label: pendingToolLabel(evt.name, t),
             pending: true,
           });
         } else if (evt.type === "tool_noop") {
@@ -366,7 +399,14 @@ export function StudioBuilder() {
         });
       }
     } catch (err) {
-      if ((err as Error)?.name !== "AbortError") {
+      if ((err as Error)?.name === "AbortError") {
+        // User hit Stop — keep whatever streamed in; only fill the bubble if
+        // nothing arrived yet so it doesn't sit there empty forever.
+        const cur = useChatBuilderStore.getState().messages.find((m) => m.id === assistantId);
+        if (!cur?.content) {
+          updateMessage(assistantId, { content: t("Stopped — your CV is unchanged. Ask me anything else.") });
+        }
+      } else {
         track("chat_error", { stage: "stream" });
         const msg = err instanceof Error ? err.message : t("Something broke");
         updateMessage(assistantId, { content: `⚠️ ${msg}` });
@@ -539,6 +579,15 @@ export function StudioBuilder() {
   }
 
   function newChat() {
+    // Anonymous work only lives on this device — persistSession silently fails
+    // without an account, so starting fresh would wipe the CV for good. Confirm
+    // before doing anything destructive.
+    if (!isSignedIn && !isEmpty) {
+      const ok = window.confirm(
+        t("Start a new CV? Your current one isn't saved to an account and will be cleared. Sign up first to keep it.")
+      );
+      if (!ok) return;
+    }
     abortRef.current?.abort();
     void persistSession();
     clear();
@@ -600,6 +649,13 @@ export function StudioBuilder() {
   }
 
   async function deleteChat(id: string) {
+    const title = chats.find((c) => c.id === id)?.title;
+    const ok = window.confirm(
+      title
+        ? t('Delete "{title}"? This can\'t be undone.', { title })
+        : t("Delete this CV? This can't be undone.")
+    );
+    if (!ok) return;
     setChats((list) => list.filter((c) => c.id !== id));
     try {
       await fetch(`/api/chats/${id}`, { method: "DELETE" });
@@ -634,8 +690,8 @@ export function StudioBuilder() {
 
   const emptyExtras = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-      <label className="cursor-pointer rounded-2xl bg-white border border-stone-200 hover:border-[#0A2647]/30 hover:shadow-sm transition-all p-3.5 flex items-start gap-3">
-        <Download className="h-5 w-5 text-[#0A2647] flex-shrink-0 mt-0.5" />
+      <label className="cursor-pointer rounded-2xl bg-white border border-stone-200 hover:border-brand-navy/30 hover:shadow-sm transition-all p-3.5 flex items-start gap-3">
+        <Download className="h-5 w-5 text-brand-navy flex-shrink-0 mt-0.5" />
         <span>
           <span className="block text-sm text-[#1a1a1a] font-medium">{t("Upload my current CV")}</span>
           <span className="block text-xs text-stone-500 mt-0.5">{t("PDF or Word in, everything pulled into the builder")}</span>
@@ -654,9 +710,9 @@ export function StudioBuilder() {
       <button
         type="button"
         onClick={() => send("Interview me — ask me what's new and help me build this CV.")}
-        className="text-start rounded-2xl bg-white border border-stone-200 hover:border-[#B8860B]/40 hover:shadow-sm transition-all p-3.5 flex items-start gap-3"
+        className="text-start rounded-2xl bg-white border border-stone-200 hover:border-brand-gold/40 hover:shadow-sm transition-all p-3.5 flex items-start gap-3"
       >
-        <Sparkles className="h-5 w-5 text-[#B8860B] flex-shrink-0 mt-0.5" />
+        <Sparkles className="h-5 w-5 text-brand-gold flex-shrink-0 mt-0.5" />
         <span>
           <span className="block text-sm text-[#1a1a1a] font-medium">{t("Interview me")}</span>
           <span className="block text-xs text-stone-500 mt-0.5">{t("Not sure what to add? I'll ask the right questions")}</span>
@@ -687,13 +743,13 @@ export function StudioBuilder() {
       disabled={streaming}
       title={label}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors disabled:opacity-40 ${
-        active ? "bg-[#0A2647]/[0.07] text-[#0A2647]" : "text-stone-600 hover:bg-stone-100 hover:text-[#0A2647]"
+        active ? "bg-brand-navy/[0.07] text-brand-navy" : "text-stone-600 hover:bg-stone-100 hover:text-brand-navy"
       }`}
     >
       <Icon className="h-[15px] w-[15px]" strokeWidth={1.8} />
       <span className="hidden lg:inline">{label}</span>
       {badge ? (
-        <span className="hidden xl:inline text-[9px] font-bold tracking-wide px-1 py-px rounded bg-[#0A2647]/10 text-[#0A2647]">
+        <span className="hidden xl:inline text-[9px] font-bold tracking-wide px-1 py-px rounded bg-brand-navy/10 text-brand-navy">
           {badge}
         </span>
       ) : null}
@@ -709,8 +765,8 @@ export function StudioBuilder() {
             <Logo variant="dark" size="sm" />
             {!isSignedIn ? (
               <SignUpButton mode="modal">
-                <button className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium text-[#B8860B] hover:bg-[#B8860B]/10 transition-colors">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#B8860B]" />
+                <button className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium text-brand-gold hover:bg-brand-gold/10 transition-colors">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
                   {t("Sign up to save your work")}
                 </button>
               </SignUpButton>
@@ -719,21 +775,21 @@ export function StudioBuilder() {
           <div className="flex items-center gap-2">
             <Link
               href="/pricing"
-              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-[13px] text-stone-600 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
+              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-[13px] text-stone-600 hover:bg-stone-100 hover:text-brand-navy transition-colors"
             >
-              {t("Help")}
+              {t("Pricing")}
             </Link>
             {isSignedIn ? (
               <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 ring-1 ring-stone-200" } }} />
             ) : (
               <>
                 <SignInButton mode="modal">
-                  <button className="px-3 py-1.5 rounded-full text-[13px] font-medium text-[#0A2647] border border-stone-300 hover:border-[#0A2647]/40 hover:bg-stone-50 transition-colors">
+                  <button className="px-3 py-1.5 rounded-full text-[13px] font-medium text-brand-navy border border-stone-300 hover:border-brand-navy/40 hover:bg-stone-50 transition-colors">
                     {t("Login")}
                   </button>
                 </SignInButton>
                 <SignUpButton mode="modal">
-                  <button className="px-3.5 py-1.5 rounded-full text-[13px] font-semibold bg-[#0A2647] text-white hover:bg-[#0d3259] transition-colors">
+                  <button className="px-3.5 py-1.5 rounded-full text-[13px] font-semibold bg-brand-navy text-white hover:bg-brand-navy-hover transition-colors">
                     {t("Sign Up")}
                   </button>
                 </SignUpButton>
@@ -748,13 +804,26 @@ export function StudioBuilder() {
             <button
               type="button"
               onClick={() => {
-                setChatOpen((v) => !v);
-                setMobileTab("chat");
+                // On phones exactly one pane is visible, driven by mobileTab —
+                // this toggle flips between chat and the document, never into a
+                // "nothing visible" state. On desktop it collapses the side pane
+                // (the document stays as the hero).
+                const mobile = window.matchMedia("(max-width: 767px)").matches;
+                if (mobile) {
+                  if (mobileTab === "chat") {
+                    setMobileTab("document");
+                  } else {
+                    setChatOpen(true);
+                    setMobileTab("chat");
+                  }
+                } else {
+                  setChatOpen((v) => !v);
+                }
               }}
               aria-pressed={chatOpen}
               title={t("AI Assistant")}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
-                chatOpen ? "bg-[#0A2647]/[0.07] text-[#0A2647]" : "text-stone-600 hover:bg-stone-100"
+                chatOpen ? "bg-brand-navy/[0.07] text-brand-navy" : "text-stone-600 hover:bg-stone-100"
               }`}
             >
               <PanelLeft className="h-[15px] w-[15px]" strokeWidth={1.8} />
@@ -772,6 +841,9 @@ export function StudioBuilder() {
                   const next = !scoreOpen;
                   setScoreOpen(next);
                   if (next) setMobileTab("score");
+                  // Closing while the mobile view is on Score would strand an
+                  // empty body — fall back to the document.
+                  else if (mobileTabRef.current === "score") setMobileTab("document");
                   track(next ? "score_panel_opened" : "score_panel_closed");
                 }}
               />
@@ -781,17 +853,35 @@ export function StudioBuilder() {
             </div>
           </div>
           <div className="flex items-center gap-0.5 flex-shrink-0">
-            <button type="button" disabled aria-label={t("Undo")} title={t("Undo")} className="grid place-items-center h-8 w-8 rounded-lg text-stone-300 cursor-not-allowed">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={!canUndo}
+              aria-label={t("Undo")}
+              title={t("Undo")}
+              className={`grid place-items-center h-10 w-10 md:h-8 md:w-8 rounded-lg transition-colors ${
+                canUndo ? "text-stone-600 hover:bg-stone-100 hover:text-brand-navy" : "text-stone-300 cursor-not-allowed"
+              }`}
+            >
               <Undo2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
             </button>
-            <button type="button" disabled aria-label={t("Redo")} title={t("Redo")} className="grid place-items-center h-8 w-8 rounded-lg text-stone-300 cursor-not-allowed">
+            <button
+              type="button"
+              onClick={redo}
+              disabled={!canRedo}
+              aria-label={t("Redo")}
+              title={t("Redo")}
+              className={`grid place-items-center h-10 w-10 md:h-8 md:w-8 rounded-lg transition-colors ${
+                canRedo ? "text-stone-600 hover:bg-stone-100 hover:text-brand-navy" : "text-stone-300 cursor-not-allowed"
+              }`}
+            >
               <Redo2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
             </button>
             <button
               type="button"
               onClick={() => setHistoryOpen(true)}
               title={t("History")}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] text-stone-600 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] text-stone-600 hover:bg-stone-100 hover:text-brand-navy transition-colors"
             >
               <Clock className="h-[15px] w-[15px]" strokeWidth={1.8} />
               <span className="hidden md:inline">{t("History")}</span>
@@ -801,7 +891,7 @@ export function StudioBuilder() {
               onClick={onExport}
               disabled={exporting}
               title={exporting ? t("Exporting…") : t("Export")}
-              className="ml-1 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold bg-[#0A2647] text-white hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
+              className="ml-1 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold bg-brand-navy text-white hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
             >
               {exporting ? <Loader2 className="h-[15px] w-[15px] animate-spin" /> : <Download className="h-[15px] w-[15px]" strokeWidth={2} />}
               <span className="hidden sm:inline">{exporting ? t("Exporting…") : t("Export")}</span>
@@ -817,7 +907,7 @@ export function StudioBuilder() {
             type="button"
             onClick={() => setMobileTab("chat")}
             className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[13px] transition-colors ${
-              mobileTab === "chat" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
+              mobileTab === "chat" ? "bg-white text-brand-navy font-medium shadow-sm" : "text-stone-500"
             }`}
           >
             <Sparkles className="h-4 w-4" /> {t("Chat")}
@@ -829,12 +919,12 @@ export function StudioBuilder() {
               setUnseenUpdates(0);
             }}
             className={`relative flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[13px] transition-colors ${
-              mobileTab === "document" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
+              mobileTab === "document" ? "bg-white text-brand-navy font-medium shadow-sm" : "text-stone-500"
             }`}
           >
             <LayoutTemplate className="h-4 w-4" /> {t("CV")}
             {unseenUpdates > 0 && mobileTab !== "document" ? (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[#B8860B] text-white text-[10px] font-bold">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-brand-gold text-white text-[10px] font-bold">
                 {unseenUpdates}
               </span>
             ) : null}
@@ -847,7 +937,7 @@ export function StudioBuilder() {
               track("score_panel_opened");
             }}
             className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[13px] transition-colors ${
-              mobileTab === "score" ? "bg-white text-[#0A2647] font-medium shadow-sm" : "text-stone-500"
+              mobileTab === "score" ? "bg-white text-brand-navy font-medium shadow-sm" : "text-stone-500"
             }`}
           >
             <ShieldCheck className="h-4 w-4" /> {t("Score")}
@@ -857,13 +947,14 @@ export function StudioBuilder() {
 
       {/* Body: chat pane + document hero */}
       <div className="flex-1 flex min-h-0">
-        {/* AI Assistant pane */}
-        {chatOpen ? (
-          <aside
-            className={`flex-col min-h-0 w-full md:w-[380px] lg:w-[420px] md:flex flex-shrink-0 bg-white border-r border-stone-200 ${
-              mobileTab === "chat" ? "flex" : "hidden"
-            }`}
-          >
+        {/* AI Assistant pane. Always mounted: on < md, visibility is derived
+            from mobileTab ALONE (chatOpen can never blank the phone view); on
+            md+ it's the chatOpen collapse toggle. */}
+        <aside
+          className={`flex-col min-h-0 w-full md:w-[380px] lg:w-[420px] flex-shrink-0 bg-white border-r border-stone-200 ${
+            mobileTab === "chat" ? "flex" : "hidden"
+          } ${chatOpen ? "md:flex" : "md:hidden"}`}
+        >
             <div className="flex-shrink-0 px-4 py-3 border-b border-stone-100">
               <div className="flex items-center justify-between gap-3">
                 <div
@@ -877,7 +968,7 @@ export function StudioBuilder() {
                     aria-selected={leftMode === "chat"}
                     onClick={() => switchMode("chat")}
                     className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12.5px] transition-colors ${
-                      leftMode === "chat" ? "bg-white text-[#0A2647] font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
+                      leftMode === "chat" ? "bg-white text-brand-navy font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
                     <Sparkles className="h-3.5 w-3.5" /> {t("Chat")}
@@ -888,7 +979,7 @@ export function StudioBuilder() {
                     aria-selected={leftMode === "edit"}
                     onClick={() => switchMode("edit")}
                     className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12.5px] transition-colors ${
-                      leftMode === "edit" ? "bg-white text-[#0A2647] font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
+                      leftMode === "edit" ? "bg-white text-brand-navy font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
                     <Pencil className="h-3.5 w-3.5" /> {t("Edit")}
@@ -900,14 +991,14 @@ export function StudioBuilder() {
                     type="button"
                     onClick={newChat}
                     aria-label={t("New chat")}
-                    className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
+                    className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-brand-navy transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
               </div>
               <div className="mt-2.5 h-1 rounded-full bg-stone-100 overflow-hidden">
-                <div className="h-full rounded-full bg-[#0A2647] transition-all duration-700" style={{ width: `${pct}%` }} />
+                <div className="h-full rounded-full bg-brand-navy transition-all duration-700" style={{ width: `${pct}%` }} />
               </div>
             </div>
 
@@ -923,6 +1014,32 @@ export function StudioBuilder() {
                   emptyExtras={emptyExtras}
                 />
                 <div className="flex-shrink-0 px-3 pb-3 pt-1 border-t border-stone-100">
+                  {streaming ? (
+                    <div className="flex justify-center pb-1.5">
+                      <button
+                        type="button"
+                        onClick={() => abortRef.current?.abort()}
+                        className="inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-full bg-white border border-stone-300 text-[13px] font-medium text-stone-600 hover:border-rose-300 hover:text-rose-500 shadow-sm transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" /> {t("Stop generating")}
+                      </button>
+                    </div>
+                  ) : null}
+                  {limitHit && !isSignedIn ? (
+                    <div className="mb-2 rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3.5">
+                      <p className="text-[13px] font-medium text-[#1a1a1a]">
+                        {t("You've used your free messages — nice progress!")}
+                      </p>
+                      <p className="mt-0.5 text-[12px] text-stone-600">
+                        {t("Create a free account to keep building. Your CV comes with you, and it saves to the cloud from here on.")}
+                      </p>
+                      <SignUpButton mode="modal">
+                        <button className="mt-2.5 w-full inline-flex items-center justify-center min-h-[44px] px-4 rounded-xl bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors">
+                          {t("Sign up free to continue")}
+                        </button>
+                      </SignUpButton>
+                    </div>
+                  ) : null}
                   <ChatComposer
                     onSend={handleSend}
                     onUpload={handleUpload}
@@ -937,8 +1054,7 @@ export function StudioBuilder() {
                 </div>
               </>
             )}
-          </aside>
-        ) : null}
+        </aside>
 
         {/* Document hero */}
         <section
@@ -956,7 +1072,7 @@ export function StudioBuilder() {
                   key={q.label}
                   type="button"
                   onClick={() => quickEdit(q.prompt)}
-                  className="flex-shrink-0 px-2.5 py-1 rounded-full bg-stone-50 border border-stone-200 text-[11px] text-stone-600 hover:border-[#0A2647]/30 hover:text-[#0A2647] transition-colors"
+                  className="flex-shrink-0 px-2.5 py-1 rounded-full bg-stone-50 border border-stone-200 text-[11px] text-stone-600 hover:border-brand-navy/30 hover:text-brand-navy transition-colors"
                 >
                   {q.label}
                 </button>
@@ -981,12 +1097,15 @@ export function StudioBuilder() {
           </div>
         </section>
 
-        {/* Resume score rail — Enhancv-style live content-intelligence */}
-        {scoreOpen ? (
+        {/* Resume score rail — Enhancv-style live content-intelligence. Mounted
+            whenever EITHER surface needs it; on < md visibility follows
+            mobileTab alone, and every close path drops the phone back on the
+            document so no state combination leaves an empty body. */}
+        {scoreOpen || mobileTab === "score" ? (
           <aside
-            className={`flex-col min-h-0 w-full md:w-[340px] lg:w-[380px] md:flex flex-shrink-0 border-l border-stone-200 ${
+            className={`flex-col min-h-0 w-full md:w-[340px] lg:w-[380px] flex-shrink-0 border-l border-stone-200 ${
               mobileTab === "score" ? "flex" : "hidden"
-            }`}
+            } ${scoreOpen ? "md:flex" : "md:hidden"}`}
           >
             <ResumeScorePanel
               resumeData={resumeData}
@@ -995,7 +1114,10 @@ export function StudioBuilder() {
               goal={scoringGoal}
               onApplyFix={applyFix}
               applyingFixId={applyingFixId}
-              onClose={() => setScoreOpen(false)}
+              onClose={() => {
+                setScoreOpen(false);
+                if (mobileTabRef.current === "score") setMobileTab("document");
+              }}
             />
           </aside>
         ) : null}
@@ -1007,12 +1129,12 @@ export function StudioBuilder() {
           <div className="absolute inset-0 bg-black/30" onClick={() => setHistoryOpen(false)} aria-hidden="true" />
           <div className="relative w-full max-w-sm h-full bg-white border-r border-stone-200 shadow-2xl flex flex-col">
             <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-stone-200">
-              <div className="text-sm font-semibold text-[#0A2647]">{t("Your CVs")}</div>
+              <div className="text-sm font-semibold text-brand-navy">{t("Your CVs")}</div>
               <button
                 type="button"
                 onClick={() => setHistoryOpen(false)}
                 aria-label={t("Close history")}
-                className="grid place-items-center h-8 w-8 rounded-lg text-stone-500 hover:text-[#0A2647] hover:bg-stone-100 transition-colors"
+                className="grid place-items-center h-8 w-8 rounded-lg text-stone-500 hover:text-brand-navy hover:bg-stone-100 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1021,22 +1143,38 @@ export function StudioBuilder() {
               <button
                 type="button"
                 onClick={newChat}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors"
               >
                 <Plus className="h-4 w-4" /> {t("New CV")}
               </button>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-3 space-y-1">
               {chats.length === 0 ? (
-                <p className="text-center text-xs text-stone-400 px-4 py-8">
-                  {t("No saved CVs yet. Your work saves automatically as you build.")}
-                </p>
+                !isSignedIn ? (
+                  // Honest anon copy: cloud saving is auth-gated, so don't
+                  // promise "saves automatically" — this device only, until
+                  // they sign up.
+                  <div className="px-4 py-8 text-center">
+                    <p className="text-xs text-stone-500 leading-relaxed">
+                      {t("Your CV only lives on this device for now — clearing your browser loses it. Create a free account to save it to the cloud and open it anywhere.")}
+                    </p>
+                    <SignUpButton mode="modal">
+                      <button className="mt-3 w-full inline-flex items-center justify-center min-h-[44px] px-4 rounded-xl bg-brand-gold text-white text-sm font-semibold hover:bg-[#a0760a] transition-colors">
+                        {t("Sign up to save your work")}
+                      </button>
+                    </SignUpButton>
+                  </div>
+                ) : (
+                  <p className="text-center text-xs text-stone-400 px-4 py-8">
+                    {t("No saved CVs yet. Your work saves automatically as you build.")}
+                  </p>
+                )
               ) : (
                 chats.map((c) => (
                   <div
                     key={c.id}
                     className={`group flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
-                      c.id === sessionId ? "bg-[#0A2647]/[0.06]" : "hover:bg-stone-50"
+                      c.id === sessionId ? "bg-brand-navy/[0.06]" : "hover:bg-stone-50"
                     }`}
                   >
                     <button type="button" onClick={() => openChat(c.id)} className="flex-1 min-w-0 text-start">
@@ -1048,13 +1186,16 @@ export function StudioBuilder() {
                           : t("{count} msgs", { count: c.messageCount })}
                       </div>
                     </button>
+                    {/* Touch devices have no hover: keep the delete button
+                        visible (dimmed) on mobile, hover/focus-reveal on
+                        desktop. */}
                     <button
                       type="button"
                       onClick={() => deleteChat(c.id)}
                       aria-label={t("Delete CV")}
-                      className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-stone-300 hover:text-rose-500 hover:bg-stone-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="flex-shrink-0 grid place-items-center h-11 w-11 md:h-8 md:w-8 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 opacity-60 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-4 w-4 md:h-3.5 md:w-3.5" />
                     </button>
                   </div>
                 ))

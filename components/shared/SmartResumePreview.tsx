@@ -4,10 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import useMeasure from "react-use-measure";
 import { ResumePreview, ResumePreviewData } from "@/components/builder/ResumePreview";
 import { BuilderTemplateId, ThemeColor, THEME_COLOR_VALUES } from "@/context/BuilderContext";
-import { 
+import {
   ChevronDown, Check, Palette, Layout, X, Pencil,
-  AlertTriangle, Type, ArrowUpDown, Zap
+  AlertTriangle, Type, ArrowUpDown, Zap, ZoomIn, ZoomOut
 } from "lucide-react";
+import { TEMPLATE_LIST } from "@/lib/templates/registry";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { densityInlineVars, densityClasses, densityOverrideCss } from "@/lib/builder/density";
@@ -16,27 +17,11 @@ import { densityInlineVars, densityClasses, densityOverrideCss } from "@/lib/bui
 const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
 
-// Template options
-const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string }[] = [
-  { id: "modern-sidebar", name: "Modern Sidebar" },
-  { id: "ivy-league", name: "Ivy League" },
-  { id: "minimalist", name: "Minimalist" },
-  { id: "executive", name: "Executive" },
-  { id: "techie", name: "Techie" },
-  { id: "creative", name: "Creative" },
-  { id: "startup", name: "Startup" },
-  { id: "international", name: "International" },
-  { id: "aurora", name: "Aurora" },
-  { id: "banner", name: "Banner" },
-  { id: "spotlight", name: "Spotlight" },
-  { id: "ledger", name: "Ledger" },
-  { id: "devfolio", name: "Devfolio" },
-  { id: "canvas", name: "Canvas" },
-  { id: "timeline", name: "Timeline" },
-  { id: "double-column", name: "Double Column" },
-  { id: "compact", name: "Compact" },
-  { id: "photo-left", name: "Photo Left" },
-];
+// Template options — derived from the canonical registry
+// (lib/templates/registry.ts) so this dropdown can never go stale.
+const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string }[] = TEMPLATE_LIST.map(
+  (entry) => ({ id: entry.id, name: entry.name })
+);
 
 // Color options
 const COLOR_OPTIONS: { id: ThemeColor; name: string; color: string }[] = [
@@ -122,6 +107,8 @@ export function SmartResumePreview({
   // component keeps its own state. Mirrors the template/color pattern above.
   const [localFontLevel, setLocalFontLevel] = useState(5);
   const [localSpacingLevel, setLocalSpacingLevel] = useState(5);
+  // Small-screen zoom toggle: false = fit page width, true = readable 100%.
+  const [zoomedIn, setZoomedIn] = useState(false);
   const fontLevel = fontLevelProp ?? localFontLevel;
   const spacingLevel = spacingLevelProp ?? localSpacingLevel;
   const setFontLevel = (v: number) => {
@@ -184,11 +171,21 @@ export function SmartResumePreview({
     onColorChange?.(newColor);
   };
 
-  // Calculate scale
+  // Calculate the fit-to-width scale
   const containerWidth = bounds.width;
-  const scale = containerWidth > 0 
+  const fitScale = containerWidth > 0
     ? Math.max(minScale, Math.min(maxScale, (containerWidth - 32) / A4_WIDTH_PX))
     : 0.5;
+
+  // MOBILE ZOOM: at phone widths the fit scale renders A4 text at ~4px —
+  // illegible. Offer a tap-to-toggle between "fit width" and a readable 100%
+  // scale with natural pan/scroll. The toggle only appears when the fit scale
+  // is small enough to be unreadable, so desktop behavior is unchanged.
+  const READABLE_SCALE = 1;
+  const ZOOM_AFFORDANCE_THRESHOLD = 0.6;
+  const canZoom = fitScale < ZOOM_AFFORDANCE_THRESHOLD;
+  const zoomActive = canZoom && zoomedIn;
+  const scale = zoomActive ? READABLE_SCALE : fitScale;
   const scaledHeight = A4_HEIGHT_PX * scale;
 
   // Get current template name
@@ -367,16 +364,27 @@ export function SmartResumePreview({
           setShowColorPicker(false);
         }}
       >
-        <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar p-4 flex justify-center">
-          
+        <div
+          className={cn(
+            "h-full overflow-y-auto custom-scrollbar p-4 flex",
+            // While zoomed the page is wider than the container: allow
+            // horizontal panning and anchor to the start edge so the whole
+            // page is reachable. In fit mode keep the original centered look.
+            zoomActive ? "overflow-x-auto justify-start" : "overflow-x-hidden justify-center"
+          )}
+        >
+
           {/* The Scaled A4 Page */}
           <div
             style={{
               width: `${A4_WIDTH_PX}px`,
               minHeight: `${A4_HEIGHT_PX}px`,
               transform: `scale(${scale})`,
-              transformOrigin: "top center",
+              transformOrigin: zoomActive ? "top left" : "top center",
               marginBottom: `-${A4_HEIGHT_PX - scaledHeight}px`,
+              // Reserve real layout width while zoomed so the scroll area pans
+              // across the full page (transforms don't affect layout size).
+              flexShrink: 0,
             }}
             className={cn(
               "bg-white shadow-xl transition-all duration-200 ease-out relative",
@@ -394,7 +402,7 @@ export function SmartResumePreview({
             </div>
 
             {/* Page Break Marker (Visual Guide) */}
-            <div 
+            <div
               className="absolute left-0 w-full border-b-2 border-dashed border-red-300/60 z-50 pointer-events-none"
               style={{ top: `${A4_HEIGHT_PX}px` }}
             >
@@ -405,6 +413,27 @@ export function SmartResumePreview({
           </div>
 
         </div>
+
+        {/* Small-screen zoom toggle + zoom-state indicator. Only rendered when
+            the fit scale is too small to read (phones / narrow panels), so
+            desktop behavior is untouched. */}
+        {canZoom && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setZoomedIn((z) => !z);
+            }}
+            aria-label={zoomActive ? t("Fit page to screen") : t("Zoom in to read")}
+            aria-pressed={zoomActive}
+            className="absolute bottom-4 end-4 z-30 inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 rounded-full bg-slate-900/90 text-white shadow-lg backdrop-blur-sm active:scale-95 transition-transform"
+          >
+            {zoomActive ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
+            <span className="text-xs font-semibold tabular-nums">
+              {zoomActive ? "100%" : `${Math.round(fitScale * 100)}%`}
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

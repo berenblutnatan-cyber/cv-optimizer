@@ -39,7 +39,7 @@ export function UseExampleButton({
       onClick={onClick}
       className={
         className ??
-        "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
+        "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors"
       }
     >
       {t(label)}

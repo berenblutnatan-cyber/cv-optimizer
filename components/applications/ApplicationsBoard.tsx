@@ -25,6 +25,9 @@ export function ApplicationsBoard() {
   const [adding, setAdding] = useState(false);
   const [clBusyId, setClBusyId] = useState<string | null>(null);
   const [coverLetter, setCoverLetter] = useState<{ app: ApplicationDTO; text: string } | null>(null);
+  // Delete is permanent — always confirm first.
+  const [confirmDelete, setConfirmDelete] = useState<ApplicationDTO | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -39,25 +42,40 @@ export function ApplicationsBoard() {
   }, []);
 
   async function changeStatus(app: ApplicationDTO, status: JobApplicationStatus) {
+    const prevStatus = app.status;
+    // Optimistic move — rolled back below if the server rejects it, so the
+    // board never silently lies about what's saved.
     setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, status } : a)));
     track("application_status_changed", { stage: status });
     try {
-      await fetch(`/api/applications/${app.id}`, {
+      const res = await fetch(`/api/applications/${app.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) throw new Error("save failed");
     } catch {
-      toast.error(t("Couldn't save that move."));
+      setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, status: prevStatus } : a)));
+      toast.error(t("Couldn't save that move — it's back where it was."));
     }
   }
 
-  async function remove(app: ApplicationDTO) {
+  // Runs only after the user confirms in the dialog. Optimistic removal with a
+  // rollback: if the server rejects the delete, the card comes right back.
+  async function confirmRemove(app: ApplicationDTO) {
+    setDeleting(true);
+    const prevApps = apps;
     setApps((prev) => prev.filter((a) => a.id !== app.id));
     try {
-      await fetch(`/api/applications/${app.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/applications/${app.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      setConfirmDelete(null);
     } catch {
-      /* ignore */
+      setApps(prevApps);
+      setConfirmDelete(null);
+      toast.error(t("Couldn't delete that application — it's been restored."));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -129,13 +147,13 @@ export function ApplicationsBoard() {
     <div>
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#0A2647]">{t("Job tracker")}</h1>
+          <h1 className="text-2xl font-bold text-brand-navy">{t("Job tracker")}</h1>
           <p className="text-sm text-stone-500 mt-0.5">{t("Every role you're chasing, in one board.")}</p>
         </div>
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors"
         >
           <Plus className="h-4 w-4" /> {t("Add application")}
         </button>
@@ -147,7 +165,7 @@ export function ApplicationsBoard() {
           return (
             <div key={status} className="rounded-2xl bg-stone-50 border border-stone-200 p-2.5 min-h-[120px]">
               <div className="flex items-center justify-between px-1 pb-2">
-                <span className="text-[12px] font-semibold text-[#0A2647]">{t(STATUS_LABEL[status])}</span>
+                <span className="text-[12px] font-semibold text-brand-navy">{t(STATUS_LABEL[status])}</span>
                 <span className="text-[11px] text-stone-400 tabular-nums">{col.length}</span>
               </div>
               <div className="space-y-2">
@@ -160,7 +178,7 @@ export function ApplicationsBoard() {
                     <select
                       value={app.status}
                       onChange={(e) => changeStatus(app, e.target.value as JobApplicationStatus)}
-                      className="mt-2 w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[12px] text-[#0A2647] outline-none focus:border-[#0A2647]/40"
+                      className="mt-2 w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[12px] text-brand-navy outline-none focus:border-brand-navy/40"
                     >
                       {APPLICATION_STATUSES.map((s) => (
                         <option key={s} value={s}>
@@ -174,7 +192,7 @@ export function ApplicationsBoard() {
                         <button
                           type="button"
                           onClick={() => tailor(app)}
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-[#B8860B]/10 text-[#8a6608] text-[11px] font-semibold hover:bg-[#B8860B]/20 transition-colors"
+                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-brand-gold/10 text-[#8a6608] text-[11px] font-semibold hover:bg-brand-gold/20 transition-colors"
                         >
                           <WandSparkles className="h-3 w-3" /> {t("Tailor CV")}
                         </button>
@@ -184,14 +202,14 @@ export function ApplicationsBoard() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={t("Open job posting")}
-                            className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
+                            className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-brand-navy transition-colors"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         ) : null}
                         <button
                           type="button"
-                          onClick={() => remove(app)}
+                          onClick={() => setConfirmDelete(app)}
                           aria-label={t("Delete application")}
                           className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-rose-500 transition-colors"
                         >
@@ -202,7 +220,7 @@ export function ApplicationsBoard() {
                         type="button"
                         onClick={() => genCoverLetter(app)}
                         disabled={clBusyId === app.id}
-                        className="w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-[#0A2647]/[0.06] text-[#0A2647] text-[11px] font-semibold hover:bg-[#0A2647]/[0.12] disabled:opacity-50 transition-colors"
+                        className="w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-brand-navy/[0.06] text-brand-navy text-[11px] font-semibold hover:bg-brand-navy/[0.12] disabled:opacity-50 transition-colors"
                       >
                         {clBusyId === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
                         {t("Cover letter")}
@@ -227,13 +245,58 @@ export function ApplicationsBoard() {
         />
       ) : null}
 
+      {confirmDelete ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-app-title"
+        >
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => (deleting ? null : setConfirmDelete(null))}
+            aria-hidden="true"
+          />
+          <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl p-5">
+            <h2 id="delete-app-title" className="text-base font-semibold text-brand-navy">
+              {t("Delete this application?")}
+            </h2>
+            <p className="mt-1 text-[13px] text-stone-500">
+              {confirmDelete.title} · {confirmDelete.company}
+            </p>
+            <p className="mt-2 text-[13px] text-stone-600">
+              {t("This permanently removes it from your board. There's no undo.")}
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-full border border-stone-200 text-[13px] font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
+              >
+                {t("Keep it")}
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmRemove(confirmDelete)}
+                disabled={deleting}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-600 text-white text-[13px] font-semibold hover:bg-rose-700 disabled:opacity-60 transition-colors"
+              >
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {t("Delete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {coverLetter ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setCoverLetter(null)} aria-hidden="true" />
           <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl p-5 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
-                <h2 className="text-base font-semibold text-[#0A2647]">{t("Cover letter")}</h2>
+                <h2 className="text-base font-semibold text-brand-navy">{t("Cover letter")}</h2>
                 <p className="text-[12px] text-stone-500 truncate">
                   {coverLetter.app.title} · {coverLetter.app.company}
                 </p>
@@ -258,7 +321,7 @@ export function ApplicationsBoard() {
                   navigator.clipboard?.writeText(coverLetter.text);
                   toast.success(t("Copied to clipboard"));
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A2647] text-white text-[13px] font-semibold hover:bg-[#0d3259] transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-navy text-white text-[13px] font-semibold hover:bg-brand-navy-hover transition-colors"
               >
                 <Copy className="h-3.5 w-3.5" /> {t("Copy")}
               </button>

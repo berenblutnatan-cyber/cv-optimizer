@@ -25,18 +25,21 @@ const CAPS: Record<ChatKind, { user: number; anon: number }> = {
   fetch: { user: 40, anon: 20 },
 };
 
+// Anon copy is a conversion moment, not a wall: the builder pairs the 429 with
+// a prominent Sign up button (see StudioBuilder's limit banner), so the text
+// reassures that nothing is lost and signing up continues the same session.
 const LIMIT_MESSAGE: Record<ChatKind, { user: string; anon: string }> = {
   build: {
     user: "You've hit the hourly chat limit — take a short break and come back.",
-    anon: "You've reached the free chat limit — sign up to keep building.",
+    anon: "You've used your free messages for now — great progress! Create a free account and you can keep building this exact CV right away.",
   },
   parse: {
     user: "Too many uploads in a row — give it a minute and try again.",
-    anon: "You've reached the free upload limit — sign up to keep going.",
+    anon: "You've used your free uploads — create a free account to keep going. Your work stays right here.",
   },
   fetch: {
     user: "Too many link reads in a row — give it a minute.",
-    anon: "You've hit the free link-read limit — sign up to keep going.",
+    anon: "You've used your free link reads — create a free account to keep going. Your work stays right here.",
   },
 };
 

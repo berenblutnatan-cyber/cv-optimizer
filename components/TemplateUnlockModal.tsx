@@ -53,7 +53,7 @@ export function TemplateUnlockModal({
             type="button"
             aria-label={t("Close")}
             onClick={() => !loading && onClose()}
-            className="absolute inset-0 bg-[#0A2647]/65 backdrop-blur-sm"
+            className="absolute inset-0 bg-brand-navy/65 backdrop-blur-sm"
           />
 
           <motion.div
@@ -67,7 +67,7 @@ export function TemplateUnlockModal({
               type="button"
               onClick={() => !loading && onClose()}
               aria-label={t("Close")}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30"
+              className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/30"
             >
               <X className="w-4 h-4 text-stone-500" strokeWidth={2} />
             </button>
@@ -80,7 +80,7 @@ export function TemplateUnlockModal({
                     className="w-24 h-32 rounded-sm border border-stone-200 shadow-soft"
                     style={{ background: templatePreview ?? "linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%)" }}
                   />
-                  <div className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-[#B8860B] flex items-center justify-center shadow-md">
+                  <div className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-brand-gold flex items-center justify-center shadow-md">
                     <Lock className="w-4 h-4 text-white" strokeWidth={2} />
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export function TemplateUnlockModal({
                 className="font-serif text-xl sm:text-2xl text-[#1a1a1a] font-light text-center tracking-tight mb-2"
               >
                 {t("Unlock")}{" "}
-                <span className="text-[#B8860B] font-normal">{templateName}</span>
+                <span className="text-brand-gold font-normal">{templateName}</span>
               </h2>
               {templateDescription && (
                 <p className="text-sm text-stone-500 font-light text-center mb-6 max-w-sm mx-auto">
@@ -100,25 +100,25 @@ export function TemplateUnlockModal({
               )}
 
               {/* Cost line */}
-              <div className="flex items-center justify-center gap-2 px-4 py-3 mb-5 bg-[#B8860B]/5 border border-[#B8860B]/20 rounded-sm">
-                <Coins className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
+              <div className="flex items-center justify-center gap-2 px-4 py-3 mb-5 bg-brand-gold/5 border border-brand-gold/20 rounded-sm">
+                <Coins className="w-4 h-4 text-brand-gold" strokeWidth={2} />
                 <span className="text-sm text-stone-700 font-light">
-                  <span className="font-medium text-[#B8860B]">{t("1 credit")}</span> {t("· unlocks this template forever")}
+                  <span className="font-medium text-brand-gold">{t("1 credit")}</span> {t("· unlocks this template forever")}
                 </span>
               </div>
 
               {/* Reassurance bullets */}
               <ul className="space-y-2 mb-7 max-w-xs mx-auto">
                 <li className="flex items-center gap-2 text-xs text-stone-500 font-light">
-                  <Check className="w-3.5 h-3.5 text-[#0A2647] flex-shrink-0" strokeWidth={2} />
+                  <Check className="w-3.5 h-3.5 text-brand-navy flex-shrink-0" strokeWidth={2} />
                   {t("One-time charge — keep it forever")}
                 </li>
                 <li className="flex items-center gap-2 text-xs text-stone-500 font-light">
-                  <Check className="w-3.5 h-3.5 text-[#0A2647] flex-shrink-0" strokeWidth={2} />
+                  <Check className="w-3.5 h-3.5 text-brand-navy flex-shrink-0" strokeWidth={2} />
                   {t("Switch back to free template anytime")}
                 </li>
                 <li className="flex items-center gap-2 text-xs text-stone-500 font-light">
-                  <Check className="w-3.5 h-3.5 text-[#0A2647] flex-shrink-0" strokeWidth={2} />
+                  <Check className="w-3.5 h-3.5 text-brand-navy flex-shrink-0" strokeWidth={2} />
                   {t("Works with PDF + DOCX export")}
                 </li>
               </ul>
@@ -136,7 +136,7 @@ export function TemplateUnlockModal({
                   type="button"
                   onClick={onConfirm}
                   disabled={loading}
-                  className="group flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#B8860B] hover:bg-[#9c7409] disabled:opacity-70 disabled:cursor-wait text-white text-sm font-medium rounded-sm transition-all tracking-wide shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8860B]/40"
+                  className="group flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-gold hover:bg-[#9c7409] disabled:opacity-70 disabled:cursor-wait text-white text-sm font-medium rounded-sm transition-all tracking-wide shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40"
                 >
                   {loading ? (
                     <span>{t("Unlocking…")}</span>

@@ -4,13 +4,12 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { useBuilder, BuilderTemplateId, ThemeColor, THEME_COLOR_VALUES } from "@/context/BuilderContext";
-import { TEMPLATE_METADATA } from "@/components/cv-templates/ThemeEngine";
 import { Layout, Palette, Check, Sparkles, Lock } from "lucide-react";
 import {
-  ALL_TEMPLATES,
+  TEMPLATE_LIST,
   DEFAULT_FREE_TEMPLATE_ID,
   isPremiumTemplate,
-} from "@/components/cv-templates";
+} from "@/lib/templates/registry";
 import { getUnlockedTemplates, unlockTemplate } from "@/lib/templateUnlocks";
 import { TemplateUnlockModal } from "@/components/TemplateUnlockModal";
 import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
@@ -43,135 +42,15 @@ export interface ColorOption {
   name: string;
 }
 
-// All 8 templates
-export const TEMPLATE_OPTIONS: TemplateOption[] = [
-  {
-    id: "modern-sidebar",
-    name: "Modern Sidebar",
-    description: "Two-column with dark sidebar",
-    preview: "linear-gradient(135deg, #0f172a 35%, #ffffff 35%)",
-    category: "professional",
-  },
-  {
-    id: "ivy-league",
-    name: "Ivy League",
-    description: "Classic serif elegance",
-    preview: "linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%)",
-    category: "classic",
-  },
-  {
-    id: "minimalist",
-    name: "Minimalist",
-    description: "Clean whitespace design",
-    preview: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
-    category: "professional",
-  },
-  {
-    id: "executive",
-    name: "Executive",
-    description: "Bold dark header",
-    preview: "linear-gradient(180deg, #111827 30%, #ffffff 30%)",
-    category: "professional",
-  },
-  {
-    id: "techie",
-    name: "Techie",
-    description: "Developer-focused layout",
-    preview: "linear-gradient(180deg, #1e293b 20%, #ffffff 20%)",
-    category: "technical",
-  },
-  {
-    id: "creative",
-    name: "Creative",
-    description: "Unique split design",
-    preview: "linear-gradient(135deg, #10b981 35%, #ffffff 35%)",
-    category: "creative",
-  },
-  {
-    id: "startup",
-    name: "Startup",
-    description: "Bold modern typography",
-    preview: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)",
-    category: "creative",
-  },
-  {
-    id: "international",
-    name: "International",
-    description: "Photo support, standardized",
-    preview: "linear-gradient(135deg, #f1f5f9 30%, #ffffff 30%)",
-    category: "professional",
-  },
-  {
-    id: "aurora",
-    name: "Aurora",
-    description: "Accent rail, tinted header",
-    preview: "linear-gradient(90deg, #6366f1 7%, #eef2ff 7%, #ffffff 60%)",
-    category: "professional",
-  },
-  {
-    id: "banner",
-    name: "Banner",
-    description: "Full-width color banner",
-    preview: "linear-gradient(180deg, #4f46e5 28%, #ffffff 28%)",
-    category: "professional",
-  },
-  {
-    id: "spotlight",
-    name: "Spotlight",
-    description: "Centered, ATS-safe",
-    preview: "linear-gradient(180deg, #ffffff 0%, #eef2ff 100%)",
-    category: "professional",
-  },
-  {
-    id: "ledger",
-    name: "Ledger",
-    description: "Editorial serif, date rail",
-    preview: "linear-gradient(180deg, #fbf6ec 0%, #f3ece0 100%)",
-    category: "classic",
-  },
-  {
-    id: "devfolio",
-    name: "Devfolio",
-    description: "Developer / mono style",
-    preview: "linear-gradient(180deg, #0f172a 7%, #ffffff 7%)",
-    category: "technical",
-  },
-  {
-    id: "canvas",
-    name: "Canvas",
-    description: "Creative accent sidebar",
-    preview: "linear-gradient(120deg, #6366f1 34%, #ffffff 34%)",
-    category: "creative",
-  },
-  {
-    id: "timeline",
-    name: "Timeline",
-    description: "Vertical timeline rail",
-    preview: "linear-gradient(90deg, #6366f1 6%, #ffffff 6%)",
-    category: "professional",
-  },
-  {
-    id: "double-column",
-    name: "Double Column",
-    description: "Full header + two columns",
-    preview: "linear-gradient(90deg, #ffffff 60%, #f1f5f9 60%)",
-    category: "professional",
-  },
-  {
-    id: "compact",
-    name: "Compact",
-    description: "Dense, ATS-friendly",
-    preview: "linear-gradient(180deg, #6366f1 5%, #ffffff 5%)",
-    category: "professional",
-  },
-  {
-    id: "photo-left",
-    name: "Photo Left",
-    description: "Photo rail + content",
-    preview: "linear-gradient(90deg, #e0e7ff 34%, #ffffff 34%)",
-    category: "professional",
-  },
-];
+// All templates — derived from the canonical registry
+// (lib/templates/registry.ts) so this list can never drift or go stale.
+export const TEMPLATE_OPTIONS: TemplateOption[] = TEMPLATE_LIST.map((entry) => ({
+  id: entry.id,
+  name: entry.name,
+  description: entry.description,
+  preview: entry.preview,
+  category: entry.category,
+}));
 
 // Color swatches - Updated for Indigo/Violet rebrand
 export const COLOR_OPTIONS: ColorOption[] = [
@@ -188,12 +67,17 @@ export const COLOR_OPTIONS: ColorOption[] = [
 ];
 
 /**
- * Hook: handles the unlock flow for premium templates. Wraps the bare
- * `setTemplate` setter from BuilderContext so callers can use one function and
- * not worry about whether the template needs a credit charge first.
+ * Hook: handles the unlock flow for premium templates. Wraps a bare "apply
+ * this template" callback so callers can use one function and not worry about
+ * whether the template needs a credit charge first.
+ *
+ * This is THE single source of truth for "is this premium and is it
+ * unlocked" — the sidebar/toolbar switchers AND the full-screen template
+ * gallery (TemplateGalleryModal) all run selections through it, so a premium
+ * design can never be applied without the same unlock/charge flow.
  */
-function useTemplateGating(
-  setTemplate: (id: BuilderTemplateId) => void,
+export function useTemplateGating(
+  onApply: (template: TemplateOption) => void,
   currentTemplateId: BuilderTemplateId,
 ) {
   const { t: translate } = useT();
@@ -213,12 +97,12 @@ function useTemplateGating(
 
   /** Call this from a tile/button click. If locked, opens the unlock modal. */
   const handleSelect = (template: TemplateOption) => {
-    // Re-clicking the active template is a no-op — even if it's a premium one
-    // the user hasn't paid for (grandfathered selection).
-    if (template.id === currentTemplateId) return;
-
-    if (!isLocked(template.id)) {
-      setTemplate(template.id);
+    // Re-selecting the active template applies without a gate — even if it's
+    // a premium one the user hasn't paid for (grandfathered selection). This
+    // still runs onApply so callers can change secondary options (e.g. the
+    // gallery re-coloring the current layout).
+    if (template.id === currentTemplateId || !isLocked(template.id)) {
+      onApply(template);
       return;
     }
     track("template_unlock_modal_shown", { template_id: template.id });
@@ -256,7 +140,7 @@ function useTemplateGating(
         return next;
       });
       track("template_unlocked", { template_id: target.id });
-      setTemplate(target.id);
+      onApply(target);
       setPendingTemplate(null);
       toast.success(translate("{name} unlocked", { name: translate(target.name) }), {
         description: translate("You can switch back to it anytime."),
@@ -286,7 +170,7 @@ export function TemplateSwitcher({ variant = "sidebar", showColors = true }: Tem
   const { t: translate } = useT();
   const { selectedTemplateId, themeColor, setTemplate, setThemeColor } = useBuilder();
   const [activeTab, setActiveTab] = useState<"layout" | "design">("layout");
-  const gating = useTemplateGating(setTemplate, selectedTemplateId);
+  const gating = useTemplateGating((tpl) => setTemplate(tpl.id), selectedTemplateId);
 
   if (variant === "toolbar") {
     return <ToolbarSwitcher />;
@@ -426,8 +310,8 @@ function LayoutTab({
                 {locked && !isSelected && (
                   <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-[1px] flex items-center justify-center">
                     <div className="flex flex-col items-center gap-1.5 px-3 py-2 bg-white/95 rounded-sm shadow-md">
-                      <Lock className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
-                      <span className="text-[10px] uppercase tracking-[0.18em] text-[#B8860B] font-semibold">
+                      <Lock className="w-4 h-4 text-brand-gold" strokeWidth={2} />
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-brand-gold font-semibold">
                         {translate("1 Credit")}
                       </span>
                     </div>
@@ -547,7 +431,7 @@ function DesignTab({
 function ToolbarSwitcher() {
   const { t: translate } = useT();
   const { selectedTemplateId, themeColor, setTemplate, setThemeColor } = useBuilder();
-  const gating = useTemplateGating(setTemplate, selectedTemplateId);
+  const gating = useTemplateGating((tpl) => setTemplate(tpl.id), selectedTemplateId);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showColors, setShowColors] = useState(false);
 
@@ -600,7 +484,7 @@ function ToolbarSwitcher() {
                     <p className="text-sm font-medium flex items-center gap-1.5">
                       {translate(template.name)}
                       {locked && (
-                        <span className="text-[9px] uppercase tracking-[0.14em] text-[#B8860B] font-semibold bg-[#B8860B]/10 px-1.5 py-0.5 rounded-sm">
+                        <span className="text-[9px] uppercase tracking-[0.14em] text-brand-gold font-semibold bg-brand-gold/10 px-1.5 py-0.5 rounded-sm">
                           {translate("1 cr")}
                         </span>
                       )}

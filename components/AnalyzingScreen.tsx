@@ -42,9 +42,11 @@ type Props = {
   open: boolean;
   mode?: "quick" | "targeted";
   jobTitle?: string;
+  /** Aborts the in-flight analysis and returns to the form, inputs intact. */
+  onCancel?: () => void;
 };
 
-export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
+export function AnalyzingScreen({ open, mode = "targeted", jobTitle, onCancel }: Props) {
   const { t } = useT();
   const stages = mode === "quick" ? QUICK_STAGES : TARGETED_STAGES;
   const [stageIdx, setStageIdx] = useState(0);
@@ -96,9 +98,9 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
           aria-label={t("Analyzing your resume")}
         >
           {/* Backdrop with gradient + soft animated orbs */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0A2647] via-[#0d3259] to-[#0A2647]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-navy via-brand-navy-hover to-brand-navy" />
           <motion.div
-            className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#B8860B]/25 blur-3xl"
+            className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-brand-gold/25 blur-3xl"
             animate={{ x: [0, 60, -20, 0], y: [0, 40, -30, 0] }}
             transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -143,7 +145,7 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
             <div className="mb-7">
               <div className="relative h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
                 <motion.div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#0A2647] via-[#B8860B] to-[#0A2647] bg-[length:200%_100%]"
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-brand-navy via-brand-gold to-brand-navy bg-[length:200%_100%]"
                   animate={{ backgroundPosition: ["0% 0%", "200% 0%"] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                   style={{ width: `${progress}%` }}
@@ -171,21 +173,21 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
                     <div
                       className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${
                         done
-                          ? "bg-[#0A2647]/10"
+                          ? "bg-brand-navy/10"
                           : active
-                            ? "bg-[#B8860B]/15"
+                            ? "bg-brand-gold/15"
                             : "bg-stone-100"
                       }`}
                     >
                       {done ? (
-                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A2647]" strokeWidth={2} />
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-brand-navy" strokeWidth={2} />
                       ) : active ? (
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
                           className="flex"
                         >
-                          <StageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-[#B8860B]" strokeWidth={2} />
+                          <StageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-brand-gold" strokeWidth={2} />
                         </motion.div>
                       ) : (
                         <StageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-stone-400" strokeWidth={1.5} />
@@ -194,7 +196,7 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
                     <div className="flex-1 min-w-0 pt-1">
                       <div
                         className={`text-sm sm:text-base font-medium tracking-wide ${
-                          active ? "text-[#0A2647]" : "text-[#1a1a1a]"
+                          active ? "text-brand-navy" : "text-[#1a1a1a]"
                         }`}
                       >
                         {t(stage.label)}
@@ -212,6 +214,19 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle }: Props) {
             <p className="mt-7 sm:mt-8 text-center text-[11px] sm:text-xs text-stone-400 font-light tracking-wide">
               {t("This usually takes 20-40 seconds. Hang tight — we're being thorough.")}
             </p>
+
+            {/* Escape hatch — aborts the request, inputs stay intact */}
+            {onCancel && (
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stone-500 hover:text-stone-700 border border-stone-200 hover:border-stone-300 rounded-sm bg-white transition-colors tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/30"
+                >
+                  {t("Cancel")}
+                </button>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
@@ -224,7 +239,7 @@ function CvScannerIcon() {
     <div className="relative w-24 h-24 sm:w-28 sm:h-28">
       {/* Soft halo */}
       <motion.div
-        className="absolute inset-0 rounded-full bg-[#B8860B]/15 blur-2xl"
+        className="absolute inset-0 rounded-full bg-brand-gold/15 blur-2xl"
         animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.85, 0.6] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -234,7 +249,7 @@ function CvScannerIcon() {
         <div className="relative w-16 h-20 sm:w-20 sm:h-24 bg-white rounded-[2px] shadow-lift border border-stone-200 overflow-hidden">
           {/* Header block */}
           <div className="px-2 pt-2.5 pb-1.5 border-b border-stone-100">
-            <div className="h-1.5 w-3/4 bg-[#0A2647] rounded-sm mb-1" />
+            <div className="h-1.5 w-3/4 bg-brand-navy rounded-sm mb-1" />
             <div className="h-0.5 w-1/2 bg-stone-300 rounded-sm" />
           </div>
           {/* Body lines */}
@@ -248,14 +263,14 @@ function CvScannerIcon() {
 
           {/* Scanner sweep */}
           <motion.div
-            className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#B8860B] to-transparent shadow-[0_0_10px_2px_rgba(184,134,11,0.6)]"
+            className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-gold to-transparent shadow-[0_0_10px_2px_rgba(184,134,11,0.6)]"
             initial={{ top: "0%" }}
             animate={{ top: ["0%", "92%", "0%"] }}
             transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
           />
           {/* Scanner shading wash */}
           <motion.div
-            className="absolute left-0 right-0 bg-[#B8860B]/8"
+            className="absolute left-0 right-0 bg-brand-gold/8"
             initial={{ top: 0, height: 0 }}
             animate={{ top: ["0%", "92%", "0%"], height: ["0%", "10%", "0%"] }}
             transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
@@ -268,9 +283,9 @@ function CvScannerIcon() {
           animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
         >
-          <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#B8860B]" />
+          <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-gold" />
           <span className="absolute top-1/2 -right-0.5 -translate-y-1/2 w-1 h-1 rounded-full bg-indigo-400" />
-          <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#0A2647]" />
+          <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-brand-navy" />
         </motion.div>
       </div>
     </div>

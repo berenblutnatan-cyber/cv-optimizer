@@ -92,8 +92,8 @@ export function InterviewPrepClient() {
   return (
     <div>
       <header className="mb-6">
-        <p className="text-[12px] uppercase tracking-[0.18em] text-[#B8860B] font-semibold">{t("Interview prep")}</p>
-        <h1 className="mt-2 text-3xl font-bold text-[#0A2647]">{t("Walk in ready")}</h1>
+        <p className="text-[12px] uppercase tracking-[0.18em] text-brand-gold font-semibold">{t("Interview prep")}</p>
+        <h1 className="mt-2 text-3xl font-bold text-brand-navy">{t("Walk in ready")}</h1>
         <p className="mt-2 text-stone-600 max-w-xl">
           {t("Get the questions you're most likely to face — then unlock STAR-format answers drawn from your own experience and a tight personal pitch.")}
         </p>
@@ -104,7 +104,7 @@ export function InterviewPrepClient() {
           <p className="text-stone-600">{t("Build your CV first so we can tailor questions to your experience.")}</p>
           <Link
             href="/build/chat"
-            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
+            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors"
           >
             {t("Build my CV")}
           </Link>
@@ -118,14 +118,14 @@ export function InterviewPrepClient() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder={t("e.g. Senior Product Manager")}
-                className="w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] outline-none focus:border-[#0A2647]/50 focus:ring-2 focus:ring-[#0A2647]/10"
+                className="w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10"
               />
             </div>
             <button
               type="button"
               onClick={generate}
               disabled={loading}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {questions.length ? t("Regenerate") : t("Get my questions")}
@@ -137,7 +137,7 @@ export function InterviewPrepClient() {
               {questions.map((q, i) => (
                 <div key={i} className="rounded-2xl bg-white border border-stone-200 p-4">
                   <div className="flex items-start gap-2">
-                    <MessageSquareQuote className="h-4 w-4 text-[#B8860B] flex-shrink-0 mt-1" />
+                    <MessageSquareQuote className="h-4 w-4 text-brand-gold flex-shrink-0 mt-1" />
                     <p className="text-[15px] font-medium text-[#1a1a1a]">{q.question}</p>
                   </div>
                   {!locked && q.starAnswer ? (
@@ -147,14 +147,14 @@ export function InterviewPrepClient() {
               ))}
 
               {!locked && pitch ? (
-                <div className="rounded-2xl bg-[#0A2647]/[0.04] border border-[#0A2647]/15 p-4">
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-[#0A2647]/60 mb-1">{t("Your 30-second pitch")}</div>
+                <div className="rounded-2xl bg-brand-navy/[0.04] border border-brand-navy/15 p-4">
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-brand-navy/60 mb-1">{t("Your 30-second pitch")}</div>
                   <p className="text-[14px] text-[#1a1a1a] leading-relaxed whitespace-pre-wrap">{pitch}</p>
                 </div>
               ) : null}
 
               {locked ? (
-                <div className="rounded-2xl bg-[#0A2647] text-white p-5 text-center">
+                <div className="rounded-2xl bg-brand-navy text-white p-5 text-center">
                   <Lock className="h-5 w-5 mx-auto text-[#E8C66B]" />
                   <h2 className="mt-2 text-lg font-bold">{t("Unlock STAR answers + your pitch")}</h2>
                   <p className="mt-1 text-white/75 text-sm max-w-md mx-auto">
@@ -164,7 +164,7 @@ export function InterviewPrepClient() {
                     type="button"
                     onClick={unlock}
                     disabled={unlocking}
-                    className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A2647] text-sm font-semibold hover:bg-stone-100 disabled:opacity-60 transition-colors"
+                    className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-brand-navy text-sm font-semibold hover:bg-stone-100 disabled:opacity-60 transition-colors"
                   >
                     {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {t("Unlock full prep")}

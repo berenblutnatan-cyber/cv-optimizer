@@ -15,7 +15,7 @@ function ContactLine({ data }: { data: ResumeData }) {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#0A2647] border-b border-stone-200 pb-1 mb-3 mt-6">
+    <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-brand-navy border-b border-stone-200 pb-1 mb-3 mt-6">
       {children}
     </h2>
   );
@@ -27,8 +27,8 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
   return (
     <article className="rounded-2xl bg-white border border-stone-200 shadow-sm p-6 sm:p-8">
       <header className="text-center border-b border-stone-200 pb-4">
-        <h1 className="text-2xl font-bold text-[#0A2647]">{p.name}</h1>
-        {p.title ? <p className="text-[15px] text-[#B8860B] font-medium mt-0.5">{p.title}</p> : null}
+        <h1 className="text-2xl font-bold text-brand-navy">{p.name}</h1>
+        {p.title ? <p className="text-[15px] text-brand-gold font-medium mt-0.5">{p.title}</p> : null}
         <div className="mt-2">
           <ContactLine data={data} />
         </div>
@@ -61,7 +61,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
                 <ul className="mt-1.5 space-y-1">
                   {exp.description.filter((b) => b.trim()).map((b, i) => (
                     <li key={i} className="flex gap-2 text-[13.5px] text-stone-700 leading-relaxed">
-                      <span className="text-[#B8860B] mt-0.5">•</span>
+                      <span className="text-brand-gold mt-0.5">•</span>
                       <span>{b}</span>
                     </li>
                   ))}
@@ -77,7 +77,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
           <SectionHeading>{t("Skills")}</SectionHeading>
           <div className="flex flex-wrap gap-1.5">
             {data.skills.map((s) => (
-              <span key={s} className="px-2.5 py-1 rounded-full bg-[#0A2647]/[0.06] border border-[#0A2647]/12 text-[12px] text-[#0A2647]">
+              <span key={s} className="px-2.5 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/12 text-[12px] text-brand-navy">
                 {s}
               </span>
             ))}

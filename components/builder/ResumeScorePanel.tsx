@@ -151,15 +151,15 @@ export function ResumeScorePanel({
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-stone-100">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-[#B8860B]" />
-          <span className="text-sm font-semibold text-[#0A2647]">{t("Resume score")}</span>
+          <Sparkles className="h-4 w-4 text-brand-gold" />
+          <span className="text-sm font-semibold text-brand-navy">{t("Resume score")}</span>
         </div>
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
             aria-label={t("Close score panel")}
-            className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
+            className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-brand-navy transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -171,12 +171,12 @@ export function ResumeScorePanel({
         <div className="flex items-center gap-4">
           <ScoreRing score={result.overall} band={result.band} />
           <div className="min-w-0">
-            <div className="text-lg font-semibold text-[#0A2647]">{BAND_LABEL[result.band]}</div>
+            <div className="text-lg font-semibold text-brand-navy">{BAND_LABEL[result.band]}</div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
               {t("Updates live as you edit. Fixes apply with AI.")}
             </p>
             {deep?.summary ? (
-              <p className="text-xs text-[#0A2647] mt-2 leading-relaxed">{deep.summary}</p>
+              <p className="text-xs text-brand-navy mt-2 leading-relaxed">{deep.summary}</p>
             ) : null}
           </div>
         </div>
@@ -187,7 +187,7 @@ export function ResumeScorePanel({
             <div key={c.category} className="rounded-xl border border-stone-200 px-3 py-2">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-stone-500 truncate">{c.label}</span>
-                <span className="text-[11px] font-semibold tabular-nums text-[#0A2647]">{c.score}</span>
+                <span className="text-[11px] font-semibold tabular-nums text-brand-navy">{c.score}</span>
               </div>
               <div className="mt-1.5 h-1 rounded-full bg-stone-100 overflow-hidden">
                 <div
@@ -204,7 +204,7 @@ export function ResumeScorePanel({
           type="button"
           onClick={runDeepCheck}
           disabled={deepLoading}
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
         >
           {deepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
           {deepLoading ? t("Analyzing…") : deep ? t("Re-run full AI check") : t("Run full AI check")}
@@ -241,7 +241,7 @@ export function ResumeScorePanel({
                           type="button"
                           onClick={() => handleFix(p)}
                           disabled={applying || Boolean(applyingFixId)}
-                          className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#B8860B]/10 text-[#8a6608] text-[11px] font-semibold hover:bg-[#B8860B]/20 disabled:opacity-50 transition-colors"
+                          className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-gold/10 text-[#8a6608] text-[11px] font-semibold hover:bg-brand-gold/20 disabled:opacity-50 transition-colors"
                         >
                           {applying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                           {p.fix.kind === "deterministic" ? t("Fix") : applying ? t("Fixing…") : t("Fix with AI")}

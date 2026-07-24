@@ -78,14 +78,14 @@ export function AddApplicationDialog({
   }
 
   const field =
-    "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] outline-none focus:border-[#0A2647]/50 focus:ring-2 focus:ring-[#0A2647]/10 transition-colors";
+    "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-[#0A2647]">{t("Track a new application")}</h2>
+          <h2 className="text-base font-semibold text-brand-navy">{t("Track a new application")}</h2>
           <button onClick={onClose} aria-label={t("Close")} className="grid place-items-center h-8 w-8 rounded-lg text-stone-400 hover:bg-stone-100">
             <X className="h-4 w-4" />
           </button>
@@ -98,7 +98,7 @@ export function AddApplicationDialog({
             type="button"
             onClick={autofill}
             disabled={fetching || !url.trim()}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl bg-[#0A2647]/[0.07] text-[#0A2647] text-[13px] font-medium hover:bg-[#0A2647]/[0.12] disabled:opacity-50 transition-colors"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl bg-brand-navy/[0.07] text-brand-navy text-[13px] font-medium hover:bg-brand-navy/[0.12] disabled:opacity-50 transition-colors"
           >
             {fetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
             {t("Read")}
@@ -128,7 +128,7 @@ export function AddApplicationDialog({
             type="button"
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A2647] text-white text-[13px] font-semibold hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-navy text-white text-[13px] font-semibold hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {t("Save")}

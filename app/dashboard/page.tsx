@@ -110,18 +110,6 @@ export default async function DashboardPage() {
           <div className="mt-1 text-xs text-white/70">
             {t("CV optimizations and role generations to date.")}
           </div>
-          <div className="mt-5 flex items-end gap-1 h-16">
-            {Array.from({ length: 7 }).map((_, i) => {
-              const hi = (i * 13 + data.activity.applicationsLaunched * 7) % 64;
-              return (
-                <span
-                  key={i}
-                  className="flex-1 rounded-sm bg-gradient-to-t from-[#8fb3ff] to-[#f5b8c8] opacity-70"
-                  style={{ height: `${20 + hi}%` }}
-                />
-              );
-            })}
-          </div>
         </GlassCard>
 
         <GlassCard padding="lg">

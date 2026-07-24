@@ -166,26 +166,26 @@ export function RewriteShowcase() {
   return (
     <div className="mx-auto w-full max-w-3xl">
       {/* The document */}
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-[#0A2647]/10 bg-white shadow-[0_30px_80px_-32px_rgba(10,38,71,0.35)]">
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-brand-navy/10 bg-white shadow-[0_30px_80px_-32px_rgba(10,38,71,0.35)]">
         {/* brass top hairline — the "Hired" seam */}
-        <div className="h-1 w-full bg-gradient-to-r from-[#B8860B] via-[#D4A83F] to-[#B8860B]" />
+        <div className="h-1 w-full bg-gradient-to-r from-brand-gold via-brand-gold-soft to-brand-gold" />
 
         <div className="p-6 sm:p-9">
           {/* BEFORE — the machine register */}
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#0A2647]/40">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-brand-navy/40">
             {t("The line you'd write")}
           </p>
-          <p className="mt-3 min-h-[3.5rem] font-mono text-[15px] leading-relaxed text-[#0A2647]/45 sm:text-base">
+          <p className="mt-3 min-h-[3.5rem] font-mono text-[15px] leading-relaxed text-brand-navy/45 sm:text-base">
             {t(ex.before)}
           </p>
 
           {/* seam */}
           <div className="my-6 flex items-center gap-3" aria-hidden>
-            <span className="h-px flex-1 bg-[#0A2647]/10" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#B8860B]/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9a6b08]">
+            <span className="h-px flex-1 bg-brand-navy/10" />
+            <span className="inline-flex items-center gap-2 rounded-full bg-brand-gold/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9a6b08]">
               {t("Hired rewrites")}
             </span>
-            <span className="h-px flex-1 bg-[#0A2647]/10" />
+            <span className="h-px flex-1 bg-brand-navy/10" />
           </div>
 
           {/* AFTER — the human register */}
@@ -194,7 +194,7 @@ export function RewriteShowcase() {
           </p>
           <p
             key={`after-${index}`}
-            className="mt-3 min-h-[3.5rem] animate-fade-in font-serif text-xl leading-snug text-[#0A2647] sm:text-2xl"
+            className="mt-3 min-h-[3.5rem] animate-fade-in font-serif text-xl leading-snug text-brand-navy sm:text-2xl"
           >
             <Quantified text={t(ex.after)} />
           </p>
@@ -204,31 +204,31 @@ export function RewriteShowcase() {
             {ex.keywords.map((k) => (
               <span
                 key={k}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#B8860B]/30 bg-[#B8860B]/[0.08] px-3 py-1 font-mono text-xs text-[#9a6b08]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/[0.08] px-3 py-1 font-mono text-xs text-[#9a6b08]"
               >
-                <span className="text-[#B8860B]">✓</span>
+                <span className="text-brand-gold">✓</span>
                 {t(k)}
               </span>
             ))}
           </div>
 
           {/* ATS match score — the machine's verdict, climbing */}
-          <div className="mt-7 rounded-2xl bg-[#0A2647]/[0.035] p-4 sm:p-5">
+          <div className="mt-7 rounded-2xl bg-brand-navy/[0.035] p-4 sm:p-5">
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#0A2647]/50">
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand-navy/50">
                 {t("ATS match score")}
               </span>
               <span className="flex items-baseline gap-2 font-mono tabular-nums">
-                <span className="text-2xl font-semibold text-[#0A2647]">{score}</span>
-                <span className="text-sm text-[#0A2647]/35">/ 100</span>
+                <span className="text-2xl font-semibold text-brand-navy">{score}</span>
+                <span className="text-sm text-brand-navy/35">/ 100</span>
                 <span className="rounded-full bg-[#1f7a3d]/10 px-2 py-0.5 text-xs font-semibold text-[#1f7a3d]">
                   +{ex.to - ex.from}
                 </span>
               </span>
             </div>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#0A2647]/10">
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-brand-navy/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#B8860B] to-[#D4A83F] transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                className="h-full rounded-full bg-gradient-to-r from-brand-gold to-brand-gold-soft transition-[width] duration-700 ease-out motion-reduce:transition-none"
                 style={{ width: `${fill}%` }}
               />
             </div>
@@ -238,7 +238,7 @@ export function RewriteShowcase() {
 
       {/* Role pills — proof it works for any career, and the way to drive it */}
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-        <span className="me-1 hidden font-mono text-[11px] uppercase tracking-[0.18em] text-[#0A2647]/40 sm:inline">
+        <span className="me-1 hidden font-mono text-[11px] uppercase tracking-[0.18em] text-brand-navy/40 sm:inline">
           {t("Try a role")}
         </span>
         {EXAMPLES.map((e, i) => (
@@ -248,8 +248,8 @@ export function RewriteShowcase() {
             aria-pressed={i === index}
             className={`rounded-full border px-4 py-2 text-sm font-medium transition-all focus-visible:outline-none ${
               i === index
-                ? "border-[#0A2647] bg-[#0A2647] text-white shadow-sm"
-                : "border-[#0A2647]/15 bg-white text-[#0A2647]/70 hover:border-[#0A2647]/40 hover:text-[#0A2647]"
+                ? "border-brand-navy bg-brand-navy text-white shadow-sm"
+                : "border-brand-navy/15 bg-white text-brand-navy/70 hover:border-brand-navy/40 hover:text-brand-navy"
             }`}
           >
             {t(e.role)}

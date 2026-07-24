@@ -23,6 +23,18 @@ interface ResumeStore {
   // Resume Score weighting (ATS-heavy vs recruiter-heavy). Kept OFF ResumeData
   // so the CV payload sent to the AI / persisted in chats stays clean.
   scoringGoal: GoalWeighting;
+  // Undo/redo snapshot stacks. EVERY mutation that replaces `resumeData` —
+  // manual field edits, AI tool calls (they all flow through `setResumeData`),
+  // resets, session loads — pushes the previous snapshot onto `past`, so the
+  // toolbar Undo/Redo buttons are real, not decoys. Not persisted.
+  past: ResumeData[];
+  future: ResumeData[];
+
+  // History Actions
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 
   // Step Navigation Actions
   nextStep: () => void;
@@ -80,14 +92,117 @@ interface ResumeStore {
   resetResume: () => void;
 }
 
+// Undo history tuning: cap the stack so localStorage/memory can't balloon, and
+// coalesce rapid same-action updates (per-keystroke typing in the inline
+// editor) into one undo step so Undo steps back a burst of typing, not one
+// character at a time.
+const HISTORY_LIMIT = 50;
+const HISTORY_COALESCE_MS = 1000;
+let lastSnapshotAt = 0;
+let lastSnapshotAction = "";
+
+/**
+ * History-aware patch: when a mutation replaces `resumeData`, push the previous
+ * snapshot onto the undo stack (deduping identical snapshots, capping at
+ * HISTORY_LIMIT) and clear the redo stack. Applied to EVERY `set` in the store,
+ * so the whole class of "irreversible edit" is impossible — any path that
+ * mutates the CV (manual edits, AI tool calls, resets) is undoable.
+ */
+function withHistory(
+  state: ResumeStore,
+  patch: Partial<ResumeStore>,
+  action: string
+): Partial<ResumeStore> {
+  const next = patch.resumeData;
+  if (!next || next === state.resumeData) return patch;
+  // Dedupe: a "mutation" that produced an identical document is not an undo step.
+  if (JSON.stringify(next) === JSON.stringify(state.resumeData)) return patch;
+  const now = Date.now();
+  const coalesce =
+    action === lastSnapshotAction &&
+    now - lastSnapshotAt < HISTORY_COALESCE_MS &&
+    state.past.length > 0;
+  lastSnapshotAt = now;
+  lastSnapshotAction = action;
+  if (coalesce) return { ...patch, future: [] };
+  return {
+    ...patch,
+    past: [...state.past, state.resumeData].slice(-HISTORY_LIMIT),
+    future: [],
+  };
+}
+
 export const useResumeStore = create<ResumeStore>()(
   devtools(
     persist(
-      (set) => ({
+      (rawSet, get) => {
+        // Shadow `set` so every existing action below transparently records
+        // undo history when it touches `resumeData` (see withHistory).
+        const set: typeof rawSet = ((
+          partial: unknown,
+          replace?: unknown,
+          action?: unknown
+        ) =>
+          (rawSet as (p: unknown, r?: unknown, a?: unknown) => void)(
+            (state: ResumeStore) =>
+              withHistory(
+                state,
+                (typeof partial === "function"
+                  ? (partial as (s: ResumeStore) => Partial<ResumeStore>)(state)
+                  : partial) as Partial<ResumeStore>,
+                String(action ?? "")
+              ),
+            replace,
+            action
+          )) as typeof rawSet;
+
+        return {
         // Initial State
         resumeData: initialResumeState,
         currentStep: 0,
         scoringGoal: "both",
+        past: [],
+        future: [],
+
+        // History
+        undo: () => {
+          // Break typing-coalescing so the next edit after an undo starts a
+          // fresh undo step.
+          lastSnapshotAction = "";
+          rawSet(
+            (state) => {
+              const prev = state.past[state.past.length - 1];
+              if (!prev) return {};
+              return {
+                resumeData: prev,
+                past: state.past.slice(0, -1),
+                future: [state.resumeData, ...state.future].slice(0, HISTORY_LIMIT),
+              };
+            },
+            false,
+            "undo"
+          );
+        },
+
+        redo: () => {
+          lastSnapshotAction = "";
+          rawSet(
+            (state) => {
+              const [next, ...rest] = state.future;
+              if (!next) return {};
+              return {
+                resumeData: next,
+                past: [...state.past, state.resumeData].slice(-HISTORY_LIMIT),
+                future: rest,
+              };
+            },
+            false,
+            "redo"
+          );
+        },
+
+        canUndo: () => get().past.length > 0,
+        canRedo: () => get().future.length > 0,
 
         // Step Navigation
         nextStep: () =>
@@ -551,9 +666,17 @@ export const useResumeStore = create<ResumeStore>()(
 
         resetResume: () =>
           set({ resumeData: initialResumeState, currentStep: 0 }, false, "resetResume"),
-      }),
+        };
+      },
       {
         name: "resume-storage", // localStorage key
+        // Undo/redo stacks are session-local — don't bloat localStorage with
+        // up to 50 CV snapshots on every keystroke.
+        partialize: (state) => ({
+          resumeData: state.resumeData,
+          currentStep: state.currentStep,
+          scoringGoal: state.scoringGoal,
+        }),
         merge: (persistedState, currentState) => {
           // Deep merge to ensure new fields are added to old stored data
           const persisted = persistedState as Partial<ResumeStore> || {};

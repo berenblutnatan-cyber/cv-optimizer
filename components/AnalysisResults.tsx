@@ -4,6 +4,7 @@ import { useState, useMemo, useRef } from "react";
 import { TemplatePreviewCard } from "./TemplatePreviewCard";
 import { TemplateType } from "./cv-templates";
 import { EditableResumePreview, ResumePreviewData, BuilderTemplateId, ThemeColor, ResumePreview } from "./builder";
+import { TEMPLATE_LIST, type TemplateRegistryId } from "@/lib/templates/registry";
 import { SmartResumePreview, TemplateGallery } from "./shared";
 import parseRawCV from "@/lib/cvParser";
 import { exportToPdf } from "@/utils/exportToPdf";
@@ -120,27 +121,38 @@ interface SkillPlacement {
   context: string; // How/where they acquired this skill
 }
 
-// Template options for the switcher - All 8 templates
-const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; preview: string }[] = [
-  { id: "modern-sidebar", name: "Modern", icon: "◧", preview: "Two-column layout" },
-  { id: "ivy-league", name: "Classic", icon: "▭", preview: "Serif elegance" },
-  { id: "minimalist", name: "Minimal", icon: "○", preview: "Clean whitespace" },
-  { id: "executive", name: "Executive", icon: "■", preview: "Bold header" },
-  { id: "techie", name: "Techie", icon: "⌨", preview: "Developer focus" },
-  { id: "creative", name: "Creative", icon: "◨", preview: "Split design" },
-  { id: "startup", name: "Startup", icon: "◆", preview: "Modern punchy" },
-  { id: "international", name: "Intl", icon: "🌐", preview: "Photo support" },
-  { id: "aurora", name: "Aurora", icon: "▮", preview: "Accent rail" },
-  { id: "banner", name: "Banner", icon: "▀", preview: "Color banner" },
-  { id: "spotlight", name: "Spotlight", icon: "◇", preview: "Centered, ATS" },
-  { id: "ledger", name: "Ledger", icon: "❡", preview: "Editorial serif" },
-  { id: "devfolio", name: "Devfolio", icon: "⌗", preview: "Dev / mono" },
-  { id: "canvas", name: "Canvas", icon: "◐", preview: "Creative sidebar" },
-  { id: "timeline", name: "Timeline", icon: "❘", preview: "Timeline rail" },
-  { id: "double-column", name: "Double", icon: "▥", preview: "Two columns" },
-  { id: "compact", name: "Compact", icon: "▤", preview: "Dense, ATS" },
-  { id: "photo-left", name: "Photo", icon: "◑", preview: "Photo rail" },
-];
+// Template switcher tiles — ids/names/descriptions come from the canonical
+// registry; only the tile glyph is presentation local to this surface. The
+// Record type makes a newly registered template a build error until it gets
+// a glyph here.
+const TEMPLATE_ICONS: Record<TemplateRegistryId, string> = {
+  "modern-sidebar": "◧",
+  "ivy-league": "▭",
+  minimalist: "○",
+  executive: "■",
+  techie: "⌨",
+  creative: "◨",
+  startup: "◆",
+  international: "🌐",
+  aurora: "▮",
+  banner: "▀",
+  spotlight: "◇",
+  ledger: "❡",
+  devfolio: "⌗",
+  canvas: "◐",
+  timeline: "❘",
+  "double-column": "▥",
+  compact: "▤",
+  "photo-left": "◑",
+};
+
+const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; icon: string; preview: string }[] =
+  TEMPLATE_LIST.map((entry) => ({
+    id: entry.id as BuilderTemplateId,
+    name: entry.name,
+    icon: TEMPLATE_ICONS[entry.id],
+    preview: entry.description,
+  }));
 
 export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive, isEnhancing, jobTitle, onTabChange }: AnalysisResultsProps) {
   const { t } = useT();
@@ -180,15 +192,6 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
     });
   };
   
-  // Suggested changes acceptance state: "pending" | "accepted" | "rejected"
-  const [changeStatuses, setChangeStatuses] = useState<Record<string, "pending" | "accepted" | "rejected">>(() => {
-    const initial: Record<string, "pending" | "accepted" | "rejected"> = {};
-    (results.suggestedChanges ?? []).forEach((change, idx) => {
-      initial[change.id || `chg_${idx}`] = "pending";
-    });
-    return initial;
-  });
-  
   // AI Deep Dive state (for enhance tab)
   const [deepDiveStep, setDeepDiveStep] = useState(0);
   const [deepDiveAnswers, setDeepDiveAnswers] = useState<DeepDiveAnswers>({
@@ -223,7 +226,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
   // Score color based on value - Premium palette
   const getScoreColor = (score: number) => {
-    if (score >= 80) return { ring: "stroke-[#0A2647]", text: "text-[#0A2647]", bg: "bg-[#0A2647]/5" };
+    if (score >= 80) return { ring: "stroke-brand-navy", text: "text-brand-navy", bg: "bg-brand-navy/5" };
     if (score >= 60) return { ring: "stroke-amber-600", text: "text-amber-700", bg: "bg-amber-50" };
     return { ring: "stroke-rose-600", text: "text-rose-700", bg: "bg-rose-50" };
   };
@@ -323,15 +326,11 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
     }
   };
 
-  // Count pending changes
-  const pendingChangesCount = Object.values(changeStatuses).filter(s => s === "pending").length;
-  const acceptedChangesCount = Object.values(changeStatuses).filter(s => s === "accepted").length;
-  
   const tabs = [
     { id: "overview" as const, label: t("Overview"), step: 1 },
     // ENHANCE FEATURE TEMPORARILY HIDDEN
     // ...(onEnhanceWithDeepDive ? [{ id: "enhance" as const, label: "Enhance", step: 2, highlight: true }] : []),
-    { id: "changes" as const, label: t("Review Changes"), step: 2, count: pendingChangesCount > 0 ? pendingChangesCount : undefined, badge: acceptedChangesCount > 0 ? t("{n} accepted", { n: acceptedChangesCount }) : undefined },
+    { id: "changes" as const, label: t("Review Changes"), step: 2 },
     { id: "optimized" as const, label: t("Optimized CV"), step: 3 },
     ...(coverLetterTab ? [{ id: "cover-letter" as const, label: t("Cover Letter"), step: 4 }] : []),
   ];
@@ -369,9 +368,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 aria-current={activeTab === tab.id ? "step" : undefined}
                 className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 text-sm font-medium tracking-wide rounded-sm transition-all duration-200 focus-visible:outline-none whitespace-nowrap ${
                   activeTab === tab.id
-                    ? "bg-[#0A2647] text-white"
+                    ? "bg-brand-navy text-white"
                     : (tab as any).highlight
-                      ? "text-[#0A2647] hover:bg-[#0A2647]/5 bg-[#0A2647]/5"
+                      ? "text-brand-navy hover:bg-brand-navy/5 bg-brand-navy/5"
                       : "text-stone-500 hover:text-stone-700 hover:bg-stone-50"
                 }`}
               >
@@ -383,13 +382,6 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   {(tab as any).step || idx + 1}
                 </span>
                 {tab.label}
-                {tab.count !== undefined && tab.count > 0 && (
-                  <span className={`text-xs px-2 py-0.5 rounded-sm ${
-                    activeTab === tab.id ? "bg-white/20" : "bg-amber-100 text-amber-700"
-                  }`}>
-                    {tab.count}
-                  </span>
-                )}
               </button>
               {/* Connector between tabs — hidden on small screens to save space */}
               {idx < tabs.length - 1 && (
@@ -407,7 +399,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {/* Hero Score Card - Premium Style */}
             <div className="bg-[#FAFAF8] rounded-sm p-5 sm:p-8 border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
-                <Target className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+                <Target className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                 <h3 className="font-serif text-xl text-[#1a1a1a]">{t("Match Analysis")}</h3>
               </div>
               <p className="text-stone-600 leading-relaxed font-light">{results.summary}</p>
@@ -415,47 +407,47 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
             {/* Score Comparison Card - Shows improvement after optimization */}
             {results.scoreComparison && (
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 sm:p-6 border border-emerald-200">
+              <div className="bg-[#FAFAF8] rounded-sm p-4 sm:p-6 border border-stone-200">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-5 h-5 text-emerald-600" />
+                    <div className="w-10 h-10 bg-brand-navy/5 rounded-full flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-slate-900">{t("Score Improvement")}</h3>
-                      <p className="text-xs sm:text-sm text-slate-600 truncate">{t("How your CV improved after optimization")}</p>
+                      <h3 className="font-serif text-lg text-[#1a1a1a]">{t("Score Improvement")}</h3>
+                      <p className="text-xs sm:text-sm text-stone-500 font-light truncate">{t("How your CV improved after optimization")}</p>
                     </div>
                   </div>
-                  
+
                   {/* Tooltip Trigger — click-toggle so touch users can open it */}
                   <div className="relative">
                     <button
                       onClick={() => setShowScoreBreakdown((v) => !v)}
                       aria-expanded={showScoreBreakdown}
                       aria-label={t("Show score breakdown")}
-                      className="w-8 h-8 rounded-full bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors focus-visible:outline-none"
+                      className="w-8 h-8 rounded-full bg-brand-navy/5 hover:bg-brand-navy/10 flex items-center justify-center transition-colors focus-visible:outline-none"
                     >
-                      <Info className="w-4 h-4 text-emerald-600" />
+                      <Info className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
                     </button>
 
                     {/* Tooltip Content */}
-                    <div className={`absolute right-0 top-10 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-slate-200 p-4 transition-all duration-200 z-50 ${
+                    <div className={`absolute right-0 top-10 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-sm shadow-lg border border-stone-200 p-4 transition-all duration-200 z-50 ${
                       showScoreBreakdown ? "opacity-100 visible" : "opacity-0 invisible"
                     }`}>
-                      <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-slate-200 transform rotate-45"></div>
-                      <h4 className="font-semibold text-slate-900 text-sm mb-3">{t("Detailed Breakdown")}</h4>
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-stone-200 transform rotate-45"></div>
+                      <h4 className="font-serif text-[#1a1a1a] text-sm mb-3">{t("Detailed Breakdown")}</h4>
                       <div className="space-y-3">
                         {/* ATS Score */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Zap className="w-4 h-4 text-blue-500" />
-                            <span className="text-xs font-medium text-slate-700">{t("ATS")}</span>
+                            <Zap className="w-4 h-4 text-brand-gold" strokeWidth={1.5} />
+                            <span className="text-xs font-medium text-stone-600">{t("ATS")}</span>
                           </div>
                           <div className="flex items-baseline gap-1">
-                            <span className="text-slate-400 text-sm">{results.scoreComparison.original.breakdown.ats}</span>
-                            <span className="text-slate-400">→</span>
-                            <span className="text-blue-600 font-semibold">{results.scoreComparison.optimized.breakdown.ats}</span>
-                            <span className="text-xs text-emerald-500 ml-1">
+                            <span className="text-stone-400 text-sm">{results.scoreComparison.original.breakdown.ats}</span>
+                            <span className="text-stone-400">→</span>
+                            <span className="text-brand-navy font-semibold">{results.scoreComparison.optimized.breakdown.ats}</span>
+                            <span className="text-xs text-brand-gold ml-1">
                               +{results.scoreComparison.optimized.breakdown.ats - results.scoreComparison.original.breakdown.ats}
                             </span>
                           </div>
@@ -464,14 +456,14 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         {/* Impact Score */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Target className="w-4 h-4 text-purple-500" />
-                            <span className="text-xs font-medium text-slate-700">{t("Impact")}</span>
+                            <Target className="w-4 h-4 text-brand-gold" strokeWidth={1.5} />
+                            <span className="text-xs font-medium text-stone-600">{t("Impact")}</span>
                           </div>
                           <div className="flex items-baseline gap-1">
-                            <span className="text-slate-400 text-sm">{results.scoreComparison.original.breakdown.impact}</span>
-                            <span className="text-slate-400">→</span>
-                            <span className="text-purple-600 font-semibold">{results.scoreComparison.optimized.breakdown.impact}</span>
-                            <span className="text-xs text-emerald-500 ml-1">
+                            <span className="text-stone-400 text-sm">{results.scoreComparison.original.breakdown.impact}</span>
+                            <span className="text-stone-400">→</span>
+                            <span className="text-brand-navy font-semibold">{results.scoreComparison.optimized.breakdown.impact}</span>
+                            <span className="text-xs text-brand-gold ml-1">
                               +{results.scoreComparison.optimized.breakdown.impact - results.scoreComparison.original.breakdown.impact}
                             </span>
                           </div>
@@ -480,14 +472,14 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         {/* Clarity Score */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <BarChart3 className="w-4 h-4 text-amber-500" />
-                            <span className="text-xs font-medium text-slate-700">{t("Clarity")}</span>
+                            <BarChart3 className="w-4 h-4 text-brand-gold" strokeWidth={1.5} />
+                            <span className="text-xs font-medium text-stone-600">{t("Clarity")}</span>
                           </div>
                           <div className="flex items-baseline gap-1">
-                            <span className="text-slate-400 text-sm">{results.scoreComparison.original.breakdown.clarity}</span>
-                            <span className="text-slate-400">→</span>
-                            <span className="text-amber-600 font-semibold">{results.scoreComparison.optimized.breakdown.clarity}</span>
-                            <span className="text-xs text-emerald-500 ml-1">
+                            <span className="text-stone-400 text-sm">{results.scoreComparison.original.breakdown.clarity}</span>
+                            <span className="text-stone-400">→</span>
+                            <span className="text-brand-navy font-semibold">{results.scoreComparison.optimized.breakdown.clarity}</span>
+                            <span className="text-xs text-brand-gold ml-1">
                               +{results.scoreComparison.optimized.breakdown.clarity - results.scoreComparison.original.breakdown.clarity}
                             </span>
                           </div>
@@ -500,26 +492,26 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 {/* Before/After Score Comparison */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4">
                   {/* Original Score */}
-                  <div className="bg-white rounded-lg p-3 sm:p-4 text-center border border-slate-200">
-                    <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider mb-1">{t("Original")}</p>
-                    <p className="text-2xl sm:text-3xl font-bold text-slate-400">{results.scoreComparison.original.total}</p>
+                  <div className="bg-white rounded-sm p-3 sm:p-4 text-center border border-stone-200">
+                    <p className="text-[10px] sm:text-xs text-stone-500 uppercase tracking-wider mb-1">{t("Original")}</p>
+                    <p className="font-serif text-2xl sm:text-3xl text-stone-400">{results.scoreComparison.original.total}</p>
                   </div>
 
                   {/* Arrow & Improvement */}
                   <div className="flex flex-col items-center justify-center">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-500 rounded-full flex items-center justify-center mb-1">
-                      <TrendingUp className="w-4 h-4 text-white" />
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-brand-gold rounded-full flex items-center justify-center mb-1">
+                      <TrendingUp className="w-4 h-4 text-white" strokeWidth={2} />
                     </div>
-                    <span className="text-base sm:text-lg font-bold text-emerald-600">
+                    <span className="text-base sm:text-lg font-semibold text-brand-gold">
                       +{results.scoreComparison.improvement}
                     </span>
-                    <span className="text-[10px] sm:text-xs text-emerald-600">{t("points")}</span>
+                    <span className="text-[10px] sm:text-xs text-brand-gold">{t("points")}</span>
                   </div>
 
                   {/* Optimized Score */}
-                  <div className="bg-emerald-500 rounded-lg p-3 sm:p-4 text-center">
-                    <p className="text-[10px] sm:text-xs text-emerald-100 uppercase tracking-wider mb-1">{t("Optimized")}</p>
-                    <p className="text-2xl sm:text-3xl font-bold text-white">{results.scoreComparison.optimized.total}</p>
+                  <div className="bg-brand-navy rounded-sm p-3 sm:p-4 text-center">
+                    <p className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wider mb-1">{t("Optimized")}</p>
+                    <p className="font-serif text-2xl sm:text-3xl text-white">{results.scoreComparison.optimized.total}</p>
                   </div>
                 </div>
               </div>
@@ -528,17 +520,17 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {/* Strengths & Areas to Improve Grid */}
             <div className="grid md:grid-cols-2 gap-4">
               {/* Strengths Card */}
-              <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-indigo-600" />
+              <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
+                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-brand-navy/5 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                   </div>
                 {t("Strengths")}
               </h4>
                 <ul className="space-y-3">
                 {results.strengths.map((strength, index) => (
-                    <li key={index} className="flex items-start gap-3 text-slate-600">
-                      <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-3 text-stone-600 font-light">
+                      <CheckCircle2 className="w-4 h-4 text-brand-navy mt-0.5 flex-shrink-0" strokeWidth={1.5} />
                       <span>{strength}</span>
                   </li>
                 ))}
@@ -546,17 +538,17 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
               </div>
 
               {/* Areas to Improve Card */}
-              <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
+                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-brand-gold/10 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-brand-gold" strokeWidth={1.5} />
                   </div>
                 {t("Areas to Improve")}
               </h4>
                 <ul className="space-y-3">
                 {(results.improvements ?? []).map((improvement, index) => (
-                    <li key={index} className="flex items-start gap-3 text-slate-600">
-                      <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-3 text-stone-600 font-light">
+                      <AlertTriangle className="w-4 h-4 text-brand-gold mt-0.5 flex-shrink-0" strokeWidth={1.5} />
                       <span>{typeof improvement === "string" ? improvement : improvement.text}</span>
                   </li>
                 ))}
@@ -567,47 +559,47 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {/* Keywords Analysis Section */}
             <div className="grid md:grid-cols-2 gap-4">
               {/* Keywords Found */}
-              <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <Check className="w-5 h-5 text-indigo-600" />
+              <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
+                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-brand-navy/5 rounded-full flex items-center justify-center">
+                    <Check className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                   </div>
                   {t("Keywords Found")}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {results.keywords.present.map((keyword, index) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1.5 bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-lg text-sm font-medium"
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 bg-brand-navy/5 text-brand-navy border border-brand-navy/15 rounded-sm text-sm font-medium"
                     >
                       {keyword}
                     </span>
                   ))}
                   {results.keywords.present.length === 0 && (
-                    <span className="text-slate-400 text-sm">{t("No keywords found")}</span>
+                    <span className="text-stone-400 text-sm font-light">{t("No keywords found")}</span>
                   )}
                 </div>
               </div>
 
               {/* Missing Keywords */}
-              <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-                <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
+                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-rose-50 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-rose-600" strokeWidth={1.5} />
                   </div>
                   {t("Missing Keywords")}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {results.keywords.missing.map((keyword, index) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-sm font-medium"
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-sm text-sm font-medium"
                     >
                       {keyword}
                     </span>
                   ))}
                   {results.keywords.missing.length === 0 && (
-                    <span className="text-slate-400 text-sm">{t("No missing keywords")}</span>
+                    <span className="text-stone-400 text-sm font-light">{t("No missing keywords")}</span>
                   )}
                 </div>
               </div>
@@ -633,34 +625,34 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
           <div className="space-y-4 flex-1 min-h-0 overflow-auto">
             {regularChanges.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-                <p className="text-slate-500">{t("No suggested changes - your CV looks great!")}</p>
+                <CheckCircle2 className="w-12 h-12 text-brand-navy mx-auto mb-4" strokeWidth={1.5} />
+                <p className="text-stone-500 font-light">{t("No suggested changes - your CV looks great!")}</p>
               </div>
             ) : (
               regularChanges.map((change, index) => (
-                <div key={index} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-emerald-600" />
-                    <span className="font-semibold text-slate-900">{change.section}</span>
+                <div key={index} className="bg-white border border-stone-200 rounded-sm overflow-hidden shadow-sm">
+                  <div className="bg-[#FAFAF8] px-5 py-3 border-b border-stone-200 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
+                    <span className="font-serif text-[#1a1a1a]">{change.section}</span>
                 </div>
-                  
+
                   <div className="p-5 space-y-4">
                   <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">{t("Original")}</p>
-                      <p className="p-4 rounded-lg border leading-relaxed text-slate-600 bg-rose-50 border-rose-100 line-through">
+                      <p className="text-xs text-stone-500 uppercase tracking-wider mb-2 font-medium">{t("Original")}</p>
+                      <p className="p-4 rounded-sm border leading-relaxed text-stone-600 bg-rose-50 border-rose-100 line-through">
                       {change.original}
                     </p>
                   </div>
 
                   <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-medium">{t("Suggested")}</p>
-                      <p className="p-4 rounded-lg border leading-relaxed text-slate-800 bg-indigo-50 border-indigo-100">
+                      <p className="text-xs text-stone-500 uppercase tracking-wider mb-2 font-medium">{t("Suggested")}</p>
+                      <p className="p-4 rounded-sm border leading-relaxed text-[#1a1a1a] bg-brand-navy/5 border-brand-navy/15">
                       {change.suggested}
                     </p>
                   </div>
-                    
-                    <div className="flex items-start gap-3 text-sm text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
-                      <Lightbulb className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+
+                    <div className="flex items-start gap-3 text-sm text-stone-600 bg-brand-gold/5 p-3 rounded-sm border border-brand-gold/20">
+                      <Lightbulb className="w-4 h-4 text-brand-gold mt-0.5 flex-shrink-0" strokeWidth={1.5} />
                     <span>{change.reason}</span>
                     </div>
                   </div>
@@ -669,13 +661,13 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             )}
 
             {/* Continue Button */}
-            <div className="flex justify-end pt-4 border-t border-slate-100 mt-4">
+            <div className="flex justify-end pt-4 border-t border-stone-100 mt-4">
               <button
                 onClick={() => goToTab("optimized")}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg focus-visible:outline-none"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide focus-visible:outline-none"
               >
                 {t("View Optimized CV")}
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </div>
           </div>
@@ -687,19 +679,19 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <div className="flex-shrink-0 mb-4">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div>
-                  <h3 className="text-slate-900 font-semibold mb-1">{t("Your Optimized Resume")}</h3>
-                  <p className="text-slate-500 text-sm">
+                  <h3 className="font-serif text-lg text-[#1a1a1a] mb-1">{t("Your Optimized Resume")}</h3>
+                  <p className="text-stone-500 text-sm font-light">
                     {isEditMode ? t("Click any text to edit directly") : t("Adjust font & spacing from the toolbar below")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Edit/Preview Toggle */}
-                  <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+                  <div className="flex items-center bg-stone-100 rounded-sm p-0.5">
                     <button
                       onClick={() => setIsEditMode(false)}
                       aria-pressed={!isEditMode}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors focus-visible:outline-none ${
-                        !isEditMode ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-sm text-xs font-medium transition-colors focus-visible:outline-none ${
+                        !isEditMode ? "bg-white shadow-sm text-[#1a1a1a]" : "text-stone-500 hover:text-stone-700"
                       }`}
                     >
                       <Eye className="w-3.5 h-3.5" />
@@ -708,8 +700,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     <button
                       onClick={() => setIsEditMode(true)}
                       aria-pressed={isEditMode}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors focus-visible:outline-none ${
-                        isEditMode ? "bg-indigo-500 shadow-sm text-white" : "text-slate-500 hover:text-slate-700"
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-sm text-xs font-medium transition-colors focus-visible:outline-none ${
+                        isEditMode ? "bg-brand-navy shadow-sm text-white" : "text-stone-500 hover:text-stone-700"
                       }`}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -719,9 +711,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <button
                     onClick={handleCopyOptimized}
                     aria-label={copiedOptimized ? t("Copied") : t("Copy optimized resume text")}
-                    className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
+                    className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 rounded-sm transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
                   >
-                    {copiedOptimized ? <Check className="w-4 h-4 text-indigo-500" /> : <Copy className="w-4 h-4" />}
+                    {copiedOptimized ? <Check className="w-4 h-4 text-brand-navy" /> : <Copy className="w-4 h-4" />}
                     {copiedOptimized ? t("Copied!") : t("Copy")}
                   </button>
 
@@ -730,7 +722,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     onClick={handleDownloadPdf}
                     disabled={isDownloading}
                     aria-label={t("Download as PDF")}
-                    className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
+                    className="flex items-center gap-2 px-3 py-2 bg-brand-navy hover:bg-brand-navy-hover disabled:bg-brand-navy/50 text-white rounded-sm transition-colors text-sm font-medium shadow-sm focus-visible:outline-none"
                   >
                     {isDownloading && downloadType === "pdf" ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -745,7 +737,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     onClick={handleDownloadWord}
                     disabled={isDownloading}
                     aria-label={t("Download as Word document")}
-                    className="flex items-center gap-2 px-3 py-2 border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 rounded-lg transition-colors text-sm font-medium focus-visible:outline-none"
+                    className="flex items-center gap-2 px-3 py-2 border border-brand-navy text-brand-navy hover:bg-brand-navy/5 disabled:border-brand-navy/30 disabled:text-brand-navy/40 rounded-sm transition-colors text-sm font-medium focus-visible:outline-none"
                   >
                     {isDownloading && downloadType === "word" ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -759,9 +751,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
               {/* Edit Mode Banner */}
               {isEditMode && (
-                <div className="flex items-center gap-3 px-4 py-2.5 mt-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
-                  <span className="text-sm text-indigo-800">
+                <div className="flex items-center gap-3 px-4 py-2.5 mt-3 bg-brand-navy/5 border border-brand-navy/15 rounded-sm">
+                  <Sparkles className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
+                  <span className="text-sm text-brand-navy">
                     <strong>{t("Editing Mode:")}</strong> {t("Click any text in the resume to edit it directly.")}
                   </span>
                 </div>
@@ -771,7 +763,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             {/* Resume Preview - SmartResumePreview with auto-scaling */}
             {isEditMode ? (
               // Editable mode - use old EditableResumePreview
-              <div className="flex-1 min-h-0 overflow-auto rounded-xl bg-indigo-50/50 p-2 sm:p-4">
+              <div className="flex-1 min-h-0 overflow-auto rounded-sm bg-stone-100/60 p-2 sm:p-4">
                 <div className="flex justify-center">
                   <div className="transform scale-[0.38] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.65] origin-top">
                     <EditableResumePreview
@@ -795,35 +787,35 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 />
                 
                 {/* Photo Upload Section */}
-                <div className="flex-shrink-0 px-4 py-3 bg-slate-50/80 rounded-xl border border-slate-200">
+                <div className="flex-shrink-0 px-4 py-3 bg-[#FAFAF8] rounded-sm border border-stone-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-                        <Camera className="w-4 h-4 text-violet-600" />
+                      <div className="w-8 h-8 rounded-full bg-brand-navy/5 flex items-center justify-center">
+                        <Camera className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
                       </div>
                       <div>
-                        <h3 className="font-medium text-slate-900 text-sm">{t("Profile Photo")}</h3>
-                        <p className="text-xs text-slate-500">{t("Optional - for templates with photo support")}</p>
+                        <h3 className="font-medium text-[#1a1a1a] text-sm">{t("Profile Photo")}</h3>
+                        <p className="text-xs text-stone-500 font-light">{t("Optional - for templates with photo support")}</p>
                       </div>
                     </div>
-                    
+
                     {photoPreview ? (
                       <div className="flex items-center gap-3">
-                        <img 
-                          src={photoPreview} 
+                        <img
+                          src={photoPreview}
                           alt={t("Profile preview")}
-                          className="w-10 h-10 rounded-lg object-cover border-2 border-violet-200"
+                          className="w-10 h-10 rounded-sm object-cover border-2 border-stone-200"
                         />
                         <button
                           onClick={removePhoto}
-                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
+                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-sm transition-colors"
                           title={t("Remove photo")}
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
-                      <label className="flex items-center gap-2 px-3 py-1.5 bg-violet-100 hover:bg-violet-200 text-violet-700 text-sm font-medium rounded-lg cursor-pointer transition-colors">
+                      <label className="flex items-center gap-2 px-3 py-1.5 bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy text-sm font-medium rounded-sm cursor-pointer transition-colors">
                         <User className="w-4 h-4" />
                         <span>{t("Add Photo")}</span>
                         <input
@@ -836,9 +828,9 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     )}
                   </div>
                 </div>
-                
+
                 {/* Resume Preview with auto-scaling */}
-                <div className="flex-1 min-h-0 rounded-xl border border-slate-200 overflow-hidden">
+                <div className="flex-1 min-h-0 rounded-sm border border-stone-200 overflow-hidden">
                   <SmartResumePreview
                     data={resumeData}
                     templateId={selectedTemplate}
@@ -857,7 +849,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                   <div className="flex justify-end pt-4 border-t border-stone-100 mt-4">
                     <button
                       onClick={() => goToTab("cover-letter")}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide focus-visible:outline-none"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide focus-visible:outline-none"
                     >
                       {t("Generate Cover Letter")}
                       <ChevronRight className="w-5 h-5" strokeWidth={1.5} />
@@ -1134,8 +1126,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
         {activeTab === "cover-letter" && coverLetterTab && (
           <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-[#0A2647]/5 rounded-full flex items-center justify-center">
-                <FileText className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+              <div className="w-10 h-10 bg-brand-navy/5 rounded-full flex items-center justify-center">
+                <FileText className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
               </div>
               <div>
                 <h4 className="font-serif text-lg text-[#1a1a1a]">
@@ -1170,7 +1162,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <button
               onClick={coverLetterTab.onGenerate}
               disabled={coverLetterTab.isGenerating || !!coverLetterTab.text}
-              className="w-full px-6 py-4 bg-[#0A2647] hover:bg-[#0d3259] disabled:bg-stone-200 disabled:text-stone-500 text-white text-base font-medium rounded-sm transition-all shadow-sm hover:shadow-md disabled:shadow-none flex items-center justify-center gap-2 tracking-wide"
+              className="w-full px-6 py-4 bg-brand-navy hover:bg-brand-navy-hover disabled:bg-stone-200 disabled:text-stone-500 text-white text-base font-medium rounded-sm transition-all shadow-sm hover:shadow-md disabled:shadow-none flex items-center justify-center gap-2 tracking-wide"
             >
               {coverLetterTab.isGenerating ? (
                 <>
@@ -1203,7 +1195,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     onClick={coverLetterTab.onCopy}
                     className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-sm font-medium rounded-sm transition-colors shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.1)]"
                   >
-                    {coverLetterTab.copied ? <Check className="w-4 h-4 text-[#0A2647]" strokeWidth={1.5} /> : <Copy className="w-4 h-4" strokeWidth={1.5} />}
+                    {coverLetterTab.copied ? <Check className="w-4 h-4 text-brand-navy" strokeWidth={1.5} /> : <Copy className="w-4 h-4" strokeWidth={1.5} />}
                     {coverLetterTab.copied ? t("Copied") : t("Copy")}
                   </button>
                   <button
@@ -1218,7 +1210,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <textarea
                   value={coverLetterTab.text}
                   onChange={(e) => coverLetterTab.onTextChange(e.target.value)}
-                  className="w-full flex-1 min-h-[320px] px-5 py-4 bg-white text-[#1a1a1a] border border-stone-200 rounded-sm focus:ring-2 focus:ring-[#0A2647]/20 focus:border-[#0A2647] outline-none resize-none placeholder:text-stone-500 leading-relaxed shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] font-light"
+                  className="w-full flex-1 min-h-[320px] px-5 py-4 bg-white text-[#1a1a1a] border border-stone-200 rounded-sm focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none resize-none placeholder:text-stone-500 leading-relaxed shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] font-light"
                 />
               </div>
             )}

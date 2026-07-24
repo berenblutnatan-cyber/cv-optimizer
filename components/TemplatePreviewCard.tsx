@@ -57,6 +57,35 @@ export function TemplatePreviewCard({
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `${fileName}-${info.name}`,
+    // Success feedback + credit charge only fire AFTER the print dialog has
+    // resolved — never before the user has actually seen their document.
+    onAfterPrint: async () => {
+      try {
+        const creditResponse = await fetch("/api/use-credit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        const creditResult = await creditResponse.json();
+        if (!creditResult.success) {
+          // Rare race: balance was spent elsewhere between the pre-flight
+          // check and the charge. The user keeps this download; tell them
+          // they're out for next time.
+          toast.error(t("You need credits to continue"), {
+            description: t("Credit packs start at just $3."),
+            action: {
+              label: t("View Pricing"),
+              onClick: () => window.location.href = "/pricing",
+            },
+          });
+          return;
+        }
+        toast.success(t("Success!"), {
+          description: t("Your CV is ready."),
+        });
+      } catch (error) {
+        console.error("Credit charge failed:", error);
+      }
+    },
     pageStyle: `
       @page {
         size: A4;
@@ -78,19 +107,18 @@ export function TemplatePreviewCard({
       setShowSignInPrompt(true);
       return;
     }
-    
+
     try {
-      // First, use a credit
-      const creditResponse = await fetch("/api/use-credit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      // Read-only balance check first — the credit itself is only charged in
+      // onAfterPrint, once the print/PDF dialog has actually run, so a failed
+      // export can never burn a credit.
+      const res = await fetch("/api/get-credits");
+      const info = await res.json();
+      const hasCredit = info?.unlimited === true || (info?.credits ?? 0) >= 1;
 
-      const creditResult = await creditResponse.json();
-
-      if (!creditResult.success) {
+      if (!hasCredit) {
         toast.error(t("You need credits to continue"), {
-          description: t("Get our Starter Pack for just $3!"),
+          description: t("Credit packs start at just $3."),
           action: {
             label: t("View Pricing"),
             onClick: () => window.location.href = "/pricing",
@@ -99,12 +127,8 @@ export function TemplatePreviewCard({
         return;
       }
 
-      // Proceed with download
+      // Open the print dialog; charge + success toast happen in onAfterPrint.
       handlePrint();
-
-      toast.success(t("Success!"), {
-        description: t("Your CV is ready."),
-      });
     } catch (error) {
       console.error("Credit check failed:", error);
       toast.error(t("Failed to check credits"), {
