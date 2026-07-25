@@ -23,8 +23,8 @@ export async function TwoReaders() {
   return (
     <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
       {/* THE MACHINE — parser register (dark card, brass ring → pops on navy) */}
-      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/12 bg-[#06182f] p-7 shadow-[0_36px_80px_-32px_rgba(0,0,0,0.7)] ring-1 ring-[#B8860B]/15 sm:p-9">
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#D4A83F]">
+      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/12 bg-[#06182f] p-7 shadow-[0_36px_80px_-32px_rgba(0,0,0,0.7)] ring-1 ring-brand-gold/15 sm:p-9">
+        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-brand-gold-soft">
           {t("Reader 01 · the software")}
         </p>
         <h3 className="mt-3 font-serif text-2xl text-white sm:text-[1.7rem]">
@@ -51,7 +51,7 @@ export async function TwoReaders() {
                 <span className="text-[#4ade80]">✓</span>
                 {t(k)}
               </span>
-              <span className="font-mono text-xs text-[#D4A83F]">{t(v)}</span>
+              <span className="font-mono text-xs text-brand-gold-soft">{t(v)}</span>
             </li>
           ))}
         </ul>
@@ -62,30 +62,30 @@ export async function TwoReaders() {
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#9a6b08]">
           {t("Reader 02 · the recruiter")}
         </p>
-        <h3 className="mt-3 font-serif text-2xl text-[#0A2647] sm:text-[1.7rem]">
+        <h3 className="mt-3 font-serif text-2xl text-brand-navy sm:text-[1.7rem]">
           {t("They skim for the one that sticks.")}
         </h3>
-        <p className="mt-3 text-sm leading-relaxed text-[#0A2647]/60">
+        <p className="mt-3 text-sm leading-relaxed text-brand-navy/60">
           {t("A recruiter gives each résumé a few seconds. They aren’t reading keywords — they’re looking for a number they’ll repeat in the hiring meeting.")}
         </p>
 
         {/* what the human sees — a clean fragment */}
-        <div className="mt-6 rounded-xl border border-[#0A2647]/8 bg-white p-5 shadow-[0_18px_40px_-26px_rgba(10,38,71,0.45)]">
-          <p className="font-serif text-base font-semibold text-[#0A2647]">
+        <div className="mt-6 rounded-xl border border-brand-navy/8 bg-white p-5 shadow-[0_18px_40px_-26px_rgba(10,38,71,0.45)]">
+          <p className="font-serif text-base font-semibold text-brand-navy">
             {t("Senior Platform Engineer")}
           </p>
-          <p className="mt-1 text-xs text-[#0A2647]/45">Cloudside · 2021–Present</p>
-          <p className="mt-3 text-[15px] leading-relaxed text-[#0A2647]/80">
+          <p className="mt-1 text-xs text-brand-navy/45">Cloudside · 2021–Present</p>
+          <p className="mt-3 text-[15px] leading-relaxed text-brand-navy/80">
             Cut AWS spend{" "}
-            <mark className="bg-[#B8860B]/15 px-1 font-semibold text-[#9a6b08]">
+            <mark className="bg-brand-gold/15 px-1 font-semibold text-[#9a6b08]">
               31% ($420K/yr)
             </mark>{" "}
             by re-architecting 12 services onto spot instances.
           </p>
         </div>
 
-        <p className="mt-5 flex items-center gap-2 text-sm text-[#0A2647]/60">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#B8860B]/12 font-mono text-[10px] font-semibold text-[#9a6b08]">
+        <p className="mt-5 flex items-center gap-2 text-sm text-brand-navy/60">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-gold/12 font-mono text-[10px] font-semibold text-[#9a6b08]">
             7s
           </span>
           {t("Read in seconds — and the number is what they remember.")}
@@ -97,7 +97,7 @@ export async function TwoReaders() {
 
 function Token({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded bg-[#B8860B]/20 px-1 text-[#F3D58A]">{children}</span>
+    <span className="rounded bg-brand-gold/20 px-1 text-[#F3D58A]">{children}</span>
   );
 }
 

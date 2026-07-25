@@ -61,8 +61,8 @@ export function ActiveNavLinks() {
           onClick={(e) => handleClick(e, section.id)}
           className={`whitespace-nowrap font-serif text-sm transition-colors ${
             activeSection === section.id
-              ? "text-[#0A2647] font-semibold"
-              : "text-stone-500 hover:text-[#0A2647]"
+              ? "text-brand-navy font-semibold"
+              : "text-stone-500 hover:text-brand-navy"
           }`}
         >
           {t(section.label)}

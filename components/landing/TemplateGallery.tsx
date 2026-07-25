@@ -26,17 +26,17 @@ export async function TemplateGallery() {
     <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
       {DOCS.map((d) => (
         <figure key={d.kind} className="group">
-          <div className="relative overflow-hidden rounded-xl border border-[#0A2647]/10 bg-white shadow-[0_22px_50px_-30px_rgba(10,38,71,0.5)] transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_36px_70px_-30px_rgba(10,38,71,0.55)]">
+          <div className="relative overflow-hidden rounded-xl border border-brand-navy/10 bg-white shadow-[0_22px_50px_-30px_rgba(10,38,71,0.5)] transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_36px_70px_-30px_rgba(10,38,71,0.55)]">
             {d.badge && (
-              <span className="absolute right-2.5 top-2.5 z-10 rounded-full bg-[#0A2647] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[#F3D58A]">
+              <span className="absolute right-2.5 top-2.5 z-10 rounded-full bg-brand-navy px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[#F3D58A]">
                 {t(d.badge)}
               </span>
             )}
             <Doc kind={d.kind} />
           </div>
           <figcaption className="mt-3 flex items-baseline justify-between px-0.5">
-            <span className="font-serif text-[15px] text-[#0A2647]">{t(d.name)}</span>
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[#0A2647]/40">
+            <span className="font-serif text-[15px] text-brand-navy">{t(d.name)}</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-brand-navy/40">
               {t(d.tag)}
             </span>
           </figcaption>
@@ -120,7 +120,7 @@ function Doc({ kind }: { kind: Kind }) {
           style={{ background: `linear-gradient(120deg, ${BRASS}, ${NAVY})` }}
         />
         <div className="space-y-1.5 p-3">
-          <div className="-mt-6 mb-2 h-9 w-9 rounded-full border-2 border-white bg-[#0A2647]/80" />
+          <div className="-mt-6 mb-2 h-9 w-9 rounded-full border-2 border-white bg-brand-navy/80" />
           <Line w="58%" c="rgba(10,38,71,0.8)" h={5} />
           <Line w="38%" c={BRASS} h={3} />
           <div className="h-1" />

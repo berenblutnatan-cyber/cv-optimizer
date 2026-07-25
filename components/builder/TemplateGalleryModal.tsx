@@ -11,6 +11,10 @@ import {
   type PresetCategory,
   type TemplatePreset,
 } from "@/lib/builder/templatePresets";
+import { getTemplateEntry } from "@/lib/templates/registry";
+import { useTemplateGating, type TemplateOption } from "@/components/builder/TemplateSwitcher";
+import { TemplateUnlockModal } from "@/components/TemplateUnlockModal";
+import { OutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 const A4_W = 794;
@@ -68,7 +72,7 @@ function PresetCard({
   return (
     <div
       className={`group relative text-start rounded-xl border bg-white overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg ${
-        selected ? "border-[#0A2647] ring-2 ring-[#0A2647]/30" : "border-stone-200 hover:border-[#0A2647]/40"
+        selected ? "border-brand-navy ring-2 ring-brand-navy/30" : "border-stone-200 hover:border-brand-navy/40"
       }`}
     >
       {/* The whole card applies the design to the user's current CV. */}
@@ -86,15 +90,15 @@ function PresetCard({
             <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-stone-100 to-stone-200" />
           )}
           {/* Dim the preview on hover so the "Make a demo CV" button reads clearly. */}
-          <div className="absolute inset-0 bg-[#0A2647]/0 group-hover:bg-[#0A2647]/20 transition-colors pointer-events-none" />
+          <div className="absolute inset-0 bg-brand-navy/0 group-hover:bg-brand-navy/20 transition-colors pointer-events-none" />
           {selected ? (
-            <div className="absolute top-2 right-2 grid place-items-center h-6 w-6 rounded-full bg-[#0A2647] text-white shadow">
+            <div className="absolute top-2 right-2 grid place-items-center h-6 w-6 rounded-full bg-brand-navy text-white shadow">
               <Check className="h-3.5 w-3.5" strokeWidth={3} />
             </div>
           ) : null}
           {/* Signals the preview is sample content (shown only while the demo CV is on screen). */}
           {isDemo ? (
-            <div className="absolute bottom-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/85 backdrop-blur text-[#0A2647] text-[8.5px] font-bold uppercase tracking-wide shadow-sm group-hover:opacity-0 transition-opacity">
+            <div className="absolute bottom-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/85 backdrop-blur text-brand-navy text-[10px] font-bold uppercase tracking-wide shadow-sm group-hover:opacity-0 transition-opacity">
               {t("demo CV")}
             </div>
           ) : null}
@@ -102,18 +106,18 @@ function PresetCard({
         {/* Footer: name + badges (badges live here, never over the preview). */}
         <div className="px-2.5 py-2 border-t border-stone-100">
           <div className="flex items-center gap-1.5">
-            <div className="text-[12.5px] font-semibold text-[#0A2647] truncate flex-1 min-w-0">{preset.name}</div>
+            <div className="text-[13px] font-semibold text-brand-navy truncate flex-1 min-w-0">{preset.name}</div>
             {preset.isNew ? (
-              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#0A2647] text-white text-[8.5px] font-bold tracking-wide">
+              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-brand-navy text-white text-[10px] font-bold tracking-wide">
                 <Sparkles className="h-2 w-2" /> {t("NEW")}
               </span>
             ) : null}
             {preset.premium ? (
-              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#B8860B] text-white text-[8.5px] font-bold tracking-wide">
+              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-brand-gold text-white text-[10px] font-bold tracking-wide">
                 <Crown className="h-2 w-2" /> {t("PRO")}
               </span>
             ) : (
-              <span className="flex-shrink-0 inline-flex items-center px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[8.5px] font-bold tracking-wide">
+              <span className="flex-shrink-0 inline-flex items-center px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-wide">
                 {t("FREE")}
               </span>
             )}
@@ -121,15 +125,16 @@ function PresetCard({
           <div className="text-[11px] text-stone-400 truncate">{preset.tagline}</div>
         </div>
       </button>
-      {/* "Make a demo CV" — revealed on hover; loads the sample CV into this design.
-          pointer-events gate so the hidden button never swallows card clicks. */}
+      {/* "Make a demo CV" — always visible on touch/small screens (no hover
+          there); hover-revealed on desktop. pointer-events gate so the hidden
+          desktop button never swallows card clicks. */}
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onMakeDemo();
         }}
-        className="absolute left-1/2 top-[42%] z-10 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-[#0A2647] shadow-lg ring-1 ring-black/5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto hover:bg-[#0A2647] hover:text-white focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none"
+        className="absolute left-1/2 top-[42%] z-10 -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-white/95 px-3.5 py-2.5 min-h-[44px] text-[11px] font-semibold text-brand-navy shadow-lg ring-1 ring-black/5 opacity-100 pointer-events-auto sm:min-h-0 sm:px-3 sm:py-1.5 sm:opacity-0 sm:pointer-events-none transition-opacity sm:group-hover:opacity-100 sm:group-hover:pointer-events-auto hover:bg-brand-navy hover:text-white focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none"
       >
         <Sparkles className="h-3 w-3" /> {t("Make a demo CV")}
       </button>
@@ -162,6 +167,35 @@ export function TemplateGalleryModal({
   const [category, setCategory] = useState<"All" | PresetCategory>("All");
   const [query, setQuery] = useState("");
 
+  // Premium gating — the SAME unlock/charge flow the sidebar/toolbar template
+  // switchers use (one source of truth, see useTemplateGating). Selecting a
+  // locked premium preset opens the unlock modal; only a confirmed credit
+  // charge applies the design. The pending action carries the preset's color
+  // and whether it was a plain select or a "Make a demo CV".
+  const pendingActionRef = useRef<{ color: ThemeColor; demo: boolean }>({
+    color: currentColor,
+    demo: false,
+  });
+  const gating = useTemplateGating((tpl) => {
+    const { color, demo } = pendingActionRef.current;
+    if (demo) onMakeDemo(tpl.id, color);
+    else onSelect(tpl.id, color);
+    onClose();
+  }, currentLayout);
+
+  const runGated = (preset: TemplatePreset, demo: boolean) => {
+    pendingActionRef.current = { color: preset.color, demo };
+    const entry = getTemplateEntry(preset.layout);
+    const option: TemplateOption = {
+      id: preset.layout,
+      name: entry?.name ?? preset.name,
+      description: entry?.description ?? preset.tagline,
+      preview: entry?.preview ?? "",
+      category: entry?.category ?? "professional",
+    };
+    gating.handleSelect(option);
+  };
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -185,8 +219,8 @@ export function TemplateGalleryModal({
       {/* Header */}
       <div className="flex-shrink-0 bg-white border-b border-stone-200 px-4 sm:px-6 py-3 flex items-center gap-4">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-[#0A2647] leading-tight">{t("Templates")}</h2>
-          <p className="text-[12px] text-stone-500">
+          <h2 className="text-lg font-semibold text-brand-navy leading-tight">{t("Templates")}</h2>
+          <p className="text-xs text-stone-500">
             {t("{count} designs across {layouts} layouts — pick one to apply it instantly.", {
               count: TEMPLATE_PRESETS.length,
               layouts: new Set(TEMPLATE_PRESETS.map((p) => p.layout)).size,
@@ -207,10 +241,34 @@ export function TemplateGalleryModal({
             type="button"
             onClick={onClose}
             aria-label={t("Close templates")}
-            className="grid place-items-center h-9 w-9 rounded-full text-stone-500 hover:bg-stone-100 hover:text-[#0A2647] transition-colors"
+            className="grid place-items-center h-11 w-11 sm:h-9 sm:w-9 rounded-full text-stone-500 hover:bg-stone-100 hover:text-brand-navy transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+      </div>
+
+      {/* Mobile search — the desktop search field is in the header row above;
+          on phones it gets its own full-width, thumb-sized row. */}
+      <div className="sm:hidden flex-shrink-0 bg-white border-b border-stone-200 px-4 py-2">
+        <div className="flex items-center gap-2 px-3 h-11 rounded-full bg-stone-100 border border-stone-200">
+          <Search className="h-4 w-4 text-stone-400 flex-shrink-0" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("Search templates or roles")}
+            className="flex-1 min-w-0 bg-transparent text-base text-[#1a1a1a] placeholder:text-stone-400 outline-none"
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label={t("Clear search")}
+              className="grid place-items-center h-8 w-8 -me-1 rounded-full text-stone-400 hover:text-brand-navy"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -224,8 +282,8 @@ export function TemplateGalleryModal({
               key={c}
               type="button"
               onClick={() => setCategory(c)}
-              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] transition-colors ${
-                active ? "bg-[#0A2647] text-white font-semibold" : "text-stone-600 hover:bg-stone-100"
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-1.5 rounded-full text-[13px] transition-colors ${
+                active ? "bg-brand-navy text-white font-semibold" : "text-stone-600 hover:bg-stone-100"
               }`}
             >
               {c}
@@ -248,19 +306,33 @@ export function TemplateGalleryModal({
                 data={data}
                 isDemo={isDemo}
                 selected={preset.layout === currentLayout && preset.color === currentColor}
-                onSelect={() => {
-                  onSelect(preset.layout, preset.color);
-                  onClose();
-                }}
-                onMakeDemo={() => {
-                  onMakeDemo(preset.layout, preset.color);
-                  onClose();
-                }}
+                onSelect={() => runGated(preset, false)}
+                onMakeDemo={() => runGated(preset, true)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Unlock confirmation for premium presets (same flow as the switcher). */}
+      <TemplateUnlockModal
+        open={!!gating.pendingTemplate}
+        templateName={gating.pendingTemplate?.name ?? ""}
+        templateDescription={gating.pendingTemplate?.description}
+        templatePreview={gating.pendingTemplate?.preview}
+        loading={gating.unlockLoading}
+        onConfirm={gating.confirmUnlock}
+        onClose={gating.cancelUnlock}
+      />
+
+      {/* Paywall fallback when the unlock attempt finds zero credits. */}
+      <OutOfCreditsModal
+        open={gating.oocModal.isOpen}
+        onClose={gating.oocModal.close}
+        trigger={gating.oocModal.trigger}
+        title={gating.oocModal.title}
+        subtitle={gating.oocModal.subtitle}
+      />
     </div>
   );
 }

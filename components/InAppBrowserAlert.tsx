@@ -85,7 +85,7 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
 
   return (
     <div
-      className={`fixed top-0 left-0 right-0 z-50 bg-amber-50 border-b-2 border-amber-300 shadow-lg ${className}`}
+      className={`fixed top-0 left-0 right-0 z-[60] bg-amber-50 border-b-2 border-amber-300 shadow-lg ${className}`}
     >
       <div className="max-w-4xl mx-auto px-4 py-3">
         <div className="flex items-start gap-3">
@@ -107,7 +107,7 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <button
                 onClick={handleCopyUrl}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
+                className="inline-flex min-h-11 items-center gap-1.5 px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
               >
                 {copied ? (
                   <>
@@ -131,7 +131,7 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
             <p className="text-amber-700 text-xs mt-2 flex items-center gap-1.5">
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
               <span>
-                {t("Tip: Tap the")} <strong>...</strong> {t("or")} <strong>{t("menu")}</strong> {t("icon and select \"Open in Browser\"")}
+                {t("Tip: Tap the ⋯ menu icon and choose \"Open in Browser\".")}
               </span>
             </p>
           </div>
@@ -139,7 +139,7 @@ export function InAppBrowserAlert({ className = "" }: InAppBrowserAlertProps) {
           {/* Dismiss button */}
           <button
             onClick={() => setDismissed(true)}
-            className="flex-shrink-0 p-2.5 hover:bg-amber-200 rounded-lg transition-colors focus-visible:outline-none"
+            className="flex-shrink-0 grid min-h-11 min-w-11 place-items-center hover:bg-amber-200 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             aria-label={t("Dismiss")}
           >
             <X className="w-4 h-4 text-amber-600" />

@@ -47,7 +47,7 @@ export function AuthModal({
   // Default content based on trigger type
   const content = {
     download: {
-      icon: <FileDown className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
+      icon: <FileDown className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />,
       title: title || t("Download Your Resume"),
       description: description || t("Create a free account to download your beautifully formatted resume."),
       benefits: [
@@ -57,7 +57,7 @@ export function AuthModal({
       ],
     },
     analyze: {
-      icon: <BarChart3 className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
+      icon: <BarChart3 className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />,
       title: title || t("See Your Full Analysis"),
       description: description || t("Create a free account to see your detailed resume score and suggestions."),
       benefits: [
@@ -67,7 +67,7 @@ export function AuthModal({
       ],
     },
     save: {
-      icon: <Shield className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />,
+      icon: <Shield className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />,
       title: title || t("Save Your Progress"),
       description: description || t("Create a free account to save your resume and access it anywhere."),
       benefits: [
@@ -101,7 +101,7 @@ export function AuthModal({
         {/* Content */}
         <div className="px-10 pt-12 pb-10">
           {/* Icon */}
-          <div className="w-14 h-14 rounded-full bg-[#0A2647]/5 flex items-center justify-center mb-6">
+          <div className="w-14 h-14 rounded-full bg-brand-navy/5 flex items-center justify-center mb-6">
             {currentContent.icon}
           </div>
           
@@ -116,14 +116,14 @@ export function AuthModal({
           </p>
           
           {/* Divider */}
-          <div className="w-12 h-px bg-[#B8860B] mb-8" />
+          <div className="w-12 h-px bg-brand-gold mb-8" />
 
           {/* Benefits */}
           <div className="space-y-4 mb-10">
             {currentContent.benefits.map((benefit, index) => (
               <div key={index} className="flex items-center gap-4">
-                <div className="w-5 h-5 rounded-full bg-[#0A2647]/10 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
+                <div className="w-5 h-5 rounded-full bg-brand-navy/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-brand-navy" strokeWidth={2} />
                 </div>
                 <span className="text-sm text-stone-600 font-light">{benefit}</span>
               </div>
@@ -133,7 +133,7 @@ export function AuthModal({
           {/* Actions */}
           <div className="space-y-4">
             <SignUpButton mode="modal">
-              <button className="w-full py-4 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all tracking-wide">
+              <button className="w-full py-4 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-all tracking-wide">
                 {t("Create Free Account")}
               </button>
             </SignUpButton>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Coins, X, Zap, Sparkles, Crown, ArrowRight, Check, Gift } from "lucide-react";
+import { POLAR_PLANS } from "@/lib/polar";
 import { track } from "@/lib/analytics";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
@@ -37,49 +38,62 @@ type Props = {
   subtitle?: string;
 };
 
+// Keys of the plans this modal sells. Prices, names, and credits come from the
+// SAME canonical config the pricing page sells from (lib/polar.ts) — so the
+// paywall can never contradict /pricing again.
+type TierKey = "onemore" | "pro" | "unlimited_monthly";
+
 type Tier = {
-  key: "onemore" | "starter" | "pro";
+  key: TierKey;
   name: string;
   price: string;
+  /** Credits granted. 0 = Unlimited plan (access, not credits). */
   credits: number;
   per: string;
   features: string[];
   Icon: typeof Zap;
   highlight?: "primary" | "value";
   badge?: string;
+  cta: string;
 };
+
+const perCredit = (amount: number, credits: number) =>
+  `$${(amount / credits).toFixed(2)} / credit`;
 
 const TIERS: Tier[] = [
   {
     key: "onemore",
-    name: "1 More Credit",
-    price: "$1",
-    credits: 1,
-    per: "one-off",
+    name: POLAR_PLANS.onemore.name,
+    price: `$${POLAR_PLANS.onemore.amount}`,
+    credits: POLAR_PLANS.onemore.credits,
+    per: perCredit(POLAR_PLANS.onemore.amount, POLAR_PLANS.onemore.credits),
     features: ["Try one more analysis", "Or unlock one premium template"],
     Icon: Zap,
     highlight: "primary",
     badge: "JUST $1",
-  },
-  {
-    key: "starter",
-    name: "Starter Pack",
-    price: "$3",
-    credits: 5,
-    per: "$0.60 / credit",
-    features: ["5 optimizations", "All premium templates", "PDF + DOCX export"],
-    Icon: Sparkles,
-    highlight: "value",
-    badge: "BEST VALUE",
+    cta: "Get 1 Credit",
   },
   {
     key: "pro",
-    name: "Pro Pack",
-    price: "$9",
-    credits: 20,
-    per: "$0.45 / credit",
+    name: POLAR_PLANS.pro.name,
+    price: `$${POLAR_PLANS.pro.amount}`,
+    credits: POLAR_PLANS.pro.credits,
+    per: perCredit(POLAR_PLANS.pro.amount, POLAR_PLANS.pro.credits),
     features: ["20 optimizations", "All premium templates", "Cover letters"],
+    Icon: Sparkles,
+    cta: "Get Pro",
+  },
+  {
+    key: "unlimited_monthly",
+    name: "Unlimited",
+    price: `$${POLAR_PLANS.unlimited_monthly.amount}`,
+    credits: POLAR_PLANS.unlimited_monthly.credits,
+    per: "No credits — ever",
+    features: ["Unlimited optimizations", "Unlimited downloads, every template", "Cancel anytime"],
     Icon: Crown,
+    highlight: "value",
+    badge: "BEST VALUE",
+    cta: "Go Unlimited",
   },
 ];
 
@@ -228,7 +242,7 @@ export function OutOfCreditsModal({
             type="button"
             aria-label={t("Close")}
             onClick={() => handleDismiss("backdrop")}
-            className="absolute inset-0 bg-[#0A2647]/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-brand-navy/70 backdrop-blur-sm"
           />
 
           <motion.div
@@ -243,15 +257,15 @@ export function OutOfCreditsModal({
               type="button"
               onClick={() => handleDismiss("x_button")}
               aria-label={t("Close modal")}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30"
+              className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/30"
             >
               <X className="w-4 h-4 text-stone-500" strokeWidth={2} />
             </button>
 
             {/* Header */}
             <div className="relative px-6 sm:px-10 pt-10 pb-7 bg-gradient-to-br from-[#FAFAF8] via-white to-stone-50 border-b border-stone-100 text-center">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#B8860B]/10 mb-4">
-                <Coins className="w-6 h-6 text-[#B8860B]" strokeWidth={2} />
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-brand-gold/10 mb-4">
+                <Coins className="w-6 h-6 text-brand-gold" strokeWidth={2} />
               </div>
               <h2
                 id="ooc-title"
@@ -261,7 +275,7 @@ export function OutOfCreditsModal({
               </h2>
               <p className="text-sm sm:text-base text-stone-500 font-light max-w-md mx-auto">
                 {subtitle ??
-                  t("Top up to keep going. Start with $1 — no commitment, no subscription.")}
+                  t("Top up from $1 with no commitment — or go Unlimited for the whole search.")}
               </p>
               {socialProofCount !== null && (
                 <p className="mt-3 text-[11px] sm:text-xs text-stone-400 font-light tracking-wide">
@@ -274,10 +288,10 @@ export function OutOfCreditsModal({
                 Best offer in the app, surfaced at the exact moment they hit the wall. */}
             {flashLive && (
               <div className="px-6 sm:px-10 pt-6">
-                <div className="relative overflow-hidden rounded-sm bg-[#0A2647] text-white border border-[#B8860B]/60 shadow-[0_18px_44px_-18px_rgba(10,38,71,0.65)]">
-                  <div aria-hidden className="h-1 w-full bg-gradient-to-r from-[#B8860B] via-[#d4a017] to-[#B8860B]" />
+                <div className="relative overflow-hidden rounded-sm bg-brand-navy text-white border border-brand-gold/60 shadow-[0_18px_44px_-18px_rgba(10,38,71,0.65)]">
+                  <div aria-hidden className="h-1 w-full bg-gradient-to-r from-brand-gold via-[#d4a017] to-brand-gold" />
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-5">
-                    <span className="grid place-items-center h-11 w-11 rounded-sm bg-[#B8860B]/15 text-[#e7c66a] flex-shrink-0">
+                    <span className="grid place-items-center h-11 w-11 rounded-sm bg-brand-gold/15 text-[#e7c66a] flex-shrink-0">
                       <Gift className="h-5 w-5" strokeWidth={1.8} />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -293,7 +307,7 @@ export function OutOfCreditsModal({
                       type="button"
                       onClick={handleClaimFlash}
                       disabled={loadingPlan !== null}
-                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-[#B8860B] hover:bg-[#a3760a] text-white text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-wait"
+                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-brand-gold hover:bg-[#a3760a] text-white text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-wait"
                     >
                       {loadingPlan ? t("Redirecting…") : (
                         <>
@@ -322,9 +336,9 @@ export function OutOfCreditsModal({
                     key={tier.key}
                     className={`relative flex flex-col rounded-sm p-5 sm:p-6 border transition-all ${
                       isPrimary
-                        ? "border-[#B8860B] bg-gradient-to-br from-[#B8860B]/5 to-white shadow-lift ring-2 ring-[#B8860B]/30"
+                        ? "border-brand-gold bg-gradient-to-br from-brand-gold/5 to-white shadow-lift ring-2 ring-brand-gold/30"
                         : isValue
-                          ? "border-[#0A2647] bg-white shadow-card"
+                          ? "border-brand-navy bg-white shadow-card"
                           : "border-stone-200 bg-white hover:border-stone-300"
                     }`}
                   >
@@ -332,8 +346,8 @@ export function OutOfCreditsModal({
                       <span
                         className={`absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-1 text-[10px] font-semibold tracking-[0.18em] uppercase rounded-sm whitespace-nowrap ${
                           isPrimary
-                            ? "bg-[#B8860B] text-white"
-                            : "bg-[#0A2647] text-white"
+                            ? "bg-brand-gold text-white"
+                            : "bg-brand-navy text-white"
                         }`}
                       >
                         {t(tier.badge)}
@@ -344,18 +358,18 @@ export function OutOfCreditsModal({
                       <div
                         className={`w-9 h-9 rounded-full flex items-center justify-center ${
                           isPrimary
-                            ? "bg-[#B8860B]/15"
+                            ? "bg-brand-gold/15"
                             : isValue
-                              ? "bg-[#0A2647]/10"
+                              ? "bg-brand-navy/10"
                               : "bg-stone-100"
                         }`}
                       >
                         <TierIcon
                           className={`w-4 h-4 ${
                             isPrimary
-                              ? "text-[#B8860B]"
+                              ? "text-brand-gold"
                               : isValue
-                                ? "text-[#0A2647]"
+                                ? "text-brand-navy"
                                 : "text-stone-500"
                           }`}
                           strokeWidth={2}
@@ -371,9 +385,11 @@ export function OutOfCreditsModal({
                         {tier.price}
                       </span>
                       <span className="text-xs text-stone-500 font-light">
-                        {tier.credits === 1
-                          ? t("/ {credits} credit", { credits: tier.credits })
-                          : t("/ {credits} credits", { credits: tier.credits })}
+                        {tier.credits === 0
+                          ? t("/ month")
+                          : tier.credits === 1
+                            ? t("/ {credits} credit", { credits: tier.credits })
+                            : t("/ {credits} credits", { credits: tier.credits })}
                       </span>
                     </div>
                     <p className="text-[11px] text-stone-400 font-light mb-4 tracking-wide">
@@ -383,7 +399,7 @@ export function OutOfCreditsModal({
                     <ul className="flex-1 space-y-2 mb-5">
                       {tier.features.map((feat) => (
                         <li key={feat} className="flex items-start gap-2 text-xs text-stone-600 font-light leading-snug">
-                          <Check className="w-3.5 h-3.5 text-[#0A2647] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                          <Check className="w-3.5 h-3.5 text-brand-navy flex-shrink-0 mt-0.5" strokeWidth={2} />
                           {t(feat)}
                         </li>
                       ))}
@@ -395,17 +411,17 @@ export function OutOfCreditsModal({
                       disabled={loading}
                       className={`group inline-flex items-center justify-center gap-2 w-full py-2.5 sm:py-3 text-sm font-medium rounded-sm transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-70 disabled:cursor-wait ${
                         isPrimary
-                          ? "bg-[#B8860B] hover:bg-[#9c7409] text-white focus-visible:ring-[#B8860B]/40 shadow-sm hover:shadow-md"
+                          ? "bg-brand-gold hover:bg-[#9c7409] text-white focus-visible:ring-brand-gold/40 shadow-sm hover:shadow-md"
                           : isValue
-                            ? "bg-[#0A2647] hover:bg-[#0d3259] text-white focus-visible:ring-[#0A2647]/40 shadow-sm hover:shadow-md"
-                            : "bg-white hover:bg-stone-50 text-[#0A2647] border border-stone-300 hover:border-[#0A2647]/50 focus-visible:ring-stone-300"
+                            ? "bg-brand-navy hover:bg-brand-navy-hover text-white focus-visible:ring-brand-navy/40 shadow-sm hover:shadow-md"
+                            : "bg-white hover:bg-stone-50 text-brand-navy border border-stone-300 hover:border-brand-navy/50 focus-visible:ring-stone-300"
                       }`}
                     >
                       {loading ? (
                         <span>{t("Redirecting…")}</span>
                       ) : (
                         <>
-                          {isPrimary ? t("Get 1 Credit") : isValue ? t("Get Starter") : t("Get Pro")}
+                          {t(tier.cta)}
                           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" strokeWidth={2} />
                         </>
                       )}
@@ -419,22 +435,22 @@ export function OutOfCreditsModal({
             <div className="px-6 sm:px-10 pb-7 pt-1 text-center">
               <p className="text-[11px] sm:text-xs text-stone-400 font-light tracking-wide flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 <span className="inline-flex items-center gap-1">
-                  <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
+                  <Check className="w-3 h-3 text-brand-navy" strokeWidth={2} />
                   {t("Secure checkout via Polar")}
                 </span>
                 <span className="text-stone-300">·</span>
                 <span className="inline-flex items-center gap-1">
-                  <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
-                  {t("No subscription")}
-                </span>
-                <span className="text-stone-300">·</span>
-                <span className="inline-flex items-center gap-1">
-                  <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
+                  <Check className="w-3 h-3 text-brand-navy" strokeWidth={2} />
                   {t("Credits never expire")}
                 </span>
                 <span className="text-stone-300">·</span>
                 <span className="inline-flex items-center gap-1">
-                  <Check className="w-3 h-3 text-[#0A2647]" strokeWidth={2} />
+                  <Check className="w-3 h-3 text-brand-navy" strokeWidth={2} />
+                  {t("Unlimited: cancel anytime")}
+                </span>
+                <span className="text-stone-300">·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Check className="w-3 h-3 text-brand-navy" strokeWidth={2} />
                   {t("Unused credits refundable")}
                 </span>
               </p>

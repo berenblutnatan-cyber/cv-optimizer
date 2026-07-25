@@ -21,13 +21,13 @@ export default async function ApplicationsPage() {
           <ApplicationsBoard />
         ) : (
           <div className="text-center py-24">
-            <h1 className="text-2xl font-bold text-[#0A2647]">{t("Track your job applications")}</h1>
+            <h1 className="text-2xl font-bold text-brand-navy">{t("Track your job applications")}</h1>
             <p className="mt-2 text-stone-600 max-w-md mx-auto">
               {t("Sign in to save the roles you're chasing — and tailor your CV to each one with AI.")}
             </p>
             <Link
               href="/sign-in"
-              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
+              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors"
             >
               {t("Sign in to start")}
             </Link>

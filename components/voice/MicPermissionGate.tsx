@@ -57,7 +57,7 @@ export function MicPermissionGate({ children }: { children: React.ReactNode }) {
         </p>
         <Link
           href="/builder"
-          className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-[#1a1a1a] text-sm font-medium"
+          className="mt-4 inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-full bg-white text-[#1a1a1a] text-sm font-medium"
         >
           {t("Use the typed builder instead")}
         </Link>

@@ -41,6 +41,15 @@ const config: Config = {
         ],
       },
       colors: {
+        // Canonical studio palette (navy/gold "document studio" register).
+        // Single source of truth for the hexes that used to be scattered as
+        // arbitrary values (`bg-[#0A2647]` etc.) across ~50 files.
+        brand: {
+          navy: "#0A2647",
+          "navy-hover": "#0d3259",
+          gold: "#B8860B",
+          "gold-soft": "#D4A83F",
+        },
         // Hired brand colors - Professional Indigo palette
         primary: {
           50: "#eef2ff",

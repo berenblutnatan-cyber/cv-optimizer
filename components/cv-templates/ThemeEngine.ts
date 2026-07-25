@@ -6,6 +6,7 @@
  */
 
 import { ThemeColor, THEME_COLOR_VALUES } from "@/context/BuilderContext";
+import { TEMPLATE_LIST } from "@/lib/templates/registry";
 
 // ==========================================
 // THEME COLORS
@@ -116,188 +117,27 @@ export interface TemplateMetadata {
   preview: string; // CSS gradient/pattern for thumbnail
 }
 
-export const TEMPLATE_METADATA: Record<string, TemplateMetadata> = {
-  "modern-sidebar": {
-    id: "modern-sidebar",
-    name: "Modern Sidebar",
-    description: "Two-column layout with skills on the left",
-    category: "professional",
-    fonts: "sans",
-    layout: "sidebar",
-    supportsPhoto: true,
-    preview: "linear-gradient(135deg, #0f172a 35%, #ffffff 35%)",
-  },
-  "ivy-league": {
-    id: "ivy-league",
-    name: "Ivy League",
-    description: "Classic serif typography, traditional layout",
-    category: "classic",
-    fonts: "serif",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%)",
-  },
-  "minimalist": {
-    id: "minimalist",
-    name: "Minimalist",
-    description: "Clean whitespace, centered header",
-    category: "professional",
-    fonts: "clean",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
-  },
-  "executive": {
-    id: "executive",
-    name: "Executive",
-    description: "Bold dark header, commanding presence",
-    category: "professional",
-    fonts: "sans",
-    layout: "header",
-    supportsPhoto: true,
-    preview: "linear-gradient(180deg, #18181b 30%, #ffffff 30%)",
-  },
-  "techie": {
-    id: "techie",
-    name: "Techie",
-    description: "Developer-focused with skills grid",
-    category: "technical",
-    fonts: "mono",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #1e293b 20%, #ffffff 20%)",
-  },
-  "creative": {
-    id: "creative",
-    name: "Creative",
-    description: "Unique split design for designers",
-    category: "creative",
-    fonts: "sans",
-    layout: "split",
-    supportsPhoto: true,
-    preview: "linear-gradient(135deg, #10b981 0%, #10b981 40%, #ffffff 40%)",
-  },
-  "startup": {
-    id: "startup",
-    name: "Startup",
-    description: "Bold typography, modern accents",
-    category: "creative",
-    fonts: "sans",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)",
-  },
-  "international": {
-    id: "international",
-    name: "International",
-    description: "Standardized with photo support",
-    category: "professional",
-    fonts: "clean",
-    layout: "sidebar",
-    supportsPhoto: true,
-    preview: "linear-gradient(135deg, #f8fafc 35%, #ffffff 35%)",
-  },
-  "aurora": {
-    id: "aurora",
-    name: "Aurora",
-    description: "Accent rail with a tinted header card",
-    category: "professional",
-    fonts: "sans",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(90deg, #6366f1 7%, #eef2ff 7%, #ffffff 60%)",
-  },
-  "banner": {
-    id: "banner",
-    name: "Banner",
-    description: "Full-width color banner header",
-    category: "professional",
-    fonts: "sans",
-    layout: "header",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #4f46e5 28%, #ffffff 28%)",
-  },
-  "spotlight": {
-    id: "spotlight",
-    name: "Spotlight",
-    description: "Centered minimal, maximally ATS-safe",
-    category: "professional",
-    fonts: "clean",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #ffffff 0%, #eef2ff 100%)",
-  },
-  "ledger": {
-    id: "ledger",
-    name: "Ledger",
-    description: "Editorial serif with a date rail",
-    category: "classic",
-    fonts: "serif",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #fbf6ec 0%, #f3ece0 100%)",
-  },
-  "devfolio": {
-    id: "devfolio",
-    name: "Devfolio",
-    description: "Monospace README style with a skills grid",
-    category: "technical",
-    fonts: "mono",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #0f172a 7%, #ffffff 7%)",
-  },
-  "canvas": {
-    id: "canvas",
-    name: "Canvas",
-    description: "Creative accent sidebar with photo",
-    category: "creative",
-    fonts: "sans",
-    layout: "sidebar",
-    supportsPhoto: true,
-    preview: "linear-gradient(120deg, #6366f1 34%, #ffffff 34%)",
-  },
-  "timeline": {
-    id: "timeline",
-    name: "Timeline",
-    description: "Vertical timeline rail down your experience",
-    category: "professional",
-    fonts: "sans",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(90deg, #6366f1 6%, #ffffff 6%)",
-  },
-  "double-column": {
-    id: "double-column",
-    name: "Double Column",
-    description: "Full header over two balanced columns",
-    category: "professional",
-    fonts: "sans",
-    layout: "split",
-    supportsPhoto: false,
-    preview: "linear-gradient(90deg, #ffffff 60%, #f1f5f9 60%)",
-  },
-  "compact": {
-    id: "compact",
-    name: "Compact",
-    description: "Dense, ATS-friendly single column",
-    category: "professional",
-    fonts: "sans",
-    layout: "single",
-    supportsPhoto: false,
-    preview: "linear-gradient(180deg, #6366f1 5%, #ffffff 5%)",
-  },
-  "photo-left": {
-    id: "photo-left",
-    name: "Photo Left",
-    description: "Photo rail with contact and skills",
-    category: "professional",
-    fonts: "sans",
-    layout: "sidebar",
-    supportsPhoto: true,
-    preview: "linear-gradient(90deg, #e0e7ff 34%, #ffffff 34%)",
-  },
-};
+/**
+ * TEMPLATE_METADATA — derived from the canonical registry in
+ * lib/templates/registry.ts so thumbnails/names can never drift from the rest
+ * of the app again (the "executive" gradient once disagreed with the switcher).
+ * Add or edit templates in the registry, never here.
+ */
+export const TEMPLATE_METADATA: Record<string, TemplateMetadata> = Object.fromEntries(
+  TEMPLATE_LIST.map((entry) => [
+    entry.id,
+    {
+      id: entry.id,
+      name: entry.name,
+      description: entry.description,
+      category: entry.category,
+      fonts: entry.fonts,
+      layout: entry.layout,
+      supportsPhoto: entry.supportsPhoto,
+      preview: entry.preview,
+    },
+  ])
+);
 
 // ==========================================
 // STYLE HELPERS

@@ -101,6 +101,13 @@ export const POLAR_PLANS = {
 
 export type PolarPlanKey = keyof typeof POLAR_PLANS;
 
+/** True for plans that grant Unlimited access (recurring subscriptions and the
+ * time-boxed Job Search Pass) instead of a credit balance. Derived from the
+ * canonical plan config so UI copy can never drift from what the webhook does. */
+export function planGrantsUnlimited(plan: PolarPlan): boolean {
+  return plan.kind === "subscription" || (plan.grantsUnlimitedDays ?? 0) > 0;
+}
+
 export function findPlanByProductId(productId: string): PolarPlan | null {
   for (const plan of Object.values(POLAR_PLANS)) {
     if (plan.productId && plan.productId === productId) return plan;

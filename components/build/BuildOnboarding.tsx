@@ -47,6 +47,7 @@ import { useOnboardingStore } from "@/stores/onboardingStore";
 import { useChatBuilderStore, CHAT_ACTIVE_SESSION_KEY } from "@/stores/chatBuilderStore";
 import { track } from "@/lib/analytics";
 import type { BuilderTemplateId } from "@/context/BuilderContext";
+import type { TemplateRegistryId } from "@/lib/templates/registry";
 
 type Step = "intro" | "start" | "upload" | "role" | "goal" | "reassurance" | "experience" | "template" | "handoff";
 type GoalId = "ats" | "recruiter" | "both";
@@ -108,12 +109,15 @@ const EXPERIENCE_OPTIONS = [
   { id: "10+", label: "10+ years", hint: "Lead / executive" },
 ];
 
-const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string; tag: string }[] = [
+// Deliberately curated funnel subset (marketing names differ from the product
+// names on purpose). Ids must exist in lib/templates/registry — the satisfies
+// check turns a renamed/removed template into a build error instead of drift.
+const TEMPLATE_OPTIONS = [
   { id: "ivy-league", name: "The Ivy", tag: "Classic" },
   { id: "modern-sidebar", name: "The Modern", tag: "Popular" },
   { id: "executive", name: "Executive", tag: "Senior" },
   { id: "creative", name: "Creative", tag: "Design" },
-];
+] satisfies { id: BuilderTemplateId & TemplateRegistryId; name: string; tag: string }[];
 
 // Where each start-choice lands, and what the handoff beat says while we go.
 const METHODS: Record<Method, { destination: string; label: string }> = {
@@ -124,6 +128,17 @@ const METHODS: Record<Method, { destination: string; label: string }> = {
 
 // Order matters: drives the slim progress bar (intro/start/reassurance/handoff are beats).
 const QUESTION_STEPS: Step[] = ["role", "goal", "experience", "template"];
+
+// Funnel answers survive a page reload. Most of our traffic arrives in Meta /
+// Instagram / TikTok in-app browsers, which reload the page routinely (memory
+// pressure, app switches) — without this, every answer was lost mid-funnel.
+// Per-tab (sessionStorage), restored on mount, cleared on completion.
+const FUNNEL_STATE_KEY = "build-onboarding-state";
+const RESTORABLE_STEPS: Step[] = ["start", "upload", "role", "goal", "reassurance", "experience", "template"];
+
+// Client-side cap matching /api/chat/parse-cv's MAX_FILE_BYTES — the UI
+// promises "up to 5 MB", so we enforce it before starting a doomed upload.
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {}) {
   const router = useRouter();
@@ -168,6 +183,72 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
       /* ignore — the link just doesn't show */
     }
   }, []);
+
+  // Restore a reload-interrupted funnel run (see FUNNEL_STATE_KEY). Runs after
+  // mount so the first client render still matches the SSR markup.
+  const funnelRestoredRef = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(FUNNEL_STATE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<{
+          step: Step;
+          method: Method;
+          roles: string[];
+          goal: GoalId | null;
+          experience: string | null;
+          template: BuilderTemplateId;
+        }>;
+        if (saved.step && RESTORABLE_STEPS.includes(saved.step)) setStep(saved.step);
+        if (saved.method && saved.method in METHODS) setMethod(saved.method);
+        if (Array.isArray(saved.roles)) {
+          setRoles(saved.roles.filter((r): r is string => typeof r === "string" && !!r.trim()).slice(0, 5));
+        }
+        if (saved.goal === "ats" || saved.goal === "recruiter" || saved.goal === "both") setGoal(saved.goal);
+        if (typeof saved.experience === "string") setExperience(saved.experience);
+        if (saved.template && TEMPLATE_OPTIONS.some((o) => o.id === saved.template)) setTemplate(saved.template);
+      }
+    } catch {
+      /* ignore — worst case the funnel starts over */
+    } finally {
+      funnelRestoredRef.current = true;
+    }
+  }, []);
+
+  // Persist every answer as it changes (skipping the handoff beat — that run
+  // is complete and its state already cleared).
+  useEffect(() => {
+    if (!funnelRestoredRef.current || step === "handoff") return;
+    try {
+      sessionStorage.setItem(
+        FUNNEL_STATE_KEY,
+        JSON.stringify({ step, method, roles, goal, experience, template }),
+      );
+    } catch {
+      /* ignore — private-mode storage can be unavailable */
+    }
+  }, [step, method, roles, goal, experience, template]);
+
+  function clearFunnelState() {
+    try {
+      sessionStorage.removeItem(FUNNEL_STATE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // The reassurance beat is a message, not a decision — auto-advance after a
+  // short readable pause instead of demanding a tap. Tapping "Makes sense"
+  // still skips ahead, and going Back to re-read it never auto-forwards again.
+  const reassuranceSeenRef = useRef(false);
+  useEffect(() => {
+    if (step !== "reassurance" || reassuranceSeenRef.current) return;
+    const id = window.setTimeout(() => {
+      reassuranceSeenRef.current = true;
+      go("experience");
+    }, 2200);
+    return () => window.clearTimeout(id);
+  }, [step]);
 
   const progress =
     step === "handoff" ? 1 : Math.max(0, QUESTION_STEPS.indexOf(step)) / QUESTION_STEPS.length;
@@ -259,6 +340,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
 
   /** Hand off to the method chosen at the start — fresh draft, seeded stores. */
   function finish(m: Method = method) {
+    clearFunnelState();
     startFreshDraft();
     seedRole();
     track("build_onboarding_completed", { method: m, role: primaryRole || null, roles: rolesLabel || null, goal, experience, template });
@@ -272,8 +354,35 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
     window.setTimeout(() => router.push(destination), delay);
   }
 
+  /** Client-side gate mirroring /api/chat/parse-cv (5 MB cap, PDF/DOCX/text
+   * only, legacy .doc rejected) — a friendly error beats a doomed upload,
+   * especially on the mobile connections most of our traffic arrives on. */
+  function validateCvFile(file: File): string | null {
+    const name = (file.name || "").toLowerCase();
+    if (name.endsWith(".doc") && !name.endsWith(".docx")) {
+      return translate("Old-style .doc files aren’t supported — save it as .docx or PDF and try again.");
+    }
+    const isPdf = file.type === "application/pdf" || name.endsWith(".pdf");
+    const isDocx =
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      name.endsWith(".docx");
+    const isText = file.type.startsWith("text/") || /\.(txt|md|rtf)$/.test(name) || file.type === "";
+    if (!isPdf && !isDocx && !isText) {
+      return translate("That format isn’t supported — upload a PDF or DOCX file.");
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return translate("That file is over 5 MB — export a smaller PDF and try again.");
+    }
+    return null;
+  }
+
   async function handleFile(file: File) {
     if (uploading) return;
+    const problem = validateCvFile(file);
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
     setUploading(true);
     try {
       // Parse via the same endpoint the in-chat upload uses (unpdf / mammoth) so a
@@ -285,6 +394,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
       if (!res.ok || !data?.text) {
         throw new Error(data?.error ?? translate("Couldn't read that file — try a PDF or DOCX."));
       }
+      clearFunnelState();
       startFreshDraft();
       seedRole();
       useOnboardingStore.getState().setCv(data.fileName, data.text);
@@ -319,7 +429,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
 
   return (
     <div
-      className={`relative w-full overflow-hidden bg-white text-[#0A2647] ${
+      className={`relative w-full overflow-hidden bg-white text-brand-navy ${
         embedded ? "flex h-full flex-col" : "min-h-dvh"
       }`}
     >
@@ -327,7 +437,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           faint warm halo behind the stage keeps it from feeling sterile. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-[34rem] w-[44rem] -translate-x-1/2 rounded-full bg-[#B8860B] opacity-[0.05] blur-[120px]"
+        className="pointer-events-none absolute left-1/2 top-0 h-[34rem] w-[44rem] -translate-x-1/2 rounded-full bg-brand-gold opacity-[0.05] blur-[120px]"
       />
 
       {/* Minimal chrome — only when standalone (/build). On the home the site
@@ -338,7 +448,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           <div className="flex items-center gap-3">
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="rounded-full border border-[#0A2647]/15 px-4 py-2 text-sm font-medium text-[#0A2647] transition-colors hover:bg-[#0A2647]/5 focus-visible:outline-none">
+                <button className="rounded-full border border-brand-navy/15 px-4 py-2 text-sm font-medium text-brand-navy transition-colors hover:bg-brand-navy/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2">
                   {translate("Log in")}
                 </button>
               </SignInButton>
@@ -353,9 +463,9 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
       {/* Progress — hidden on the cinematic intro + handoff */}
       {QUESTION_STEPS.includes(step) && (
         <div className="relative z-10 mx-auto max-w-xl px-5">
-          <div className="h-1 w-full overflow-hidden rounded-full bg-[#0A2647]/10">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-brand-navy/10">
             <motion.div
-              className="h-full rounded-full bg-[#B8860B]"
+              className="h-full rounded-full bg-brand-gold"
               initial={false}
               animate={{ width: `${Math.max(progress, 0.08) * 100}%` }}
               transition={{ duration: reduce ? 0.001 : 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -394,20 +504,20 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {step === "intro" && (
             <motion.div key="intro" {...fade} className="flex flex-col items-center">
               <Orb reduce={!!reduce} />
-              <p className="mt-8 font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+              <p className="mt-8 font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
                 {translate("Your CV coach")}
               </p>
-              <h1 className="mt-4 max-w-xl text-balance font-serif text-4xl leading-[1.05] text-[#0A2647] sm:text-5xl md:text-6xl">
+              <h1 className="mt-4 max-w-xl text-balance font-serif text-4xl leading-[1.05] text-brand-navy sm:text-5xl md:text-6xl">
                 {translate("Let’s build a CV that gets you")}{" "}
-                <span className="italic text-[#B8860B]">{translate("hired.")}</span>
+                <span className="italic text-brand-gold">{translate("hired.")}</span>
               </h1>
-              <p className="mt-5 max-w-md text-pretty text-lg leading-relaxed text-[#0A2647]/65">
+              <p className="mt-5 max-w-md text-pretty text-lg leading-relaxed text-brand-navy/65">
                 {translate("A few quick questions, and we’ll have your first draft together in about two minutes.")}
               </p>
               <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
                 <button
                   onClick={() => go("start")}
-                  className="group inline-flex items-center gap-2.5 rounded-full bg-[#D4A83F] px-8 py-4 text-base font-semibold text-[#0A2647] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
+                  className="group inline-flex items-center gap-2.5 rounded-full bg-brand-gold-soft px-8 py-4 text-base font-semibold text-brand-navy shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
                   {translate("Build / Optimize my CV")}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" strokeWidth={1.75} />
@@ -417,9 +527,9 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     track("build_onboarding_score_click");
                     router.push("/score");
                   }}
-                  className="group inline-flex items-center gap-2.5 rounded-full border border-[#0A2647]/15 bg-white/70 px-8 py-4 text-base font-medium text-[#0A2647] shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#0A2647]/30 hover:bg-white hover:shadow-md focus-visible:outline-none"
+                  className="group inline-flex items-center gap-2.5 rounded-full border border-brand-navy/15 bg-white/70 px-8 py-4 text-base font-medium text-brand-navy shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-brand-navy/30 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
-                  <BarChart3 className="h-5 w-5 text-[#B8860B]" strokeWidth={1.75} />
+                  <BarChart3 className="h-5 w-5 text-brand-gold" strokeWidth={1.75} />
                   {translate("Check my CV score")}
                 </button>
               </div>
@@ -431,7 +541,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     track("build_onboarding_resume_draft");
                     router.push("/build/chat");
                   }}
-                  className="group mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-[#0A2647]/55 underline-offset-4 transition-colors hover:text-[#0A2647] hover:underline focus-visible:outline-none"
+                  className="group mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy/55 underline-offset-4 transition-colors hover:text-brand-navy hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
                   {translate("Continue where you left off")}
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
@@ -443,10 +553,10 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {/* ---------- START: THE ONE "HOW" QUESTION ---------- */}
           {step === "start" && (
             <motion.div key="start" {...fade} className="w-full">
-              <h2 className="mt-4 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+              <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("How would you like to build it?")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-[#0A2647]/55">
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
                 {translate("Already have a CV? Upload it and skip the questions — otherwise pick how we work together.")}
               </p>
               <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
@@ -477,6 +587,16 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   title={translate("Talk it out")}
                   desc={translate("Have a real voice conversation — it builds your CV as you speak.")}
                   badge={translate("New")}
+                  note={
+                    // Honesty up front: the voice coach needs an account, and
+                    // anonymous users would otherwise hit a surprise sign-in
+                    // redirect after picking this card.
+                    <SignedOut>
+                      <span className="mt-1 block text-[11px] font-medium text-brand-navy/45">
+                        {translate("Sign-in required for voice")}
+                      </span>
+                    </SignedOut>
+                  }
                   onClick={() => {
                     track("build_onboarding_path", { path: "voice" });
                     setMethod("voice");
@@ -503,13 +623,13 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {/* ---------- OPTIMIZE EXISTING: UPLOAD (skips the questions) ---------- */}
           {step === "upload" && (
             <motion.div key="upload" {...fade} className="w-full">
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#0A2647]/5 text-[#B8860B]">
+              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-navy/5 text-brand-gold">
                 <FileUp className="h-7 w-7" strokeWidth={1.6} />
               </span>
-              <h2 className="mt-6 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+              <h2 className="mt-6 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("Upload your CV — we’ll take it from here")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-pretty text-[#0A2647]/55">
+              <p className="mx-auto mt-3 max-w-md text-pretty text-brand-navy/55">
                 {translate("No questions to answer. Drop your current CV in and we’ll read it, score it, and start optimizing right away.")}
               </p>
               <div
@@ -538,32 +658,32 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   const f = e.dataTransfer.files?.[0];
                   if (f) handleFile(f);
                 }}
-                className={`mx-auto mt-8 flex w-full max-w-md flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-12 text-center transition-all focus-visible:outline-none ${
+                className={`mx-auto mt-8 flex w-full max-w-md flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-12 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 ${
                   uploading
-                    ? "cursor-wait border-[#0A2647]/15 bg-white/60"
+                    ? "cursor-wait border-brand-navy/15 bg-white/60"
                     : dragging
-                      ? "border-[#B8860B] bg-[#B8860B]/5"
-                      : "cursor-pointer border-[#0A2647]/20 bg-white/60 hover:border-[#0A2647]/40 hover:bg-white"
+                      ? "border-brand-gold bg-brand-gold/5"
+                      : "cursor-pointer border-brand-navy/20 bg-white/60 hover:border-brand-navy/40 hover:bg-white"
                 }`}
               >
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#B8860B]/10 text-[#B8860B]">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-gold/10 text-brand-gold">
                   {uploading ? (
                     <Loader2 className="h-6 w-6 animate-spin" strokeWidth={1.75} />
                   ) : (
                     <FileUp className="h-6 w-6" strokeWidth={1.75} />
                   )}
                 </span>
-                <span className="text-base font-medium text-[#0A2647]">
+                <span className="text-base font-medium text-brand-navy">
                   {uploading ? translate("Reading your CV…") : translate("Drop your CV here, or click to browse")}
                 </span>
-                <span className="text-xs text-[#0A2647]/45">{translate("PDF or DOCX, up to 5 MB")}</span>
+                <span className="text-xs text-brand-navy/45">{translate("PDF or DOCX, up to 5 MB")}</span>
               </div>
               <div className="mt-6">
                 <button
                   type="button"
                   disabled={uploading}
                   onClick={() => finish("chat")}
-                  className="text-sm font-medium text-[#0A2647]/55 underline-offset-4 transition-colors hover:text-[#0A2647] hover:underline disabled:opacity-40 focus-visible:outline-none"
+                  className="text-sm font-medium text-brand-navy/55 underline-offset-4 transition-colors hover:text-brand-navy hover:underline disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
                   {translate("I don’t have it handy — build with the coach instead")}
                 </button>
@@ -578,10 +698,10 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {step === "role" && (
             <motion.div key="role" {...fade} className="w-full">
               <StepLabel step="role" />
-              <h2 className="mt-4 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+              <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("What role are you going after?")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-[#0A2647]/55">
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
                 {translate("Pick from the list or type your own — add more than one if you’re weighing options. Not sure yet? Just continue.")}
               </p>
               <form
@@ -644,7 +764,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                         }}
                         placeholder={translate("e.g. Product Manager")}
                         aria-label={translate("Target role")}
-                        className="w-full rounded-2xl border border-[#0A2647]/15 bg-white/80 py-4 pe-11 ps-5 text-center text-xl text-[#0A2647] shadow-sm outline-none backdrop-blur transition-shadow placeholder:text-[#0A2647]/35 focus:border-[#0A2647]/40 focus:shadow-md"
+                        className="w-full rounded-2xl border border-brand-navy/15 bg-white/80 py-4 pe-11 ps-5 text-center text-xl text-brand-navy shadow-sm outline-none backdrop-blur transition-shadow placeholder:text-brand-navy/35 focus:border-brand-navy/40 focus:shadow-md"
                       />
                       <button
                         type="button"
@@ -654,7 +774,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                           e.preventDefault();
                           setRoleOpen((o) => !o);
                         }}
-                        className="absolute end-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-[#0A2647]/40 transition-colors hover:bg-[#0A2647]/5 hover:text-[#0A2647] focus-visible:outline-none"
+                        className="absolute end-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-brand-navy/40 transition-colors hover:bg-brand-navy/5 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                       >
                         <ChevronDown
                           className={`h-5 w-5 transition-transform ${roleOpen ? "rotate-180" : ""}`}
@@ -666,7 +786,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                       type="button"
                       onClick={() => addRole(roleInput)}
                       disabled={!roleInput.trim()}
-                      className="shrink-0 rounded-2xl border border-[#0A2647]/15 bg-white/70 px-4 text-sm font-semibold text-[#0A2647] transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none"
+                      className="shrink-0 rounded-2xl border border-brand-navy/15 bg-white/70 px-4 text-sm font-semibold text-brand-navy transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                     >
                       {translate("Add")}
                     </button>
@@ -678,7 +798,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                       id="role-options"
                       role="listbox"
                       aria-label={translate("Common roles")}
-                      className="absolute inset-x-0 top-full z-20 mt-2 max-h-60 overflow-y-auto rounded-2xl border border-[#0A2647]/10 bg-white py-1.5 text-start shadow-xl"
+                      className="absolute inset-x-0 top-full z-20 mt-2 max-h-60 overflow-y-auto rounded-2xl border border-brand-navy/10 bg-white py-1.5 text-start shadow-xl"
                     >
                       {roleMatches.map((o, i) => (
                         <li
@@ -694,7 +814,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                           }}
                           onMouseEnter={() => setRoleHighlight(i)}
                           className={`cursor-pointer px-4 py-2.5 text-sm transition-colors ${
-                            i === roleHighlight ? "bg-[#B8860B]/10 text-[#0A2647]" : "text-[#0A2647]/75"
+                            i === roleHighlight ? "bg-brand-gold/10 text-brand-navy" : "text-brand-navy/75"
                           }`}
                         >
                           {translate(o)}
@@ -709,14 +829,14 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     {roles.map((r) => (
                       <span
                         key={r}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#B8860B]/12 py-1.5 pe-1.5 ps-3.5 text-sm font-medium text-[#9a6b08]"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-gold/12 py-1.5 pe-1.5 ps-3.5 text-sm font-medium text-[#9a6b08]"
                       >
                         {r}
                         <button
                           type="button"
                           onClick={() => removeRole(r)}
                           aria-label={translate("Remove {role}", { role: r })}
-                          className="grid h-5 w-5 place-items-center rounded-full text-[#9a6b08]/70 transition-colors hover:bg-[#B8860B]/20 hover:text-[#9a6b08] focus-visible:outline-none"
+                          className="relative grid h-6 w-6 place-items-center rounded-full text-[#9a6b08]/70 transition-colors before:absolute before:-inset-2.5 before:content-[''] hover:bg-brand-gold/20 hover:text-[#9a6b08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                         >
                           ×
                         </button>
@@ -725,14 +845,14 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   </div>
                 )}
 
-                <p className="mt-3 text-xs text-[#0A2647]/45">
+                <p className="mt-3 text-xs text-brand-navy/45">
                   {translate("These are just examples — type any role. You can change these anytime.")}
                 </p>
                 <div className="mt-8 flex items-center justify-center gap-3">
                   <BackButton onClick={() => go("start")} />
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#D4A83F] px-7 py-3.5 text-sm font-semibold text-[#0A2647] transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
+                    className="inline-flex items-center gap-2 rounded-full bg-brand-gold-soft px-7 py-3.5 text-sm font-semibold text-brand-navy transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                   >
                     {roles.length || roleInput.trim() ? translate("Continue") : translate("Skip for now")}
                     <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
@@ -746,10 +866,10 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {step === "goal" && (
             <motion.div key="goal" {...fade} className="w-full">
               <StepLabel step="goal" />
-              <h2 className="mt-4 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+              <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("What should your CV do first?")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-[#0A2647]/55">
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
                 {translate("Most resumes are read by software before a person ever sees them — tell us where to aim.")}
               </p>
               <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
@@ -758,22 +878,24 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     key={o.id}
                     onClick={() => {
                       setGoal(o.id);
+                      // A fresh goal pick earns a fresh reassurance beat.
+                      reassuranceSeenRef.current = false;
                       go("reassurance");
                     }}
-                    className="group flex items-center justify-between rounded-2xl border border-[#0A2647]/12 bg-white/70 px-5 py-4 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#0A2647]/30 hover:bg-white hover:shadow-md focus-visible:outline-none"
+                    className="group flex items-center justify-between rounded-2xl border border-brand-navy/12 bg-white/70 px-5 py-4 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:border-brand-navy/30 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                   >
                     <span className="min-w-0">
                       <span className="flex items-center gap-2">
-                        <span className="text-base font-medium text-[#0A2647]">{translate(o.title)}</span>
+                        <span className="text-base font-medium text-brand-navy">{translate(o.title)}</span>
                         {o.badge && (
-                          <span className="rounded-full bg-[#B8860B]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B8860B]">
+                          <span className="rounded-full bg-brand-gold/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-gold">
                             {translate(o.badge)}
                           </span>
                         )}
                       </span>
-                      <span className="mt-0.5 block text-sm text-[#0A2647]/55">{translate(o.desc)}</span>
+                      <span className="mt-0.5 block text-sm text-brand-navy/55">{translate(o.desc)}</span>
                     </span>
-                    <ArrowRight className="ms-3 h-4 w-4 shrink-0 text-[#0A2647]/30 transition-all group-hover:translate-x-0.5 group-hover:text-[#B8860B]" strokeWidth={1.75} />
+                    <ArrowRight className="ms-3 h-4 w-4 shrink-0 text-brand-navy/30 transition-all group-hover:translate-x-0.5 group-hover:text-brand-gold" strokeWidth={1.75} />
                   </button>
                 ))}
               </div>
@@ -786,15 +908,15 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {/* ---------- BEAT: REASSURANCE ---------- */}
           {step === "reassurance" && (
             <motion.div key="reassurance" {...fade} className="flex w-full flex-col items-center">
-              <span className="grid h-14 w-14 place-items-center rounded-full bg-[#0A2647]/5 text-[#B8860B]">
+              <span className="grid h-14 w-14 place-items-center rounded-full bg-brand-navy/5 text-brand-gold">
                 <Sparkles className="h-7 w-7" strokeWidth={1.6} />
               </span>
-              <h2 className="mt-6 max-w-xl text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl">
+              <h2 className="mt-6 max-w-xl text-balance font-serif text-3xl text-brand-navy sm:text-4xl">
                 {goal === "recruiter"
                   ? translate("Smart — people hire people.")
                   : translate("Good call — that's how hiring really works.")}
               </h2>
-              <p className="mx-auto mt-5 max-w-md text-pretty text-lg leading-relaxed text-[#0A2647]/65">
+              <p className="mx-auto mt-5 max-w-md text-pretty text-lg leading-relaxed text-brand-navy/65">
                 {goal === "recruiter"
                   ? translate("We'll make every line earn its place — specific, results-first, and easy for a busy recruiter to skim in seconds.")
                   : translate("We'll make sure the screening software can read every section, and still write it so a human wants to keep reading.")}
@@ -802,15 +924,18 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   <>
                     {" "}
                     {translate("Everything stays tuned for")}{" "}
-                    <span className="font-medium text-[#B8860B]">{rolesLabel}</span>.
+                    <span className="font-medium text-brand-gold">{rolesLabel}</span>.
                   </>
                 )}
               </p>
               <div className="mt-9 flex items-center justify-center gap-3">
                 <BackButton onClick={() => go("goal")} />
                 <button
-                  onClick={() => go("experience")}
-                  className="group inline-flex items-center gap-2 rounded-full bg-[#D4A83F] px-7 py-3.5 text-sm font-semibold text-[#0A2647] transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
+                  onClick={() => {
+                    reassuranceSeenRef.current = true;
+                    go("experience");
+                  }}
+                  className="group inline-flex items-center gap-2 rounded-full bg-brand-gold-soft px-7 py-3.5 text-sm font-semibold text-brand-navy transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
                   {translate("Makes sense")}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.75} />
@@ -823,7 +948,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {step === "experience" && (
             <motion.div key="experience" {...fade} className="w-full">
               <StepLabel step="experience" />
-              <h2 className="mt-4 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+              <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("How much experience do you have?")}
               </h2>
               <div className="mx-auto mt-8 grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
@@ -834,13 +959,13 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                       setExperience(o.id);
                       go("template");
                     }}
-                    className="group flex items-center justify-between rounded-2xl border border-[#0A2647]/12 bg-white/70 px-5 py-4 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#0A2647]/30 hover:bg-white hover:shadow-md focus-visible:outline-none"
+                    className="group flex items-center justify-between rounded-2xl border border-brand-navy/12 bg-white/70 px-5 py-4 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:border-brand-navy/30 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                   >
                     <span>
-                      <span className="block text-base font-medium text-[#0A2647]">{translate(o.label)}</span>
-                      <span className="block text-xs text-[#0A2647]/50">{translate(o.hint)}</span>
+                      <span className="block text-base font-medium text-brand-navy">{translate(o.label)}</span>
+                      <span className="block text-xs text-brand-navy/50">{translate(o.hint)}</span>
                     </span>
-                    <ArrowRight className="h-4 w-4 text-[#0A2647]/30 transition-all group-hover:translate-x-0.5 group-hover:text-[#B8860B]" strokeWidth={1.75} />
+                    <ArrowRight className="h-4 w-4 text-brand-navy/30 transition-all group-hover:translate-x-0.5 group-hover:text-brand-gold" strokeWidth={1.75} />
                   </button>
                 ))}
               </div>
@@ -854,10 +979,10 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {step === "template" && (
             <motion.div key="template" {...fade} className="w-full">
               <StepLabel step="template" />
-              <h2 className="mt-4 text-balance font-serif text-3xl text-[#0A2647] sm:text-4xl md:text-5xl">
+              <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("Pick a look to start with")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-[#0A2647]/55">
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
                 {translate("You can change it anytime — nothing’s locked in.")}
               </p>
               <div className="mx-auto mt-8 grid w-full max-w-md grid-cols-2 gap-4 sm:grid-cols-4">
@@ -866,16 +991,16 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     key={t.id}
                     onClick={() => setTemplate(t.id)}
                     aria-pressed={template === t.id}
-                    className={`group flex flex-col items-stretch rounded-xl border bg-white/80 p-2 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none ${
+                    className={`group flex flex-col items-stretch rounded-xl border bg-white/80 p-2 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2 ${
                       template === t.id
-                        ? "border-[#B8860B] ring-2 ring-[#B8860B]/40"
-                        : "border-[#0A2647]/12 hover:border-[#0A2647]/30"
+                        ? "border-brand-gold ring-2 ring-brand-gold/40"
+                        : "border-brand-navy/12 hover:border-brand-navy/30"
                     }`}
                   >
                     <TemplateMock id={t.id} />
                     <span className="mt-2 px-0.5">
-                      <span className="block text-xs font-medium text-[#0A2647]">{translate(t.name)}</span>
-                      <span className="block text-[10px] text-[#0A2647]/50">{translate(t.tag)}</span>
+                      <span className="block text-xs font-medium text-brand-navy">{translate(t.name)}</span>
+                      <span className="block text-[10px] text-brand-navy/50">{translate(t.tag)}</span>
                     </span>
                   </button>
                 ))}
@@ -884,7 +1009,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 <BackButton onClick={() => go("experience")} />
                 <button
                   onClick={() => finish()}
-                  className="group inline-flex items-center gap-2 rounded-full bg-[#D4A83F] px-7 py-3.5 text-sm font-semibold text-[#0A2647] transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none"
+                  className="group inline-flex items-center gap-2 rounded-full bg-brand-gold-soft px-7 py-3.5 text-sm font-semibold text-brand-navy transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
                   {translate("Create my first draft")}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.75} />
@@ -897,10 +1022,10 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {step === "handoff" && (
             <motion.div key="handoff" {...fade} className="flex flex-col items-center">
               <Orb reduce={!!reduce} busy />
-              <p className="mt-8 font-serif text-2xl text-[#0A2647] sm:text-3xl">{handoffLabel}</p>
+              <p className="mt-8 font-serif text-2xl text-brand-navy sm:text-3xl">{handoffLabel}</p>
               {rolesLabel && (
-                <p className="mt-3 text-sm text-[#0A2647]/55">
-                  {translate("Tailoring for")} <span className="font-medium text-[#B8860B]">{rolesLabel}</span>
+                <p className="mt-3 text-sm text-brand-navy/55">
+                  {translate("Tailoring for")} <span className="font-medium text-brand-gold">{rolesLabel}</span>
                 </p>
               )}
             </motion.div>
@@ -918,11 +1043,11 @@ function Orb({ reduce, busy = false }: { reduce: boolean; busy?: boolean }) {
     <div className="relative grid h-20 w-20 place-items-center">
       {!reduce && (
         <span
-          className="absolute inset-0 rounded-full bg-[#B8860B]/30"
+          className="absolute inset-0 rounded-full bg-brand-gold/30"
           style={{ animation: busy ? "pulse 1.1s ease-in-out infinite" : "pulse 2.6s ease-in-out infinite" }}
         />
       )}
-      <span className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[#B8860B] to-[#d4a83f] shadow-[0_12px_30px_-8px_rgba(184,134,11,0.45)]">
+      <span className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-brand-gold to-brand-gold-soft shadow-[0_12px_30px_-8px_rgba(184,134,11,0.45)]">
         <Sparkles className="h-7 w-7 text-white" strokeWidth={1.6} />
       </span>
     </div>
@@ -934,7 +1059,7 @@ function StepLabel({ step }: { step: Step }) {
   const i = QUESTION_STEPS.indexOf(step);
   if (i < 0) return null;
   return (
-    <p className="font-mono text-xs uppercase tracking-[0.28em] text-[#B8860B]">
+    <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
       {t("Question {n} of {total}", { n: i + 1, total: QUESTION_STEPS.length })}
     </p>
   );
@@ -944,8 +1069,8 @@ function StepLabel({ step }: { step: Step }) {
 function TemplateMock({ id }: { id: BuilderTemplateId }) {
   if (id === "modern-sidebar") {
     return (
-      <div className="flex aspect-[3/4] overflow-hidden rounded-md border border-[#0A2647]/10 bg-white">
-        <div className="w-1/3 bg-[#0A2647] p-1.5">
+      <div className="flex aspect-[3/4] overflow-hidden rounded-md border border-brand-navy/10 bg-white">
+        <div className="w-1/3 bg-brand-navy p-1.5">
           <div className="mx-auto mb-1.5 h-4 w-4 rounded-full bg-white/30" />
           <div className="space-y-1">
             <div className="h-0.5 w-full rounded bg-white/40" />
@@ -953,39 +1078,39 @@ function TemplateMock({ id }: { id: BuilderTemplateId }) {
           </div>
         </div>
         <div className="flex-1 space-y-1 p-1.5">
-          <div className="h-1 w-2/3 rounded bg-[#0A2647]/70" />
-          <div className="h-0.5 w-full rounded bg-[#0A2647]/15" />
-          <div className="h-0.5 w-5/6 rounded bg-[#0A2647]/15" />
-          <div className="mt-1.5 h-0.5 w-full rounded bg-[#0A2647]/15" />
+          <div className="h-1 w-2/3 rounded bg-brand-navy/70" />
+          <div className="h-0.5 w-full rounded bg-brand-navy/15" />
+          <div className="h-0.5 w-5/6 rounded bg-brand-navy/15" />
+          <div className="mt-1.5 h-0.5 w-full rounded bg-brand-navy/15" />
         </div>
       </div>
     );
   }
   if (id === "executive") {
     return (
-      <div className="aspect-[3/4] overflow-hidden rounded-md border border-[#0A2647]/10 bg-white p-2">
-        <div className="mb-1.5 border-b-2 border-[#B8860B] pb-1.5">
-          <div className="h-1.5 w-3/4 rounded bg-[#0A2647]/80" />
-          <div className="mt-1 h-0.5 w-full rounded bg-[#0A2647]/20" />
+      <div className="aspect-[3/4] overflow-hidden rounded-md border border-brand-navy/10 bg-white p-2">
+        <div className="mb-1.5 border-b-2 border-brand-gold pb-1.5">
+          <div className="h-1.5 w-3/4 rounded bg-brand-navy/80" />
+          <div className="mt-1 h-0.5 w-full rounded bg-brand-navy/20" />
         </div>
         <div className="space-y-1">
-          <div className="h-0.5 w-8 rounded bg-[#B8860B]" />
-          <div className="h-0.5 w-full rounded bg-[#0A2647]/15" />
-          <div className="h-0.5 w-5/6 rounded bg-[#0A2647]/15" />
+          <div className="h-0.5 w-8 rounded bg-brand-gold" />
+          <div className="h-0.5 w-full rounded bg-brand-navy/15" />
+          <div className="h-0.5 w-5/6 rounded bg-brand-navy/15" />
         </div>
       </div>
     );
   }
   if (id === "creative") {
     return (
-      <div className="aspect-[3/4] overflow-hidden rounded-md border border-[#0A2647]/10 bg-white">
-        <div className="h-5 bg-gradient-to-r from-violet-500 to-[#B8860B]" />
+      <div className="aspect-[3/4] overflow-hidden rounded-md border border-brand-navy/10 bg-white">
+        <div className="h-5 bg-gradient-to-r from-violet-500 to-brand-gold" />
         <div className="space-y-1 p-2">
-          <div className="h-1 w-2/3 rounded bg-[#0A2647]/70" />
-          <div className="h-0.5 w-full rounded bg-[#0A2647]/15" />
+          <div className="h-1 w-2/3 rounded bg-brand-navy/70" />
+          <div className="h-0.5 w-full rounded bg-brand-navy/15" />
           <div className="mt-1 flex gap-1">
             <div className="h-2 w-5 rounded bg-violet-200" />
-            <div className="h-2 w-4 rounded bg-[#B8860B]/30" />
+            <div className="h-2 w-4 rounded bg-brand-gold/30" />
           </div>
         </div>
       </div>
@@ -993,15 +1118,15 @@ function TemplateMock({ id }: { id: BuilderTemplateId }) {
   }
   // ivy-league — classic centered serif
   return (
-    <div className="aspect-[3/4] overflow-hidden rounded-md border border-[#0A2647]/10 bg-white p-2">
-      <div className="mb-1.5 border-b border-[#0A2647]/15 pb-1.5 text-center">
-        <div className="mx-auto h-1.5 w-1/2 rounded bg-[#0A2647]/80" />
-        <div className="mx-auto mt-1 h-0.5 w-2/3 rounded bg-[#0A2647]/20" />
+    <div className="aspect-[3/4] overflow-hidden rounded-md border border-brand-navy/10 bg-white p-2">
+      <div className="mb-1.5 border-b border-brand-navy/15 pb-1.5 text-center">
+        <div className="mx-auto h-1.5 w-1/2 rounded bg-brand-navy/80" />
+        <div className="mx-auto mt-1 h-0.5 w-2/3 rounded bg-brand-navy/20" />
       </div>
       <div className="space-y-1">
-        <div className="h-0.5 w-6 rounded bg-[#0A2647]/40" />
-        <div className="h-0.5 w-full rounded bg-[#0A2647]/15" />
-        <div className="h-0.5 w-5/6 rounded bg-[#0A2647]/15" />
+        <div className="h-0.5 w-6 rounded bg-brand-navy/40" />
+        <div className="h-0.5 w-full rounded bg-brand-navy/15" />
+        <div className="h-0.5 w-5/6 rounded bg-brand-navy/15" />
       </div>
     </div>
   );
@@ -1012,7 +1137,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-full px-4 py-3.5 text-sm font-medium text-[#0A2647]/55 transition-colors hover:text-[#0A2647] focus-visible:outline-none"
+      className="inline-flex items-center gap-1.5 rounded-full px-4 py-3.5 text-sm font-medium text-brand-navy/55 transition-colors hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
     >
       <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
       {t("Back")}
@@ -1025,34 +1150,38 @@ function MethodCard({
   title,
   desc,
   badge,
+  note,
   onClick,
 }: {
   icon: React.ReactNode;
   title: string;
   desc: string;
   badge?: string;
+  /** Small honesty line under the description (e.g. "Sign-in required"). */
+  note?: React.ReactNode;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className="group flex items-center gap-4 rounded-2xl border border-[#0A2647]/12 bg-white/70 px-5 py-4 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#0A2647]/30 hover:bg-white hover:shadow-lg focus-visible:outline-none"
+      className="group flex items-center gap-4 rounded-2xl border border-brand-navy/12 bg-white/70 px-5 py-4 text-start backdrop-blur transition-all hover:-translate-y-0.5 hover:border-brand-navy/30 hover:bg-white hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#B8860B]/10 text-[#B8860B] transition-colors group-hover:bg-[#B8860B] group-hover:text-white">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-gold/10 text-brand-gold transition-colors group-hover:bg-brand-gold group-hover:text-white">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="text-base font-medium text-[#0A2647]">{title}</span>
+          <span className="text-base font-medium text-brand-navy">{title}</span>
           {badge && (
-            <span className="rounded-full bg-[#B8860B]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B8860B]">
+            <span className="rounded-full bg-brand-gold/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-gold">
               {badge}
             </span>
           )}
         </span>
-        <span className="mt-0.5 block text-sm text-[#0A2647]/55">{desc}</span>
+        <span className="mt-0.5 block text-sm text-brand-navy/55">{desc}</span>
+        {note}
       </span>
-      <ArrowRight className="h-4 w-4 shrink-0 text-[#0A2647]/25 transition-all group-hover:translate-x-0.5 group-hover:text-[#B8860B]" strokeWidth={1.75} />
+      <ArrowRight className="h-4 w-4 shrink-0 text-brand-navy/25 transition-all group-hover:translate-x-0.5 group-hover:text-brand-gold" strokeWidth={1.75} />
     </button>
   );
 }

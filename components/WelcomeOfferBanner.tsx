@@ -80,10 +80,10 @@ export function WelcomeOfferBanner() {
 
   return (
     <div className="fixed inset-x-0 bottom-4 z-[60] px-4 pointer-events-none">
-      <div className="pointer-events-auto mx-auto max-w-xl rounded-sm bg-[#0A2647] text-white shadow-[0_24px_60px_-20px_rgba(10,38,71,0.7)] border border-[#B8860B]/50 overflow-hidden">
-        <div aria-hidden className="h-1 w-full bg-gradient-to-r from-[#B8860B] via-[#d4a017] to-[#B8860B]" />
+      <div className="pointer-events-auto mx-auto max-w-xl rounded-sm bg-brand-navy text-white shadow-[0_24px_60px_-20px_rgba(10,38,71,0.7)] border border-brand-gold/50 overflow-hidden">
+        <div aria-hidden className="h-1 w-full bg-gradient-to-r from-brand-gold via-[#d4a017] to-brand-gold" />
         <div className="flex items-center gap-3 sm:gap-4 px-4 py-3">
-          <span className="grid place-items-center h-10 w-10 rounded-sm bg-[#B8860B]/15 text-[#e7c66a] flex-shrink-0">
+          <span className="grid place-items-center h-10 w-10 rounded-sm bg-brand-gold/15 text-[#e7c66a] flex-shrink-0">
             <Gift className="h-5 w-5" strokeWidth={1.8} />
           </span>
           <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export function WelcomeOfferBanner() {
           <Link
             href="/api/checkout/polar?plan=welcome"
             onClick={() => track("checkout_started", { plan: "welcome" })}
-            className="flex-shrink-0 inline-flex items-center px-4 py-2 rounded-sm bg-[#B8860B] hover:bg-[#a3760a] text-white text-sm font-medium transition-colors"
+            className="flex-shrink-0 inline-flex items-center px-4 py-2 rounded-sm bg-brand-gold hover:bg-[#a3760a] text-white text-sm font-medium transition-colors"
           >
             {t("Claim")}
           </Link>

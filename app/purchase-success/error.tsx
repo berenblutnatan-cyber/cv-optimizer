@@ -27,12 +27,12 @@ export default function PurchaseSuccessError({
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a] flex items-center justify-center px-6 py-16">
       <div className="max-w-xl w-full text-center">
-        <div className="w-20 h-20 rounded-full bg-[#0A2647] flex items-center justify-center mx-auto mb-8">
+        <div className="w-20 h-20 rounded-full bg-brand-navy flex items-center justify-center mx-auto mb-8">
           <Check className="w-10 h-10 text-white" strokeWidth={2} />
         </div>
 
         <h1 className="font-serif text-4xl font-light mb-4">{t("Payment received.")}</h1>
-        <div className="w-16 h-px bg-[#0A2647] mx-auto mb-6" />
+        <div className="w-16 h-px bg-brand-navy mx-auto mb-6" />
         <p className="text-lg text-stone-600 font-light mb-10">
           {t("Your purchase went through and your credits are safe — this page just had trouble loading.")}
         </p>
@@ -47,7 +47,7 @@ export default function PurchaseSuccessError({
           </button>
           <Link
             href="/builder"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-all"
           >
             {t("Optimize My Resume Now")}
             <ArrowRight className="w-4 h-4" strokeWidth={1.5} />

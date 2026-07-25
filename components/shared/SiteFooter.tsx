@@ -10,7 +10,7 @@ export function SiteFooter() {
   const linkClass =
     "hover:text-white transition-colors focus-visible:outline-none focus-visible:text-white";
   return (
-    <footer className="w-full bg-[#0A2647] border-t border-white/10 text-white/70 py-10 sm:py-12">
+    <footer className="w-full bg-brand-navy border-t border-white/10 text-white/70 py-10 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
           <Logo variant="light" size="md" />

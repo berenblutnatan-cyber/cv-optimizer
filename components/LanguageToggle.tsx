@@ -6,6 +6,9 @@ import { useT } from "@/lib/i18n/LanguageProvider";
 type Props = {
   /** Visual style. "ghost" suits light headers; "light" suits dark footers. */
   variant?: "ghost" | "light";
+  /** Icon-only square button (≥44px tap target) for tight mobile headers.
+   *  The target language stays announced via aria-label/title. */
+  compact?: boolean;
   className?: string;
 };
 
@@ -17,13 +20,14 @@ type Props = {
  * The label always shows the language you'd switch TO, so it reads naturally in
  * either direction ("עברית" while in English, "English" while in Hebrew).
  */
-export function LanguageToggle({ variant = "ghost", className = "" }: Props) {
+export function LanguageToggle({ variant = "ghost", compact = false, className = "" }: Props) {
   const { lang, toggle, t } = useT();
   const switchingToHebrew = lang === "en";
   const targetLabel = switchingToHebrew ? "עברית" : "English";
 
-  const base =
-    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1";
+  const base = compact
+    ? "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+    : "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1";
   const skin =
     variant === "light"
       ? "text-white/80 hover:text-white border border-white/20 hover:border-white/40 focus-visible:ring-white/40"
@@ -38,8 +42,8 @@ export function LanguageToggle({ variant = "ghost", className = "" }: Props) {
       title={t(switchingToHebrew ? "Switch to Hebrew" : "Switch to English")}
       lang={switchingToHebrew ? "he" : "en"}
     >
-      <Languages className="h-4 w-4" aria-hidden />
-      <span>{targetLabel}</span>
+      <Languages className={compact ? "h-5 w-5" : "h-4 w-4"} aria-hidden />
+      {!compact && <span>{targetLabel}</span>}
     </button>
   );
 }

@@ -1,16 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { 
-  BuilderProvider, 
+import React, { useState, useEffect, useRef } from "react";
+import {
+  BuilderProvider,
   FloatingAIAssistant,
   TemplateSwitcher,
   EditableResumePreview,
+  ResumePreview,
   ResumePreviewData,
   useBuilder,
 } from "@/components/builder";
-import { Eye, Edit3, Download, Undo, Redo, ArrowLeft } from "lucide-react";
+import { Eye, Edit3, Download, Undo, Redo, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useAuth, SignInButton } from "@clerk/nextjs";
+import { toast } from "sonner";
+import { exportToPdf } from "@/utils/exportToPdf";
+import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { useResumeStore } from "@/store/useResumeStore";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { useT } from "@/lib/i18n/LanguageProvider";
@@ -94,11 +99,11 @@ function BuilderContent() {
   }, [storeData]);
   
   const [resumeData, setResumeData] = useState<ResumePreviewData>(initialData);
-  
+
   // Sync with store data when it changes
   useEffect(() => {
     const converted = convertToPreviewData(storeData);
-    const hasRealData = storeData.personalInfo.name || 
+    const hasRealData = storeData.personalInfo.name ||
                         storeData.personalInfo.email ||
                         storeData.experience.length > 0 ||
                         storeData.education.length > 0;
@@ -106,6 +111,65 @@ function BuilderContent() {
       setResumeData(converted);
     }
   }, [storeData]);
+
+  // ── Real PDF export (same rules as everywhere else: sign in, have a credit,
+  //    export first, charge only after the file was produced). ──────────────
+  const { isSignedIn } = useAuth();
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const oocModal = useOutOfCreditsModal();
+
+  const handleDownloadPdf = async () => {
+    if (!exportRef.current || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      // 1. Read-only balance check — nothing charged, nothing exported yet.
+      try {
+        const res = await fetch("/api/get-credits");
+        const info = await res.json();
+        if (!(info?.unlimited === true || (info?.credits ?? 0) >= 1)) {
+          oocModal.open({
+            trigger: "manual",
+            title: t("Download your CV as a PDF"),
+            subtitle: t("You're out of credits. Top up to download your CV."),
+          });
+          return;
+        }
+      } catch {
+        // Balance check unreachable — let the charge step be the arbiter.
+      }
+
+      // 2. Produce the file first, so a failed export never burns a credit.
+      const safeName = (resumeData.name || "My-CV").trim().replace(/\s+/g, "-");
+      await exportToPdf(exportRef.current, safeName);
+
+      // 3. Only after the file exists, charge the credit.
+      const creditResponse = await fetch("/api/use-credit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const creditResult = await creditResponse.json();
+      if (!creditResult?.success) {
+        oocModal.open({
+          trigger: "manual",
+          title: t("Download your CV as a PDF"),
+          subtitle: t("You're out of credits. Top up to download your CV."),
+        });
+        return;
+      }
+
+      toast.success(t("Success!"), {
+        description: t("Your CV has been downloaded."),
+      });
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error(t("PDF export failed"), {
+        description: t("Please try again — no credit was charged."),
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <>
@@ -162,11 +226,29 @@ function BuilderContent() {
               </button>
             </div>
 
-            {/* Download Button */}
-            <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
-              <Download className="w-4 h-4" />
-              {t("Download PDF")}
-            </button>
+            {/* Download Button — signed-out users get the sign-in modal;
+                signed-in users run the real gated export. */}
+            {isSignedIn ? (
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
+                className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                {isDownloading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {t("Download PDF")}
+              </button>
+            ) : (
+              <SignInButton mode="modal">
+                <button className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+                  <Download className="w-4 h-4" />
+                  {t("Download PDF")}
+                </button>
+              </SignInButton>
+            )}
           </div>
         </div>
       </header>
@@ -211,6 +293,26 @@ function BuilderContent() {
 
       {/* Floating AI Assistant */}
       <FloatingAIAssistant />
+
+      {/* Off-screen full-size render — rasterized to PDF on Download. */}
+      <div aria-hidden className="fixed -left-[10000px] top-0 pointer-events-none">
+        <div ref={exportRef} style={{ width: "210mm", minHeight: "297mm", background: "#ffffff" }}>
+          <ResumePreview
+            data={resumeData}
+            templateId={selectedTemplateId}
+            themeColor={themeColor}
+          />
+        </div>
+      </div>
+
+      {/* Paywall when the download finds zero credits */}
+      <OutOfCreditsModal
+        open={oocModal.isOpen}
+        onClose={oocModal.close}
+        trigger={oocModal.trigger}
+        title={oocModal.title}
+        subtitle={oocModal.subtitle}
+      />
     </>
   );
 }

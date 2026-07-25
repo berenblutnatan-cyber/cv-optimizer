@@ -64,8 +64,8 @@ export default function ResultsPage() {
         <div className="flex-1 flex items-center justify-center px-4 py-12">
           <div className="max-w-lg w-full">
             <div className="bg-white rounded-sm shadow-card border border-stone-100 p-8 sm:p-10 text-center reveal-up">
-              <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                <ArrowLeft className="w-6 h-6 text-[#0A2647]" strokeWidth={1.5} />
+              <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-brand-navy/5 flex items-center justify-center">
+                <ArrowLeft className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />
               </div>
               <h1 className="font-serif text-2xl text-[#1a1a1a] mb-3">{t("No analysis yet")}</h1>
               <p className="text-stone-500 font-light mb-8">
@@ -73,7 +73,7 @@ export default function ResultsPage() {
               </p>
               <button
                 onClick={() => router.push("/optimize")}
-                className="inline-flex items-center gap-3 px-8 py-3.5 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
+                className="inline-flex items-center gap-3 px-8 py-3.5 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
               >
                 {t("Start an Analysis")}
               </button>
@@ -94,7 +94,7 @@ export default function ResultsPage() {
               clearAnalysisSession();
               router.push("/optimize");
             }}
-            className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-[#0A2647] hover:text-white hover:bg-[#0A2647] border border-[#0A2647]/30 hover:border-[#0A2647] rounded-sm transition-colors tracking-wide focus-visible:outline-none"
+            className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-brand-navy hover:text-white hover:bg-brand-navy border border-brand-navy/30 hover:border-brand-navy rounded-sm transition-colors tracking-wide focus-visible:outline-none"
           >
             {t("New Analysis")}
           </button>
@@ -287,8 +287,8 @@ export default function ResultsPage() {
               <X className="w-5 h-5" strokeWidth={1.5} />
             </button>
             <div className="mb-6">
-              <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[#0A2647]/10 flex items-center justify-center">
-                <Download className="w-7 h-7 text-[#0A2647]" strokeWidth={1.5} />
+              <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-brand-navy/10 flex items-center justify-center">
+                <Download className="w-7 h-7 text-brand-navy" strokeWidth={1.5} />
               </div>
               <h3 id="signin-prompt-title" className="font-serif text-2xl text-[#1a1a1a] mb-3">
                 {t("Sign in to Download")}
@@ -299,7 +299,7 @@ export default function ResultsPage() {
             </div>
             <div className="flex flex-col gap-3">
               <SignInButton mode="modal">
-                <button className="w-full px-6 py-3.5 bg-[#0A2647] hover:bg-[#0d3259] text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none">
+                <button className="w-full px-6 py-3.5 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none">
                   {t("Sign In")}
                 </button>
               </SignInButton>

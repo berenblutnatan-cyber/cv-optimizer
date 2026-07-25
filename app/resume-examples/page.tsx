@@ -23,8 +23,8 @@ export default async function ResumeExamplesIndex() {
     <main className="min-h-screen bg-[#F8F7F4]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <header className="text-center max-w-2xl mx-auto">
-          <p className="text-[12px] uppercase tracking-[0.18em] text-[#B8860B] font-semibold">{t("Resume examples")}</p>
-          <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-[#0A2647]">
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-gold font-semibold">{t("Resume examples")}</p>
+          <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-brand-navy">
             {t("Resume examples that actually get interviews")}
           </h1>
           <p className="mt-3 text-stone-600 leading-relaxed">
@@ -37,15 +37,15 @@ export default async function ResumeExamplesIndex() {
             <Link
               key={ex.slug}
               href={`/resume-examples/${ex.slug}`}
-              className="group rounded-2xl bg-white border border-stone-200 p-5 hover:border-[#0A2647]/30 hover:shadow-sm transition-all"
+              className="group rounded-2xl bg-white border border-stone-200 p-5 hover:border-brand-navy/30 hover:shadow-sm transition-all"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] uppercase tracking-[0.14em] text-stone-400">{ex.category}</span>
                 <span className="text-[11px] text-stone-400">{ex.seniority}</span>
               </div>
-              <h2 className="mt-1 text-lg font-semibold text-[#0A2647]">{t("{role} resume example", { role: ex.role })}</h2>
-              <p className="mt-1.5 text-[13.5px] text-stone-600 leading-relaxed line-clamp-3">{ex.blurb}</p>
-              <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[#B8860B] group-hover:gap-2 transition-all">
+              <h2 className="mt-1 text-lg font-semibold text-brand-navy">{t("{role} resume example", { role: ex.role })}</h2>
+              <p className="mt-1.5 text-[13px] text-stone-600 leading-relaxed line-clamp-3">{ex.blurb}</p>
+              <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-brand-gold group-hover:gap-2 transition-all">
                 {t("View example")} <ArrowRight className="h-4 w-4" />
               </span>
             </Link>
@@ -55,7 +55,7 @@ export default async function ResumeExamplesIndex() {
         <div className="mt-12 text-center">
           <Link
             href="/build/chat"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#0A2647] text-white text-sm font-semibold hover:bg-[#0d3259] transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors"
           >
             {t("Build my resume free")} <ArrowRight className="h-4 w-4" />
           </Link>

@@ -1,6 +1,34 @@
 "use client";
 
 import React from "react";
+import {
+  TEMPLATE_LIST,
+  DEFAULT_FREE_TEMPLATE_ID,
+  isPremiumTemplate,
+  type TemplateRegistryId,
+} from "@/lib/templates/registry";
+import type { ResumeData as RegistryResumeData } from "./templates/TemplateProps";
+import type { ThemeColor as RegistryThemeColor } from "@/context/BuilderContext";
+import {
+  ModernSidebarTemplate,
+  IvyLeagueTemplate,
+  MinimalistTemplate,
+  ExecutiveTemplate,
+  TechieTemplate,
+  CreativeTemplate as CreativeTemplateNew,
+  StartupTemplate,
+  InternationalTemplate,
+  AuroraTemplate,
+  BannerTemplate,
+  SpotlightTemplate,
+  LedgerTemplate,
+  DevfolioTemplate,
+  CanvasTemplate,
+  TimelineTemplate,
+  DoubleColumnTemplate,
+  CompactTemplate,
+  PhotoLeftTemplate,
+} from "./templates";
 
 // ==========================================
 // CORE ARCHITECTURE
@@ -59,26 +87,8 @@ export type TemplateId = "ivy" | "modern" | "executive" | "modern-sidebar";
 /** Legacy type for backwards compatibility */
 export type TemplateType = "harvard" | "modern" | "creative";
 
-/** All template IDs */
-export type AllTemplateId =
-  | "modern-sidebar"
-  | "ivy-league"
-  | "minimalist"
-  | "executive"
-  | "techie"
-  | "creative"
-  | "startup"
-  | "international"
-  | "aurora"
-  | "banner"
-  | "spotlight"
-  | "ledger"
-  | "devfolio"
-  | "canvas"
-  | "timeline"
-  | "double-column"
-  | "compact"
-  | "photo-left";
+/** All template IDs — derived from the canonical registry. */
+export type AllTemplateId = TemplateRegistryId;
 
 /** Template props interface - all templates must accept these */
 export interface TemplateProps {
@@ -99,12 +109,15 @@ export interface TemplateConfig {
 }
 
 // ==========================================
-// ALL 8 TEMPLATES REGISTRY
+// ALL TEMPLATES REGISTRY (derived)
 // ==========================================
 
 /**
- * ALL_TEMPLATES - Complete registry of all 8 template archetypes
- * Used by the builder download section and preview cards
+ * ALL_TEMPLATES - Complete registry of all template archetypes.
+ * Used by the builder download section and preview cards.
+ *
+ * Derived from the canonical registry in lib/templates/registry.ts — add or
+ * edit templates THERE, never here.
  */
 export const ALL_TEMPLATES: Record<AllTemplateId, {
   name: string;
@@ -113,141 +126,56 @@ export const ALL_TEMPLATES: Record<AllTemplateId, {
   category: "professional" | "classic" | "creative" | "technical";
   /** Free templates are usable by everyone; premium ones cost 1 credit to unlock per user. */
   isPremium?: boolean;
-}> = {
-  "modern-sidebar": {
-    name: "Modern Professional",
-    description: "Two-column with dark sidebar. Perfect for tech & business roles.",
-    preview: "linear-gradient(135deg, #0f172a 35%, #ffffff 35%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "ivy-league": {
-    name: "Ivy League",
-    description: "Classic serif elegance. Ideal for legal, academic & executive roles.",
-    preview: "linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%)",
-    category: "classic",
-    // The only free / default template. Everyone gets this without paying.
-  },
-  "minimalist": {
-    name: "Minimalist",
-    description: "Clean whitespace design. Great for modern creative roles.",
-    preview: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "executive": {
-    name: "Executive",
-    description: "Bold dark header for senior professionals & consultants.",
-    preview: "linear-gradient(180deg, #111827 30%, #ffffff 30%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "techie": {
-    name: "Techie",
-    description: "Developer-focused with skills grid. Perfect for engineers.",
-    preview: "linear-gradient(180deg, #1e293b 20%, #ffffff 20%)",
-    category: "technical",
-    isPremium: true,
-  },
-  "creative": {
-    name: "Creative",
-    description: "Unique split design. Made for designers & marketers.",
-    preview: "linear-gradient(135deg, #10b981 35%, #ffffff 35%)",
-    category: "creative",
-    isPremium: true,
-  },
-  "startup": {
-    name: "Startup",
-    description: "Bold modern typography. Great for innovative companies.",
-    preview: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)",
-    category: "creative",
-    isPremium: true,
-  },
-  "international": {
-    name: "International",
-    description: "Photo support, standardized format. Common in Europe.",
-    preview: "linear-gradient(135deg, #f1f5f9 30%, #ffffff 30%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "aurora": {
-    name: "Aurora",
-    description: "Accent rail + tinted header. Colorful but clean for PM & business roles.",
-    preview: "linear-gradient(90deg, #6366f1 7%, #eef2ff 7%, #ffffff 60%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "banner": {
-    name: "Banner",
-    description: "Full-width color banner header. Confident and modern, still one page.",
-    preview: "linear-gradient(180deg, #4f46e5 28%, #ffffff 28%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "spotlight": {
-    name: "Spotlight",
-    description: "Centered, airy and maximally ATS-safe. Great default for any role.",
-    preview: "linear-gradient(180deg, #ffffff 0%, #eef2ff 100%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "ledger": {
-    name: "Ledger",
-    description: "Editorial serif with a date rail. Elegant for finance, law & consulting.",
-    preview: "linear-gradient(180deg, #fbf6ec 0%, #f3ece0 100%)",
-    category: "classic",
-    isPremium: true,
-  },
-  "devfolio": {
-    name: "Devfolio",
-    description: "Monospace README style with a skills grid. Built for developers.",
-    preview: "linear-gradient(180deg, #0f172a 7%, #ffffff 7%)",
-    category: "technical",
-    isPremium: true,
-  },
-  "canvas": {
-    name: "Canvas",
-    description: "Bold accent sidebar with photo. Personality for designers & creatives.",
-    preview: "linear-gradient(120deg, #6366f1 34%, #ffffff 34%)",
-    category: "creative",
-    isPremium: true,
-  },
-  "timeline": {
-    name: "Timeline",
-    description: "A vertical timeline rail that tells your career as a story.",
-    preview: "linear-gradient(90deg, #6366f1 6%, #ffffff 6%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "double-column": {
-    name: "Double Column",
-    description: "Full header over two balanced light columns. Clean and compact.",
-    preview: "linear-gradient(90deg, #ffffff 60%, #f1f5f9 60%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "compact": {
-    name: "Compact",
-    description: "Dense, ATS-friendly single column. Fits more on one page.",
-    preview: "linear-gradient(180deg, #6366f1 5%, #ffffff 5%)",
-    category: "professional",
-    isPremium: true,
-  },
-  "photo-left": {
-    name: "Photo Left",
-    description: "Photo rail with contact & skills beside your story.",
-    preview: "linear-gradient(90deg, #e0e7ff 34%, #ffffff 34%)",
-    category: "professional",
-    isPremium: true,
-  },
+}> = Object.fromEntries(
+  TEMPLATE_LIST.map((entry) => [
+    entry.id,
+    {
+      name: entry.name,
+      description: entry.detail,
+      preview: entry.preview,
+      category: entry.category,
+      ...(entry.premium ? { isPremium: true } : {}),
+    },
+  ])
+) as Record<AllTemplateId, {
+  name: string;
+  description: string;
+  preview: string;
+  category: "professional" | "classic" | "creative" | "technical";
+  isPremium?: boolean;
+}>;
+
+// Re-exported from the canonical registry so existing imports keep working.
+export { DEFAULT_FREE_TEMPLATE_ID, isPremiumTemplate };
+
+/**
+ * Component for every registry template id. Typed as a complete Record so the
+ * build FAILS if a template is added to lib/templates/registry.ts without a
+ * matching component — the guard that keeps lists and renderers in sync.
+ */
+export const TEMPLATE_COMPONENTS_BY_ID: Record<
+  AllTemplateId,
+  React.ComponentType<{ data: RegistryResumeData; themeColor: RegistryThemeColor; className?: string }>
+> = {
+  "modern-sidebar": ModernSidebarTemplate,
+  "ivy-league": IvyLeagueTemplate,
+  minimalist: MinimalistTemplate,
+  executive: ExecutiveTemplate,
+  techie: TechieTemplate,
+  creative: CreativeTemplateNew,
+  startup: StartupTemplate,
+  international: InternationalTemplate,
+  aurora: AuroraTemplate,
+  banner: BannerTemplate,
+  spotlight: SpotlightTemplate,
+  ledger: LedgerTemplate,
+  devfolio: DevfolioTemplate,
+  canvas: CanvasTemplate,
+  timeline: TimelineTemplate,
+  "double-column": DoubleColumnTemplate,
+  compact: CompactTemplate,
+  "photo-left": PhotoLeftTemplate,
 };
-
-export const DEFAULT_FREE_TEMPLATE_ID: AllTemplateId = "ivy-league";
-
-/** Whether a template requires unlocking. */
-export function isPremiumTemplate(id: string): boolean {
-  return !!ALL_TEMPLATES[id as AllTemplateId]?.isPremium;
-}
 
 // ==========================================
 // TEMPLATE REGISTRY (Legacy 4)
@@ -278,6 +206,13 @@ export const TEMPLATES: Record<TemplateId, TemplateConfig> = {
     layout: "single-column",
   },
   "executive": {
+    // NOTE (intentional, do not "fix"): in this LEGACY registry the id
+    // "executive" renders the legacy ./CreativeTemplate component, which was
+    // rebranded "Executive" years ago (see TEMPLATE_INFO below — legacy id
+    // "creative" maps here too via ID_MAP). Saved CVs persist these legacy ids,
+    // so changing this mapping would silently change how existing documents
+    // render. The modern "executive" design lives in ./templates/
+    // ExecutiveTemplate and is resolved through the canonical registry.
     component: CreativeTemplate,
     name: "Executive",
     description: "Professional two-column layout with dark sidebar. Great for senior professionals & consultants.",

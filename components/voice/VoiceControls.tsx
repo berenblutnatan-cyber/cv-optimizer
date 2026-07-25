@@ -38,7 +38,7 @@ export function VoiceControls({
         type="button"
         onClick={onRestart}
         disabled={finalizing}
-        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 border border-glass-border text-white/85 text-sm hover:bg-white/15 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-full bg-white/10 border border-glass-border text-white/85 text-sm hover:bg-white/15 disabled:opacity-50 transition-colors"
       >
         <RotateCw className="h-3.5 w-3.5" />
         {t("Restart")}
@@ -48,7 +48,7 @@ export function VoiceControls({
         type="button"
         onClick={onDone}
         disabled={!showDone || finalizing}
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-[#1a1a1a] text-sm font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-full bg-white text-[#1a1a1a] text-sm font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {finalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         {finalizing ? t("Building…") : t("I'm done")}

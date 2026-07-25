@@ -58,7 +58,7 @@ export function InlineAssist({
         type="button"
         onClick={onGenerate}
         disabled={loading}
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#B8860B]/10 border border-[#B8860B]/25 text-[11px] font-medium text-[#8a6608] hover:bg-[#B8860B]/20 disabled:opacity-50 transition-colors"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/25 text-[11px] font-medium text-[#8a6608] hover:bg-brand-gold/20 disabled:opacity-50 transition-colors"
       >
         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
         {loading ? t("Thinking…") : label ?? t(ASSIST_LABEL[action])}
@@ -73,7 +73,7 @@ export function InlineAssist({
             <ul className="space-y-1.5">
               {suggestion.items.map((it, i) => (
                 <li key={i} className="flex gap-2 text-[13px] text-[#1a1a1a] leading-relaxed">
-                  <span className="text-[#B8860B]">•</span>
+                  <span className="text-brand-gold">•</span>
                   <span>{it}</span>
                 </li>
               ))}
@@ -84,7 +84,7 @@ export function InlineAssist({
               type="button"
               onClick={onAccept}
               disabled={applying}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#0A2647] text-white text-[12px] font-semibold hover:bg-[#0d3259] disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-navy text-white text-xs font-semibold hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
             >
               {applying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
               {applying ? t("Applying…") : t("Accept")}
@@ -93,7 +93,7 @@ export function InlineAssist({
               type="button"
               onClick={onDiscard}
               disabled={applying}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] text-stone-500 hover:bg-stone-100 disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-stone-500 hover:bg-stone-100 disabled:opacity-60 transition-colors"
             >
               <X className="h-3 w-3" /> {t("Discard")}
             </button>

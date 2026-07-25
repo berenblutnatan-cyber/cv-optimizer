@@ -50,13 +50,13 @@ export function BuilderWelcomeBanner() {
   return (
     <div className="px-8 lg:px-16 pt-4">
       <div className="max-w-[1800px] mx-auto">
-        <div className="flex items-start sm:items-center justify-between gap-4 px-5 py-3 rounded-sm bg-[#0A2647]/5 border border-[#0A2647]/15">
+        <div className="flex items-start sm:items-center justify-between gap-4 px-5 py-3 rounded-sm bg-brand-navy/5 border border-brand-navy/15">
           <div className="flex items-start sm:items-center gap-3">
-            <Sparkles className="w-5 h-5 text-[#0A2647] flex-shrink-0 mt-0.5 sm:mt-0" strokeWidth={1.5} />
+            <Sparkles className="w-5 h-5 text-brand-navy flex-shrink-0 mt-0.5 sm:mt-0" strokeWidth={1.5} />
             <p className="text-sm text-[#1a1a1a] font-light leading-relaxed">
               <span className="font-medium">{t("Welcome to Hired-CV.")}</span>{" "}
               {t("You have")}{" "}
-              <span className="font-medium text-[#0A2647]">
+              <span className="font-medium text-brand-navy">
                 {credits === 1
                   ? t("{credits} credit", { credits })
                   : t("{credits} credits", { credits })}

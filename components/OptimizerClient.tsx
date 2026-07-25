@@ -34,6 +34,10 @@ import { useT } from "@/lib/i18n/LanguageProvider";
 
 const DRAFT_KEY = "optimizer_draft";
 
+// The analyze route is slow by design (Opus rewrite, ~20-40s typical). Give it
+// generous room, but never let the user hang forever on a dead connection.
+const ANALYZE_TIMEOUT_MS = 150_000;
+
 // Helper: Convert File to base64
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -104,6 +108,11 @@ export function OptimizerClient() {
   const hasFiredJobEvent = useRef(false);
   const hasFiredPageView = useRef(false);
   const cvFileInputRef = useRef<HTMLInputElement>(null);
+
+  // In-flight analyze request — lets Cancel and the timeout abort it.
+  const abortRef = useRef<AbortController | null>(null);
+  const timedOutRef = useRef(false);
+  const cancelledRef = useRef(false);
 
   // Fire one-time page view event
   useEffect(() => {
@@ -245,6 +254,37 @@ export function OptimizerClient() {
     }, 250);
   };
 
+  // Persist the current inputs (including the file as base64) so nothing is
+  // lost across a sign-in or checkout navigation. Restored on next mount by
+  // the draft-restore effect above — for signed-in and anonymous users alike.
+  const persistDraft = async () => {
+    const draft: Record<string, string | null> = {
+      cvText,
+      cvFileName: cvFile?.name || null,
+      cvFileMimeType: cvFile?.type || null,
+      jobTitle,
+      jobDescription,
+      jobUrl,
+      summary,
+    };
+
+    // Convert file to base64 if present
+    if (cvFile) {
+      try {
+        draft.cvFileBase64 = await fileToBase64(cvFile);
+      } catch (err) {
+        console.error("Failed to convert file to base64:", err);
+      }
+    }
+
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch (err) {
+      // localStorage full or unavailable — nothing more we can do client-side.
+      console.error("Failed to save draft:", err);
+    }
+  };
+
   const handleAnalyze = async () => {
     track("analyze_clicked", {
       signed_in: !!isSignedIn,
@@ -272,35 +312,13 @@ export function OptimizerClient() {
     if (!isSignedIn) {
       // Show free credit toast before auth modal
       setShowFreeCreditToast(true);
-      
-      // Save draft including file as base64
-      const saveDraft = async () => {
-        const draft: Record<string, string | null> = {
-          cvText,
-          cvFileName: cvFile?.name || null,
-          cvFileMimeType: cvFile?.type || null,
-          jobTitle,
-          jobDescription,
-          jobUrl,
-          summary,
-        };
-        
-        // Convert file to base64 if present
-        if (cvFile) {
-          try {
-            draft.cvFileBase64 = await fileToBase64(cvFile);
-          } catch (err) {
-            console.error("Failed to convert file to base64:", err);
-          }
-        }
-        
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+
+      // Save draft (including the file as base64), then open the auth modal.
+      persistDraft().then(() => {
         setTimeout(() => {
           openAuthModal("analyze");
         }, 500); // Small delay to show toast first
-      };
-      
-      saveDraft();
+      });
       return;
     }
 
@@ -329,14 +347,49 @@ export function OptimizerClient() {
         formData.append("summary", summary.trim());
       }
 
-      const response = await fetch("/api/analyze", { method: "POST", body: formData });
-      const data = await response.json();
+      // Abortable fetch with a generous timeout — the route is slow by design,
+      // but a dead connection or gateway 504 must never hang the user forever.
+      const controller = new AbortController();
+      abortRef.current = controller;
+      timedOutRef.current = false;
+      cancelledRef.current = false;
+      const timeoutId = setTimeout(() => {
+        timedOutRef.current = true;
+        controller.abort();
+      }, ANALYZE_TIMEOUT_MS);
+
+      let response: Response;
+      try {
+        response = await fetch("/api/analyze", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      // Gateway timeouts (504) return HTML, not JSON — never parse blindly, or
+      // the user sees a raw SyntaxError instead of a retryable message.
+      const contentType = response.headers.get("content-type") ?? "";
+      const data = contentType.includes("application/json")
+        ? await response.json().catch(() => null)
+        : null;
+
       if (response.status === 402) {
         track("credit_check_failed", { reason: "insufficient_credits" });
+        // Save the user's work BEFORE the paywall: checkout is a hard
+        // navigation, and their inputs must survive the round trip.
+        await persistDraft();
         oocModal.open({ trigger: "optimize" });
         return;
       }
-      if (!response.ok) throw new Error(data.error || t("Analysis failed"));
+      if (!response.ok || !data) {
+        throw new Error(
+          data?.error ||
+            t("Our analysis service hit a snag. Your inputs are safe — please try again.")
+        );
+      }
 
       saveAnalysisToSession({ 
         analysis: data.analysis, 
@@ -370,17 +423,36 @@ export function OptimizerClient() {
       router.push("/results");
 
     } catch (err) {
+      // User pressed Cancel — back to the form silently, inputs intact.
+      if (cancelledRef.current) return;
+
       // The server only charges a credit when analysis succeeds, so a failure
       // here costs the user nothing.
+      const timedOut = timedOutRef.current;
       track("optimize_failed", {
-        message: err instanceof Error ? err.message : "unknown",
+        message: timedOut ? "timeout" : err instanceof Error ? err.message : "unknown",
       });
-      toast.error(t("Analysis failed — you weren't charged"), {
-        description: err instanceof Error ? err.message : t("Something went wrong. Please try again."),
-      });
+      if (timedOut) {
+        toast.error(t("This is taking longer than usual"), {
+          description: t("The analysis timed out — your inputs are untouched. Please try again."),
+        });
+      } else {
+        toast.error(t("Analysis failed — you weren't charged"), {
+          description: err instanceof Error ? err.message : t("Something went wrong. Please try again."),
+        });
+      }
     } finally {
+      abortRef.current = null;
       setIsAnalyzing(false);
     }
+  };
+
+  // Visible escape hatch on the analyzing overlay: abort the request and
+  // return to the form with every input intact.
+  const handleCancelAnalyze = () => {
+    cancelledRef.current = true;
+    abortRef.current?.abort();
+    setIsAnalyzing(false);
   };
 
   const extractCompanyFromContext = (): string | null => {
@@ -405,7 +477,7 @@ export function OptimizerClient() {
               {t("Resume Builder")}
             </Link>
             <span className="hidden sm:inline-block w-px h-4 bg-stone-300" />
-            <span className="hidden sm:inline-flex text-sm font-medium text-[#0A2647] tracking-wide" aria-current="page">
+            <span className="hidden sm:inline-flex text-sm font-medium text-brand-navy tracking-wide" aria-current="page">
               {t("Optimizer")}
             </span>
             <SignedIn>
@@ -437,7 +509,7 @@ export function OptimizerClient() {
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
               {t("Optimize Your Resume")}
             </h1>
-            <div className="w-16 h-px bg-[#0A2647] mx-auto mb-5" />
+            <div className="w-16 h-px bg-brand-navy mx-auto mb-5" />
             <p className="text-stone-500 text-base sm:text-lg font-light tracking-wide max-w-xl mx-auto">
               {isQuickMode
                 ? t("Upload your CV and we'll polish it — no job description needed.")
@@ -460,13 +532,13 @@ export function OptimizerClient() {
                   setAnalysisMode("quick");
                   track("analysis_mode_changed", { mode: "quick" });
                 }}
-                className={`group relative flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 rounded-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30 ${
+                className={`group relative flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 rounded-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/30 ${
                   isQuickMode
-                    ? "bg-[#0A2647] text-white shadow-sm"
+                    ? "bg-brand-navy text-white shadow-sm"
                     : "bg-transparent text-stone-600 hover:bg-stone-50"
                 }`}
               >
-                <Zap className={`w-4 h-4 sm:w-5 sm:h-5 ${isQuickMode ? "text-[#B8860B]" : ""}`} strokeWidth={2} />
+                <Zap className={`w-4 h-4 sm:w-5 sm:h-5 ${isQuickMode ? "text-brand-gold" : ""}`} strokeWidth={2} />
                 <div className="text-left">
                   <div className="text-sm sm:text-base font-medium tracking-wide">{t("Quick Optimize")}</div>
                   <div className={`hidden sm:block text-[11px] font-light ${isQuickMode ? "text-white/70" : "text-stone-500"}`}>
@@ -482,13 +554,13 @@ export function OptimizerClient() {
                   setAnalysisMode("targeted");
                   track("analysis_mode_changed", { mode: "targeted" });
                 }}
-                className={`group relative flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 rounded-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A2647]/30 ${
+                className={`group relative flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-3.5 rounded-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/30 ${
                   !isQuickMode
-                    ? "bg-[#0A2647] text-white shadow-sm"
+                    ? "bg-brand-navy text-white shadow-sm"
                     : "bg-transparent text-stone-600 hover:bg-stone-50"
                 }`}
               >
-                <Target className={`w-4 h-4 sm:w-5 sm:h-5 ${!isQuickMode ? "text-[#B8860B]" : ""}`} strokeWidth={2} />
+                <Target className={`w-4 h-4 sm:w-5 sm:h-5 ${!isQuickMode ? "text-brand-gold" : ""}`} strokeWidth={2} />
                 <div className="text-left">
                   <div className="text-sm sm:text-base font-medium tracking-wide">{t("Tailor to Role")}</div>
                   <div className={`hidden sm:block text-[11px] font-light ${!isQuickMode ? "text-white/70" : "text-stone-500"}`}>
@@ -505,8 +577,8 @@ export function OptimizerClient() {
             {/* Left Panel - Resume Upload */}
             <div className="bg-white rounded-sm shadow-card p-6 sm:p-8 lg:p-10">
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-11 h-11 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+                <div className="w-11 h-11 rounded-full bg-brand-navy/5 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                 </div>
                 <div>
                   <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">{t("Your Resume")}</h2>
@@ -521,16 +593,16 @@ export function OptimizerClient() {
                 onDrop={handleDrop}
                 className={`relative border rounded-sm p-10 text-center transition-all mb-6 ${
                   isDragging
-                    ? "border-[#0A2647] bg-[#0A2647]/5"
+                    ? "border-brand-navy bg-brand-navy/5"
                     : cvFile
-                      ? "border-[#0A2647]/30 bg-[#0A2647]/5"
+                      ? "border-brand-navy/30 bg-brand-navy/5"
                       : "border-stone-200 hover:border-stone-300 bg-stone-50/50"
                 }`}
               >
                 {cvFile ? (
                   <div className="flex items-center justify-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#0A2647]/10 flex items-center justify-center">
-                      <Check className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+                    <div className="w-12 h-12 rounded-full bg-brand-navy/10 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                     </div>
                     <div className="text-left">
                       <p className="font-medium text-[#1a1a1a]">{cvFile.name}</p>
@@ -555,7 +627,7 @@ export function OptimizerClient() {
                       type="button"
                       onClick={() => cvFileInputRef.current?.click()}
                       aria-label={t("Select resume file")}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-transparent border border-[#0A2647] text-[#0A2647] font-medium rounded-sm hover:bg-[#0A2647] hover:text-white transition-all tracking-wide text-sm focus-visible:outline-none"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-transparent border border-brand-navy text-brand-navy font-medium rounded-sm hover:bg-brand-navy hover:text-white transition-all tracking-wide text-sm focus-visible:outline-none"
                     >
                       <span>{t("Select File")}</span>
                     </button>
@@ -587,7 +659,7 @@ export function OptimizerClient() {
                 value={cvText}
                 onChange={(e) => { setCvText(e.target.value); if (e.target.value) setCvFile(null); }}
                 placeholder={t("Please paste your resume contents here...")}
-                className="w-full h-40 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
+                className="w-full h-40 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
               />
 
               {/* Summary Section */}
@@ -604,7 +676,7 @@ export function OptimizerClient() {
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
                   placeholder={t("A brief 2-4 sentence summary of your experience and goals...")}
-                  className="w-full h-24 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
+                  className="w-full h-24 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                 />
               </div>
             </div>
@@ -613,8 +685,8 @@ export function OptimizerClient() {
             {!isQuickMode && (
             <div className="bg-white rounded-sm shadow-card p-6 sm:p-8 lg:p-10">
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-11 h-11 rounded-full bg-[#0A2647]/5 flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-[#0A2647]" strokeWidth={1.5} />
+                <div className="w-11 h-11 rounded-full bg-brand-navy/5 flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                 </div>
                 <div>
                   <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">{t("Target Role")}</h2>
@@ -625,7 +697,7 @@ export function OptimizerClient() {
               {/* Status Indicator */}
               <div className={`mb-8 p-4 rounded-sm flex items-center gap-3 text-sm font-light ${
                 hasJobContext 
-                  ? "bg-[#0A2647]/5 text-[#0A2647]" 
+                  ? "bg-brand-navy/5 text-brand-navy" 
                   : "bg-amber-50/80 text-amber-700"
               }`}>
                 {hasJobContext ? (
@@ -652,7 +724,7 @@ export function OptimizerClient() {
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
                   placeholder={t("e.g. Senior Software Engineer")}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                 />
               </div>
 
@@ -667,7 +739,7 @@ export function OptimizerClient() {
                     onClick={() => setJobInputMode("description")}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
                       jobInputMode === "description"
-                        ? "border-[#0A2647] text-[#0A2647]"
+                        ? "border-brand-navy text-brand-navy"
                         : "border-transparent text-stone-500 hover:text-stone-600"
                     }`}
                   >
@@ -679,7 +751,7 @@ export function OptimizerClient() {
                     onClick={() => setJobInputMode("url")}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
                       jobInputMode === "url"
-                        ? "border-[#0A2647] text-[#0A2647]"
+                        ? "border-brand-navy text-brand-navy"
                         : "border-transparent text-stone-500 hover:text-stone-600"
                     }`}
                   >
@@ -697,7 +769,7 @@ export function OptimizerClient() {
                       value={jobUrl}
                       onChange={(e) => setJobUrl(e.target.value)}
                       placeholder="https://linkedin.com/jobs/view/..."
-                      className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                     />
                     <p className="text-xs text-stone-500 mt-3 font-light">
                       {t("We'll extract the job details automatically")}
@@ -711,7 +783,7 @@ export function OptimizerClient() {
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
                       placeholder={t("Please paste the complete job description here...")}
-                      className="w-full h-[180px] p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-[#0A2647] focus:ring-1 focus:ring-[#0A2647]/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
+                      className="w-full h-[180px] p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                     />
                     <p className="text-xs text-stone-500 mt-3 font-light">
                       {t("Include requirements, responsibilities, and qualifications")}
@@ -730,7 +802,7 @@ export function OptimizerClient() {
               onClick={handleAnalyze}
               disabled={isAnalyzing}
               aria-disabled={!canAnalyze}
-              className="group inline-flex items-center gap-3 sm:gap-4 px-8 sm:px-12 py-4 sm:py-5 bg-[#0A2647] hover:bg-[#0d3259] disabled:opacity-70 disabled:cursor-wait text-white font-medium rounded-sm shadow-sm hover:shadow-md transition-all text-base tracking-wide focus-visible:outline-none"
+              className="group inline-flex items-center gap-3 sm:gap-4 px-8 sm:px-12 py-4 sm:py-5 bg-brand-navy hover:bg-brand-navy-hover disabled:opacity-70 disabled:cursor-wait text-white font-medium rounded-sm shadow-sm hover:shadow-md transition-all text-base tracking-wide focus-visible:outline-none"
             >
               {isAnalyzing ? (
                 <>
@@ -752,14 +824,14 @@ export function OptimizerClient() {
             </button>
             
             {/* Credit Cost Info */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-[#B8860B]/5 border border-[#B8860B]/20 rounded-sm">
-              <Coins className="w-4 h-4 text-[#B8860B]" strokeWidth={2} />
+            <div className="flex items-center gap-2 px-4 py-2 bg-brand-gold/5 border border-brand-gold/20 rounded-sm">
+              <Coins className="w-4 h-4 text-brand-gold" strokeWidth={2} />
               <span className="text-sm text-stone-600 font-light">
-                <span className="font-medium text-[#B8860B]">{t("1 Credit")}</span> {t("per optimization")}
+                <span className="font-medium text-brand-gold">{t("1 Credit")}</span> {t("per optimization")}
               </span>
               <Link
                 href="/pricing"
-                className="text-xs text-[#0A2647] hover:text-[#0d3259] underline font-medium ml-1"
+                className="text-xs text-brand-navy hover:text-brand-navy-hover underline font-medium ml-1"
               >
                 {t("Get more")}
               </Link>
@@ -776,7 +848,7 @@ export function OptimizerClient() {
       </main>
 
       {/* Full-screen analyzing overlay */}
-      <AnalyzingScreen open={isAnalyzing} mode={analysisMode} jobTitle={jobTitle} />
+      <AnalyzingScreen open={isAnalyzing} mode={analysisMode} jobTitle={jobTitle} onCancel={handleCancelAnalyze} />
 
       {/* Out-of-credits paywall — shown when /api/analyze returns 402 */}
       <OutOfCreditsModal

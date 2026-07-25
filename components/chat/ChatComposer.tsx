@@ -43,12 +43,12 @@ const SKIN: Record<
   },
   light: {
     chip: "bg-white border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 shadow-sm",
-    box: "bg-white border-stone-300 focus-within:border-[#0A2647]/40 shadow-sm",
+    box: "bg-white border-stone-300 focus-within:border-brand-navy/40 shadow-sm",
     iconBtn: "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700",
     textarea: "text-[#1a1a1a] placeholder:text-stone-400",
     micIdle: "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700",
-    micOn: "bg-[#0A2647] text-white animate-pulse",
-    send: "bg-[#0A2647] text-white hover:bg-[#0d3259]",
+    micOn: "bg-brand-navy text-white animate-pulse",
+    send: "bg-brand-navy text-white hover:bg-brand-navy-hover",
     error: "text-rose-600",
   },
 };
