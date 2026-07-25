@@ -15,7 +15,7 @@ function ContactLine({ data }: { data: ResumeData }) {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-brand-navy border-b border-stone-200 pb-1 mb-3 mt-6">
+    <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-brand-navy border-b border-stone-200 pb-1 mb-3 mt-6">
       {children}
     </h2>
   );
@@ -37,7 +37,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
       {data.summary ? (
         <section>
           <SectionHeading>{t("Summary")}</SectionHeading>
-          <p className="text-[14px] text-stone-700 leading-relaxed">{data.summary}</p>
+          <p className="text-sm text-stone-700 leading-relaxed">{data.summary}</p>
         </section>
       ) : null}
 
@@ -48,11 +48,11 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
             {data.experience.map((exp) => (
               <div key={exp.id}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <h3 className="text-[14px] font-semibold text-[#1a1a1a]">
+                  <h3 className="text-sm font-semibold text-[#1a1a1a]">
                     {exp.role}
                     {exp.company ? <span className="text-stone-500 font-normal"> · {exp.company}</span> : null}
                   </h3>
-                  <span className="text-[12px] text-stone-400 tabular-nums">
+                  <span className="text-xs text-stone-400 tabular-nums">
                     {exp.startDate}
                     {exp.startDate || exp.endDate ? " – " : ""}
                     {exp.current ? t("Present") : exp.endDate}
@@ -60,7 +60,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
                 </div>
                 <ul className="mt-1.5 space-y-1">
                   {exp.description.filter((b) => b.trim()).map((b, i) => (
-                    <li key={i} className="flex gap-2 text-[13.5px] text-stone-700 leading-relaxed">
+                    <li key={i} className="flex gap-2 text-[13px] text-stone-700 leading-relaxed">
                       <span className="text-brand-gold mt-0.5">•</span>
                       <span>{b}</span>
                     </li>
@@ -77,7 +77,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
           <SectionHeading>{t("Skills")}</SectionHeading>
           <div className="flex flex-wrap gap-1.5">
             {data.skills.map((s) => (
-              <span key={s} className="px-2.5 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/12 text-[12px] text-brand-navy">
+              <span key={s} className="px-2.5 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/12 text-xs text-brand-navy">
                 {s}
               </span>
             ))}
@@ -91,15 +91,15 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
           <div className="space-y-2">
             {data.education.map((edu) => (
               <div key={edu.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <h3 className="text-[14px] text-[#1a1a1a]">
+                <h3 className="text-sm text-[#1a1a1a]">
                   <span className="font-semibold">
                     {edu.degree}
                     {edu.field ? ` ${t("in")} ${edu.field}` : ""}
                   </span>
                   {edu.institution ? <span className="text-stone-500"> · {edu.institution}</span> : null}
-                  {edu.gpa ? <span className="text-stone-400 text-[12px]"> · {edu.gpa}</span> : null}
+                  {edu.gpa ? <span className="text-stone-400 text-xs"> · {edu.gpa}</span> : null}
                 </h3>
-                <span className="text-[12px] text-stone-400 tabular-nums">
+                <span className="text-xs text-stone-400 tabular-nums">
                   {edu.startDate}
                   {edu.startDate || edu.endDate ? " – " : ""}
                   {edu.endDate}
@@ -113,7 +113,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
       {data.languages.length > 0 ? (
         <section>
           <SectionHeading>{t("Languages")}</SectionHeading>
-          <p className="text-[13.5px] text-stone-700">{data.languages.join("  ·  ")}</p>
+          <p className="text-[13px] text-stone-700">{data.languages.join("  ·  ")}</p>
         </section>
       ) : null}
     </article>

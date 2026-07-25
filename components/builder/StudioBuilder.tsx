@@ -749,7 +749,7 @@ export function StudioBuilder() {
       <Icon className="h-[15px] w-[15px]" strokeWidth={1.8} />
       <span className="hidden lg:inline">{label}</span>
       {badge ? (
-        <span className="hidden xl:inline text-[9px] font-bold tracking-wide px-1 py-px rounded bg-brand-navy/10 text-brand-navy">
+        <span className="hidden xl:inline text-[10px] font-bold tracking-wide px-1 py-px rounded bg-brand-navy/10 text-brand-navy">
           {badge}
         </span>
       ) : null}
@@ -765,7 +765,7 @@ export function StudioBuilder() {
             <Logo variant="dark" size="sm" />
             {!isSignedIn ? (
               <SignUpButton mode="modal">
-                <button className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium text-brand-gold hover:bg-brand-gold/10 transition-colors">
+                <button className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-brand-gold hover:bg-brand-gold/10 transition-colors">
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
                   {t("Sign up to save your work")}
                 </button>
@@ -967,7 +967,7 @@ export function StudioBuilder() {
                     role="tab"
                     aria-selected={leftMode === "chat"}
                     onClick={() => switchMode("chat")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12.5px] transition-colors ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] transition-colors ${
                       leftMode === "chat" ? "bg-white text-brand-navy font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
@@ -978,7 +978,7 @@ export function StudioBuilder() {
                     role="tab"
                     aria-selected={leftMode === "edit"}
                     onClick={() => switchMode("edit")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12.5px] transition-colors ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] transition-colors ${
                       leftMode === "edit" ? "bg-white text-brand-navy font-semibold shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
@@ -1030,7 +1030,7 @@ export function StudioBuilder() {
                       <p className="text-[13px] font-medium text-[#1a1a1a]">
                         {t("You've used your free messages — nice progress!")}
                       </p>
-                      <p className="mt-0.5 text-[12px] text-stone-600">
+                      <p className="mt-0.5 text-xs text-stone-600">
                         {t("Create a free account to keep building. Your CV comes with you, and it saves to the cloud from here on.")}
                       </p>
                       <SignUpButton mode="modal">

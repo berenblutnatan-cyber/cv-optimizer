@@ -406,7 +406,7 @@ export function SmartResumePreview({
               className="absolute left-0 w-full border-b-2 border-dashed border-red-300/60 z-50 pointer-events-none"
               style={{ top: `${A4_HEIGHT_PX}px` }}
             >
-              <span className="absolute right-2 -top-4 text-[9px] text-red-400 bg-white/80 px-1.5 py-0.5 rounded">
+              <span className="absolute right-2 -top-4 text-[10px] text-red-400 bg-white/80 px-1.5 py-0.5 rounded">
                 {t("End of Page 1")}
               </span>
             </div>

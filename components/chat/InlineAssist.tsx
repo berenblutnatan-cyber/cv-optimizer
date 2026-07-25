@@ -84,7 +84,7 @@ export function InlineAssist({
               type="button"
               onClick={onAccept}
               disabled={applying}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-navy text-white text-[12px] font-semibold hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-navy text-white text-xs font-semibold hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
             >
               {applying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
               {applying ? t("Applying…") : t("Accept")}
@@ -93,7 +93,7 @@ export function InlineAssist({
               type="button"
               onClick={onDiscard}
               disabled={applying}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] text-stone-500 hover:bg-stone-100 disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-stone-500 hover:bg-stone-100 disabled:opacity-60 transition-colors"
             >
               <X className="h-3 w-3" /> {t("Discard")}
             </button>

@@ -62,7 +62,7 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
         </Link>
 
         <header className="mt-5">
-          <p className="text-[12px] uppercase tracking-[0.18em] text-brand-gold font-semibold">
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-gold font-semibold">
             {ex.category} · {ex.seniority}
           </p>
           <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-brand-navy">{t("{role} resume example", { role: ex.role })}</h1>

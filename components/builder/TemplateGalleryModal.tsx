@@ -98,7 +98,7 @@ function PresetCard({
           ) : null}
           {/* Signals the preview is sample content (shown only while the demo CV is on screen). */}
           {isDemo ? (
-            <div className="absolute bottom-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/85 backdrop-blur text-brand-navy text-[8.5px] font-bold uppercase tracking-wide shadow-sm group-hover:opacity-0 transition-opacity">
+            <div className="absolute bottom-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/85 backdrop-blur text-brand-navy text-[10px] font-bold uppercase tracking-wide shadow-sm group-hover:opacity-0 transition-opacity">
               {t("demo CV")}
             </div>
           ) : null}
@@ -106,18 +106,18 @@ function PresetCard({
         {/* Footer: name + badges (badges live here, never over the preview). */}
         <div className="px-2.5 py-2 border-t border-stone-100">
           <div className="flex items-center gap-1.5">
-            <div className="text-[12.5px] font-semibold text-brand-navy truncate flex-1 min-w-0">{preset.name}</div>
+            <div className="text-[13px] font-semibold text-brand-navy truncate flex-1 min-w-0">{preset.name}</div>
             {preset.isNew ? (
-              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-brand-navy text-white text-[8.5px] font-bold tracking-wide">
+              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-brand-navy text-white text-[10px] font-bold tracking-wide">
                 <Sparkles className="h-2 w-2" /> {t("NEW")}
               </span>
             ) : null}
             {preset.premium ? (
-              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-brand-gold text-white text-[8.5px] font-bold tracking-wide">
+              <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-brand-gold text-white text-[10px] font-bold tracking-wide">
                 <Crown className="h-2 w-2" /> {t("PRO")}
               </span>
             ) : (
-              <span className="flex-shrink-0 inline-flex items-center px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[8.5px] font-bold tracking-wide">
+              <span className="flex-shrink-0 inline-flex items-center px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-wide">
                 {t("FREE")}
               </span>
             )}
@@ -220,7 +220,7 @@ export function TemplateGalleryModal({
       <div className="flex-shrink-0 bg-white border-b border-stone-200 px-4 sm:px-6 py-3 flex items-center gap-4">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-brand-navy leading-tight">{t("Templates")}</h2>
-          <p className="text-[12px] text-stone-500">
+          <p className="text-xs text-stone-500">
             {t("{count} designs across {layouts} layouts — pick one to apply it instantly.", {
               count: TEMPLATE_PRESETS.length,
               layouts: new Set(TEMPLATE_PRESETS.map((p) => p.layout)).size,

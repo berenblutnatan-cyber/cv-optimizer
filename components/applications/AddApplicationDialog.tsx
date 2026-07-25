@@ -78,7 +78,7 @@ export function AddApplicationDialog({
   }
 
   const field =
-    "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
+    "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-sm outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

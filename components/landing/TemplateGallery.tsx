@@ -28,7 +28,7 @@ export async function TemplateGallery() {
         <figure key={d.kind} className="group">
           <div className="relative overflow-hidden rounded-xl border border-brand-navy/10 bg-white shadow-[0_22px_50px_-30px_rgba(10,38,71,0.5)] transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_36px_70px_-30px_rgba(10,38,71,0.55)]">
             {d.badge && (
-              <span className="absolute right-2.5 top-2.5 z-10 rounded-full bg-brand-navy px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[#F3D58A]">
+              <span className="absolute right-2.5 top-2.5 z-10 rounded-full bg-brand-navy px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[#F3D58A]">
                 {t(d.badge)}
               </span>
             )}

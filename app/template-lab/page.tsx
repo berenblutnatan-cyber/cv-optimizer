@@ -169,7 +169,7 @@ export default function TemplateLabPage() {
         </Section>
       </main>
 
-      <footer className="border-t border-white/10 px-5 py-10 text-center font-mono text-[12px] text-white/40 sm:px-8">
+      <footer className="border-t border-white/10 px-5 py-10 text-center font-mono text-xs text-white/40 sm:px-8">
         {t("Same résumé, every template — pick your favorite and make it yours in the builder.")}
       </footer>
     </div>

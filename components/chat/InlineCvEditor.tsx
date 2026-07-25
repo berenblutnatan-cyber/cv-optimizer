@@ -20,7 +20,7 @@ import { InlineAssist } from "@/components/chat/InlineAssist";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 const fieldCls =
-  "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] text-[#1a1a1a] placeholder-stone-400 outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
+  "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-sm text-[#1a1a1a] placeholder-stone-400 outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
 const labelCls = "block text-[11px] font-medium uppercase tracking-wide text-stone-500 mb-1";
 
 function SectionCard({
@@ -225,7 +225,7 @@ export function InlineCvEditor() {
                         placeholder={t("End")}
                       />
                     </div>
-                    <label className="sm:col-span-2 inline-flex items-center gap-2 text-[12px] text-stone-600">
+                    <label className="sm:col-span-2 inline-flex items-center gap-2 text-xs text-stone-600">
                       <input
                         type="checkbox"
                         checked={exp.current}
@@ -382,7 +382,7 @@ export function InlineCvEditor() {
           {skills.map((skill) => (
             <span
               key={skill}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/15 text-[12px] text-brand-navy"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/15 text-xs text-brand-navy"
             >
               {skill}
               <button

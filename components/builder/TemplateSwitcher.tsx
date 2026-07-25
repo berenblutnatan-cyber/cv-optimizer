@@ -335,7 +335,7 @@ function LayoutTab({
               {/* Free badge on the default template */}
               {template.id === DEFAULT_FREE_TEMPLATE_ID && !locked && (
                 <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-emerald-500/95 rounded-sm">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white">{translate("Free")}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white">{translate("Free")}</span>
                 </div>
               )}
             </button>
@@ -484,7 +484,7 @@ function ToolbarSwitcher() {
                     <p className="text-sm font-medium flex items-center gap-1.5">
                       {translate(template.name)}
                       {locked && (
-                        <span className="text-[9px] uppercase tracking-[0.14em] text-brand-gold font-semibold bg-brand-gold/10 px-1.5 py-0.5 rounded-sm">
+                        <span className="text-[10px] uppercase tracking-[0.14em] text-brand-gold font-semibold bg-brand-gold/10 px-1.5 py-0.5 rounded-sm">
                           {translate("1 cr")}
                         </span>
                       )}

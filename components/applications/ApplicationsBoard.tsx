@@ -165,20 +165,20 @@ export function ApplicationsBoard() {
           return (
             <div key={status} className="rounded-2xl bg-stone-50 border border-stone-200 p-2.5 min-h-[120px]">
               <div className="flex items-center justify-between px-1 pb-2">
-                <span className="text-[12px] font-semibold text-brand-navy">{t(STATUS_LABEL[status])}</span>
+                <span className="text-xs font-semibold text-brand-navy">{t(STATUS_LABEL[status])}</span>
                 <span className="text-[11px] text-stone-400 tabular-nums">{col.length}</span>
               </div>
               <div className="space-y-2">
                 {col.map((app) => (
                   <div key={app.id} className="rounded-xl bg-white border border-stone-200 p-3">
                     <div className="text-[13px] font-semibold text-[#1a1a1a] leading-snug">{app.title}</div>
-                    <div className="text-[12px] text-stone-500">{app.company}</div>
+                    <div className="text-xs text-stone-500">{app.company}</div>
                     {app.location ? <div className="text-[11px] text-stone-400 mt-0.5">{app.location}</div> : null}
 
                     <select
                       value={app.status}
                       onChange={(e) => changeStatus(app, e.target.value as JobApplicationStatus)}
-                      className="mt-2 w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[12px] text-brand-navy outline-none focus:border-brand-navy/40"
+                      className="mt-2 w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-brand-navy outline-none focus:border-brand-navy/40"
                     >
                       {APPLICATION_STATUSES.map((s) => (
                         <option key={s} value={s}>
@@ -297,7 +297,7 @@ export function ApplicationsBoard() {
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
                 <h2 className="text-base font-semibold text-brand-navy">{t("Cover letter")}</h2>
-                <p className="text-[12px] text-stone-500 truncate">
+                <p className="text-xs text-stone-500 truncate">
                   {coverLetter.app.title} · {coverLetter.app.company}
                 </p>
               </div>

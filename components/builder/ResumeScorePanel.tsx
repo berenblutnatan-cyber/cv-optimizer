@@ -73,7 +73,7 @@ function ScoreRing({ score, band }: { score: number; band: ScoreBand }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[30px] font-bold tabular-nums leading-none" style={{ color }}>
+        <span className="text-3xl font-bold tabular-nums leading-none" style={{ color }}>
           {score}
         </span>
         <span className="text-[10px] uppercase tracking-[0.14em] text-stone-400 mt-1">/ 100</span>

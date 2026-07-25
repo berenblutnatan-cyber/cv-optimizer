@@ -23,7 +23,7 @@ export default async function ResumeExamplesIndex() {
     <main className="min-h-screen bg-[#F8F7F4]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <header className="text-center max-w-2xl mx-auto">
-          <p className="text-[12px] uppercase tracking-[0.18em] text-brand-gold font-semibold">{t("Resume examples")}</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-gold font-semibold">{t("Resume examples")}</p>
           <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-brand-navy">
             {t("Resume examples that actually get interviews")}
           </h1>
@@ -44,7 +44,7 @@ export default async function ResumeExamplesIndex() {
                 <span className="text-[11px] text-stone-400">{ex.seniority}</span>
               </div>
               <h2 className="mt-1 text-lg font-semibold text-brand-navy">{t("{role} resume example", { role: ex.role })}</h2>
-              <p className="mt-1.5 text-[13.5px] text-stone-600 leading-relaxed line-clamp-3">{ex.blurb}</p>
+              <p className="mt-1.5 text-[13px] text-stone-600 leading-relaxed line-clamp-3">{ex.blurb}</p>
               <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-brand-gold group-hover:gap-2 transition-all">
                 {t("View example")} <ArrowRight className="h-4 w-4" />
               </span>

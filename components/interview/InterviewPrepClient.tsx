@@ -92,7 +92,7 @@ export function InterviewPrepClient() {
   return (
     <div>
       <header className="mb-6">
-        <p className="text-[12px] uppercase tracking-[0.18em] text-brand-gold font-semibold">{t("Interview prep")}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-brand-gold font-semibold">{t("Interview prep")}</p>
         <h1 className="mt-2 text-3xl font-bold text-brand-navy">{t("Walk in ready")}</h1>
         <p className="mt-2 text-stone-600 max-w-xl">
           {t("Get the questions you're most likely to face — then unlock STAR-format answers drawn from your own experience and a tight personal pitch.")}
@@ -118,7 +118,7 @@ export function InterviewPrepClient() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder={t("e.g. Senior Product Manager")}
-                className="w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-[14px] outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10"
+                className="w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-sm outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10"
               />
             </div>
             <button
@@ -141,7 +141,7 @@ export function InterviewPrepClient() {
                     <p className="text-[15px] font-medium text-[#1a1a1a]">{q.question}</p>
                   </div>
                   {!locked && q.starAnswer ? (
-                    <p className="mt-2 ml-6 text-[13.5px] text-stone-600 leading-relaxed whitespace-pre-wrap">{q.starAnswer}</p>
+                    <p className="mt-2 ml-6 text-[13px] text-stone-600 leading-relaxed whitespace-pre-wrap">{q.starAnswer}</p>
                   ) : null}
                 </div>
               ))}
@@ -149,7 +149,7 @@ export function InterviewPrepClient() {
               {!locked && pitch ? (
                 <div className="rounded-2xl bg-brand-navy/[0.04] border border-brand-navy/15 p-4">
                   <div className="text-[11px] uppercase tracking-[0.14em] text-brand-navy/60 mb-1">{t("Your 30-second pitch")}</div>
-                  <p className="text-[14px] text-[#1a1a1a] leading-relaxed whitespace-pre-wrap">{pitch}</p>
+                  <p className="text-sm text-[#1a1a1a] leading-relaxed whitespace-pre-wrap">{pitch}</p>
                 </div>
               ) : null}
 
