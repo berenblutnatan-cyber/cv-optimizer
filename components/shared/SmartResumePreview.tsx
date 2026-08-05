@@ -6,9 +6,12 @@ import { ResumePreview, ResumePreviewData } from "@/components/builder/ResumePre
 import { BuilderTemplateId, ThemeColor, THEME_COLOR_VALUES } from "@/context/BuilderContext";
 import {
   ChevronDown, Check, Palette, Layout, X, Pencil,
-  AlertTriangle, Type, ArrowUpDown, Zap, ZoomIn, ZoomOut
+  AlertTriangle, Type, ArrowUpDown, Zap, ZoomIn, ZoomOut, Lock
 } from "lucide-react";
 import { TEMPLATE_LIST } from "@/lib/templates/registry";
+import { useTemplateGating, TemplateOption } from "@/components/builder/TemplateSwitcher";
+import { TemplateUnlockModal } from "@/components/TemplateUnlockModal";
+import { OutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { densityInlineVars, densityClasses, densityOverrideCss } from "@/lib/builder/density";
@@ -18,10 +21,15 @@ const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
 
 // Template options — derived from the canonical registry
-// (lib/templates/registry.ts) so this dropdown can never go stale.
-const TEMPLATE_OPTIONS: { id: BuilderTemplateId; name: string }[] = TEMPLATE_LIST.map(
-  (entry) => ({ id: entry.id, name: entry.name })
-);
+// (lib/templates/registry.ts) so this dropdown can never go stale. Full
+// TemplateOption shape so selections run through the shared premium gate.
+const TEMPLATE_OPTIONS: TemplateOption[] = TEMPLATE_LIST.map((entry) => ({
+  id: entry.id,
+  name: entry.name,
+  description: entry.description,
+  preview: entry.preview,
+  category: entry.category,
+}));
 
 // Color options
 const COLOR_OPTIONS: { id: ThemeColor; name: string; color: string }[] = [
@@ -125,6 +133,11 @@ export function SmartResumePreview({
   const activeTemplate = onTemplateChange ? initialTemplateId : localTemplateId;
   const activeColor = onColorChange ? initialThemeColor : localThemeColor;
 
+  // Premium gate — the SAME shared unlock/charge flow as TemplateSwitcher and
+  // TemplateGalleryModal, so this dropdown can never apply a locked premium
+  // template without the 1-credit unlock (incl. the out-of-credits paywall).
+  const gating = useTemplateGating((tpl) => applyTemplate(tpl.id), activeTemplate);
+
   // Sync local state with props
   useEffect(() => {
     setLocalTemplateId(initialTemplateId);
@@ -137,12 +150,16 @@ export function SmartResumePreview({
   // Check overflow whenever controls, template, or data changes
   useEffect(() => {
     const checkOverflow = () => {
-      if (contentRef.current) {
-        const currentHeight = contentRef.current.scrollHeight;
-        setIsOverflowing(currentHeight > A4_HEIGHT_PX + 10); // Small buffer
-      }
+      const node = contentRef.current;
+      if (!node) return;
+      // The A4 wrapper clips at exactly one page (fixed height +
+      // overflow:hidden), so its own box never grows — measure the wrapper's
+      // scrollHeight, which still reports the full (clipped) content height.
+      const wrapper = node.querySelector<HTMLElement>(".a4-wrapper");
+      const contentHeight = wrapper ? wrapper.scrollHeight : node.scrollHeight;
+      setIsOverflowing(contentHeight > A4_HEIGHT_PX + 10); // Small buffer
     };
-    
+
     // Delay check to allow rendering
     const timer = setTimeout(checkOverflow, 100);
     return () => clearTimeout(timer);
@@ -157,12 +174,14 @@ export function SmartResumePreview({
   // Font/spacing density styles are shared with the PDF-export render (see
   // lib/builder/density.ts) so the preview and the download stay identical.
 
-  // Handle template change
-  const handleTemplateChange = (newTemplateId: BuilderTemplateId) => {
+  // Apply a template AFTER it cleared the premium gate (gating.handleSelect
+  // is the entry point — it opens the unlock modal for locked templates and
+  // only calls this once the template is free, unlocked, or just paid for).
+  function applyTemplate(newTemplateId: BuilderTemplateId) {
     setLocalTemplateId(newTemplateId);
     setShowTemplateDropdown(false);
     onTemplateChange?.(newTemplateId);
-  };
+  }
 
   // Handle color change
   const handleColorChange = (newColor: ThemeColor) => {
@@ -219,18 +238,29 @@ export function SmartResumePreview({
 
                   {showTemplateDropdown && (
                     <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 max-h-64 overflow-y-auto">
-                      {TEMPLATE_OPTIONS.map((template) => (
-                        <button
-                          key={template.id}
-                          onClick={() => handleTemplateChange(template.id)}
-                          className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
-                            activeTemplate === template.id ? "text-indigo-600 bg-indigo-50" : "text-slate-700"
-                          }`}
-                        >
-                          {template.name}
-                          {activeTemplate === template.id && <Check className="w-4 h-4" />}
-                        </button>
-                      ))}
+                      {TEMPLATE_OPTIONS.map((template) => {
+                        const locked = gating.isLocked(template.id);
+                        return (
+                          <button
+                            key={template.id}
+                            onClick={() => gating.handleSelect(template)}
+                            className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
+                              activeTemplate === template.id ? "text-indigo-600 bg-indigo-50" : "text-slate-700"
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5 truncate">
+                              {template.name}
+                              {locked && (
+                                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-brand-gold font-semibold bg-brand-gold/10 px-1.5 py-0.5 rounded-sm shrink-0">
+                                  <Lock className="w-3 h-3" strokeWidth={2.5} />
+                                  {t("1 cr")}
+                                </span>
+                              )}
+                            </span>
+                            {activeTemplate === template.id && !locked && <Check className="w-4 h-4 shrink-0" />}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -333,22 +363,25 @@ export function SmartResumePreview({
             </div>
           </div>
 
-          {/* OVERFLOW WARNING BANNER */}
-          {isOverflowing && (
-            <div className="bg-amber-50 border-t border-amber-200 px-4 py-2 flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center gap-2 text-amber-700 text-xs font-medium">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                <span>{t("Resume exceeds 1 page! Reduce font or spacing to fit.")}</span>
-              </div>
-              <button 
-                onClick={handleAutoFit}
-                className="flex items-center gap-1.5 h-6 px-3 text-[10px] font-semibold border border-amber-300 text-amber-800 hover:bg-amber-100 bg-white rounded-md transition-colors"
-              >
-                <Zap className="w-3 h-3" />
-                {t("Auto Fit")}
-              </button>
-            </div>
-          )}
+        </div>
+      )}
+
+      {/* OVERFLOW NOTICE — always on (never gated behind the toolbar): the
+          preview clips at one page, so the user must be told page 2 exists
+          and will be in their download. */}
+      {isOverflowing && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between gap-3 shrink-0 z-10 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2 text-amber-800 text-sm font-medium">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            <span>{t("Runs past one page — page 2 is included in your download.")}</span>
+          </div>
+          <button
+            onClick={handleAutoFit}
+            className="flex items-center gap-1.5 min-h-[44px] px-4 text-sm font-semibold border border-amber-300 text-amber-800 hover:bg-amber-100 bg-white rounded-md transition-colors shrink-0"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            {t("Auto Fit")}
+          </button>
         </div>
       )}
 
@@ -435,6 +468,26 @@ export function SmartResumePreview({
           </button>
         )}
       </div>
+
+      {/* Premium unlock confirmation (shared gate) */}
+      <TemplateUnlockModal
+        open={!!gating.pendingTemplate}
+        templateName={gating.pendingTemplate?.name ?? ""}
+        templateDescription={gating.pendingTemplate?.description}
+        templatePreview={gating.pendingTemplate?.preview}
+        loading={gating.unlockLoading}
+        onConfirm={gating.confirmUnlock}
+        onClose={gating.cancelUnlock}
+      />
+
+      {/* Paywall fallback when the unlock attempt finds zero credits */}
+      <OutOfCreditsModal
+        open={gating.oocModal.isOpen}
+        onClose={gating.oocModal.close}
+        trigger={gating.oocModal.trigger}
+        title={gating.oocModal.title}
+        subtitle={gating.oocModal.subtitle}
+      />
     </div>
   );
 }

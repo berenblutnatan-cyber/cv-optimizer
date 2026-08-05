@@ -30,13 +30,13 @@ export async function TwoReaders() {
         <h3 className="mt-3 font-serif text-2xl text-white sm:text-[1.7rem]">
           {t("It scans before it forwards.")}
         </h3>
-        <p className="mt-3 text-sm leading-relaxed text-white/65">
-          {t("Most companies run every résumé through screening software first. It hunts for the right words in a structure it can actually parse.")}
+        <p className="mt-3 text-sm leading-relaxed text-white/70">
+          {t("Most companies run every CV through screening software first. It hunts for the right words in a structure it can actually parse.")}
         </p>
 
         {/* tokenized view */}
         <div className="mt-6 rounded-xl bg-[#030d1c] p-4 font-mono text-[13px] leading-relaxed text-white/75 ring-1 ring-white/10">
-          <span className="text-white/40">&gt; {t("parsing bullet…")}</span>
+          <span className="text-white/60">&gt; {t("parsing bullet…")}</span>
           <p className="mt-2">
             Cut <Token>AWS</Token> <Token>spend</Token> 31% by{" "}
             <Token>re-architecting</Token> 12 services onto{" "}
@@ -59,14 +59,14 @@ export async function TwoReaders() {
 
       {/* THE RECRUITER — human register (paper) */}
       <div className="relative overflow-hidden rounded-[1.5rem] bg-[#FDFBF6] p-7 shadow-[0_36px_80px_-32px_rgba(0,0,0,0.5)] sm:p-9">
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#9a6b08]">
+        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-brand-gold-deep">
           {t("Reader 02 · the recruiter")}
         </p>
         <h3 className="mt-3 font-serif text-2xl text-brand-navy sm:text-[1.7rem]">
           {t("They skim for the one that sticks.")}
         </h3>
-        <p className="mt-3 text-sm leading-relaxed text-brand-navy/60">
-          {t("A recruiter gives each résumé a few seconds. They aren’t reading keywords — they’re looking for a number they’ll repeat in the hiring meeting.")}
+        <p className="mt-3 text-sm leading-relaxed text-brand-navy/70">
+          {t("A recruiter gives each CV a few seconds. They aren’t reading keywords — they’re looking for a number they’ll repeat in the hiring meeting.")}
         </p>
 
         {/* what the human sees — a clean fragment */}
@@ -74,18 +74,18 @@ export async function TwoReaders() {
           <p className="font-serif text-base font-semibold text-brand-navy">
             {t("Senior Platform Engineer")}
           </p>
-          <p className="mt-1 text-xs text-brand-navy/45">Cloudside · 2021–Present</p>
+          <p className="mt-1 text-xs text-brand-navy/60">Cloudside · 2021–Present</p>
           <p className="mt-3 text-[15px] leading-relaxed text-brand-navy/80">
             Cut AWS spend{" "}
-            <mark className="bg-brand-gold/15 px-1 font-semibold text-[#9a6b08]">
+            <mark className="bg-brand-gold/15 px-1 font-semibold text-brand-gold-deep">
               31% ($420K/yr)
             </mark>{" "}
             by re-architecting 12 services onto spot instances.
           </p>
         </div>
 
-        <p className="mt-5 flex items-center gap-2 text-sm text-brand-navy/60">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-gold/12 font-mono text-[10px] font-semibold text-[#9a6b08]">
+        <p className="mt-5 flex items-center gap-2 text-sm text-brand-navy/70">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-gold/12 font-mono text-[10px] font-semibold text-brand-gold-deep">
             7s
           </span>
           {t("Read in seconds — and the number is what they remember.")}

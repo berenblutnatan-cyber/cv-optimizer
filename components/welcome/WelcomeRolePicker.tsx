@@ -133,7 +133,7 @@ export function WelcomeRolePicker({ suggestions }: { suggestions: string[] }) {
           type="button"
           onClick={next}
           disabled={roles.length === 0 || busy}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#1a1a1a] font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/95 active:scale-[0.98] transition-all"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-brand-ink font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/95 active:scale-[0.98] transition-all"
         >
           {t("Continue")}
           <ArrowRight className="h-4 w-4" />

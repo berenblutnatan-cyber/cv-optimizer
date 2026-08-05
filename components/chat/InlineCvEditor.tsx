@@ -13,15 +13,19 @@
  */
 
 import { useState } from "react";
-import { Plus, Trash2, GripVertical, Sparkles, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, Sparkles, X } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 import { InlineAssist } from "@/components/chat/InlineAssist";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 const fieldCls =
-  "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-sm text-[#1a1a1a] placeholder-stone-400 outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
+  "w-full rounded-xl bg-white border border-stone-300 px-3 py-2 text-sm text-brand-ink placeholder-stone-400 outline-none focus:border-brand-navy/50 focus:ring-2 focus:ring-brand-navy/10 transition-colors";
 const labelCls = "block text-[11px] font-medium uppercase tracking-wide text-stone-500 mb-1";
+// Entry-rail icon buttons (move up/down, delete): 44px touch targets on
+// mobile, compact on desktop pointers.
+const entryBtnCls =
+  "flex-shrink-0 grid place-items-center h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors disabled:opacity-30 disabled:pointer-events-none";
 
 function SectionCard({
   title,
@@ -51,15 +55,28 @@ export function InlineCvEditor() {
   const addExperience = useResumeStore((s) => s.addExperience);
   const updateExperience = useResumeStore((s) => s.updateExperience);
   const removeExperience = useResumeStore((s) => s.removeExperience);
+  const reorderExperience = useResumeStore((s) => s.reorderExperience);
   const addEducation = useResumeStore((s) => s.addEducation);
   const updateEducation = useResumeStore((s) => s.updateEducation);
   const removeEducation = useResumeStore((s) => s.removeEducation);
   const addSkill = useResumeStore((s) => s.addSkill);
   const removeSkill = useResumeStore((s) => s.removeSkill);
+  const setResumeData = useResumeStore((s) => s.setResumeData);
 
   const [skillDraft, setSkillDraft] = useState("");
   const { personalInfo, summary, experience, education, skills } = resumeData;
   const summaryValue = isPlaceholderSummary(summary) ? "" : summary;
+
+  // Education reorder goes through setResumeData (no dedicated store action),
+  // which records undo history like every other resumeData mutation.
+  function moveEducation(index: number, dir: -1 | 1) {
+    const to = index + dir;
+    if (to < 0 || to >= education.length) return;
+    const next = [...education];
+    const [moved] = next.splice(index, 1);
+    next.splice(to, 0, moved);
+    setResumeData({ ...resumeData, education: next });
+  }
 
   function commitSkill() {
     const next = skillDraft.trim();
@@ -177,7 +194,8 @@ export function InlineCvEditor() {
           <button
             type="button"
             onClick={() => addExperience()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-navy/[0.07] border border-brand-navy/15 text-[11px] text-brand-navy hover:bg-brand-navy/[0.12] transition-colors"
+            aria-label={t("Add role")}
+            className="relative inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-navy/[0.07] border border-brand-navy/15 text-[11px] text-brand-navy hover:bg-brand-navy/[0.12] transition-colors before:absolute before:-inset-y-2.5 before:-inset-x-1.5 before:content-[''] md:before:hidden"
           >
             <Plus className="h-3 w-3" /> {t("Add")}
           </button>
@@ -190,7 +208,6 @@ export function InlineCvEditor() {
             {experience.map((exp, expIndex) => (
               <div key={exp.id} className="rounded-xl bg-white border border-stone-200 p-3">
                 <div className="flex items-start gap-2">
-                  <GripVertical className="h-4 w-4 text-stone-300 mt-2 flex-shrink-0" />
                   <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <input
                       className={fieldCls}
@@ -286,14 +303,34 @@ export function InlineCvEditor() {
                       />
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeExperience(exp.id)}
-                    aria-label={t("Remove role")}
-                    className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => reorderExperience(expIndex, expIndex - 1)}
+                      disabled={expIndex === 0}
+                      aria-label={t("Move {name} up", { name: exp.role.trim() || exp.company.trim() || t("this role") })}
+                      className={`${entryBtnCls} text-stone-400 hover:text-brand-navy hover:bg-stone-100`}
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => reorderExperience(expIndex, expIndex + 1)}
+                      disabled={expIndex === experience.length - 1}
+                      aria-label={t("Move {name} down", { name: exp.role.trim() || exp.company.trim() || t("this role") })}
+                      className={`${entryBtnCls} text-stone-400 hover:text-brand-navy hover:bg-stone-100`}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeExperience(exp.id)}
+                      aria-label={t("Delete {name}", { name: exp.role.trim() || exp.company.trim() || t("this role") })}
+                      className={`${entryBtnCls} text-stone-400 hover:text-rose-500 hover:bg-stone-100`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -308,7 +345,8 @@ export function InlineCvEditor() {
           <button
             type="button"
             onClick={() => addEducation()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-navy/[0.07] border border-brand-navy/15 text-[11px] text-brand-navy hover:bg-brand-navy/[0.12] transition-colors"
+            aria-label={t("Add education")}
+            className="relative inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-navy/[0.07] border border-brand-navy/15 text-[11px] text-brand-navy hover:bg-brand-navy/[0.12] transition-colors before:absolute before:-inset-y-2.5 before:-inset-x-1.5 before:content-[''] md:before:hidden"
           >
             <Plus className="h-3 w-3" /> {t("Add")}
           </button>
@@ -318,7 +356,7 @@ export function InlineCvEditor() {
           <p className="text-[13px] text-stone-500">{t("No schools yet.")}</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {education.map((edu) => (
+            {education.map((edu, eduIndex) => (
               <div key={edu.id} className="rounded-xl bg-white border border-stone-200 p-3">
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -361,14 +399,34 @@ export function InlineCvEditor() {
                       />
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeEducation(edu.id)}
-                    aria-label={t("Remove education")}
-                    className="flex-shrink-0 grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => moveEducation(eduIndex, -1)}
+                      disabled={eduIndex === 0}
+                      aria-label={t("Move {name} up", { name: edu.institution.trim() || edu.degree.trim() || t("this school") })}
+                      className={`${entryBtnCls} text-stone-400 hover:text-brand-navy hover:bg-stone-100`}
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveEducation(eduIndex, 1)}
+                      disabled={eduIndex === education.length - 1}
+                      aria-label={t("Move {name} down", { name: edu.institution.trim() || edu.degree.trim() || t("this school") })}
+                      className={`${entryBtnCls} text-stone-400 hover:text-brand-navy hover:bg-stone-100`}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeEducation(edu.id)}
+                      aria-label={t("Delete {name}", { name: edu.institution.trim() || edu.degree.trim() || t("this school") })}
+                      className={`${entryBtnCls} text-stone-400 hover:text-rose-500 hover:bg-stone-100`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -385,11 +443,12 @@ export function InlineCvEditor() {
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/15 text-xs text-brand-navy"
             >
               {skill}
+              {/* 16px visual, 44px effective target via ::before hit-slop */}
               <button
                 type="button"
                 onClick={() => removeSkill(skill)}
                 aria-label={t("Remove {skill}", { skill })}
-                className="grid place-items-center h-4 w-4 rounded-full text-brand-navy/50 hover:text-brand-navy hover:bg-brand-navy/12"
+                className="relative grid place-items-center h-4 w-4 rounded-full text-brand-navy/50 hover:text-brand-navy hover:bg-brand-navy/12 before:absolute before:-inset-3.5 md:before:-inset-1 before:content-['']"
               >
                 <X className="h-3 w-3" />
               </button>

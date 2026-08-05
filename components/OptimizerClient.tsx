@@ -215,12 +215,26 @@ export function OptimizerClient() {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && (file.type === "application/pdf" || file.name.endsWith(".pdf") || file.name.endsWith(".docx") || file.name.endsWith(".txt"))) {
-      setCvFile(file);
-      if (file.type === "text/plain" || file.name.endsWith(".txt")) {
-        const text = await file.text();
-        setCvText(text);
-      }
+    if (!file) return;
+    // Rejections must be audible — a silently ignored drop reads as "the app
+    // is broken" (same validation copy as /score and the onboarding funnel).
+    const accepted =
+      file.type === "application/pdf" ||
+      file.name.endsWith(".pdf") ||
+      file.name.endsWith(".docx") ||
+      file.name.endsWith(".txt");
+    if (!accepted) {
+      toast.error(t("That file type isn't supported — upload a PDF, DOCX, or TXT."));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t("That file is over 5 MB — export a smaller PDF and try again."));
+      return;
+    }
+    setCvFile(file);
+    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+      const text = await file.text();
+      setCvText(text);
     }
   };
 
@@ -506,7 +520,7 @@ export function OptimizerClient() {
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8 sm:mb-10">
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-[#1a1a1a] mb-4 tracking-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-brand-ink mb-4 tracking-tight">
               {t("Optimize Your Resume")}
             </h1>
             <div className="w-16 h-px bg-brand-navy mx-auto mb-5" />
@@ -581,7 +595,7 @@ export function OptimizerClient() {
                   <FileText className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">{t("Your Resume")}</h2>
+                  <h2 className="font-serif text-xl text-brand-ink tracking-tight">{t("Your Resume")}</h2>
                   <p className="text-sm text-stone-500 font-light">{t("PDF, DOCX, or plain text")}</p>
                 </div>
               </div>
@@ -605,7 +619,7 @@ export function OptimizerClient() {
                       <Check className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                     </div>
                     <div className="text-left">
-                      <p className="font-medium text-[#1a1a1a]">{cvFile.name}</p>
+                      <p className="font-medium text-brand-ink">{cvFile.name}</p>
                       <p className="text-sm text-stone-500">{(cvFile.size / 1024).toFixed(1)} KB</p>
                     </div>
                     <button
@@ -659,7 +673,7 @@ export function OptimizerClient() {
                 value={cvText}
                 onChange={(e) => { setCvText(e.target.value); if (e.target.value) setCvFile(null); }}
                 placeholder={t("Please paste your resume contents here...")}
-                className="w-full h-40 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
+                className="w-full h-40 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-brand-ink text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
               />
 
               {/* Summary Section */}
@@ -667,7 +681,7 @@ export function OptimizerClient() {
                 <div className="flex items-center gap-3 mb-4">
                   <Pen className="w-4 h-4 text-stone-500" strokeWidth={1.5} />
                   <div>
-                    <label htmlFor="summary" className="font-medium text-[#1a1a1a] text-sm tracking-wide block">{t("Professional Summary")}</label>
+                    <label htmlFor="summary" className="font-medium text-brand-ink text-sm tracking-wide block">{t("Professional Summary")}</label>
                     <p className="text-xs text-stone-500 font-light">{t("Optional — AI will enhance it")}</p>
                   </div>
                 </div>
@@ -676,7 +690,7 @@ export function OptimizerClient() {
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
                   placeholder={t("A brief 2-4 sentence summary of your experience and goals...")}
-                  className="w-full h-24 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
+                  className="w-full h-24 p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-brand-ink text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                 />
               </div>
             </div>
@@ -689,7 +703,7 @@ export function OptimizerClient() {
                   <Briefcase className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="font-serif text-xl text-[#1a1a1a] tracking-tight">{t("Target Role")}</h2>
+                  <h2 className="font-serif text-xl text-brand-ink tracking-tight">{t("Target Role")}</h2>
                   <p className="text-sm text-stone-500 font-light">{t("Role details for tailored optimization")}</p>
                 </div>
               </div>
@@ -715,7 +729,7 @@ export function OptimizerClient() {
 
               {/* Job Title Input */}
               <div className="mb-8">
-                <label htmlFor="job-title" className="block text-sm font-medium text-[#1a1a1a] mb-3 tracking-wide">
+                <label htmlFor="job-title" className="block text-sm font-medium text-brand-ink mb-3 tracking-wide">
                   {t("Target Job Title")}
                 </label>
                 <input
@@ -724,13 +738,13 @@ export function OptimizerClient() {
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
                   placeholder={t("e.g. Senior Software Engineer")}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
+                  className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-brand-ink text-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                 />
               </div>
 
               {/* Toggle: URL vs Description */}
               <div className="mb-6">
-                <span className="block text-sm font-medium text-[#1a1a1a] mb-4 tracking-wide">
+                <span className="block text-sm font-medium text-brand-ink mb-4 tracking-wide">
                   {t("Job Details")}
                 </span>
                 <div className="flex border-b border-stone-200 mb-6">
@@ -769,7 +783,7 @@ export function OptimizerClient() {
                       value={jobUrl}
                       onChange={(e) => setJobUrl(e.target.value)}
                       placeholder="https://linkedin.com/jobs/view/..."
-                      className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-sm bg-stone-50/40 text-brand-ink text-sm focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light"
                     />
                     <p className="text-xs text-stone-500 mt-3 font-light">
                       {t("We'll extract the job details automatically")}
@@ -783,7 +797,7 @@ export function OptimizerClient() {
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
                       placeholder={t("Please paste the complete job description here...")}
-                      className="w-full h-[180px] p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-[#1a1a1a] text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
+                      className="w-full h-[180px] p-4 border border-stone-200 rounded-sm bg-stone-50/40 text-brand-ink text-sm resize-none focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy/20 focus:bg-white transition-colors placeholder:text-stone-500 font-light leading-relaxed"
                     />
                     <p className="text-xs text-stone-500 mt-3 font-light">
                       {t("Include requirements, responsibilities, and qualifications")}

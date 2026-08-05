@@ -234,7 +234,7 @@ export function ResumeScorePanel({
                   <div className="flex items-start gap-2.5">
                     <span className={`mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0 ${SEVERITY_DOT[p.severity]}`} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-medium text-[#1a1a1a] leading-relaxed">{p.title}</div>
+                      <div className="text-[13px] font-medium text-brand-ink leading-relaxed">{p.title}</div>
                       <div className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">{p.detail}</div>
                       {p.fix ? (
                         <button

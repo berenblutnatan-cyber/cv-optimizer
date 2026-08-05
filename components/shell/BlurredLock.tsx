@@ -33,7 +33,7 @@ export function BlurredLock({
         onClick={onUnlock}
         className="absolute inset-0 grid place-items-center rounded-2xl bg-black/20 hover:bg-black/30 transition-colors group"
       >
-        <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 text-[#1a1a1a] text-sm font-medium shadow-glow group-hover:scale-[1.02] transition-transform">
+        <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 text-brand-ink text-sm font-medium shadow-glow group-hover:scale-[1.02] transition-transform">
           <Lock className="h-3.5 w-3.5" />
           {label ?? t("Unlock")}
           {typeof scoreImpact === "number" && scoreImpact > 0 ? (

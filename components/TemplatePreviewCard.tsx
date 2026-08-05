@@ -2,12 +2,13 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
-import { Download, Maximize2, X } from "lucide-react";
+import { Download, Maximize2, X, Lock } from "lucide-react";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import {
   TemplateType,
   TEMPLATE_INFO,
   TEMPLATE_COMPONENTS,
+  isPremiumTemplate,
 } from "./cv-templates";
 import { Watermark } from "@/components/Watermark";
 import { toast } from "sonner";
@@ -33,6 +34,9 @@ export function TemplatePreviewCard({
   const { isSignedIn } = useAuth();
   const info = TEMPLATE_INFO[templateId];
   const Component = TEMPLATE_COMPONENTS[templateId];
+  // Guard: today's optimizer template ids are all non-premium, but check the
+  // canonical registry anyway so a premium id can never slip through unbadged.
+  const premium = isPremiumTemplate(templateId);
 
   // Close on Escape key
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -143,11 +147,17 @@ export function TemplatePreviewCard({
     <>
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-300 hover:shadow-md transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+        <div className="flex items-center justify-between gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
           <div>
             <h3 className="font-semibold text-slate-900 text-sm">{info.name}</h3>
             <p className="text-xs text-slate-500">{info.description}</p>
           </div>
+          {premium && (
+            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-brand-gold font-semibold bg-brand-gold/10 px-1.5 py-0.5 rounded-sm shrink-0">
+              <Lock className="w-3 h-3" strokeWidth={2.5} />
+              {t("1 cr")}
+            </span>
+          )}
         </div>
 
         {/* Mini Preview */}
@@ -178,14 +188,14 @@ export function TemplatePreviewCard({
           </div>
         </div>
 
-        {/* Download Button */}
+        {/* Download Button — cost shown up front, never only at failure */}
         <div className="p-3 border-t border-slate-100">
           <button
             onClick={handleDownloadClick}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors shadow-sm"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors shadow-sm"
           >
             <Download className="w-4 h-4" />
-            {t("Download PDF")}
+            {t("Download PDF")} · {t("1 cr")}
           </button>
         </div>
 
@@ -225,10 +235,10 @@ export function TemplatePreviewCard({
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleDownloadClick}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
                 >
                   <Download className="w-4 h-4" />
-                  {t("Download PDF")}
+                  {t("Download PDF")} · {t("1 cr")}
                 </button>
                 <button
                   onClick={closePreview}
@@ -242,8 +252,8 @@ export function TemplatePreviewCard({
 
             {/* Preview Content */}
             <div className="flex-1 overflow-auto p-6 bg-slate-100 flex justify-center relative">
-              <Watermark />
               <div className="shadow-2xl relative z-10">
+                <Watermark />
                 <Component data={cvData} photo={templateId === "creative" ? photo : undefined} />
               </div>
             </div>

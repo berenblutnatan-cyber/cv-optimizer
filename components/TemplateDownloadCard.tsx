@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { Download, Maximize2, X, FileText, FileEdit, Loader2 } from "lucide-react";
+import { Download, Maximize2, X, FileText, FileEdit, Loader2, Lock } from "lucide-react";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import { ResumePreview, ResumePreviewData } from "@/components/builder/ResumePreview";
 import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
 import { ALL_TEMPLATES, AllTemplateId } from "@/components/cv-templates";
+import { DEFAULT_FREE_TEMPLATE_ID } from "@/lib/templates/registry";
+import { useTemplateGating, TemplateOption } from "@/components/builder/TemplateSwitcher";
+import { TemplateUnlockModal } from "@/components/TemplateUnlockModal";
+import { OutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { formatName, formatJobTitle } from "@/utils/formatting";
 import { exportToPdf } from "@/utils/exportToPdf";
 import { exportToWord } from "@/utils/exportToWord";
@@ -63,6 +67,35 @@ export function TemplateDownloadCard({
   const info = ALL_TEMPLATES[templateId];
   const builderTemplateId = templateIdMap[templateId];
 
+  // Premium gate — the SAME shared unlock/charge flow as the builder's
+  // template switchers. A locked premium template must be unlocked (1 credit)
+  // before it can be downloaded; the pending download resumes after unlock.
+  const pendingDownloadRef = useRef<(() => void) | null>(null);
+  const gating = useTemplateGating(() => {
+    const run = pendingDownloadRef.current;
+    pendingDownloadRef.current = null;
+    run?.();
+  }, DEFAULT_FREE_TEMPLATE_ID);
+  const templateOption: TemplateOption = {
+    id: builderTemplateId,
+    name: info.name,
+    description: info.description,
+    preview: info.preview,
+    category: info.category,
+  };
+  const locked = gating.isLocked(builderTemplateId);
+
+  /** Run `download` directly for free/unlocked templates; otherwise open the
+   *  shared unlock modal first and resume the download after the unlock. */
+  const gatekeep = (download: () => void) => {
+    if (!gating.isLocked(builderTemplateId)) {
+      download();
+      return;
+    }
+    pendingDownloadRef.current = download;
+    gating.handleSelect(templateOption);
+  };
+
   // Format the data with proper capitalization
   const formattedData: ResumePreviewData = {
     ...data,
@@ -118,17 +151,8 @@ export function TemplateDownloadCard({
     return creditResult?.success === true;
   };
 
-  // Direct PDF download (no print dialog)
-  const handleDownloadPdf = async () => {
-    if (!isSignedIn) {
-      // Show free credit toast before sign-in prompt
-      setShowFreeCreditToast(true);
-      setTimeout(() => {
-        setShowSignInPrompt(true);
-      }, 500); // Small delay to show toast first
-      return;
-    }
-
+  // PDF download (vector print pipeline, raster fallback in exportToPdf)
+  const runPdfDownload = async () => {
     if (!printRef.current) return;
 
     setIsDownloading(true);
@@ -175,16 +199,7 @@ export function TemplateDownloadCard({
   };
 
   // Word document download
-  const handleDownloadWord = async () => {
-    if (!isSignedIn) {
-      // Show free credit toast before sign-in prompt
-      setShowFreeCreditToast(true);
-      setTimeout(() => {
-        setShowSignInPrompt(true);
-      }, 500); // Small delay to show toast first
-      return;
-    }
-
+  const runWordDownload = async () => {
     setIsDownloading(true);
     setDownloadType("word");
 
@@ -228,6 +243,28 @@ export function TemplateDownloadCard({
     }
   };
 
+  // Public handlers: sign-in first, then the premium unlock gate, then the
+  // actual download (which itself charges the 1-credit download cost).
+  const requireSignIn = (): boolean => {
+    if (isSignedIn) return true;
+    // Show free credit toast before sign-in prompt
+    setShowFreeCreditToast(true);
+    setTimeout(() => {
+      setShowSignInPrompt(true);
+    }, 500); // Small delay to show toast first
+    return false;
+  };
+
+  const handleDownloadPdf = () => {
+    if (!requireSignIn()) return;
+    gatekeep(() => void runPdfDownload());
+  };
+
+  const handleDownloadWord = () => {
+    if (!requireSignIn()) return;
+    gatekeep(() => void runWordDownload());
+  };
+
   const closePreview = () => setShowFullPreview(false);
 
   return (
@@ -235,7 +272,16 @@ export function TemplateDownloadCard({
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-300 hover:shadow-md transition-all">
         {/* Header */}
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-900 text-sm">{info.name}</h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-slate-900 text-sm">{info.name}</h3>
+            {/* Locked-premium state, surfaced BEFORE any download attempt */}
+            {locked && (
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-brand-gold font-semibold bg-brand-gold/10 px-1.5 py-0.5 rounded-sm shrink-0">
+                <Lock className="w-3 h-3" strokeWidth={2.5} />
+                {t("1 cr")}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 line-clamp-2">{info.description}</p>
         </div>
 
@@ -272,31 +318,31 @@ export function TemplateDownloadCard({
           </div>
         </div>
 
-        {/* Download Buttons */}
+        {/* Download Buttons — cost shown up front, never only at failure */}
         <div className="p-3 border-t border-slate-100 flex gap-2">
           <button
             onClick={handleDownloadPdf}
             disabled={isDownloading}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium rounded-xl transition-colors shadow-sm text-sm"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium rounded-xl transition-colors shadow-sm text-sm"
           >
             {isDownloading && downloadType === "pdf" ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <FileText className="w-4 h-4" />
             )}
-            PDF
+            PDF · {t("1 cr")}
           </button>
           <button
             onClick={handleDownloadWord}
             disabled={isDownloading}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 font-medium rounded-xl transition-colors text-sm"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 font-medium rounded-xl transition-colors text-sm"
           >
             {isDownloading && downloadType === "word" ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <FileEdit className="w-4 h-4" />
             )}
-            Word
+            Word · {t("1 cr")}
           </button>
         </div>
 
@@ -341,34 +387,34 @@ export function TemplateDownloadCard({
                 <button
                   onClick={handleDownloadPdf}
                   disabled={isDownloading}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium rounded-lg transition-colors"
                 >
                   {isDownloading && downloadType === "pdf" ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <FileText className="w-4 h-4" />
                   )}
-                  PDF
+                  PDF · {t("1 cr")}
                 </button>
                 <button
                   onClick={handleDownloadWord}
                   disabled={isDownloading}
-                  className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 min-h-[44px] border border-blue-500 text-blue-600 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300 font-medium rounded-lg transition-colors"
                 >
                   {isDownloading && downloadType === "word" ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <FileEdit className="w-4 h-4" />
                   )}
-                  Word
+                  Word · {t("1 cr")}
                 </button>
               </div>
             </div>
 
             {/* Preview Content */}
             <div className="flex-1 overflow-auto p-6 bg-slate-100 flex justify-center relative">
-              {showWatermark && <Watermark />}
               <div className="shadow-2xl relative z-10">
+                {showWatermark && <Watermark />}
                 <ResumePreview 
                   data={formattedData} 
                   templateId={builderTemplateId} 
@@ -465,6 +511,26 @@ export function TemplateDownloadCard({
           </div>
         </div>
       )}
+
+      {/* Premium unlock confirmation (shared gate) */}
+      <TemplateUnlockModal
+        open={!!gating.pendingTemplate}
+        templateName={gating.pendingTemplate?.name ?? ""}
+        templateDescription={gating.pendingTemplate?.description}
+        templatePreview={gating.pendingTemplate?.preview}
+        loading={gating.unlockLoading}
+        onConfirm={gating.confirmUnlock}
+        onClose={gating.cancelUnlock}
+      />
+
+      {/* Paywall fallback when the unlock attempt finds zero credits */}
+      <OutOfCreditsModal
+        open={gating.oocModal.isOpen}
+        onClose={gating.oocModal.close}
+        trigger={gating.oocModal.trigger}
+        title={gating.oocModal.title}
+        subtitle={gating.oocModal.subtitle}
+      />
 
       {/* Free Credit Toast */}
       <FreeCreditToast

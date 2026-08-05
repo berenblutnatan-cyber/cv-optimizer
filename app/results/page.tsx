@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth, SignInButton } from "@clerk/nextjs";
+import { toast } from "sonner";
 import { Download, X, ArrowLeft } from "lucide-react";
 import { AnalysisResults } from "@/components/AnalysisResults";
 import { AnalysisSessionPayload, clearAnalysisSession, loadAnalysisFromSession, saveAnalysisToSession } from "@/lib/analysisSession";
@@ -67,7 +69,7 @@ export default function ResultsPage() {
               <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-brand-navy/5 flex items-center justify-center">
                 <ArrowLeft className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />
               </div>
-              <h1 className="font-serif text-2xl text-[#1a1a1a] mb-3">{t("No analysis yet")}</h1>
+              <h1 className="font-serif text-2xl text-brand-ink mb-3">{t("No analysis yet")}</h1>
               <p className="text-stone-500 font-light mb-8">
                 {t("Run an analysis first to see your tailored results, suggested changes, and downloadable resume.")}
               </p>
@@ -94,9 +96,10 @@ export default function ResultsPage() {
               clearAnalysisSession();
               router.push("/optimize");
             }}
-            className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-brand-navy hover:text-white hover:bg-brand-navy border border-brand-navy/30 hover:border-brand-navy rounded-sm transition-colors tracking-wide focus-visible:outline-none"
+            className="inline-flex items-center min-h-[44px] px-3 sm:px-4 py-2 text-sm font-medium text-brand-navy hover:text-white hover:bg-brand-navy border border-brand-navy/30 hover:border-brand-navy rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none"
           >
-            {t("New Analysis")}
+            <span className="sm:hidden">{t("New")}</span>
+            <span className="hidden sm:inline">{t("New Analysis")}</span>
           </button>
         }
       />
@@ -190,7 +193,7 @@ export default function ResultsPage() {
                       a.remove();
                       URL.revokeObjectURL(url);
                     } catch (e) {
-                      alert(e instanceof Error ? e.message : t("PDF export failed"));
+                      toast.error(e instanceof Error ? e.message : t("PDF export failed"));
                     } finally {
                       setDownloadingCoverLetterPdf(false);
                     }
@@ -262,7 +265,12 @@ export default function ResultsPage() {
 
       <footer className="w-full border-t border-stone-200/60 py-5 bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-8 lg:px-16 text-center text-stone-500 text-xs font-light tracking-wide">
-          {t("Powered by AI • Your data is secure and never stored")}
+          {/* Honest privacy line — analyses ARE saved so results survive
+              refreshes; never claim "never stored". */}
+          {t("Powered by AI • Processed securely •")}{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-stone-700 transition-colors">
+            {t("Privacy Policy")}
+          </Link>
         </div>
       </footer>
 
@@ -290,7 +298,7 @@ export default function ResultsPage() {
               <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-brand-navy/10 flex items-center justify-center">
                 <Download className="w-7 h-7 text-brand-navy" strokeWidth={1.5} />
               </div>
-              <h3 id="signin-prompt-title" className="font-serif text-2xl text-[#1a1a1a] mb-3">
+              <h3 id="signin-prompt-title" className="font-serif text-2xl text-brand-ink mb-3">
                 {t("Sign in to Download")}
               </h3>
               <p className="text-stone-500 font-light">

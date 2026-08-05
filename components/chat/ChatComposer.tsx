@@ -37,15 +37,16 @@ const SKIN: Record<
     iconBtn: "bg-white/10 text-white/75 hover:bg-white/20 hover:text-white",
     textarea: "text-white placeholder:text-white/45",
     micIdle: "bg-white/10 text-white/75 hover:bg-white/20 hover:text-white",
-    micOn: "bg-[#f5b8c8] text-[#1a1a1a] animate-pulse",
-    send: "bg-white text-[#1a1a1a]",
-    error: "text-[#f5b8c8]",
+    micOn: "bg-warm text-brand-ink animate-pulse",
+    send: "bg-white text-brand-ink",
+    // Errors read rose, NOT the warm pink — the pink already means "recording".
+    error: "text-rose-300",
   },
   light: {
     chip: "bg-white border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 shadow-sm",
     box: "bg-white border-stone-300 focus-within:border-brand-navy/40 shadow-sm",
     iconBtn: "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700",
-    textarea: "text-[#1a1a1a] placeholder:text-stone-400",
+    textarea: "text-brand-ink placeholder:text-stone-400",
     micIdle: "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700",
     micOn: "bg-brand-navy text-white animate-pulse",
     send: "bg-brand-navy text-white hover:bg-brand-navy-hover",
@@ -140,7 +141,7 @@ export function ChatComposer({
               type="button"
               disabled={disabled}
               onClick={() => send(chip)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full border text-xs transition-colors disabled:opacity-40 ${skin.chip}`}
+              className={`flex-shrink-0 min-h-11 md:min-h-0 px-3 py-1.5 rounded-full border text-xs transition-colors disabled:opacity-40 ${skin.chip}`}
             >
               {t(chip)}
             </button>
@@ -166,7 +167,7 @@ export function ChatComposer({
           disabled={disabled || uploading}
           aria-label={t("Upload your current CV (PDF or Word)")}
           title={t("Upload your current CV (PDF or Word)")}
-          className={`grid place-items-center h-10 w-10 rounded-xl transition-colors disabled:opacity-40 ${skin.iconBtn}`}
+          className={`grid place-items-center h-11 w-11 md:h-10 md:w-10 rounded-xl transition-colors disabled:opacity-40 ${skin.iconBtn}`}
         >
           {uploading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -201,7 +202,7 @@ export function ChatComposer({
             onClick={onMicClick}
             aria-label={listening ? t("Stop dictation") : t("Dictate your answer")}
             aria-pressed={listening}
-            className={`grid place-items-center h-10 w-10 rounded-xl transition-colors ${
+            className={`grid place-items-center h-11 w-11 md:h-10 md:w-10 rounded-xl transition-colors ${
               listening ? skin.micOn : skin.micIdle
             }`}
           >
@@ -213,8 +214,8 @@ export function ChatComposer({
           onClick={() => send(draft)}
           disabled={disabled || !draft.trim()}
           aria-label={sendLabel ?? t("Send")}
-          className={`inline-flex items-center justify-center gap-1.5 h-10 rounded-xl disabled:opacity-40 transition-colors ${
-            sendLabel ? "px-4 w-auto" : "w-10"
+          className={`inline-flex items-center justify-center gap-1.5 h-11 md:h-10 rounded-xl disabled:opacity-40 transition-colors ${
+            sendLabel ? "px-4 w-auto" : "w-11 md:w-10"
           } ${skin.send}`}
         >
           {sendLabel ? (
@@ -228,7 +229,7 @@ export function ChatComposer({
         </button>
       </div>
 
-      {error ? <div className={`text-xs ${skin.error}`}>{error}</div> : null}
+      {error ? <div className={`text-sm ${skin.error}`}>{error}</div> : null}
     </div>
   );
 }

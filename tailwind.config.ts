@@ -49,6 +49,11 @@ const config: Config = {
           "navy-hover": "#0d3259",
           gold: "#B8860B",
           "gold-soft": "#D4A83F",
+          // AA-compliant dark gold for small text (<18px) and CTA hovers —
+          // replaces the four hand-derived variants (#9a6b08/#9c7409/#a3760a/#a0760a).
+          "gold-deep": "#9a6b08",
+          // Near-black body ink used across chat/document surfaces.
+          ink: "#1a1a1a",
         },
         // Hired brand colors - Professional Indigo palette
         primary: {

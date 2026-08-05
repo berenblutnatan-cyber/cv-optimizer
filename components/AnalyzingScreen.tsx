@@ -125,7 +125,7 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle, onCancel }:
 
             {/* Headline */}
             <div className="text-center mb-7 sm:mb-8">
-              <h2 className="font-serif text-2xl sm:text-3xl font-light text-[#1a1a1a] mb-2 tracking-tight">
+              <h2 className="font-serif text-2xl sm:text-3xl font-light text-brand-ink mb-2 tracking-tight">
                 {mode === "quick"
                   ? t("Polishing your resume")
                   : jobTitle?.trim()
@@ -196,7 +196,7 @@ export function AnalyzingScreen({ open, mode = "targeted", jobTitle, onCancel }:
                     <div className="flex-1 min-w-0 pt-1">
                       <div
                         className={`text-sm sm:text-base font-medium tracking-wide ${
-                          active ? "text-brand-navy" : "text-[#1a1a1a]"
+                          active ? "text-brand-navy" : "text-brand-ink"
                         }`}
                       >
                         {t(stage.label)}

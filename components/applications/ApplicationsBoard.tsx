@@ -15,6 +15,7 @@ import {
   type JobApplicationStatus,
 } from "@/lib/applications";
 import { AddApplicationDialog } from "@/components/applications/AddApplicationDialog";
+import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function ApplicationsBoard() {
@@ -28,6 +29,8 @@ export function ApplicationsBoard() {
   // Delete is permanent — always confirm first.
   const [confirmDelete, setConfirmDelete] = useState<ApplicationDTO | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Paywall with a way to act — never a dead-end toast (same as OptimizerClient).
+  const oocModal = useOutOfCreditsModal();
 
   useEffect(() => {
     (async () => {
@@ -121,7 +124,10 @@ export function ApplicationsBoard() {
       if (res.status === 402 || data?.code === "INSUFFICIENT_CREDITS") {
         track("application_cover_letter_blocked", { reason: "no_credits" });
         useFlashSaleStore.getState().recordAction();
-        toast.message(t("You're out of credits"), { description: t("Top up or grab the Pro offer to generate.") });
+        oocModal.open({
+          trigger: "cover_letter",
+          subtitle: t("Top up from $1 to generate this cover letter — or go Unlimited."),
+        });
         return;
       }
       if (!res.ok) {
@@ -171,7 +177,7 @@ export function ApplicationsBoard() {
               <div className="space-y-2">
                 {col.map((app) => (
                   <div key={app.id} className="rounded-xl bg-white border border-stone-200 p-3">
-                    <div className="text-[13px] font-semibold text-[#1a1a1a] leading-snug">{app.title}</div>
+                    <div className="text-[13px] font-semibold text-brand-ink leading-snug">{app.title}</div>
                     <div className="text-xs text-stone-500">{app.company}</div>
                     {app.location ? <div className="text-[11px] text-stone-400 mt-0.5">{app.location}</div> : null}
 
@@ -290,6 +296,14 @@ export function ApplicationsBoard() {
         </div>
       ) : null}
 
+      <OutOfCreditsModal
+        open={oocModal.isOpen}
+        onClose={oocModal.close}
+        trigger={oocModal.trigger}
+        title={oocModal.title}
+        subtitle={oocModal.subtitle}
+      />
+
       {coverLetter ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setCoverLetter(null)} aria-hidden="true" />
@@ -312,7 +326,7 @@ export function ApplicationsBoard() {
             <textarea
               readOnly
               value={coverLetter.text}
-              className="flex-1 min-h-[300px] w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-[13px] leading-relaxed text-[#1a1a1a] resize-none outline-none"
+              className="flex-1 min-h-[300px] w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-[13px] leading-relaxed text-brand-ink resize-none outline-none"
             />
             <div className="mt-3 flex justify-end">
               <button

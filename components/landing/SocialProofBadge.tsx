@@ -34,7 +34,7 @@ export function SocialProofBadge({ className = "" }: { className?: string }) {
     >
       <Users className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
       <span>
-        {t("Trusted by")} <strong className="font-medium text-[#1a1a1a]">{count.toLocaleString()}+</strong> {t("job seekers in the last 30 days")}
+        {t("Trusted by")} <strong className="font-medium text-brand-ink">{count.toLocaleString()}+</strong> {t("job seekers in the last 30 days")}
       </span>
     </div>
   );

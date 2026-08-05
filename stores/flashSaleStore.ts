@@ -29,8 +29,6 @@ interface FlashSaleStore {
   expire: () => void;
   /** User closed the banner — terminal. */
   dismiss: () => void;
-  /** User clicked through to checkout — terminal. */
-  markClaimed: () => void;
 }
 
 export const useFlashSaleStore = create<FlashSaleStore>()(
@@ -55,7 +53,9 @@ export const useFlashSaleStore = create<FlashSaleStore>()(
         if (get().status === "armed") set({ status: "expired" });
       },
       dismiss: () => set({ status: "dismissed" }),
-      markClaimed: () => set({ status: "claimed" }),
+      // NOTE: "claimed" status is no longer set client-side — a click-through is
+      // not a purchase. The server's /api/flash-sale availability check (which
+      // returns false after any purchase) is the source of truth for claiming.
     }),
     { name: "hired-flash-sale" }
   )

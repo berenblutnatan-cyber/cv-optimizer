@@ -96,7 +96,7 @@ const ROLE_OPTIONS = [
 ];
 
 const GOAL_OPTIONS: { id: GoalId; title: string; desc: string; badge?: string }[] = [
-  { id: "ats", title: "Get past the ATS", desc: "Clear the resume-screening software that reads it first." },
+  { id: "ats", title: "Get past the ATS", desc: "Clear the CV-screening software that reads it first." },
   { id: "recruiter", title: "Impress the recruiter", desc: "Stand out to the human who decides on the interview." },
   { id: "both", title: "Both", desc: "Beat the filter and win the person.", badge: "Most pick this" },
 ];
@@ -110,13 +110,15 @@ const EXPERIENCE_OPTIONS = [
 ];
 
 // Deliberately curated funnel subset (marketing names differ from the product
-// names on purpose). Ids must exist in lib/templates/registry — the satisfies
-// check turns a renamed/removed template into a build error instead of drift.
+// names on purpose). SAME quartet the landing TemplateGallery showcases — the
+// funnel must deliver the designs the gallery just sold, not a different set.
+// Ids must exist in lib/templates/registry — the satisfies check turns a
+// renamed/removed template into a build error instead of drift.
 const TEMPLATE_OPTIONS = [
   { id: "ivy-league", name: "The Ivy", tag: "Classic" },
   { id: "modern-sidebar", name: "The Modern", tag: "Popular" },
   { id: "executive", name: "Executive", tag: "Senior" },
-  { id: "creative", name: "Creative", tag: "Design" },
+  { id: "aurora", name: "Aurora", tag: "Creative" },
 ] satisfies { id: BuilderTemplateId & TemplateRegistryId; name: string; tag: string }[];
 
 // Where each start-choice lands, and what the handoff beat says while we go.
@@ -238,17 +240,29 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
   }
 
   // The reassurance beat is a message, not a decision — auto-advance after a
-  // short readable pause instead of demanding a tap. Tapping "Makes sense"
-  // still skips ahead, and going Back to re-read it never auto-forwards again.
+  // genuinely readable pause (~30 words needs ~8s, per WCAG 2.2.1) instead of
+  // demanding a tap. Any tap or keypress cancels the auto-advance (the user
+  // has taken control — "Makes sense" still skips ahead), reduced-motion users
+  // are never auto-advanced, and going Back to re-read never auto-forwards.
   const reassuranceSeenRef = useRef(false);
   useEffect(() => {
-    if (step !== "reassurance" || reassuranceSeenRef.current) return;
+    if (step !== "reassurance" || reassuranceSeenRef.current || reduce) return;
     const id = window.setTimeout(() => {
       reassuranceSeenRef.current = true;
       go("experience");
-    }, 2200);
-    return () => window.clearTimeout(id);
-  }, [step]);
+    }, 8000);
+    const cancel = () => {
+      reassuranceSeenRef.current = true;
+      window.clearTimeout(id);
+    };
+    window.addEventListener("pointerdown", cancel);
+    window.addEventListener("keydown", cancel);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("pointerdown", cancel);
+      window.removeEventListener("keydown", cancel);
+    };
+  }, [step, reduce]);
 
   const progress =
     step === "handoff" ? 1 : Math.max(0, QUESTION_STEPS.indexOf(step)) / QUESTION_STEPS.length;
@@ -504,14 +518,14 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
           {step === "intro" && (
             <motion.div key="intro" {...fade} className="flex flex-col items-center">
               <Orb reduce={!!reduce} />
-              <p className="mt-8 font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
+              <p className="mt-8 font-mono text-xs uppercase tracking-[0.28em] text-brand-gold-deep">
                 {translate("Your CV coach")}
               </p>
               <h1 className="mt-4 max-w-xl text-balance font-serif text-4xl leading-[1.05] text-brand-navy sm:text-5xl md:text-6xl">
                 {translate("Let’s build a CV that gets you")}{" "}
                 <span className="italic text-brand-gold">{translate("hired.")}</span>
               </h1>
-              <p className="mt-5 max-w-md text-pretty text-lg leading-relaxed text-brand-navy/65">
+              <p className="mt-5 max-w-md text-pretty text-lg leading-relaxed text-brand-navy/70">
                 {translate("A few quick questions, and we’ll have your first draft together in about two minutes.")}
               </p>
               <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
@@ -519,7 +533,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   onClick={() => go("start")}
                   className="group inline-flex items-center gap-2.5 rounded-full bg-brand-gold-soft px-8 py-4 text-base font-semibold text-brand-navy shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
-                  {translate("Build / Optimize my CV")}
+                  {translate("Build my CV")}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" strokeWidth={1.75} />
                 </button>
                 <button
@@ -541,7 +555,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     track("build_onboarding_resume_draft");
                     router.push("/build/chat");
                   }}
-                  className="group mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy/55 underline-offset-4 transition-colors hover:text-brand-navy hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
+                  className="group mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy/70 underline-offset-4 transition-colors hover:text-brand-navy hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
                   {translate("Continue where you left off")}
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
@@ -556,7 +570,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
               <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("How would you like to build it?")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/70">
                 {translate("Already have a CV? Upload it and skip the questions — otherwise pick how we work together.")}
               </p>
               <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
@@ -592,7 +606,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     // anonymous users would otherwise hit a surprise sign-in
                     // redirect after picking this card.
                     <SignedOut>
-                      <span className="mt-1 block text-[11px] font-medium text-brand-navy/45">
+                      <span className="mt-1 block text-[11px] font-medium text-brand-navy/60">
                         {translate("Sign-in required for voice")}
                       </span>
                     </SignedOut>
@@ -629,7 +643,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
               <h2 className="mt-6 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("Upload your CV — we’ll take it from here")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-pretty text-brand-navy/55">
+              <p className="mx-auto mt-3 max-w-md text-pretty text-brand-navy/70">
                 {translate("No questions to answer. Drop your current CV in and we’ll read it, score it, and start optimizing right away.")}
               </p>
               <div
@@ -676,14 +690,14 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                 <span className="text-base font-medium text-brand-navy">
                   {uploading ? translate("Reading your CV…") : translate("Drop your CV here, or click to browse")}
                 </span>
-                <span className="text-xs text-brand-navy/45">{translate("PDF or DOCX, up to 5 MB")}</span>
+                <span className="text-xs text-brand-navy/60">{translate("PDF or DOCX, up to 5 MB")}</span>
               </div>
               <div className="mt-6">
                 <button
                   type="button"
                   disabled={uploading}
                   onClick={() => finish("chat")}
-                  className="text-sm font-medium text-brand-navy/55 underline-offset-4 transition-colors hover:text-brand-navy hover:underline disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
+                  className="text-sm font-medium text-brand-navy/70 underline-offset-4 transition-colors hover:text-brand-navy hover:underline disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                 >
                   {translate("I don’t have it handy — build with the coach instead")}
                 </button>
@@ -701,7 +715,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
               <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("What role are you going after?")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/70">
                 {translate("Pick from the list or type your own — add more than one if you’re weighing options. Not sure yet? Just continue.")}
               </p>
               <form
@@ -829,14 +843,14 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     {roles.map((r) => (
                       <span
                         key={r}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-gold/12 py-1.5 pe-1.5 ps-3.5 text-sm font-medium text-[#9a6b08]"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-gold/12 py-1.5 pe-1.5 ps-3.5 text-sm font-medium text-brand-gold-deep"
                       >
                         {r}
                         <button
                           type="button"
                           onClick={() => removeRole(r)}
                           aria-label={translate("Remove {role}", { role: r })}
-                          className="relative grid h-6 w-6 place-items-center rounded-full text-[#9a6b08]/70 transition-colors before:absolute before:-inset-2.5 before:content-[''] hover:bg-brand-gold/20 hover:text-[#9a6b08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
+                          className="relative grid h-6 w-6 place-items-center rounded-full text-brand-gold-deep/70 transition-colors before:absolute before:-inset-2.5 before:content-[''] hover:bg-brand-gold/20 hover:text-brand-gold-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
                         >
                           ×
                         </button>
@@ -845,7 +859,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   </div>
                 )}
 
-                <p className="mt-3 text-xs text-brand-navy/45">
+                <p className="mt-3 text-xs text-brand-navy/60">
                   {translate("These are just examples — type any role. You can change these anytime.")}
                 </p>
                 <div className="mt-8 flex items-center justify-center gap-3">
@@ -869,8 +883,8 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
               <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("What should your CV do first?")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
-                {translate("Most resumes are read by software before a person ever sees them — tell us where to aim.")}
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/70">
+                {translate("Most CVs are read by software before a person ever sees them — tell us where to aim.")}
               </p>
               <div className="mx-auto mt-8 grid w-full max-w-md gap-3">
                 {GOAL_OPTIONS.map((o) => (
@@ -888,12 +902,12 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                       <span className="flex items-center gap-2">
                         <span className="text-base font-medium text-brand-navy">{translate(o.title)}</span>
                         {o.badge && (
-                          <span className="rounded-full bg-brand-gold/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-gold">
+                          <span className="rounded-full bg-brand-gold/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-gold-deep">
                             {translate(o.badge)}
                           </span>
                         )}
                       </span>
-                      <span className="mt-0.5 block text-sm text-brand-navy/55">{translate(o.desc)}</span>
+                      <span className="mt-0.5 block text-sm text-brand-navy/70">{translate(o.desc)}</span>
                     </span>
                     <ArrowRight className="ms-3 h-4 w-4 shrink-0 text-brand-navy/30 transition-all group-hover:translate-x-0.5 group-hover:text-brand-gold" strokeWidth={1.75} />
                   </button>
@@ -916,7 +930,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   ? translate("Smart — people hire people.")
                   : translate("Good call — that's how hiring really works.")}
               </h2>
-              <p className="mx-auto mt-5 max-w-md text-pretty text-lg leading-relaxed text-brand-navy/65">
+              <p className="mx-auto mt-5 max-w-md text-pretty text-lg leading-relaxed text-brand-navy/70">
                 {goal === "recruiter"
                   ? translate("We'll make every line earn its place — specific, results-first, and easy for a busy recruiter to skim in seconds.")
                   : translate("We'll make sure the screening software can read every section, and still write it so a human wants to keep reading.")}
@@ -924,7 +938,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   <>
                     {" "}
                     {translate("Everything stays tuned for")}{" "}
-                    <span className="font-medium text-brand-gold">{rolesLabel}</span>.
+                    <span className="font-medium text-brand-gold-deep">{rolesLabel}</span>.
                   </>
                 )}
               </p>
@@ -963,7 +977,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                   >
                     <span>
                       <span className="block text-base font-medium text-brand-navy">{translate(o.label)}</span>
-                      <span className="block text-xs text-brand-navy/50">{translate(o.hint)}</span>
+                      <span className="block text-xs text-brand-navy/60">{translate(o.hint)}</span>
                     </span>
                     <ArrowRight className="h-4 w-4 text-brand-navy/30 transition-all group-hover:translate-x-0.5 group-hover:text-brand-gold" strokeWidth={1.75} />
                   </button>
@@ -982,7 +996,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
               <h2 className="mt-4 text-balance font-serif text-3xl text-brand-navy sm:text-4xl md:text-5xl">
                 {translate("Pick a look to start with")}
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-brand-navy/55">
+              <p className="mx-auto mt-3 max-w-md text-brand-navy/70">
                 {translate("You can change it anytime — nothing’s locked in.")}
               </p>
               <div className="mx-auto mt-8 grid w-full max-w-md grid-cols-2 gap-4 sm:grid-cols-4">
@@ -1000,7 +1014,7 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
                     <TemplateMock id={t.id} />
                     <span className="mt-2 px-0.5">
                       <span className="block text-xs font-medium text-brand-navy">{translate(t.name)}</span>
-                      <span className="block text-[10px] text-brand-navy/50">{translate(t.tag)}</span>
+                      <span className="block text-[10px] text-brand-navy/60">{translate(t.tag)}</span>
                     </span>
                   </button>
                 ))}
@@ -1024,8 +1038,8 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
               <Orb reduce={!!reduce} busy />
               <p className="mt-8 font-serif text-2xl text-brand-navy sm:text-3xl">{handoffLabel}</p>
               {rolesLabel && (
-                <p className="mt-3 text-sm text-brand-navy/55">
-                  {translate("Tailoring for")} <span className="font-medium text-brand-gold">{rolesLabel}</span>
+                <p className="mt-3 text-sm text-brand-navy/70">
+                  {translate("Tailoring for")} <span className="font-medium text-brand-gold-deep">{rolesLabel}</span>
                 </p>
               )}
             </motion.div>
@@ -1059,7 +1073,7 @@ function StepLabel({ step }: { step: Step }) {
   const i = QUESTION_STEPS.indexOf(step);
   if (i < 0) return null;
   return (
-    <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
+    <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold-deep">
       {t("Question {n} of {total}", { n: i + 1, total: QUESTION_STEPS.length })}
     </p>
   );
@@ -1101,15 +1115,19 @@ function TemplateMock({ id }: { id: BuilderTemplateId }) {
       </div>
     );
   }
-  if (id === "creative") {
+  if (id === "aurora") {
+    // Mirrors the landing TemplateGallery's Aurora mini-doc (gradient header +
+    // avatar + chips) so the funnel shows the same design the gallery sold.
     return (
       <div className="aspect-[3/4] overflow-hidden rounded-md border border-brand-navy/10 bg-white">
-        <div className="h-5 bg-gradient-to-r from-violet-500 to-brand-gold" />
+        <div className="h-5 bg-gradient-to-r from-brand-gold to-brand-navy" />
         <div className="space-y-1 p-2">
+          <div className="-mt-4 mb-1 h-4 w-4 rounded-full border-2 border-white bg-brand-navy/80" />
           <div className="h-1 w-2/3 rounded bg-brand-navy/70" />
+          <div className="h-0.5 w-1/2 rounded bg-brand-gold" />
           <div className="h-0.5 w-full rounded bg-brand-navy/15" />
           <div className="mt-1 flex gap-1">
-            <div className="h-2 w-5 rounded bg-violet-200" />
+            <div className="h-2 w-5 rounded bg-brand-gold/20" />
             <div className="h-2 w-4 rounded bg-brand-gold/30" />
           </div>
         </div>
@@ -1137,7 +1155,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-full px-4 py-3.5 text-sm font-medium text-brand-navy/55 transition-colors hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
+      className="inline-flex items-center gap-1.5 rounded-full px-4 py-3.5 text-sm font-medium text-brand-navy/70 transition-colors hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/60 focus-visible:ring-offset-2"
     >
       <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
       {t("Back")}
@@ -1173,12 +1191,12 @@ function MethodCard({
         <span className="flex items-center gap-2">
           <span className="text-base font-medium text-brand-navy">{title}</span>
           {badge && (
-            <span className="rounded-full bg-brand-gold/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-gold">
+            <span className="rounded-full bg-brand-gold/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-gold-deep">
               {badge}
             </span>
           )}
         </span>
-        <span className="mt-0.5 block text-sm text-brand-navy/55">{desc}</span>
+        <span className="mt-0.5 block text-sm text-brand-navy/70">{desc}</span>
         {note}
       </span>
       <ArrowRight className="h-4 w-4 shrink-0 text-brand-navy/25 transition-all group-hover:translate-x-0.5 group-hover:text-brand-gold" strokeWidth={1.75} />

@@ -26,8 +26,10 @@ export default async function LandingPage() {
     <div className="min-h-screen bg-[#FAFAF8] text-brand-navy">
       <ScrollDepthTracker page="landing" />
 
-      {/* Header — premium full-width navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
+      {/* Header — premium full-width navbar. Sticky (not fixed) so the global
+          in-app-browser banner can sit above it in normal flow without either
+          bar covering the other. */}
+      <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
           <Logo variant="dark" size="md" />
           <ActiveNavLinks />
@@ -73,21 +75,27 @@ export default async function LandingPage() {
       {/* HERO — the home IS the guided funnel (role → goal → template), which
           drafts the CV live. The narrative below is for scrollers / SEO. */}
       <section id="hero" className="relative w-full bg-[#FAFAF8]">
-        <div className="h-[100dvh] flex flex-col pt-16 sm:pt-20 pb-4">
+        {/* Header is sticky (in flow), so the hero fills the REST of the
+            viewport: 100dvh minus the 4rem/5rem header. The scroll cue is in
+            flow at the bottom on every breakpoint — mobile (~90% of traffic)
+            gets the same "there's more below" signal as desktop. Mobile keeps
+            an extra 2rem of slack so the cue stays above the fold even when
+            the in-app-browser banner is pushing the page down. */}
+        <div className="h-[calc(100dvh-6rem)] sm:h-[calc(100dvh-5rem)] flex flex-col pb-2">
           <div className="flex-1 min-h-0">
             <BuildOnboarding embedded />
           </div>
+          {/* Quiet scroll affordance into the story */}
+          <a
+            href="#rewrite"
+            className="mx-auto flex min-h-11 flex-col items-center justify-center gap-1 rounded-md px-4 text-brand-navy/60 transition-colors hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2"
+          >
+            <span className="font-mono text-xs uppercase tracking-[0.24em]">
+              {t("See how it works")}
+            </span>
+            <ChevronDown className="h-4 w-4 motion-safe:animate-bounce" strokeWidth={1.75} />
+          </a>
         </div>
-        {/* Quiet scroll affordance into the story */}
-        <a
-          href="#rewrite"
-          className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 lg:flex flex-col items-center gap-1.5 text-brand-navy/40 transition-colors hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2 rounded-md"
-        >
-          <span className="font-mono text-[10px] uppercase tracking-[0.24em]">
-            {t("See how it works")}
-          </span>
-          <ChevronDown className="h-4 w-4 animate-bounce" strokeWidth={1.75} />
-        </a>
       </section>
 
       {/* ============================================================
@@ -103,13 +111,13 @@ export default async function LandingPage() {
         />
         <div className="relative mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold-deep">
               {t("The rewrite engine")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-brand-navy sm:text-4xl md:text-[2.7rem]">
               {t("One line decides whether they keep reading.")}
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-brand-navy/55 sm:text-lg">
+            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-brand-navy/70 sm:text-lg">
               {t("Hired turns the lines you’d actually write into the ones a recruiter repeats out loud. Same job — sharper proof.")}
             </p>
           </div>
@@ -133,7 +141,7 @@ export default async function LandingPage() {
               {t("Before a human ever sees it")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-white sm:text-4xl md:text-[2.7rem]">
-              {t("Your résumé is read twice.")}
+              {t("Your CV is read twice.")}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-white/60 sm:text-lg">
               {t("First by software deciding if you’re worth forwarding. Then by a person deciding if you’re worth meeting. Most tools write for one. Hired writes for both.")}
@@ -152,13 +160,13 @@ export default async function LandingPage() {
       <section id="templates" className="w-full bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold-deep">
               {t("The templates")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-brand-navy sm:text-4xl md:text-[2.7rem]">
               {t("Built to survive the scan and earn the read.")}
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-brand-navy/55 sm:text-lg">
+            <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-brand-navy/70 sm:text-lg">
               {t("Every layout parses cleanly for the software and looks composed to the person. Start with one — switch anytime, nothing’s locked in.")}
             </p>
           </div>
@@ -168,7 +176,7 @@ export default async function LandingPage() {
           </div>
 
           <div className="mt-10 flex flex-col items-center gap-4">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-brand-navy/40">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-brand-navy/60">
               {t("+ 9 more in the studio")}
             </p>
             <Link
@@ -191,7 +199,7 @@ export default async function LandingPage() {
       <section id="stories" className="w-full bg-[#FAFAF8] py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-8 lg:px-16">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold">
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-brand-gold-deep">
               {t("Early signals")}
             </p>
             <h2 className="mt-4 text-balance font-serif text-3xl leading-[1.08] text-brand-navy sm:text-4xl md:text-[2.7rem]">
@@ -212,7 +220,7 @@ export default async function LandingPage() {
             <blockquote className="mt-5 text-balance font-serif text-2xl leading-snug text-brand-navy sm:text-3xl md:text-[2.1rem] md:leading-[1.25]">
               {t("“I’d been editing the same bullet for a week. Hired rewrote it in one line — and it was the line I actually wanted to say.”")}
             </blockquote>
-            <figcaption className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-brand-navy/50">
+            <figcaption className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-brand-navy/60">
               Maya G. · {t("Product Manager")}
             </figcaption>
           </figure>
@@ -240,14 +248,14 @@ export default async function LandingPage() {
                 <p className="text-[15px] leading-relaxed text-brand-navy/75">
                   &ldquo;{t(item.quote)}&rdquo;
                 </p>
-                <footer className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-navy/45">
+                <footer className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-navy/60">
                   {item.name} · {t(item.role)}
                 </footer>
               </blockquote>
             ))}
           </div>
 
-          <p className="mt-10 text-center font-mono text-[11px] tracking-wide text-brand-navy/40">
+          <p className="mt-10 text-center font-mono text-[11px] tracking-wide text-brand-navy/60">
             {t("Quotes from anonymized user interviews. Outcomes vary.")}
           </p>
         </div>
@@ -268,7 +276,7 @@ export default async function LandingPage() {
             <span className="italic text-brand-gold-soft">{t("hired.")}</span>
           </h2>
           <p className="mx-auto mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-white/70">
-            {t("See where your résumé stands in 60 seconds — no signup, no card.")}
+            {t("See where your CV stands in 60 seconds — no signup, no card.")}
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-5">

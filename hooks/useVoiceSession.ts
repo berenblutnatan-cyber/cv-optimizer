@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parseRealtimeToolCall } from "@/lib/voice/realtimeTools";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export type VoiceState =
   | "idle"
@@ -45,6 +46,7 @@ export function useVoiceSession(opts?: {
    * for the UI feed (e.g. "Added PM at Acme"), or null to suppress it. */
   onToolCall?: (name: string, input: Record<string, unknown>) => string | null;
 }) {
+  const { t } = useT();
   const [state, setState] = useState<VoiceState>("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [toolEvents, setToolEvents] = useState<VoiceToolEvent[]>([]);
@@ -186,8 +188,10 @@ export function useVoiceSession(opts?: {
       return;
     }
     if (evt.type === "error") {
+      // Raw API errors are developer-speak — log them, show a friendly line.
       const err = (evt as { error?: { message?: string } }).error;
-      setError(err?.message ?? "Voice error");
+      console.error("[useVoiceSession] realtime error:", err?.message ?? evt);
+      setError(t("The voice connection hiccuped — tap the orb to try again."));
       setState("error");
     }
   }
@@ -209,13 +213,30 @@ export function useVoiceSession(opts?: {
         body: JSON.stringify(voice ? { voice } : {}),
       });
       if (!res.ok) {
+        // Log the raw server error; the UI gets a friendly, translated line
+        // that maps the statuses users can actually act on.
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error ?? "Couldn't start voice session");
+        console.error("[useVoiceSession] session request failed:", res.status, data?.error);
+        setError(
+          res.status === 401
+            ? t("Sign in to use the voice builder.")
+            : res.status === 429
+              ? t("You've hit the hourly voice limit — give it a few minutes and try again.")
+              : t("Couldn't start the voice session — check your connection and try again.")
+        );
+        setState("error");
+        return;
       }
       session = await res.json();
-      if (!session.client_secret) throw new Error("Voice service didn't return a key");
+      if (!session.client_secret) {
+        console.error("[useVoiceSession] session response missing client_secret");
+        setError(t("Couldn't start the voice session — try again in a moment."));
+        setState("error");
+        return;
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't start");
+      console.error("[useVoiceSession] session request threw:", err);
+      setError(t("Couldn't reach the voice service — check your connection and try again."));
       setState("error");
       return;
     }
@@ -224,7 +245,7 @@ export function useVoiceSession(opts?: {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setError("Microphone access blocked. Allow the mic in your browser and try again.");
+      setError(t("Microphone access blocked. Allow the mic in your browser and try again."));
       setState("error");
       return;
     }
@@ -274,7 +295,12 @@ export function useVoiceSession(opts?: {
       }
     );
     if (!sdpRes.ok) {
-      setError("Voice service refused the connection.");
+      console.error(
+        "[useVoiceSession] SDP handshake failed:",
+        sdpRes.status,
+        await sdpRes.text().catch(() => "")
+      );
+      setError(t("Couldn't connect the call — try again in a moment."));
       setState("error");
       return;
     }

@@ -240,9 +240,9 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
   spotlight: {
     id: "spotlight",
     name: "Spotlight",
-    description: "Centered, ATS-safe",
-    detail: "Centered, airy and maximally ATS-safe. Great default for any role.",
-    tagline: "Centered, airy and maximally ATS-safe.",
+    description: "Centered, ATS-friendly",
+    detail: "Centered, airy and ATS-friendly. Great default for any role.",
+    tagline: "Centered, airy and ATS-friendly.",
     category: "professional",
     galleryCategory: "Simple",
     preview: "linear-gradient(180deg, #ffffff 0%, #eef2ff 100%)",

@@ -38,7 +38,7 @@ export function Transcript({ turns }: { turns: Turn[] }) {
             className={[
               "inline-block max-w-[85%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed",
               t.role === "user"
-                ? "bg-white/85 text-[#1a1a1a] rounded-tr-md"
+                ? "bg-white/85 text-brand-ink rounded-tr-md"
                 : "bg-white/10 text-white/90 border border-glass-border rounded-tl-md",
             ].join(" ")}
           >

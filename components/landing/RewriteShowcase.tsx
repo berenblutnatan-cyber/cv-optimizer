@@ -81,7 +81,7 @@ function Quantified({ text }: { text: string }) {
     <>
       {parts.map((p, i) =>
         /\d/.test(p) ? (
-          <span key={i} className="font-semibold text-[#9a6b08]">
+          <span key={i} className="font-semibold text-brand-gold-deep">
             {p}
           </span>
         ) : (
@@ -172,24 +172,24 @@ export function RewriteShowcase() {
 
         <div className="p-6 sm:p-9">
           {/* BEFORE — the machine register */}
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-brand-navy/40">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-brand-navy/60">
             {t("The line you'd write")}
           </p>
-          <p className="mt-3 min-h-[3.5rem] font-mono text-[15px] leading-relaxed text-brand-navy/45 sm:text-base">
+          <p className="mt-3 min-h-[3.5rem] font-mono text-[15px] leading-relaxed text-brand-navy/70 sm:text-base">
             {t(ex.before)}
           </p>
 
           {/* seam */}
           <div className="my-6 flex items-center gap-3" aria-hidden>
             <span className="h-px flex-1 bg-brand-navy/10" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-brand-gold/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9a6b08]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-brand-gold/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-brand-gold-deep">
               {t("Hired rewrites")}
             </span>
             <span className="h-px flex-1 bg-brand-navy/10" />
           </div>
 
           {/* AFTER — the human register */}
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#9a6b08]">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-brand-gold-deep">
             {t("What a recruiter remembers")}
           </p>
           <p
@@ -204,9 +204,9 @@ export function RewriteShowcase() {
             {ex.keywords.map((k) => (
               <span
                 key={k}
-                className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/[0.08] px-3 py-1 font-mono text-xs text-[#9a6b08]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/[0.08] px-3 py-1 font-mono text-xs text-brand-gold-deep"
               >
-                <span className="text-brand-gold">✓</span>
+                <span className="text-brand-gold-deep">✓</span>
                 {t(k)}
               </span>
             ))}
@@ -215,12 +215,12 @@ export function RewriteShowcase() {
           {/* ATS match score — the machine's verdict, climbing */}
           <div className="mt-7 rounded-2xl bg-brand-navy/[0.035] p-4 sm:p-5">
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand-navy/50">
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand-navy/60">
                 {t("ATS match score")}
               </span>
               <span className="flex items-baseline gap-2 font-mono tabular-nums">
                 <span className="text-2xl font-semibold text-brand-navy">{score}</span>
-                <span className="text-sm text-brand-navy/35">/ 100</span>
+                <span className="text-sm text-brand-navy/60">/ 100</span>
                 <span className="rounded-full bg-[#1f7a3d]/10 px-2 py-0.5 text-xs font-semibold text-[#1f7a3d]">
                   +{ex.to - ex.from}
                 </span>
@@ -238,7 +238,7 @@ export function RewriteShowcase() {
 
       {/* Role pills — proof it works for any career, and the way to drive it */}
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-        <span className="me-1 hidden font-mono text-[11px] uppercase tracking-[0.18em] text-brand-navy/40 sm:inline">
+        <span className="me-1 hidden font-mono text-[11px] uppercase tracking-[0.18em] text-brand-navy/60 sm:inline">
           {t("Try a role")}
         </span>
         {EXAMPLES.map((e, i) => (

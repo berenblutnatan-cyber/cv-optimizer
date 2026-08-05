@@ -28,7 +28,7 @@ export function SquircleIcon({
       >
         <Icon className="h-7 w-7 text-white/95" strokeWidth={1.8} />
         {typeof badge === "number" && badge > 0 ? (
-          <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-[#f5b8c8] text-[11px] font-medium text-[#1a1a1a] grid place-items-center">
+          <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-[#f5b8c8] text-[11px] font-medium text-brand-ink grid place-items-center">
             {badge > 99 ? "99+" : badge}
           </span>
         ) : null}

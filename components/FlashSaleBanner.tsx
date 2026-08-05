@@ -40,7 +40,6 @@ export function FlashSaleBanner() {
   const armedAt = useFlashSaleStore((s) => s.armedAt);
   const expire = useFlashSaleStore((s) => s.expire);
   const dismiss = useFlashSaleStore((s) => s.dismiss);
-  const markClaimed = useFlashSaleStore((s) => s.markClaimed);
 
   const [offer, setOffer] = useState<Offer | null>(null);
   const [remaining, setRemaining] = useState("");
@@ -67,6 +66,18 @@ export function FlashSaleBanner() {
       cancelled = true;
     };
   }, [live, offer, dismiss]);
+
+  // Returning from Polar via the back button restores this page from bfcache
+  // with the old `offer` still cached. Clear it so eligibility re-fetches:
+  // if the user actually bought, /api/flash-sale now says unavailable and the
+  // banner dismisses; if they canceled, the (still-armed) offer keeps ticking.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setOffer(null);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   // Tick the 5-minute countdown, anchored to armedAt so a refresh can't reset it.
   useEffect(() => {
@@ -109,7 +120,12 @@ export function FlashSaleBanner() {
       price,
       credits,
     });
-    markClaimed();
+    // Deliberately NOT markClaimed() here: clicking through is not a purchase.
+    // A canceled checkout must not burn the one-time offer. Termination is
+    // owned by the server + the window instead — a COMPLETED purchase makes
+    // /api/flash-sale return available:false ("already paid") which dismisses
+    // it for good, and an unclaimed offer still dies when the 5-minute window
+    // expires.
     // Hard navigation — the checkout route is a redirect handler (and bounces
     // anon users through sign-in, preserving ?plan=pro_flash).
     window.location.href = "/api/checkout/polar?plan=pro_flash";
@@ -130,7 +146,7 @@ export function FlashSaleBanner() {
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold leading-tight flex items-center gap-2">
-              <span className="inline-flex items-center rounded-sm bg-brand-gold/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9c7409]">
+              <span className="inline-flex items-center rounded-sm bg-brand-gold/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
                 {t("{off}% off", { off })}
               </span>
               {t("Flash sale — Pro")}
@@ -144,7 +160,7 @@ export function FlashSaleBanner() {
           <button
             type="button"
             onClick={claim}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-brand-gold hover:bg-[#a3760a] text-white text-sm font-medium transition-colors"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-brand-gold hover:bg-brand-gold-deep text-white text-sm font-medium transition-colors"
           >
             {t("Claim")}
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />

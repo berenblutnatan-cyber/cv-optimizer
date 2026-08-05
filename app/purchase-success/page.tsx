@@ -148,7 +148,7 @@ function PurchaseSuccessContent() {
 
 export default function PurchaseSuccessPage() {
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a] flex flex-col">
+    <div className="min-h-screen bg-[#FAFAF8] text-brand-ink flex flex-col">
       <header className="w-full px-8 md:px-16 py-6 border-b border-stone-200/60">
         <Logo variant="dark" size="md" />
       </header>

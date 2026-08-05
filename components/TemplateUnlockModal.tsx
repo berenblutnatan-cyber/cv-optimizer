@@ -88,7 +88,7 @@ export function TemplateUnlockModal({
 
               <h2
                 id="unlock-title"
-                className="font-serif text-xl sm:text-2xl text-[#1a1a1a] font-light text-center tracking-tight mb-2"
+                className="font-serif text-xl sm:text-2xl text-brand-ink font-light text-center tracking-tight mb-2"
               >
                 {t("Unlock")}{" "}
                 <span className="text-brand-gold font-normal">{templateName}</span>
@@ -119,7 +119,7 @@ export function TemplateUnlockModal({
                 </li>
                 <li className="flex items-center gap-2 text-xs text-stone-500 font-light">
                   <Check className="w-3.5 h-3.5 text-brand-navy flex-shrink-0" strokeWidth={2} />
-                  {t("Works with PDF + DOCX export")}
+                  {t("Works with PDF export")}
                 </li>
               </ul>
 
@@ -136,7 +136,7 @@ export function TemplateUnlockModal({
                   type="button"
                   onClick={onConfirm}
                   disabled={loading}
-                  className="group flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-gold hover:bg-[#9c7409] disabled:opacity-70 disabled:cursor-wait text-white text-sm font-medium rounded-sm transition-all tracking-wide shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40"
+                  className="group flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-gold hover:bg-brand-gold-deep disabled:opacity-70 disabled:cursor-wait text-white text-sm font-medium rounded-sm transition-all tracking-wide shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40"
                 >
                   {loading ? (
                     <span>{t("Unlocking…")}</span>

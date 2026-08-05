@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
         controller.enqueue(
           sseEncode({
             type: "error",
-            error: "Something broke on our side — say that again?",
+            error: t("The assistant hit a snag mid-reply — your CV is unchanged. Say that again and I'll pick it up."),
           })
         );
       } finally {

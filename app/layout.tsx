@@ -52,16 +52,18 @@ const rubik = Rubik({
   preload: false,
 });
 
-// Resume / code fonts — only used inside the builder + analysis, never in
-// hero or first paint. `preload: false` keeps them out of the LCP critical
-// path (previously these six fonts all preloaded by default and contributed
-// to the 5.2s LCP measured in Clarity).
+// Mono paints above the fold (the landing eyebrows / funnel step labels are
+// font-mono), so it's in the LCP region and preloads with Inter + Playfair.
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
-  preload: false,
 });
+
+// CV fonts — only used inside the builder + analysis, never in hero or first
+// paint. `preload: false` keeps them out of the LCP critical path (previously
+// these fonts all preloaded by default and contributed to the 5.2s LCP
+// measured in Clarity).
 
 const merriweather = Merriweather({
   subsets: ["latin"],
@@ -197,7 +199,15 @@ export default async function RootLayout({
             `}
           </Script>
           <LanguageProvider initialLang={lang}>
-            <InAppBrowserAlert />
+            {/* In-app-webview heads-up (Google OAuth breaks in Meta/TikTok/etc.
+                webviews). Compact one-line bar, rendered IN FLOW above the page
+                so it pushes content down instead of covering the header; only
+                for signed-out visitors (it's about signing in), and dismissal
+                persists across the webview's routine reloads. The detailed
+                variant lives on the sign-in/sign-up pages. */}
+            <SignedOut>
+              <InAppBrowserAlert variant="banner" />
+            </SignedOut>
             <GclidCapture />
             <ClarityRouteTags />
             <UserSyncProvider>
