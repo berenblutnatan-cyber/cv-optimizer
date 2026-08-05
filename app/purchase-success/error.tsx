@@ -25,7 +25,7 @@ export default function PurchaseSuccessError({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a] flex items-center justify-center px-6 py-16">
+    <div className="min-h-screen bg-[#FAFAF8] text-brand-ink flex items-center justify-center px-6 py-16">
       <div className="max-w-xl w-full text-center">
         <div className="w-20 h-20 rounded-full bg-brand-navy flex items-center justify-center mx-auto mb-8">
           <Check className="w-10 h-10 text-white" strokeWidth={2} />

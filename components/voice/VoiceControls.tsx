@@ -48,7 +48,7 @@ export function VoiceControls({
         type="button"
         onClick={onDone}
         disabled={!showDone || finalizing}
-        className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-full bg-white text-[#1a1a1a] text-sm font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-full bg-white text-brand-ink text-sm font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {finalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         {finalizing ? t("Building…") : t("I'm done")}

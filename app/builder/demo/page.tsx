@@ -10,7 +10,7 @@ import {
   ResumePreviewData,
   useBuilder,
 } from "@/components/builder";
-import { Eye, Edit3, Download, Undo, Redo, ArrowLeft, Loader2 } from "lucide-react";
+import { Eye, Edit3, Download, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -175,18 +175,18 @@ function BuilderContent() {
     <>
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Back Button */}
             <Link
               href="/builder"
-              className="flex items-center gap-2 px-3 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 min-h-[44px] text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm font-medium">{t("Back")}</span>
             </Link>
-            <div className="w-px h-6 bg-slate-200" />
-            <h1 className="text-lg font-bold text-slate-900">{t("Resume Builder")}</h1>
+            <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+            <h1 className="text-lg font-bold text-slate-900 truncate">{t("Resume Builder")}</h1>
             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
               {t("Demo")}
             </span>
@@ -194,16 +194,6 @@ function BuilderContent() {
 
           {/* Toolbar */}
           <div className="flex items-center gap-2">
-            {/* Undo/Redo */}
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden">
-              <button className="p-2 hover:bg-slate-50 text-slate-500 disabled:opacity-30" disabled>
-                <Undo className="w-4 h-4" />
-              </button>
-              <button className="p-2 hover:bg-slate-50 text-slate-500 disabled:opacity-30 border-l border-slate-200" disabled>
-                <Redo className="w-4 h-4" />
-              </button>
-            </div>
-
             {/* Edit/Preview Toggle */}
             <div className="flex items-center bg-slate-100 rounded-lg p-1">
               <button
@@ -253,11 +243,12 @@ function BuilderContent() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="py-6 flex gap-6 max-w-7xl mx-auto px-4">
-        {/* Left Sidebar - Template Switcher */}
-        <aside className="w-64 flex-shrink-0">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm sticky top-20">
+      {/* Main Content — stacks below lg so the fixed sidebar never crushes
+          the preview at phone widths (375px) */}
+      <main className="py-6 flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto px-4">
+        {/* Template Switcher — full-width card on mobile, sidebar on desktop */}
+        <aside className="w-full lg:w-64 flex-shrink-0">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm lg:sticky lg:top-20">
             <TemplateSwitcher variant="sidebar" showColors={true} />
           </div>
         </aside>
@@ -279,7 +270,9 @@ function BuilderContent() {
             </div>
           )}
 
-          <div className="flex justify-center bg-slate-100 rounded-xl p-6 min-h-[800px]">
+          {/* overflow-x-auto: the A4 page is 794px wide — phones pan it
+              instead of blowing the page layout apart */}
+          <div className="flex justify-start lg:justify-center bg-slate-100 rounded-xl p-3 sm:p-6 min-h-[60vh] lg:min-h-[800px] overflow-x-auto">
             <EditableResumePreview
               data={resumeData}
               onChange={setResumeData}

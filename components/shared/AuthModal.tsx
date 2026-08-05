@@ -84,7 +84,7 @@ export function AuthModal({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-[#1a1a1a]/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-brand-ink/50 backdrop-blur-sm"
         onClick={onClose}
       />
       
@@ -106,7 +106,7 @@ export function AuthModal({
           </div>
           
           {/* Title */}
-          <h2 className="font-serif text-2xl font-light text-[#1a1a1a] mb-3">
+          <h2 className="font-serif text-2xl font-light text-brand-ink mb-3">
             {currentContent.title}
           </h2>
           
@@ -145,7 +145,7 @@ export function AuthModal({
             </div>
             
             <SignInButton mode="modal">
-              <button className="w-full py-4 rounded-sm font-medium text-[#1a1a1a] border border-stone-300 hover:bg-white hover:border-stone-400 transition-all tracking-wide">
+              <button className="w-full py-4 rounded-sm font-medium text-brand-ink border border-stone-300 hover:bg-white hover:border-stone-400 transition-all tracking-wide">
                 {t("Sign In")}
               </button>
             </SignInButton>

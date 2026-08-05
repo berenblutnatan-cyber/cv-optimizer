@@ -36,30 +36,46 @@ export function BuildProgress({ data }: { data: ResumeData }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] uppercase tracking-[0.18em] text-brand-navy/55">
-          {t("Your CV")}
+        <span className="text-[13px] text-brand-navy/60">{t("CV completeness")}</span>
+        <span className="text-[13px] text-brand-navy/70 tabular-nums" aria-hidden>
+          {pct}%
         </span>
-        <span className="text-[11px] text-brand-navy/65 tabular-nums">{pct}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-brand-navy/[0.05] overflow-hidden">
+      <div
+        role="progressbar"
+        aria-label={t("CV completeness")}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        aria-valuetext={t("{pct}% — {done} of {total} sections done", {
+          pct,
+          done,
+          total: items.length,
+        })}
+        className="h-1.5 rounded-full bg-brand-navy/[0.05] overflow-hidden"
+      >
         <div
           className="h-full rounded-full bg-gradient-to-r from-brand-navy to-brand-gold transition-all duration-700"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
+      <ul className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
         {items.map((item) => (
-          <span
+          <li
             key={item.key}
-            className={`inline-flex items-center gap-1 text-[11px] transition-colors ${
+            className={`inline-flex items-center gap-1 text-[13px] transition-colors ${
               item.done ? "text-brand-navy/85" : "text-brand-navy/40"
             }`}
           >
-            <Check className={`h-3 w-3 ${item.done ? "text-[#059669]" : "text-brand-navy/25"}`} />
+            <Check
+              aria-hidden
+              className={`h-3 w-3 ${item.done ? "text-emerald-600" : "text-brand-navy/25"}`}
+            />
             {t(item.label)}
-          </span>
+            <span className="sr-only">{item.done ? t("done") : t("still to do")}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

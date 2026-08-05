@@ -35,6 +35,10 @@ type Step = "input" | "processing" | "result";
 // connection or gateway 504 must never leave the user stuck at ~95% forever.
 const SCORE_TIMEOUT_MS = 120_000;
 
+// Client-side cap matching /api/score-teaser's MAX_FILE_BYTES — the UI
+// promises "max 5MB", so we enforce it before starting a doomed upload.
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
 /**
  * Score Teaser Page - Lead Magnet
  * Light theme matching the main site design
@@ -90,26 +94,28 @@ export default function ScoreTeaserPage() {
     }
   }, [step, result]);
 
+  // Shared validation for drop + picker: PDF only, under the promised 5MB cap.
+  const acceptFile = (candidate: File | undefined) => {
+    if (candidate?.type !== "application/pdf") {
+      setError(t("Please upload a PDF file"));
+      return;
+    }
+    if (candidate.size > MAX_UPLOAD_BYTES) {
+      setError(t("That file is over 5 MB — export a smaller PDF and try again."));
+      return;
+    }
+    setFile(candidate);
+    setError("");
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile?.type === "application/pdf") {
-      setFile(droppedFile);
-      setError("");
-    } else {
-      setError(t("Please upload a PDF file"));
-    }
+    acceptFile(e.dataTransfer.files[0]);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile?.type === "application/pdf") {
-      setFile(selectedFile);
-      setError("");
-    } else {
-      setError(t("Please upload a PDF file"));
-    }
+    acceptFile(e.target.files?.[0]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -220,9 +226,9 @@ export default function ScoreTeaserPage() {
   const scoreColor = result ? getScoreColor(result.score) : getScoreColor(0);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
+    <div className="min-h-screen bg-[#FAFAF8] text-brand-ink">
       {/* Header - Premium Full Width Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
+      <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between">
           {/* Logo - Far Left */}
           <Logo variant="dark" size="md" />
@@ -240,7 +246,7 @@ export default function ScoreTeaserPage() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full px-4 sm:px-8 lg:px-16 pt-24 sm:pt-28 pb-16">
+      <main className="w-full px-4 sm:px-8 lg:px-16 pt-8 sm:pt-12 pb-16">
         <div className="max-w-3xl mx-auto">
           {/* Title */}
           <div className="text-center mb-10 sm:mb-12">
@@ -248,7 +254,7 @@ export default function ScoreTeaserPage() {
               <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               {t("Free Resume Analysis")}
             </div>
-            <h1 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5">
+            <h1 className="font-serif text-4xl sm:text-5xl font-light text-brand-ink mb-5">
               {t("Get Your Resume Score")}
             </h1>
             <div className="w-16 h-px bg-brand-navy mx-auto mb-6" />
@@ -269,9 +275,9 @@ export default function ScoreTeaserPage() {
                   <span className="font-serif text-3xl text-brand-navy">72<span className="text-base text-stone-500">/100</span></span>
                 </div>
                 <div className="space-y-2 text-xs text-stone-600 font-light">
-                  <div className="flex items-center justify-between"><span>{t("Keyword coverage")}</span><span className="font-medium text-[#1a1a1a]">68%</span></div>
-                  <div className="flex items-center justify-between"><span>{t("ATS readability")}</span><span className="font-medium text-[#1a1a1a]">85%</span></div>
-                  <div className="flex items-center justify-between"><span>{t("Impact phrasing")}</span><span className="font-medium text-[#1a1a1a]">63%</span></div>
+                  <div className="flex items-center justify-between"><span>{t("Keyword coverage")}</span><span className="font-medium text-brand-ink">68%</span></div>
+                  <div className="flex items-center justify-between"><span>{t("ATS readability")}</span><span className="font-medium text-brand-ink">85%</span></div>
+                  <div className="flex items-center justify-between"><span>{t("Impact phrasing")}</span><span className="font-medium text-brand-ink">63%</span></div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-stone-100">
                   <p className="text-xs text-stone-500 font-light leading-relaxed">
@@ -312,7 +318,7 @@ export default function ScoreTeaserPage() {
                         <FileCheck className="w-7 h-7 text-brand-navy" strokeWidth={1.5} />
                       </div>
                       <div className="text-left">
-                        <p className="font-serif text-base text-[#1a1a1a]">{file.name}</p>
+                        <p className="font-serif text-base text-brand-ink">{file.name}</p>
                         <p className="text-sm text-stone-500 font-light">
                           {(file.size / 1024).toFixed(1)} {t("KB • Ready to analyze")}
                         </p>
@@ -327,7 +333,7 @@ export default function ScoreTeaserPage() {
                   ) : (
                     <>
                       <Upload className="w-12 h-12 text-stone-500 mx-auto mb-4" strokeWidth={1.5} />
-                      <p className="font-serif text-lg text-[#1a1a1a] mb-2">
+                      <p className="font-serif text-lg text-brand-ink mb-2">
                         {t("Drop your resume here")}
                       </p>
                       <p className="text-stone-500 mb-4 font-light">{t("PDF format only (max 5MB)")}</p>
@@ -356,7 +362,7 @@ export default function ScoreTeaserPage() {
 
                 {/* Goal Selector */}
                 <div className="bg-white rounded-sm p-6 border border-stone-200 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)]">
-                  <label className="flex items-center gap-2 text-sm font-medium text-[#1a1a1a] mb-3 tracking-wide">
+                  <label className="flex items-center gap-2 text-sm font-medium text-brand-ink mb-3 tracking-wide">
                     <Target className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
                     {t("Target Role")}
                   </label>
@@ -492,7 +498,7 @@ export default function ScoreTeaserPage() {
                 {/* Next Step: Optimize */}
                 <div className="bg-white rounded-sm border border-stone-200 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] p-8 md:p-10">
                   <div className="text-center max-w-2xl mx-auto">
-                    <h3 className="font-serif text-2xl md:text-3xl font-light text-[#1a1a1a] mb-3">
+                    <h3 className="font-serif text-2xl md:text-3xl font-light text-brand-ink mb-3">
                       {t("Now let's actually fix it.")}
                     </h3>
                     <p className="text-stone-600 font-light mb-8">
@@ -524,7 +530,7 @@ export default function ScoreTeaserPage() {
                         <Link
                           href="/pricing?utm_source=score&utm_medium=cta&utm_score=low"
                           onClick={() => track("score_upsell_clicked", { cta: "pricing", score_band: "low", target_role: targetRole || null, match_score: result.score })}
-                          className="inline-flex items-center gap-2 px-8 py-4 bg-brand-gold hover:bg-[#9c7409] text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
+                          className="inline-flex items-center gap-2 px-8 py-4 bg-brand-gold hover:bg-brand-gold-deep text-white font-medium rounded-sm transition-all shadow-sm hover:shadow-md tracking-wide"
                         >
                           <Sparkles className="w-5 h-5" strokeWidth={1.5} />
                           {t("Fix My Resume — Plans from $3")}
@@ -571,10 +577,13 @@ export default function ScoreTeaserPage() {
                         <Check className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
                         {t("No credit card")}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <Link
+                        href="/refund-policy"
+                        className="flex items-center gap-1 hover:text-stone-700 transition-colors"
+                      >
                         <Check className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
                         {t("14-day money-back")}
-                      </span>
+                      </Link>
                     </p>
                   </div>
                 </div>

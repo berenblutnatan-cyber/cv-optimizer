@@ -224,7 +224,8 @@ export function VoiceBuilderClient() {
       await finalize({ turns, durationSec: elapsed });
     } catch (err) {
       track("voice_error", { stage: "finalize" });
-      toast.error(err instanceof Error ? err.message : t("Something broke"));
+      console.error("[voice] finalize failed:", err);
+      toast.error(t("Couldn't build your CV from this session — your answers are safe on this device. Tap Retry to save them."));
       // Back to idle — the transcript itself is safe in `pending` + storage,
       // and the retry card below offers to save it again.
       reset();
@@ -238,7 +239,8 @@ export function VoiceBuilderClient() {
       await finalize(pending);
     } catch (err) {
       track("voice_error", { stage: "finalize" });
-      toast.error(err instanceof Error ? err.message : t("Something broke"));
+      console.error("[voice] finalize retry failed:", err);
+      toast.error(t("Still couldn't save — check your connection and tap Retry again."));
     } finally {
       setRetrying(false);
     }
@@ -273,7 +275,7 @@ export function VoiceBuilderClient() {
                 type="button"
                 onClick={onRetryPending}
                 disabled={retrying}
-                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-full bg-white text-[#1a1a1a] text-sm font-medium shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-full bg-white text-brand-ink text-sm font-medium shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {retrying ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -296,8 +298,9 @@ export function VoiceBuilderClient() {
 
         <div className="flex flex-col items-center gap-6">
           <VoiceOrb state={state} amplitude={amplitude} onClick={onOrbClick} />
+          {/* Rose, not the warm pink — pink means "recording", never "error". */}
           {error ? (
-            <div className="text-sm text-[#f5b8c8] max-w-md text-center">{error}</div>
+            <div className="text-sm text-rose-300 max-w-md text-center" role="alert">{error}</div>
           ) : null}
 
           {/* Voice picker — only before the call starts; the Realtime API locks
@@ -319,7 +322,7 @@ export function VoiceBuilderClient() {
                       title={v.blurb}
                       className={
                         active
-                          ? "inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-xs font-medium bg-white text-[#1a1a1a] shadow-glow"
+                          ? "inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-xs font-medium bg-white text-brand-ink shadow-glow"
                           : "inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-xs font-medium bg-white/10 border border-glass-border text-white/80 hover:bg-white/15 transition-colors"
                       }
                     >
@@ -348,7 +351,7 @@ export function VoiceBuilderClient() {
                   key={t.id}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-glass-border text-[11px] text-white/85"
                 >
-                  <Sparkles className="h-3 w-3 text-[#f5b8c8]" />
+                  <Sparkles className="h-3 w-3 text-warm" />
                   {t.label}
                 </span>
               ))}
@@ -383,15 +386,15 @@ export function VoiceBuilderClient() {
       <button
         type="button"
         onClick={() => setPreviewOpen(true)}
-        className="lg:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 inline-flex items-center gap-2 min-h-[48px] px-5 rounded-full bg-white text-[#1a1a1a] text-sm font-medium shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8fb3ff] focus-visible:ring-offset-2"
+        className="lg:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 inline-flex items-center gap-2 min-h-[48px] px-5 rounded-full bg-white text-brand-ink text-sm font-medium shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-cool focus-visible:ring-offset-2"
       >
         <FileText className="h-4 w-4" />
         {t("Preview CV")}
         {previewDirty ? (
           <>
             <span className="relative flex h-2.5 w-2.5" aria-hidden>
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f5b8c8] opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#f5b8c8]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warm opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-warm" />
             </span>
             <span className="sr-only">{t("CV updated")}</span>
           </>
@@ -419,12 +422,12 @@ export function VoiceBuilderClient() {
             className="absolute inset-x-0 bottom-0 top-12 rounded-t-3xl bg-white/95 shadow-glow overflow-hidden flex flex-col"
           >
             <div className="flex items-center justify-between pl-4 pr-2 py-1.5 border-b border-black/10 bg-white">
-              <div className="text-sm font-medium text-[#1a1a1a]">{t("Live CV preview")}</div>
+              <div className="text-sm font-medium text-brand-ink">{t("Live CV preview")}</div>
               <button
                 type="button"
                 onClick={() => setPreviewOpen(false)}
                 aria-label={t("Close preview")}
-                className="grid place-items-center h-11 w-11 rounded-full text-[#1a1a1a] hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8fb3ff]"
+                className="grid place-items-center h-11 w-11 rounded-full text-brand-ink hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cool"
               >
                 <X className="h-5 w-5" />
               </button>

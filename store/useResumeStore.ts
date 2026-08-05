@@ -14,27 +14,56 @@ import {
   TOTAL_STEPS,
 } from "@/types/resume";
 import type { GoalWeighting } from "@/lib/optimizer/localChecks";
+import type { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
+
+/** Document design state — template, accent color, font/spacing density
+ * (1-10, 5 = normal). Lives in the store (not component state) so a restyle
+ * participates in undo/redo exactly like a content edit, persists across
+ * reloads, and rides along in the chat-session save payload. */
+export type DesignState = {
+  template: BuilderTemplateId;
+  color: ThemeColor;
+  fontLevel: number;
+  spacingLevel: number;
+};
+
+export const DEFAULT_DESIGN: DesignState = {
+  template: "ivy-league",
+  color: "indigo",
+  fontLevel: 5,
+  spacingLevel: 5,
+};
+
+/** One undo step: the CV document AND its design, together — so Cmd+Z reverts
+ * a restyle just like it reverts a rewrite. */
+type HistoryEntry = { resumeData: ResumeData; design: DesignState };
 
 interface ResumeStore {
   // State
   resumeData: ResumeData;
+  design: DesignState;
   currentStep: number;
   // What the user optimizes for (from the onboarding funnel). Shifts the live
   // Resume Score weighting (ATS-heavy vs recruiter-heavy). Kept OFF ResumeData
   // so the CV payload sent to the AI / persisted in chats stays clean.
   scoringGoal: GoalWeighting;
-  // Undo/redo snapshot stacks. EVERY mutation that replaces `resumeData` —
-  // manual field edits, AI tool calls (they all flow through `setResumeData`),
-  // resets, session loads — pushes the previous snapshot onto `past`, so the
-  // toolbar Undo/Redo buttons are real, not decoys. Not persisted.
-  past: ResumeData[];
-  future: ResumeData[];
+  // Undo/redo snapshot stacks. EVERY mutation that replaces `resumeData` or
+  // `design` — manual field edits, AI tool calls (they all flow through
+  // `setResumeData`/`setDesign`), resets, session loads — pushes the previous
+  // snapshot onto `past`, so the toolbar Undo/Redo buttons are real, not
+  // decoys. Not persisted.
+  past: HistoryEntry[];
+  future: HistoryEntry[];
 
   // History Actions
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
+  /** Batch every mutation until the matching endUndoGroup into ONE undo entry
+   * (e.g. a whole AI turn's 10-20 tool events). Re-entrant; must be paired. */
+  beginUndoGroup: () => void;
+  endUndoGroup: () => void;
 
   // Step Navigation Actions
   nextStep: () => void;
@@ -88,6 +117,7 @@ interface ResumeStore {
 
   // Bulk Actions
   setResumeData: (data: ResumeData) => void;
+  setDesign: (patch: Partial<DesignState>) => void;
   setScoringGoal: (goal: GoalWeighting) => void;
   resetResume: () => void;
 }
@@ -100,23 +130,43 @@ const HISTORY_LIMIT = 50;
 const HISTORY_COALESCE_MS = 1000;
 let lastSnapshotAt = 0;
 let lastSnapshotAction = "";
+// Undo-group batching (beginUndoGroup/endUndoGroup): while depth > 0, only the
+// FIRST mutating write pushes a snapshot — everything else in the group folds
+// into that one undo entry. Module-level (like the coalescing clock) so it
+// never bloats persisted state.
+let historyGroupDepth = 0;
+let historyGroupSnapshotDone = false;
 
 /**
- * History-aware patch: when a mutation replaces `resumeData`, push the previous
- * snapshot onto the undo stack (deduping identical snapshots, capping at
- * HISTORY_LIMIT) and clear the redo stack. Applied to EVERY `set` in the store,
- * so the whole class of "irreversible edit" is impossible — any path that
- * mutates the CV (manual edits, AI tool calls, resets) is undoable.
+ * History-aware patch: when a mutation replaces `resumeData` or `design`, push
+ * the previous {resumeData, design} snapshot onto the undo stack (deduping
+ * identical snapshots, capping at HISTORY_LIMIT) and clear the redo stack.
+ * Applied to EVERY `set` in the store, so the whole class of "irreversible
+ * edit" is impossible — any path that mutates the CV or its design (manual
+ * edits, AI tool calls, restyles, resets) is undoable.
  */
 function withHistory(
   state: ResumeStore,
   patch: Partial<ResumeStore>,
   action: string
 ): Partial<ResumeStore> {
-  const next = patch.resumeData;
-  if (!next || next === state.resumeData) return patch;
+  const touchesResume = patch.resumeData !== undefined && patch.resumeData !== state.resumeData;
+  const touchesDesign = patch.design !== undefined && patch.design !== state.design;
+  if (!touchesResume && !touchesDesign) return patch;
+  const prev: HistoryEntry = { resumeData: state.resumeData, design: state.design };
+  const next: HistoryEntry = {
+    resumeData: patch.resumeData ?? state.resumeData,
+    design: (patch.design as DesignState | undefined) ?? state.design,
+  };
   // Dedupe: a "mutation" that produced an identical document is not an undo step.
-  if (JSON.stringify(next) === JSON.stringify(state.resumeData)) return patch;
+  if (JSON.stringify(next) === JSON.stringify(prev)) return patch;
+  if (historyGroupDepth > 0) {
+    if (historyGroupSnapshotDone) return { ...patch, future: [] };
+    historyGroupSnapshotDone = true;
+    lastSnapshotAt = Date.now();
+    lastSnapshotAction = "";
+    return { ...patch, past: [...state.past, prev].slice(-HISTORY_LIMIT), future: [] };
+  }
   const now = Date.now();
   const coalesce =
     action === lastSnapshotAction &&
@@ -127,7 +177,7 @@ function withHistory(
   if (coalesce) return { ...patch, future: [] };
   return {
     ...patch,
-    past: [...state.past, state.resumeData].slice(-HISTORY_LIMIT),
+    past: [...state.past, prev].slice(-HISTORY_LIMIT),
     future: [],
   };
 }
@@ -159,6 +209,7 @@ export const useResumeStore = create<ResumeStore>()(
         return {
         // Initial State
         resumeData: initialResumeState,
+        design: DEFAULT_DESIGN,
         currentStep: 0,
         scoringGoal: "both",
         past: [],
@@ -174,9 +225,13 @@ export const useResumeStore = create<ResumeStore>()(
               const prev = state.past[state.past.length - 1];
               if (!prev) return {};
               return {
-                resumeData: prev,
+                resumeData: prev.resumeData,
+                design: prev.design,
                 past: state.past.slice(0, -1),
-                future: [state.resumeData, ...state.future].slice(0, HISTORY_LIMIT),
+                future: [
+                  { resumeData: state.resumeData, design: state.design },
+                  ...state.future,
+                ].slice(0, HISTORY_LIMIT),
               };
             },
             false,
@@ -191,8 +246,12 @@ export const useResumeStore = create<ResumeStore>()(
               const [next, ...rest] = state.future;
               if (!next) return {};
               return {
-                resumeData: next,
-                past: [...state.past, state.resumeData].slice(-HISTORY_LIMIT),
+                resumeData: next.resumeData,
+                design: next.design,
+                past: [
+                  ...state.past,
+                  { resumeData: state.resumeData, design: state.design },
+                ].slice(-HISTORY_LIMIT),
                 future: rest,
               };
             },
@@ -203,6 +262,20 @@ export const useResumeStore = create<ResumeStore>()(
 
         canUndo: () => get().past.length > 0,
         canRedo: () => get().future.length > 0,
+
+        beginUndoGroup: () => {
+          if (historyGroupDepth === 0) historyGroupSnapshotDone = false;
+          historyGroupDepth++;
+        },
+
+        endUndoGroup: () => {
+          historyGroupDepth = Math.max(0, historyGroupDepth - 1);
+          if (historyGroupDepth === 0) {
+            historyGroupSnapshotDone = false;
+            // The next edit after a group starts a fresh undo step.
+            lastSnapshotAction = "";
+          }
+        },
 
         // Step Navigation
         nextStep: () =>
@@ -661,11 +734,22 @@ export const useResumeStore = create<ResumeStore>()(
         setResumeData: (data) =>
           set({ resumeData: data }, false, "setResumeData"),
 
+        setDesign: (patch) =>
+          set(
+            (state) => ({ design: { ...state.design, ...patch } }),
+            false,
+            "setDesign"
+          ),
+
         setScoringGoal: (goal) =>
           set({ scoringGoal: goal }, false, "setScoringGoal"),
 
         resetResume: () =>
-          set({ resumeData: initialResumeState, currentStep: 0 }, false, "resetResume"),
+          set(
+            { resumeData: initialResumeState, design: DEFAULT_DESIGN, currentStep: 0 },
+            false,
+            "resetResume"
+          ),
         };
       },
       {
@@ -674,6 +758,7 @@ export const useResumeStore = create<ResumeStore>()(
         // up to 50 CV snapshots on every keystroke.
         partialize: (state) => ({
           resumeData: state.resumeData,
+          design: state.design,
           currentStep: state.currentStep,
           scoringGoal: state.scoringGoal,
         }),
@@ -683,6 +768,7 @@ export const useResumeStore = create<ResumeStore>()(
           return {
             ...currentState,
             ...persisted,
+            design: { ...currentState.design, ...(persisted.design || {}) },
             resumeData: {
               ...currentState.resumeData,
               ...(persisted.resumeData || {}),

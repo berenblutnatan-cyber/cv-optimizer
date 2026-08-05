@@ -183,7 +183,7 @@ export function OptimizerChatClient() {
       setPhase("done");
     } catch (err) {
       patch(thinkingId, {
-        content: `⚠️ ${err instanceof Error ? err.message : t("Something broke")} — ${t("want to try again?")}`,
+        content: `⚠️ ${err instanceof Error ? err.message : t("The analysis didn't come back — your inputs are safe. Try again.")} — ${t("want to try again?")}`,
       });
       setPhase(jobRef.current || cvRef.current ? "done" : "jd");
       toast.error(err instanceof Error ? err.message : t("Analysis failed"));
@@ -317,7 +317,7 @@ export function OptimizerChatClient() {
               {messages.map((m) =>
                 m.role === "user" ? (
                   <div key={m.id} className="flex justify-end">
-                    <div dir="auto" className="max-w-[85%] rounded-2xl rounded-br-md bg-white text-[#1a1a1a] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+                    <div dir="auto" className="max-w-[85%] rounded-2xl rounded-br-md bg-white text-brand-ink px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap">
                       {m.display ?? m.content}
                     </div>
                   </div>
@@ -339,7 +339,7 @@ export function OptimizerChatClient() {
                       {m.kind === "signin" ? (
                         <div className="mt-2">
                           <SignInButton mode="modal" forceRedirectUrl="/optimize">
-                            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition-colors">
+                            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-brand-ink text-sm font-semibold hover:bg-white/90 transition-colors">
                               {t("Sign in & score my CV")}
                               <ArrowRight className="h-4 w-4" />
                             </button>
@@ -349,7 +349,7 @@ export function OptimizerChatClient() {
                       {m.kind === "paywall" ? (
                         <Link
                           href="/pricing?reason=optimize"
-                          className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition-colors"
+                          className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-brand-ink text-sm font-semibold hover:bg-white/90 transition-colors"
                         >
                           {t("See plans")}
                           <ArrowRight className="h-4 w-4" />
@@ -443,7 +443,7 @@ function ResultCard({ r }: { r: AnalysisResult }) {
           track("optimizer_chat_view_full");
           router.push("/results");
         }}
-        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition-colors"
+        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-brand-ink text-sm font-semibold hover:bg-white/90 transition-colors"
       >
         {t("See the full breakdown & optimized CV")}
         <ArrowRight className="h-4 w-4" />

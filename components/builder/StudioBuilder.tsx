@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
-import { useResumeStore } from "@/store/useResumeStore";
+import { DEFAULT_DESIGN, useResumeStore, type DesignState } from "@/store/useResumeStore";
 import { useChatBuilderStore, CHAT_ACTIVE_SESSION_KEY } from "@/stores/chatBuilderStore";
 import { useFlashSaleStore } from "@/stores/flashSaleStore";
 import { applyCvToolCall, pendingToolLabel, DESIGN_TEMPLATES, DESIGN_COLORS } from "@/lib/chat/cvTools";
@@ -75,6 +75,10 @@ export function StudioBuilder() {
   const redo = useResumeStore((s) => s.redo);
   const canUndo = useResumeStore((s) => s.past.length > 0);
   const canRedo = useResumeStore((s) => s.future.length > 0);
+  // Template/color/font/spacing live in the store so a restyle is undoable and
+  // rides in the session save payload (see DesignState in useResumeStore).
+  const design = useResumeStore((s) => s.design);
+  const setDesign = useResumeStore((s) => s.setDesign);
   const {
     messages,
     addMessage,
@@ -96,13 +100,6 @@ export function StudioBuilder() {
   const [prefill, setPrefill] = useState("");
   const [prefillNonce, setPrefillNonce] = useState(0);
   const [unseenUpdates, setUnseenUpdates] = useState(0);
-  const [selectedTemplate, setSelectedTemplate] = useState<BuilderTemplateId>("ivy-league");
-  const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
-  // Font-size + spacing density (1-10, 5 = normal). Lifted out of
-  // SmartResumePreview so the AI's set_design tool can tune them after reading
-  // a CV — and so switching chat sessions can restore them.
-  const [fontLevel, setFontLevel] = useState(5);
-  const [spacingLevel, setSpacingLevel] = useState(5);
   const [docControls, setDocControls] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [scoreOpen, setScoreOpen] = useState(false);
@@ -244,6 +241,24 @@ export function StudioBuilder() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Autosave for signed-in users: ✏️ Edit-mode changes, template/design picks
+  // and score-panel fixes never pass through send(), so debounce a save on any
+  // CV/design change — the history drawer promises "saves automatically".
+  // Streaming turns are covered by send()'s own scheduleSave; the first pass
+  // after hydration is skipped so merely opening the builder saves nothing.
+  const autosaveReady = useRef(false);
+  useEffect(() => {
+    if (!hydrated || !isSignedIn) return;
+    if (!autosaveReady.current) {
+      autosaveReady.current = true;
+      return;
+    }
+    if (streaming) return;
+    const timer = setTimeout(() => void persistSession(), 2000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeData, design, hydrated, isSignedIn, streaming]);
+
   async function loadChats() {
     try {
       const res = await fetch("/api/chats");
@@ -268,10 +283,16 @@ export function StudioBuilder() {
 
   async function persistSession() {
     const msgs = useChatBuilderStore.getState().messages;
-    if (!msgs.some((m) => m.role === "user")) return;
+    const { resumeData: cv, design: cvDesign } = useResumeStore.getState();
+    const hasChat = msgs.some((m) => m.role === "user");
+    // Edit-mode-only sessions have no user messages but real CV content — they
+    // must save too (the drawer promises "saves automatically").
+    if (!hasChat && isEmptyResume(convertToPreviewData(cv))) return;
     const payload = {
       messages: msgs.map((m) => ({ role: m.role, content: m.content, display: m.display, tools: m.tools })),
-      resume: useResumeStore.getState().resumeData,
+      // Design rides inside the resume JSON under a reserved key — the API
+      // stores it opaquely, old rows without it fall back to defaults on load.
+      resume: { ...cv, _design: cvDesign },
     };
     try {
       const id = sessionIdRef.current;
@@ -285,7 +306,11 @@ export function StudioBuilder() {
         const res = await fetch("/api/chats", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            ...payload,
+            // No chat turn to derive a title from — use the CV's name.
+            ...(hasChat ? {} : { title: cv.personalInfo.name.trim() || undefined }),
+          }),
         });
         if (res.ok) {
           const d = await res.json();
@@ -330,6 +355,9 @@ export function StudioBuilder() {
 
     const controller = new AbortController();
     abortRef.current = controller;
+    // One assistant turn = ONE undo entry, however many tool/design events the
+    // stream applies — matched by endUndoGroup in the finally below.
+    useResumeStore.getState().beginUndoGroup();
     try {
       const res = await fetch("/api/chat/build", {
         method: "POST",
@@ -367,18 +395,20 @@ export function StudioBuilder() {
           // The agent picked a format that fits the CV — apply it live. Values
           // are server-validated; re-guard against the allow-lists so a bad
           // frame can never wedge an invalid template/color into the preview.
+          const patch: Partial<DesignState> = {};
           if (evt.template && (DESIGN_TEMPLATES as readonly string[]).includes(evt.template)) {
-            setSelectedTemplate(evt.template as BuilderTemplateId);
+            patch.template = evt.template as BuilderTemplateId;
           }
           if (evt.accentColor && (DESIGN_COLORS as readonly string[]).includes(evt.accentColor)) {
-            setSelectedColor(evt.accentColor as ThemeColor);
+            patch.color = evt.accentColor as ThemeColor;
           }
           if (typeof evt.fontLevel === "number") {
-            setFontLevel(Math.min(10, Math.max(1, Math.round(evt.fontLevel))));
+            patch.fontLevel = Math.min(10, Math.max(1, Math.round(evt.fontLevel)));
           }
           if (typeof evt.spacingLevel === "number") {
-            setSpacingLevel(Math.min(10, Math.max(1, Math.round(evt.spacingLevel))));
+            patch.spacingLevel = Math.min(10, Math.max(1, Math.round(evt.spacingLevel)));
           }
+          if (Object.keys(patch).length > 0) setDesign(patch);
           if (mobileTabRef.current === "chat") setUnseenUpdates((n) => n + 1);
         } else if (evt.type === "resume") {
           setResumeData(evt.resumeData);
@@ -408,11 +438,12 @@ export function StudioBuilder() {
         }
       } else {
         track("chat_error", { stage: "stream" });
-        const msg = err instanceof Error ? err.message : t("Something broke");
+        const msg = err instanceof Error ? err.message : t("The message didn't go through — your CV is unchanged. Try sending again.");
         updateMessage(assistantId, { content: `⚠️ ${msg}` });
         toast.error(msg);
       }
     } finally {
+      useResumeStore.getState().endUndoGroup();
       for (let i = 0; i < 25; i++) {
         const msg = useChatBuilderStore.getState().messages.find((m) => m.id === assistantId);
         if (!msg?.tools?.some((t) => t.pending)) break;
@@ -570,7 +601,7 @@ export function StudioBuilder() {
       }
       if (!exportRef.current) throw new Error(t("Nothing to export yet"));
       await exportToPdf(exportRef.current, `${(previewData.name || "My").replace(/\s+/g, "-")}-CV`);
-      toast.success(t("Downloaded"), { description: t("Your CV PDF is in your downloads.") });
+      toast.success(t("PDF ready"), { description: t("Save it from the print dialog, or check your downloads.") });
     } catch (err) {
       toast.error(t("Export failed"), { description: err instanceof Error ? err.message : t("Please try again.") });
     } finally {
@@ -632,8 +663,44 @@ export function StudioBuilder() {
           ? loaded
           : [{ id: generateId(), role: "assistant", content: chatGreeting(false) }],
       });
-      if (chat.resume) setResumeData(chat.resume as ResumeData);
-      else resetResume();
+      // Loading a session lands as ONE undo entry (content + design together).
+      const store = useResumeStore.getState();
+      store.beginUndoGroup();
+      try {
+        if (chat.resume) {
+          // Design was saved inside the resume JSON under `_design` — split it
+          // back out, re-guarding against the allow-lists. Old rows without it
+          // fall back to the defaults instead of leaking the previous
+          // session's look.
+          const { _design, ...rest } = chat.resume as ResumeData & {
+            _design?: Partial<DesignState>;
+          };
+          setResumeData(rest as ResumeData);
+          const d = _design ?? {};
+          setDesign({
+            template:
+              d.template && (DESIGN_TEMPLATES as readonly string[]).includes(d.template)
+                ? (d.template as BuilderTemplateId)
+                : DEFAULT_DESIGN.template,
+            color:
+              d.color && (DESIGN_COLORS as readonly string[]).includes(d.color)
+                ? (d.color as ThemeColor)
+                : DEFAULT_DESIGN.color,
+            fontLevel:
+              typeof d.fontLevel === "number"
+                ? Math.min(10, Math.max(1, Math.round(d.fontLevel)))
+                : DEFAULT_DESIGN.fontLevel,
+            spacingLevel:
+              typeof d.spacingLevel === "number"
+                ? Math.min(10, Math.max(1, Math.round(d.spacingLevel)))
+                : DEFAULT_DESIGN.spacingLevel,
+          });
+        } else {
+          resetResume();
+        }
+      } finally {
+        store.endUndoGroup();
+      }
       setSessionId(id);
       sessionIdRef.current = id;
       try {
@@ -677,6 +744,12 @@ export function StudioBuilder() {
   const progress = computeProgress(resumeData);
   const pct = Math.round((progress.filter((p) => p.done).length / progress.length) * 100);
 
+  // Heads-up BEFORE the anon free-message wall. The cap lives server-side (KV,
+  // per-IP — see lib/chat/rateLimit.ts) so the client can't count down "N
+  // left" honestly; nudge from the 2nd anon message instead.
+  const anonUserMsgCount = messages.filter((m) => m.role === "user").length;
+  const showAnonNudge = !isSignedIn && !limitHit && anonUserMsgCount >= 2;
+
   const quickEdits: { label: string; prompt: string }[] = [
     ...(!isPlaceholderSummary(resumeData.summary)
       ? [{ label: t("Summary"), prompt: "Punch up my summary — " }]
@@ -693,7 +766,7 @@ export function StudioBuilder() {
       <label className="cursor-pointer rounded-2xl bg-white border border-stone-200 hover:border-brand-navy/30 hover:shadow-sm transition-all p-3.5 flex items-start gap-3">
         <Download className="h-5 w-5 text-brand-navy flex-shrink-0 mt-0.5" />
         <span>
-          <span className="block text-sm text-[#1a1a1a] font-medium">{t("Upload my current CV")}</span>
+          <span className="block text-sm text-brand-ink font-medium">{t("Upload my current CV")}</span>
           <span className="block text-xs text-stone-500 mt-0.5">{t("PDF or Word in, everything pulled into the builder")}</span>
         </span>
         <input
@@ -714,7 +787,7 @@ export function StudioBuilder() {
       >
         <Sparkles className="h-5 w-5 text-brand-gold flex-shrink-0 mt-0.5" />
         <span>
-          <span className="block text-sm text-[#1a1a1a] font-medium">{t("Interview me")}</span>
+          <span className="block text-sm text-brand-ink font-medium">{t("Interview me")}</span>
           <span className="block text-xs text-stone-500 mt-0.5">{t("Not sure what to add? I'll ask the right questions")}</span>
         </span>
       </button>
@@ -741,13 +814,16 @@ export function StudioBuilder() {
       type="button"
       onClick={onClick}
       disabled={streaming}
+      aria-label={label}
       title={label}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors disabled:opacity-40 ${
+      className={`inline-flex items-center gap-1.5 min-h-[44px] md:min-h-0 px-2.5 py-1.5 rounded-lg text-[13px] whitespace-nowrap transition-colors disabled:opacity-40 ${
         active ? "bg-brand-navy/[0.07] text-brand-navy" : "text-stone-600 hover:bg-stone-100 hover:text-brand-navy"
       }`}
     >
-      <Icon className="h-[15px] w-[15px]" strokeWidth={1.8} />
-      <span className="hidden lg:inline">{label}</span>
+      <Icon className="h-[15px] w-[15px] flex-shrink-0" strokeWidth={1.8} />
+      {/* Touch has no tooltips — the label is always visible; the toolbar
+          scrolls horizontally on small screens. */}
+      <span>{label}</span>
       {badge ? (
         <span className="hidden xl:inline text-[10px] font-bold tracking-wide px-1 py-px rounded bg-brand-navy/10 text-brand-navy">
           {badge}
@@ -757,17 +833,20 @@ export function StudioBuilder() {
   );
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#F3F4F6] text-[#1a1a1a]">
+    <div className="flex flex-col h-[100dvh] bg-[#F3F4F6] text-brand-ink">
       {/* Global top bar */}
       <header className="flex-shrink-0 bg-white border-b border-stone-200">
         <div className="h-14 px-3 sm:px-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Logo variant="dark" size="sm" />
             {!isSignedIn ? (
+              // Visible on phones too (~90% of traffic) — short label there,
+              // full copy at sm+. Tapping opens sign-up.
               <SignUpButton mode="modal">
-                <button className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-brand-gold hover:bg-brand-gold/10 transition-colors">
+                <button className="inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-full text-sm sm:text-xs font-medium text-brand-gold-deep hover:bg-brand-gold/10 transition-colors whitespace-nowrap">
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
-                  {t("Sign up to save your work")}
+                  <span className="hidden sm:inline">{t("Sign up to save your work")}</span>
+                  <span className="sm:hidden">{t("Save")}</span>
                 </button>
               </SignUpButton>
             ) : null}
@@ -821,8 +900,9 @@ export function StudioBuilder() {
                 }
               }}
               aria-pressed={chatOpen}
+              aria-label={t("AI Assistant")}
               title={t("AI Assistant")}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 min-h-[44px] md:min-h-0 px-2.5 py-1.5 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${
                 chatOpen ? "bg-brand-navy/[0.07] text-brand-navy" : "text-stone-600 hover:bg-stone-100"
               }`}
             >
@@ -859,7 +939,7 @@ export function StudioBuilder() {
               disabled={!canUndo}
               aria-label={t("Undo")}
               title={t("Undo")}
-              className={`grid place-items-center h-10 w-10 md:h-8 md:w-8 rounded-lg transition-colors ${
+              className={`grid place-items-center h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors ${
                 canUndo ? "text-stone-600 hover:bg-stone-100 hover:text-brand-navy" : "text-stone-300 cursor-not-allowed"
               }`}
             >
@@ -871,7 +951,7 @@ export function StudioBuilder() {
               disabled={!canRedo}
               aria-label={t("Redo")}
               title={t("Redo")}
-              className={`grid place-items-center h-10 w-10 md:h-8 md:w-8 rounded-lg transition-colors ${
+              className={`grid place-items-center h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors ${
                 canRedo ? "text-stone-600 hover:bg-stone-100 hover:text-brand-navy" : "text-stone-300 cursor-not-allowed"
               }`}
             >
@@ -880,21 +960,23 @@ export function StudioBuilder() {
             <button
               type="button"
               onClick={() => setHistoryOpen(true)}
-              title={t("History")}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] text-stone-600 hover:bg-stone-100 hover:text-brand-navy transition-colors"
+              aria-label={t("Your CVs")}
+              title={t("Your CVs")}
+              className="inline-flex items-center gap-1.5 min-h-[44px] md:min-h-0 px-2.5 py-1.5 rounded-lg text-[13px] whitespace-nowrap text-stone-600 hover:bg-stone-100 hover:text-brand-navy transition-colors"
             >
-              <Clock className="h-[15px] w-[15px]" strokeWidth={1.8} />
-              <span className="hidden md:inline">{t("History")}</span>
+              <Clock className="h-[15px] w-[15px] flex-shrink-0" strokeWidth={1.8} />
+              <span className="hidden md:inline">{t("Your CVs")}</span>
             </button>
             <button
               type="button"
               onClick={onExport}
               disabled={exporting}
+              aria-label={exporting ? t("Exporting…") : t("Export")}
               title={exporting ? t("Exporting…") : t("Export")}
-              className="ml-1 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold bg-brand-navy text-white hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
+              className="ml-1 inline-flex items-center gap-1.5 min-h-[44px] md:min-h-0 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold whitespace-nowrap bg-brand-navy text-white hover:bg-brand-navy-hover disabled:opacity-60 transition-colors"
             >
               {exporting ? <Loader2 className="h-[15px] w-[15px] animate-spin" /> : <Download className="h-[15px] w-[15px]" strokeWidth={2} />}
-              <span className="hidden sm:inline">{exporting ? t("Exporting…") : t("Export")}</span>
+              <span>{exporting ? t("Exporting…") : t("Export")}</span>
             </button>
           </div>
         </div>
@@ -986,18 +1068,32 @@ export function StudioBuilder() {
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-stone-400 tabular-nums">{pct}%</span>
+                  <span
+                    className="text-[11px] text-stone-400 tabular-nums"
+                    title={t("CV completeness: {pct}%", { pct })}
+                    aria-label={t("CV completeness: {pct}%", { pct })}
+                  >
+                    {pct}%
+                  </span>
                   <button
                     type="button"
                     onClick={newChat}
-                    aria-label={t("New chat")}
-                    className="grid place-items-center h-7 w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-brand-navy transition-colors"
+                    aria-label={t("New CV")}
+                    title={t("New CV")}
+                    className="grid place-items-center h-11 w-11 md:h-7 md:w-7 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-brand-navy transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
               </div>
-              <div className="mt-2.5 h-1 rounded-full bg-stone-100 overflow-hidden">
+              <div
+                className="mt-2.5 h-1 rounded-full bg-stone-100 overflow-hidden"
+                role="progressbar"
+                aria-valuenow={pct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={t("CV completeness: {pct}%", { pct })}
+              >
                 <div className="h-full rounded-full bg-brand-navy transition-all duration-700" style={{ width: `${pct}%` }} />
               </div>
             </div>
@@ -1027,7 +1123,7 @@ export function StudioBuilder() {
                   ) : null}
                   {limitHit && !isSignedIn ? (
                     <div className="mb-2 rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3.5">
-                      <p className="text-[13px] font-medium text-[#1a1a1a]">
+                      <p className="text-[13px] font-medium text-brand-ink">
                         {t("You've used your free messages — nice progress!")}
                       </p>
                       <p className="mt-0.5 text-xs text-stone-600">
@@ -1036,6 +1132,16 @@ export function StudioBuilder() {
                       <SignUpButton mode="modal">
                         <button className="mt-2.5 w-full inline-flex items-center justify-center min-h-[44px] px-4 rounded-xl bg-brand-navy text-white text-sm font-semibold hover:bg-brand-navy-hover transition-colors">
                           {t("Sign up free to continue")}
+                        </button>
+                      </SignUpButton>
+                    </div>
+                  ) : null}
+                  {showAnonNudge ? (
+                    <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] px-3 py-1.5">
+                      <p className="text-sm text-brand-ink">{t("Free messages are limited")}</p>
+                      <SignUpButton mode="modal">
+                        <button className="flex-shrink-0 inline-flex items-center min-h-[44px] px-3 rounded-lg text-sm font-semibold text-brand-navy hover:bg-brand-navy/5 transition-colors">
+                          {t("Sign up to keep going")}
                         </button>
                       </SignUpButton>
                     </div>
@@ -1082,16 +1188,16 @@ export function StudioBuilder() {
           <div className="flex-1 min-h-0 min-w-0 bg-stone-100">
             <SmartResumePreview
               data={docData}
-              templateId={selectedTemplate}
-              themeColor={selectedColor}
-              fontLevel={fontLevel}
-              spacingLevel={spacingLevel}
-              onFontLevelChange={setFontLevel}
-              onSpacingLevelChange={setSpacingLevel}
+              templateId={design.template}
+              themeColor={design.color}
+              fontLevel={design.fontLevel}
+              spacingLevel={design.spacingLevel}
+              onFontLevelChange={(v) => setDesign({ fontLevel: v })}
+              onSpacingLevelChange={(v) => setDesign({ spacingLevel: v })}
               showToolbar={docControls}
               hideTemplateSelector
-              onTemplateChange={setSelectedTemplate}
-              onColorChange={setSelectedColor}
+              onTemplateChange={(id) => setDesign({ template: id })}
+              onColorChange={(c) => setDesign({ color: c })}
               className="h-full"
             />
           </div>
@@ -1133,7 +1239,7 @@ export function StudioBuilder() {
               <button
                 type="button"
                 onClick={() => setHistoryOpen(false)}
-                aria-label={t("Close history")}
+                aria-label={t("Close")}
                 className="grid place-items-center h-8 w-8 rounded-lg text-stone-500 hover:text-brand-navy hover:bg-stone-100 transition-colors"
               >
                 <X className="h-4 w-4" />
@@ -1159,7 +1265,7 @@ export function StudioBuilder() {
                       {t("Your CV only lives on this device for now — clearing your browser loses it. Create a free account to save it to the cloud and open it anywhere.")}
                     </p>
                     <SignUpButton mode="modal">
-                      <button className="mt-3 w-full inline-flex items-center justify-center min-h-[44px] px-4 rounded-xl bg-brand-gold text-white text-sm font-semibold hover:bg-[#a0760a] transition-colors">
+                      <button className="mt-3 w-full inline-flex items-center justify-center min-h-[44px] px-4 rounded-xl bg-brand-gold text-white text-sm font-semibold hover:bg-brand-gold-deep transition-colors">
                         {t("Sign up to save your work")}
                       </button>
                     </SignUpButton>
@@ -1178,7 +1284,7 @@ export function StudioBuilder() {
                     }`}
                   >
                     <button type="button" onClick={() => openChat(c.id)} className="flex-1 min-w-0 text-start">
-                      <div className="text-sm text-[#1a1a1a] truncate">{c.title}</div>
+                      <div className="text-sm text-brand-ink truncate">{c.title}</div>
                       <div className="text-[11px] text-stone-400">
                         {new Date(c.updatedAt).toLocaleDateString()} ·{" "}
                         {c.messageCount === 1
@@ -1211,11 +1317,10 @@ export function StudioBuilder() {
         onClose={() => setGalleryOpen(false)}
         data={docData}
         isDemo={isEmpty}
-        currentLayout={selectedTemplate}
-        currentColor={selectedColor}
+        currentLayout={design.template}
+        currentColor={design.color}
         onSelect={(layout, color) => {
-          setSelectedTemplate(layout);
-          setSelectedColor(color);
+          setDesign({ template: layout, color });
           setMobileTab("document");
           track("studio_toolbar_action", { action: "template_select" });
           useFlashSaleStore.getState().recordAction();
@@ -1225,8 +1330,7 @@ export function StudioBuilder() {
           // Guard real work — only replace silently when the CV is still empty.
           if (!isEmpty && !window.confirm(t("Replace your current CV with the demo content?"))) return;
           setResumeData(SAMPLE_RESUME_DATA);
-          setSelectedTemplate(layout);
-          setSelectedColor(color);
+          setDesign({ template: layout, color });
           setMobileTab("document");
           track("studio_toolbar_action", { action: "template_make_demo" });
         }}
@@ -1240,12 +1344,12 @@ export function StudioBuilder() {
             <>
               {/* Same font/spacing density the live preview shows, so the
                   downloaded PDF is WYSIWYG (shared math in lib/builder/density). */}
-              <style dangerouslySetInnerHTML={{ __html: densityOverrideCss(fontLevel, spacingLevel) }} />
+              <style dangerouslySetInnerHTML={{ __html: densityOverrideCss(design.fontLevel, design.spacingLevel) }} />
               <div
-                className={`smart-resume-override ${densityClasses(fontLevel, spacingLevel)}`}
-                style={densityInlineVars(fontLevel, spacingLevel)}
+                className={`smart-resume-override ${densityClasses(design.fontLevel, design.spacingLevel)}`}
+                style={densityInlineVars(design.fontLevel, design.spacingLevel)}
               >
-                <ResumePreview data={previewData} templateId={selectedTemplate} themeColor={selectedColor} />
+                <ResumePreview data={previewData} templateId={design.template} themeColor={design.color} />
               </div>
             </>
           ) : null}

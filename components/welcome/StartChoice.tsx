@@ -58,7 +58,7 @@ export function StartChoice() {
             className="cursor-pointer flex flex-col items-center text-center gap-4 py-8"
           >
             <span className="h-16 w-16 rounded-[28%] grid place-items-center bg-gradient-to-br from-[#f5b8c8] to-[#c9b8ff] shadow-glow">
-              <UploadCloud className="h-7 w-7 text-[#1a1a1a]" strokeWidth={1.7} />
+              <UploadCloud className="h-7 w-7 text-brand-ink" strokeWidth={1.7} />
             </span>
             <div>
               <div className="font-serif italic text-2xl text-white">{t("Upload my CV")}</div>
@@ -75,7 +75,7 @@ export function StartChoice() {
                 if (file) handleFile(file);
               }}
             />
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-brand-ink font-medium text-sm">
               {parsing ? t("Reading…") : cvFileName ? t("Replace ({fileName})", { fileName: cvFileName }) : t("Choose file")}
             </span>
           </label>
@@ -99,7 +99,7 @@ export function StartChoice() {
                 <Link
                   href="/build/chat"
                   onClick={() => track("start_choice", { choice: "chat_build" })}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-brand-ink font-medium text-sm"
                 >
                   <MessageCircle className="h-4 w-4" />
                   {t("Tell your story (5 min)")}
@@ -122,7 +122,7 @@ export function StartChoice() {
               </SignedIn>
               <SignedOut>
                 <SignUpButton mode="modal" forceRedirectUrl="/build/chat">
-                  <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] font-medium text-sm">
+                  <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-brand-ink font-medium text-sm">
                     <MessageCircle className="h-4 w-4" />
                     {t("Tell your story (5 min)")}
                   </button>

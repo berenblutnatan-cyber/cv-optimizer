@@ -39,14 +39,24 @@ interface A4PageWrapperProps {
   debug?: boolean;
   /** Show overflow indicator when content exceeds page */
   showOverflowIndicator?: boolean;
+  /**
+   * When false, the strict one-page height + overflow:hidden clip is lifted so
+   * content flows past the A4 boundary (grows in whole-page steps). Use for
+   * export renders — a clipped export silently truncates multi-page CVs.
+   * Note: utils/exportToPdf.ts also lifts the clip at capture/print time via
+   * the `.a4-wrapper` class, so existing single-page template markup keeps
+   * working without threading this prop through every template.
+   */
+  clip?: boolean;
 }
 
-export function A4PageWrapper({ 
-  children, 
-  className = "", 
+export function A4PageWrapper({
+  children,
+  className = "",
   pageId,
   debug = false,
   showOverflowIndicator = false,
+  clip = true,
 }: A4PageWrapperProps) {
   return (
     <div
@@ -62,22 +72,23 @@ export function A4PageWrapper({
         // STRICT A4 DIMENSIONS (ENFORCED)
         // ==========================================
         width: `${A4_WIDTH_MM}mm`,
-        height: `${A4_HEIGHT_MM}mm`,
+        height: clip ? `${A4_HEIGHT_MM}mm` : "auto",
         minHeight: `${A4_HEIGHT_MM}mm`,
-        maxHeight: `${A4_HEIGHT_MM}mm`,
-        
+        maxHeight: clip ? `${A4_HEIGHT_MM}mm` : "none",
+
         // ==========================================
         // SCREEN PRESENTATION
         // ==========================================
         backgroundColor: "#ffffff",
         margin: "0 auto 2rem auto",
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-        
+
         // ==========================================
         // STRICT OVERFLOW CONTROL
         // Forces content to be clipped at A4 boundary
+        // (lifted when clip={false} — export renders)
         // ==========================================
-        overflow: "hidden",
+        overflow: clip ? "hidden" : "visible",
         position: "relative",
         boxSizing: "border-box",
         

@@ -11,7 +11,7 @@ export function Watermark({ className = "" }: WatermarkProps) {
   const { t } = useT();
   return (
     <div
-      className={`fixed inset-0 pointer-events-none z-50 ${className}`}
+      className={`absolute inset-0 pointer-events-none z-20 ${className}`}
       style={{
         background: "repeating-linear-gradient(45deg, transparent, transparent 100px, rgba(0,0,0,0.03) 100px, rgba(0,0,0,0.03) 200px)",
       }}

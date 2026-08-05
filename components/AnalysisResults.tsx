@@ -6,6 +6,9 @@ import { TemplateType } from "./cv-templates";
 import { EditableResumePreview, ResumePreviewData, BuilderTemplateId, ThemeColor, ResumePreview } from "./builder";
 import { TEMPLATE_LIST, type TemplateRegistryId } from "@/lib/templates/registry";
 import { SmartResumePreview, TemplateGallery } from "./shared";
+import { useTemplateGating, TEMPLATE_OPTIONS as GATED_TEMPLATE_OPTIONS } from "./builder/TemplateSwitcher";
+import { TemplateUnlockModal } from "./TemplateUnlockModal";
+import { OutOfCreditsModal } from "./OutOfCreditsModal";
 import parseRawCV from "@/lib/cvParser";
 import { exportToPdf } from "@/utils/exportToPdf";
 import { exportToWord } from "@/utils/exportToWord";
@@ -176,6 +179,19 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
   // Score-breakdown tooltip: click-toggle so touch users can open it
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
+
+  // Premium gate for the template carousel — the SAME shared unlock/charge
+  // flow as every other template surface, so the gallery can't apply a locked
+  // premium design without the 1-credit unlock.
+  const galleryGating = useTemplateGating(
+    (tpl) => setSelectedTemplate(tpl.id as BuilderTemplateId),
+    selectedTemplate,
+  );
+  const handleGallerySelect = (id: BuilderTemplateId) => {
+    const option = GATED_TEMPLATE_OPTIONS.find((x) => x.id === id);
+    if (option) galleryGating.handleSelect(option);
+    else setSelectedTemplate(id);
+  };
   
   // Ref for PDF capture - points to ONLY the CV content (no toolbar)
   const pdfCaptureRef = useRef<HTMLDivElement>(null);
@@ -183,6 +199,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   // Clarity flagged dead clicks on "View Optimized CV" because switching tabs
   // didn't move the viewport, so the user thought nothing happened.
   const rootRef = useRef<HTMLDivElement>(null);
+  // Photo picker — opened programmatically. `<label>` wrapping a
+  // `display:none` input doesn't dispatch on iOS Safari + in-app webviews
+  // (LinkedIn/Instagram/Meta). Same pattern as OptimizerClient / /score.
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const goToTab = (next: typeof activeTab) => {
     setActiveTab(next);
@@ -274,6 +294,8 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
       };
       reader.readAsDataURL(file);
     }
+    // Allow re-selecting the same file after removing the photo.
+    if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
   const removePhoto = () => {
@@ -400,7 +422,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <div className="bg-[#FAFAF8] rounded-sm p-5 sm:p-8 border border-stone-100">
               <div className="flex items-center gap-3 mb-3">
                 <Target className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
-                <h3 className="font-serif text-xl text-[#1a1a1a]">{t("Match Analysis")}</h3>
+                <h3 className="font-serif text-xl text-brand-ink">{t("Match Analysis")}</h3>
               </div>
               <p className="text-stone-600 leading-relaxed font-light">{results.summary}</p>
             </div>
@@ -414,7 +436,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       <TrendingUp className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-serif text-lg text-[#1a1a1a]">{t("Score Improvement")}</h3>
+                      <h3 className="font-serif text-lg text-brand-ink">{t("Score Improvement")}</h3>
                       <p className="text-xs sm:text-sm text-stone-500 font-light truncate">{t("How your CV improved after optimization")}</p>
                     </div>
                   </div>
@@ -435,7 +457,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       showScoreBreakdown ? "opacity-100 visible" : "opacity-0 invisible"
                     }`}>
                       <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-stone-200 transform rotate-45"></div>
-                      <h4 className="font-serif text-[#1a1a1a] text-sm mb-3">{t("Detailed Breakdown")}</h4>
+                      <h4 className="font-serif text-brand-ink text-sm mb-3">{t("Detailed Breakdown")}</h4>
                       <div className="space-y-3">
                         {/* ATS Score */}
                         <div className="flex items-center justify-between">
@@ -521,7 +543,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <div className="grid md:grid-cols-2 gap-4">
               {/* Strengths Card */}
               <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
-                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                <h4 className="font-serif text-lg text-brand-ink mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-brand-navy/5 rounded-full flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                   </div>
@@ -539,7 +561,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
               {/* Areas to Improve Card */}
               <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
-                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                <h4 className="font-serif text-lg text-brand-ink mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-brand-gold/10 rounded-full flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-brand-gold" strokeWidth={1.5} />
                   </div>
@@ -560,7 +582,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <div className="grid md:grid-cols-2 gap-4">
               {/* Keywords Found */}
               <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
-                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                <h4 className="font-serif text-lg text-brand-ink mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-brand-navy/5 rounded-full flex items-center justify-center">
                     <Check className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
                   </div>
@@ -583,7 +605,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
               {/* Missing Keywords */}
               <div className="bg-white border border-stone-200 rounded-sm p-5 shadow-sm">
-                <h4 className="font-serif text-lg text-[#1a1a1a] mb-4 flex items-center gap-2">
+                <h4 className="font-serif text-lg text-brand-ink mb-4 flex items-center gap-2">
                   <div className="w-8 h-8 bg-rose-50 rounded-full flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5 text-rose-600" strokeWidth={1.5} />
                   </div>
@@ -633,7 +655,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <div key={index} className="bg-white border border-stone-200 rounded-sm overflow-hidden shadow-sm">
                   <div className="bg-[#FAFAF8] px-5 py-3 border-b border-stone-200 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
-                    <span className="font-serif text-[#1a1a1a]">{change.section}</span>
+                    <span className="font-serif text-brand-ink">{change.section}</span>
                 </div>
 
                   <div className="p-5 space-y-4">
@@ -646,7 +668,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
                   <div>
                       <p className="text-xs text-stone-500 uppercase tracking-wider mb-2 font-medium">{t("Suggested")}</p>
-                      <p className="p-4 rounded-sm border leading-relaxed text-[#1a1a1a] bg-brand-navy/5 border-brand-navy/15">
+                      <p className="p-4 rounded-sm border leading-relaxed text-brand-ink bg-brand-navy/5 border-brand-navy/15">
                       {change.suggested}
                     </p>
                   </div>
@@ -679,7 +701,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
             <div className="flex-shrink-0 mb-4">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div>
-                  <h3 className="font-serif text-lg text-[#1a1a1a] mb-1">{t("Your Optimized Resume")}</h3>
+                  <h3 className="font-serif text-lg text-brand-ink mb-1">{t("Your Optimized Resume")}</h3>
                   <p className="text-stone-500 text-sm font-light">
                     {isEditMode ? t("Click any text to edit directly") : t("Adjust font & spacing from the toolbar below")}
                   </p>
@@ -691,7 +713,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                       onClick={() => setIsEditMode(false)}
                       aria-pressed={!isEditMode}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-sm text-xs font-medium transition-colors focus-visible:outline-none ${
-                        !isEditMode ? "bg-white shadow-sm text-[#1a1a1a]" : "text-stone-500 hover:text-stone-700"
+                        !isEditMode ? "bg-white shadow-sm text-brand-ink" : "text-stone-500 hover:text-stone-700"
                       }`}
                     >
                       <Eye className="w-3.5 h-3.5" />
@@ -782,8 +804,24 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 {/* Template Gallery - Visual carousel for template selection */}
                 <TemplateGallery
                   selectedId={selectedTemplate}
-                  onSelect={setSelectedTemplate}
+                  onSelect={handleGallerySelect}
                   className="flex-shrink-0"
+                />
+                <TemplateUnlockModal
+                  open={!!galleryGating.pendingTemplate}
+                  templateName={galleryGating.pendingTemplate?.name ?? ""}
+                  templateDescription={galleryGating.pendingTemplate?.description}
+                  templatePreview={galleryGating.pendingTemplate?.preview}
+                  loading={galleryGating.unlockLoading}
+                  onConfirm={galleryGating.confirmUnlock}
+                  onClose={galleryGating.cancelUnlock}
+                />
+                <OutOfCreditsModal
+                  open={galleryGating.oocModal.isOpen}
+                  onClose={galleryGating.oocModal.close}
+                  trigger={galleryGating.oocModal.trigger}
+                  title={galleryGating.oocModal.title}
+                  subtitle={galleryGating.oocModal.subtitle}
                 />
                 
                 {/* Photo Upload Section */}
@@ -794,7 +832,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         <Camera className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />
                       </div>
                       <div>
-                        <h3 className="font-medium text-[#1a1a1a] text-sm">{t("Profile Photo")}</h3>
+                        <h3 className="font-medium text-brand-ink text-sm">{t("Profile Photo")}</h3>
                         <p className="text-xs text-stone-500 font-light">{t("Optional - for templates with photo support")}</p>
                       </div>
                     </div>
@@ -815,16 +853,29 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                         </button>
                       </div>
                     ) : (
-                      <label className="flex items-center gap-2 px-3 py-1.5 bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy text-sm font-medium rounded-sm cursor-pointer transition-colors">
-                        <User className="w-4 h-4" />
-                        <span>{t("Add Photo")}</span>
+                      <>
+                        {/* Programmatic file-picker open. `<label>` wrapping a
+                            `display:none` input doesn't dispatch on iOS Safari
+                            + in-app webviews (LinkedIn/Instagram/Meta). */}
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current?.click()}
+                          aria-label={t("Add profile photo")}
+                          className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy text-sm font-medium rounded-sm transition-colors focus-visible:outline-none"
+                        >
+                          <User className="w-4 h-4" />
+                          <span>{t("Add Photo")}</span>
+                        </button>
                         <input
+                          ref={photoInputRef}
                           type="file"
                           accept="image/*"
                           onChange={handlePhotoSelect}
-                          className="hidden"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                          className="absolute -left-[9999px] w-px h-px opacity-0"
                         />
-                      </label>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1130,7 +1181,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <FileText className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
               </div>
               <div>
-                <h4 className="font-serif text-lg text-[#1a1a1a]">
+                <h4 className="font-serif text-lg text-brand-ink">
                   {coverLetterTab.title || t("AI Cover Letter Generator")}
                 </h4>
                 <p className="text-stone-500 text-sm font-light">{coverLetterTab.subtitle || t("Generate a tailored cover letter for this position")}</p>
@@ -1210,7 +1261,7 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                 <textarea
                   value={coverLetterTab.text}
                   onChange={(e) => coverLetterTab.onTextChange(e.target.value)}
-                  className="w-full flex-1 min-h-[320px] px-5 py-4 bg-white text-[#1a1a1a] border border-stone-200 rounded-sm focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none resize-none placeholder:text-stone-500 leading-relaxed shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] font-light"
+                  className="w-full flex-1 min-h-[320px] px-5 py-4 bg-white text-brand-ink border border-stone-200 rounded-sm focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none resize-none placeholder:text-stone-500 leading-relaxed shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] font-light"
                 />
               </div>
             )}

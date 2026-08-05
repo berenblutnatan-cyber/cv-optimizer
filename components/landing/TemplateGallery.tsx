@@ -36,7 +36,7 @@ export async function TemplateGallery() {
           </div>
           <figcaption className="mt-3 flex items-baseline justify-between px-0.5">
             <span className="font-serif text-[15px] text-brand-navy">{t(d.name)}</span>
-            <span className="font-mono text-[10px] uppercase tracking-wider text-brand-navy/40">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-brand-navy/60">
               {t(d.tag)}
             </span>
           </figcaption>

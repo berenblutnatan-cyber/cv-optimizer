@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 // Starter ($3/5) is retired here: that price point now belongs to the 24h
 // welcome flash (10 credits for $3).
 const PACKS: { plan: "mini" | "pro" | "ultimate"; name: string; price: number; credits: number; perCredit: string; best?: boolean }[] = [
-  { plan: "mini", name: "Mini", price: 3, credits: 3, perCredit: "just a few" },
+  { plan: "mini", name: "Mini", price: 3, credits: 3, perCredit: "$1.00 / credit" },
   { plan: "pro", name: "Pro", price: 9, credits: 20, perCredit: "$0.45 / credit", best: true },
   { plan: "ultimate", name: "Ultimate", price: 20, credits: 60, perCredit: "$0.33 / credit" },
 ];
@@ -33,9 +33,9 @@ export default async function PricingPage() {
   const passConfigured = Boolean(process.env.POLAR_PRODUCT_UNLIMITED_QUARTER);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
+    <div className="min-h-screen bg-[#FAFAF8] text-brand-ink">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
+      <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="relative w-full px-4 sm:px-8 md:px-16 h-16 sm:h-20 flex items-center justify-between gap-2">
           <Logo variant="dark" size="md" />
           <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
@@ -68,7 +68,7 @@ export default async function PricingPage() {
         </div>
       </header>
 
-      <div className="pt-28 sm:pt-32 pb-16 px-4 sm:px-8 lg:px-16">
+      <div className="pt-10 sm:pt-14 pb-16 px-4 sm:px-8 lg:px-16">
         <div className="max-w-7xl mx-auto">
           {/* Hero header */}
           <div className="text-center mb-12">
@@ -76,7 +76,7 @@ export default async function PricingPage() {
               <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               {t("Pricing")}
             </div>
-            <h1 className="font-serif text-4xl sm:text-5xl font-light text-[#1a1a1a] mb-5 leading-tight">
+            <h1 className="font-serif text-4xl sm:text-5xl font-light text-brand-ink mb-5 leading-tight">
               {t("Go unlimited, or pay as you go")}
             </h1>
             <div className="w-16 h-px bg-brand-navy mx-auto mb-6" />
@@ -89,9 +89,9 @@ export default async function PricingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-stretch max-w-7xl mx-auto">
             {/* Free */}
             <div className="bg-white rounded-sm border border-stone-200 p-6 flex flex-col">
-              <h3 className="font-serif text-lg text-[#1a1a1a]">{t("Free")}</h3>
+              <h3 className="font-serif text-lg text-brand-ink">{t("Free")}</h3>
               <div className="mt-3 mb-4 flex items-baseline gap-1.5">
-                <span className="font-serif text-3xl font-light text-[#1a1a1a]">$0</span>
+                <span className="font-serif text-3xl font-light text-brand-ink">$0</span>
               </div>
               <ul className="space-y-2.5 text-sm flex-1">
                 <li className="flex items-start gap-2 text-stone-600 font-light"><Check className="w-4 h-4 text-brand-navy flex-shrink-0 mt-0.5" strokeWidth={1.8} />{t("ATS score & keyword gaps")}</li>
@@ -112,13 +112,13 @@ export default async function PricingPage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-serif text-lg text-[#1a1a1a]">{t(p.name)}</h3>
+                  <h3 className="font-serif text-lg text-brand-ink">{t(p.name)}</h3>
                   {p.best ? (
                     <span className="text-[10px] uppercase tracking-wider font-medium text-brand-navy bg-brand-navy/8 px-2 py-0.5 rounded-sm">{t("Popular")}</span>
                   ) : null}
                 </div>
                 <div className="mt-3 mb-1 flex items-baseline gap-1.5">
-                  <span className="font-serif text-3xl font-light text-[#1a1a1a]">${p.price}</span>
+                  <span className="font-serif text-3xl font-light text-brand-ink">${p.price}</span>
                   <span className="text-xs text-stone-500 font-light">{t("once")}</span>
                 </div>
                 <p className="text-xs text-brand-navy font-medium">{t("{credits} credits", { credits: p.credits })}</p>
@@ -128,8 +128,11 @@ export default async function PricingPage() {
               </div>
             ))}
 
-            {/* Unlimited — the flagship, sitting right in the lineup */}
-            <div className="relative bg-brand-navy text-white rounded-sm border-2 border-brand-gold shadow-[0_12px_44px_-14px_rgba(184,134,11,0.5)] p-6 flex flex-col">
+            {/* Unlimited — the flagship, sitting right in the lineup.
+                order-first: ~90% of traffic is mobile, where the grid stacks —
+                the "Best value" plan must lead, not sit buried in 5th place.
+                lg:order-none restores the desktop lineup. */}
+            <div className="relative order-first lg:order-none mt-3 lg:mt-0 bg-brand-navy text-white rounded-sm border-2 border-brand-gold shadow-[0_12px_44px_-14px_rgba(184,134,11,0.5)] p-6 flex flex-col">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-brand-gold text-white text-[10px] font-medium px-3 py-1 rounded-sm tracking-[0.12em] uppercase whitespace-nowrap">{t("Best value")}</span>
               </div>
@@ -148,7 +151,7 @@ export default async function PricingPage() {
               {unlimitedConfigured ? (
                 <Link
                   href="/api/checkout/polar?plan=unlimited_monthly"
-                  className="group mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-gold hover:bg-[#a3760a] text-white text-sm font-medium rounded-sm transition-colors text-center"
+                  className="group mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-gold hover:bg-brand-gold-deep text-white text-sm font-medium rounded-sm transition-colors text-center"
                 >
                   {t("Go Unlimited")}
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.8} />
@@ -175,7 +178,7 @@ export default async function PricingPage() {
             <div className="mt-8 max-w-3xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-sm border border-brand-gold/40 bg-brand-gold/[0.06] px-6 py-5">
                 <div className="flex-1">
-                  <p className="font-serif text-lg text-[#1a1a1a]">
+                  <p className="font-serif text-lg text-brand-ink">
                     {t("On an active search?")}{" "}
                     <span className="text-brand-navy">{t("Get the 3-month Job Search Pass")}</span>
                   </p>
@@ -195,25 +198,33 @@ export default async function PricingPage() {
           )}
 
           {/* Trust signals */}
-          <div className="mt-14 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-14 max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Matches /refund-policy: 14-day money-back on credit purchases. */}
+            <Link href="/refund-policy" className="flex items-center gap-4 p-5 bg-white border border-stone-200 hover:border-stone-300 rounded-sm transition-colors">
+              <ShieldCheck className="w-6 h-6 text-brand-navy flex-shrink-0" strokeWidth={1.5} />
+              <div>
+                <p className="font-medium text-brand-ink text-sm">{t("14-day money-back")}</p>
+                <p className="text-stone-500 text-xs font-light">{t("Credit packs, no questions asked.")}</p>
+              </div>
+            </Link>
             <div className="flex items-center gap-4 p-5 bg-white border border-stone-200 rounded-sm">
               <RotateCcw className="w-6 h-6 text-brand-navy flex-shrink-0" strokeWidth={1.5} />
               <div>
-                <p className="font-medium text-[#1a1a1a] text-sm">{t("Cancel anytime")}</p>
+                <p className="font-medium text-brand-ink text-sm">{t("Cancel anytime")}</p>
                 <p className="text-stone-500 text-xs font-light">{t("Keep access through the period you paid for.")}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 p-5 bg-white border border-stone-200 rounded-sm">
               <Lock className="w-6 h-6 text-brand-navy flex-shrink-0" strokeWidth={1.5} />
               <div>
-                <p className="font-medium text-[#1a1a1a] text-sm">{t("Secure checkout")}</p>
+                <p className="font-medium text-brand-ink text-sm">{t("Secure checkout")}</p>
                 <p className="text-stone-500 text-xs font-light">{t("Powered by Polar. Cards, Apple Pay, Google Pay.")}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 p-5 bg-white border border-stone-200 rounded-sm">
-              <ShieldCheck className="w-6 h-6 text-brand-navy flex-shrink-0" strokeWidth={1.5} />
+              <Check className="w-6 h-6 text-brand-navy flex-shrink-0" strokeWidth={1.5} />
               <div>
-                <p className="font-medium text-[#1a1a1a] text-sm">{t("No lock-in")}</p>
+                <p className="font-medium text-brand-ink text-sm">{t("No lock-in")}</p>
                 <p className="text-stone-500 text-xs font-light">{t("Prefer one-time? Credit packs never expire.")}</p>
               </div>
             </div>

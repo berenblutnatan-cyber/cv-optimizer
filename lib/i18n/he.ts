@@ -345,6 +345,68 @@ const core: Record<string, string> = {
   "“I’d been editing the same bullet for a week. Hired rewrote it in one line — and it was the line I actually wanted to say.”":
     "„שבוע שלם ערכתי את אותה שורה. Hired ניסח אותה מחדש בשורה אחת — וזו הייתה בדיוק השורה שרציתי להגיד.”",
   "Tip: Tap the ⋯ menu icon and choose \"Open in Browser\".": "טיפ: הקישו על תפריט ⋯ ובחרו „פתיחה בדפדפן”.",
+
+  // ── Round-2 audit fixes (export, autosave, voice errors, honesty copy) ─────
+  "Heads-up: sign-in works best in your browser.": "שימו לב: ההתחברות עובדת הכי טוב בדפדפן הרגיל.",
+  "Runs past one page — page 2 is included in your download.": "חורג מעמוד אחד — עמוד 2 ייכלל בהורדה.",
+  "PDF ready": "ה־PDF מוכן",
+  "Save it from the print dialog, or check your downloads.": "שמרו אותו מחלון ההדפסה, או בדקו בהורדות.",
+  "Works with PDF export": "כולל ייצוא PDF",
+  "CV completeness": "שלמות קורות החיים",
+  "CV completeness: {pct}%": "שלמות קורות החיים: {pct}%",
+  "{pct}% — {done} of {total} sections done": "{pct}% — הושלמו {done} מתוך {total} פרקים",
+  done: "הושלם",
+  "still to do": "נותר להשלים",
+  "Delete {name}": "מחיקת {name}",
+  "Move {name} up": "העברת {name} למעלה",
+  "Move {name} down": "העברת {name} למטה",
+  "this role": "התפקיד הזה",
+  "this school": "המוסד הזה",
+  "Add education": "הוספת השכלה",
+  "Add profile photo": "הוספת תמונת פרופיל",
+  "Free messages are limited": "ההודעות החינמיות מוגבלות",
+  "Sign up to keep going": "הרשמו כדי להמשיך",
+  "The message didn't go through — your CV is unchanged. Try sending again.":
+    "ההודעה לא עברה — קורות החיים לא השתנו. נסו לשלוח שוב.",
+  "The assistant hit a snag mid-reply — your CV is unchanged. Say that again and I'll pick it up.":
+    "העוזר נתקל בתקלה באמצע התשובה — קורות החיים לא השתנו. כתבו שוב ואמשיך מאותה נקודה.",
+  "The analysis didn't come back — your inputs are safe. Try again.":
+    "הניתוח לא חזר — הנתונים שלך שמורים. נסו שוב.",
+  "Couldn't build your CV from this session — your answers are safe on this device. Tap Retry to save them.":
+    "לא הצלחנו לבנות את קורות החיים מהשיחה — התשובות שלך שמורות במכשיר. הקישו על נסו שוב כדי לשמור.",
+  "Still couldn't save — check your connection and tap Retry again.":
+    "עדיין לא נשמר — בדקו את החיבור והקישו שוב על נסו שוב.",
+  "Couldn't connect the call — try again in a moment.": "לא הצלחנו להתחבר לשיחה — נסו שוב בעוד רגע.",
+  "Couldn't reach the voice service — check your connection and try again.":
+    "שירות הקול לא זמין — בדקו את החיבור ונסו שוב.",
+  "Couldn't start the voice session — check your connection and try again.":
+    "לא הצלחנו להתחיל את שיחת הקול — בדקו את החיבור ונסו שוב.",
+  "Couldn't start the voice session — try again in a moment.": "לא הצלחנו להתחיל את שיחת הקול — נסו שוב בעוד רגע.",
+  "The voice connection hiccuped — tap the orb to try again.": "חיבור הקול נקטע — הקישו על העיגול כדי לנסות שוב.",
+  "Microphone access blocked. Allow the mic in your browser and try again.":
+    "הגישה למיקרופון חסומה. אפשרו מיקרופון בדפדפן ונסו שוב.",
+  "You've hit the hourly voice limit — give it a few minutes and try again.":
+    "הגעתם למגבלת הקול השעתית — המתינו כמה דקות ונסו שוב.",
+  "Sign in to use the voice builder.": "התחברו כדי להשתמש בבונה הקולי.",
+  "That file is over 5 MB — export a smaller PDF and try again.":
+    "הקובץ גדול מ־5MB — ייצאו PDF קטן יותר ונסו שוב.",
+  "That file type isn't supported — upload a PDF, DOCX, or TXT.":
+    "סוג הקובץ אינו נתמך — העלו PDF, DOCX או TXT.",
+  "14-day money-back on credit packs": "החזר כספי תוך 14 יום על חבילות קרדיטים",
+  "Credit packs, no questions asked.": "חבילות קרדיטים, בלי שאלות.",
+  "Top up from $1 to generate this cover letter — or go Unlimited.":
+    "טעינה החל מ־$1 ליצירת מכתב המקדים — או ללא הגבלה.",
+  "Top up from $1 to unlock full prep — or go Unlimited.":
+    "טעינה החל מ־$1 לפתיחת ההכנה המלאה — או ללא הגבלה.",
+  "{off}% off · ends in": "{off}% הנחה · מסתיים בעוד",
+  "Powered by AI • Processed securely •": "מופעל על ידי AI • מעובד באופן מאובטח •",
+  "Your CV is read twice.": "קורות החיים שלך נקראים פעמיים.",
+  "See where your CV stands in 60 seconds — no signup, no card.":
+    "בדקו איפה קורות החיים שלכם עומדים תוך 60 שניות — בלי הרשמה, בלי כרטיס.",
+  "Most companies run every CV through screening software first. It hunts for the right words in a structure it can actually parse.":
+    "רוב החברות מעבירות כל קורות חיים דרך תוכנת סינון. היא מחפשת את המילים הנכונות במבנה שהיא מסוגלת לקרוא.",
+  "A recruiter gives each CV a few seconds. They aren’t reading keywords — they’re looking for a number they’ll repeat in the hiring meeting.":
+    "מגייס מקדיש לכל קורות חיים שניות ספורות. הוא לא קורא מילות מפתח — הוא מחפש מספר שיוכל לצטט בישיבת הגיוס.",
 };
 
 // Final dictionary: bulk auto-generated translations first, curated core last so

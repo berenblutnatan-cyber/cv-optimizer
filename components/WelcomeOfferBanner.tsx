@@ -92,13 +92,16 @@ export function WelcomeOfferBanner() {
               <span className="text-white/45 line-through font-normal">${anchor}</span>
             </div>
             <div className="text-xs text-[#e7c66a] mt-0.5">
-              {t("70% off · ends in")} <span className="tabular-nums">{remaining}</span>
+              {/* % is computed from the server-supplied prices so the badge can
+                  never contradict what checkout charges. */}
+              {t("{off}% off · ends in", { off: Math.round((1 - price / anchor) * 100) })}{" "}
+              <span className="tabular-nums">{remaining}</span>
             </div>
           </div>
           <Link
             href="/api/checkout/polar?plan=welcome"
             onClick={() => track("checkout_started", { plan: "welcome" })}
-            className="flex-shrink-0 inline-flex items-center px-4 py-2 rounded-sm bg-brand-gold hover:bg-[#a3760a] text-white text-sm font-medium transition-colors"
+            className="flex-shrink-0 inline-flex items-center px-4 py-2 rounded-sm bg-brand-gold hover:bg-brand-gold-deep text-white text-sm font-medium transition-colors"
           >
             {t("Claim")}
           </Link>

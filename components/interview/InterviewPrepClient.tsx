@@ -7,6 +7,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { Loader2, Sparkles, Lock, MessageSquareQuote } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useFlashSaleStore } from "@/stores/flashSaleStore";
+import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { resumeToText } from "@/types/resume";
 import { track } from "@/lib/analytics";
 import { useT } from "@/lib/i18n/LanguageProvider";
@@ -24,6 +25,8 @@ export function InterviewPrepClient() {
   const [locked, setLocked] = useState(true);
   const [loading, setLoading] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  // Paywall with a way to act — never a dead-end toast (same as OptimizerClient).
+  const oocModal = useOutOfCreditsModal();
 
   const cvText = resumeToText(resumeData);
   const hasCv = cvText.trim().length >= 40;
@@ -73,7 +76,10 @@ export function InterviewPrepClient() {
       if (res.status === 402 || data?.code === "INSUFFICIENT_CREDITS") {
         track("interview_prep_blocked", { reason: "no_credits" });
         useFlashSaleStore.getState().recordAction();
-        toast.message(t("You're out of credits"), { description: t("Top up or grab the Pro offer to unlock.") });
+        oocModal.open({
+          trigger: "interview_prep",
+          subtitle: t("Top up from $1 to unlock full prep — or go Unlimited."),
+        });
         return;
       }
       if (!res.ok) {
@@ -138,7 +144,7 @@ export function InterviewPrepClient() {
                 <div key={i} className="rounded-2xl bg-white border border-stone-200 p-4">
                   <div className="flex items-start gap-2">
                     <MessageSquareQuote className="h-4 w-4 text-brand-gold flex-shrink-0 mt-1" />
-                    <p className="text-[15px] font-medium text-[#1a1a1a]">{q.question}</p>
+                    <p className="text-[15px] font-medium text-brand-ink">{q.question}</p>
                   </div>
                   {!locked && q.starAnswer ? (
                     <p className="mt-2 ml-6 text-[13px] text-stone-600 leading-relaxed whitespace-pre-wrap">{q.starAnswer}</p>
@@ -149,7 +155,7 @@ export function InterviewPrepClient() {
               {!locked && pitch ? (
                 <div className="rounded-2xl bg-brand-navy/[0.04] border border-brand-navy/15 p-4">
                   <div className="text-[11px] uppercase tracking-[0.14em] text-brand-navy/60 mb-1">{t("Your 30-second pitch")}</div>
-                  <p className="text-sm text-[#1a1a1a] leading-relaxed whitespace-pre-wrap">{pitch}</p>
+                  <p className="text-sm text-brand-ink leading-relaxed whitespace-pre-wrap">{pitch}</p>
                 </div>
               ) : null}
 
@@ -175,6 +181,14 @@ export function InterviewPrepClient() {
           ) : null}
         </>
       )}
+
+      <OutOfCreditsModal
+        open={oocModal.isOpen}
+        onClose={oocModal.close}
+        trigger={oocModal.trigger}
+        title={oocModal.title}
+        subtitle={oocModal.subtitle}
+      />
     </div>
   );
 }

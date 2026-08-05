@@ -12,7 +12,9 @@ const STATE_COPY: Record<VoiceState, string> = {
   thinking: "Thinking…",
   speaking: "Speaking…",
   finalizing: "Building your CV…",
-  error: "Something broke",
+  // The detailed, actionable error line renders next to the orb (from
+  // useVoiceSession) — the orb caption just says what tapping does.
+  error: "Tap to retry",
 };
 
 export function VoiceOrb({
@@ -71,7 +73,7 @@ export function VoiceOrb({
           <span
             className={[
               "relative grid place-items-center h-16 w-16 rounded-full transition-colors duration-200",
-              active ? "bg-white/95 text-[#1a1a1a]" : "bg-white/85 text-[#1a1a1a]",
+              active ? "bg-white/95 text-brand-ink" : "bg-white/85 text-brand-ink",
             ].join(" ")}
           >
             {active ? (
@@ -87,7 +89,7 @@ export function VoiceOrb({
               aria-hidden
               className={[
                 "absolute -bottom-2 h-2 w-12 rounded-full transition-colors",
-                isUserTurn ? "bg-[#f5b8c8]" : isAssistantTurn ? "bg-[#8fb3ff]" : "bg-white/40",
+                isUserTurn ? "bg-warm" : isAssistantTurn ? "bg-cool" : "bg-white/40",
               ].join(" ")}
             />
           ) : null}

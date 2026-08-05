@@ -120,7 +120,7 @@ export function RolesDeck({
             type="button"
             onClick={regenerate}
             disabled={generating}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#1a1a1a] text-sm font-medium shadow-glow disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-brand-ink text-sm font-medium shadow-glow disabled:opacity-60"
           >
             {generating ? (
               <Loader2 className="h-4 w-4 animate-spin" />

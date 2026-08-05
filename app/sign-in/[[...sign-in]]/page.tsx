@@ -1,5 +1,6 @@
 import { SignIn } from "@clerk/nextjs";
 import { GradientShell } from "@/components/shell/GradientShell";
+import { InAppBrowserAlert } from "@/components/InAppBrowserAlert";
 
 // Real, app-hosted sign-in route. Every `redirect("/sign-in?redirect_url=…")`
 // across the app (build/chat, build/voice, dashboard, admin, roles, checkout)
@@ -17,7 +18,8 @@ export const metadata = { title: "Sign in · Hired" };
 export default function SignInPage() {
   return (
     <GradientShell>
-      <div className="min-h-dvh flex items-center justify-center px-4 py-12">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-4 py-12">
+        <InAppBrowserAlert variant="full" />
         <SignIn signUpUrl="/sign-up" />
       </div>
     </GradientShell>

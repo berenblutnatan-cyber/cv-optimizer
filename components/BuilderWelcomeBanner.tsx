@@ -53,7 +53,7 @@ export function BuilderWelcomeBanner() {
         <div className="flex items-start sm:items-center justify-between gap-4 px-5 py-3 rounded-sm bg-brand-navy/5 border border-brand-navy/15">
           <div className="flex items-start sm:items-center gap-3">
             <Sparkles className="w-5 h-5 text-brand-navy flex-shrink-0 mt-0.5 sm:mt-0" strokeWidth={1.5} />
-            <p className="text-sm text-[#1a1a1a] font-light leading-relaxed">
+            <p className="text-sm text-brand-ink font-light leading-relaxed">
               <span className="font-medium">{t("Welcome to Hired-CV.")}</span>{" "}
               {t("You have")}{" "}
               <span className="font-medium text-brand-navy">

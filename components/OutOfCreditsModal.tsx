@@ -25,7 +25,13 @@ function fmtCountdown(ms: number): string {
   return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
 }
 
-type Trigger = "optimize" | "template_unlock" | "balance_click" | "manual";
+type Trigger =
+  | "optimize"
+  | "template_unlock"
+  | "balance_click"
+  | "cover_letter"
+  | "interview_prep"
+  | "manual";
 
 type Props = {
   open: boolean;
@@ -110,6 +116,8 @@ export function OutOfCreditsModal({
   const [welcome, setWelcome] = useState<WelcomeOffer | null>(null);
   const [remaining, setRemaining] = useState("");
   const flashTracked = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -123,6 +131,53 @@ export function OutOfCreditsModal({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, trigger, onClose]);
+
+  // Focus trap: focus the first control on open, keep Tab inside the dialog,
+  // and hand focus back to wherever the user was when it closes.
+  useEffect(() => {
+    if (!open) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => !el.hasAttribute("disabled"));
+    // Defer one frame so framer-motion has mounted the dialog contents.
+    const raf = requestAnimationFrame(() => focusables()[0]?.focus());
+    const onTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const els = focusables();
+      if (els.length === 0) return;
+      const first = els[0];
+      const last = els[els.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !dialogRef.current?.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !dialogRef.current?.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onTab);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", onTab);
+      previouslyFocused.current?.focus?.();
+    };
+  }, [open]);
+
+  // Coming BACK from Polar via the browser's back button restores this page
+  // from bfcache with the loading lock still set — every buy button would stay
+  // disabled forever. `pageshow` with persisted=true is that moment; unlock.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setLoadingPlan(null);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   useEffect(() => {
     if (!open || socialProofCount !== null) return;
@@ -246,6 +301,7 @@ export function OutOfCreditsModal({
           />
 
           <motion.div
+            ref={dialogRef}
             initial={{ y: 24, opacity: 0, scale: 0.97 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 16, opacity: 0, scale: 0.98 }}
@@ -269,7 +325,7 @@ export function OutOfCreditsModal({
               </div>
               <h2
                 id="ooc-title"
-                className="font-serif text-2xl sm:text-3xl font-light text-[#1a1a1a] tracking-tight mb-2"
+                className="font-serif text-2xl sm:text-3xl font-light text-brand-ink tracking-tight mb-2"
               >
                 {title ?? t("You're out of credits")}
               </h2>
@@ -300,14 +356,19 @@ export function OutOfCreditsModal({
                         <span className="text-white/45 line-through font-normal">${welcome?.anchor ?? 10}</span>
                       </div>
                       <div className="text-xs text-[#e7c66a] mt-1">
-                        {t("70% off · ends in")} <span className="tabular-nums">{remaining}</span> {t("— won't come back")}
+                        {/* % is computed from the server-supplied prices so the
+                            badge can never contradict what checkout charges. */}
+                        {t("{off}% off · ends in", {
+                          off: Math.round((1 - (welcome?.price ?? 3) / (welcome?.anchor ?? 10)) * 100),
+                        })}{" "}
+                        <span className="tabular-nums">{remaining}</span> {t("— won't come back")}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={handleClaimFlash}
                       disabled={loadingPlan !== null}
-                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-brand-gold hover:bg-[#a3760a] text-white text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-wait"
+                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-brand-gold hover:bg-brand-gold-deep text-white text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-wait"
                     >
                       {loadingPlan ? t("Redirecting…") : (
                         <>
@@ -375,13 +436,13 @@ export function OutOfCreditsModal({
                           strokeWidth={2}
                         />
                       </div>
-                      <div className="font-serif text-base text-[#1a1a1a] tracking-tight">
+                      <div className="font-serif text-base text-brand-ink tracking-tight">
                         {t(tier.name)}
                       </div>
                     </div>
 
                     <div className="flex items-baseline gap-1.5 mb-1">
-                      <span className="font-serif text-3xl sm:text-4xl text-[#1a1a1a]">
+                      <span className="font-serif text-3xl sm:text-4xl text-brand-ink">
                         {tier.price}
                       </span>
                       <span className="text-xs text-stone-500 font-light">
@@ -411,7 +472,7 @@ export function OutOfCreditsModal({
                       disabled={loading}
                       className={`group inline-flex items-center justify-center gap-2 w-full py-2.5 sm:py-3 text-sm font-medium rounded-sm transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-70 disabled:cursor-wait ${
                         isPrimary
-                          ? "bg-brand-gold hover:bg-[#9c7409] text-white focus-visible:ring-brand-gold/40 shadow-sm hover:shadow-md"
+                          ? "bg-brand-gold hover:bg-brand-gold-deep text-white focus-visible:ring-brand-gold/40 shadow-sm hover:shadow-md"
                           : isValue
                             ? "bg-brand-navy hover:bg-brand-navy-hover text-white focus-visible:ring-brand-navy/40 shadow-sm hover:shadow-md"
                             : "bg-white hover:bg-stone-50 text-brand-navy border border-stone-300 hover:border-brand-navy/50 focus-visible:ring-stone-300"
@@ -451,7 +512,8 @@ export function OutOfCreditsModal({
                 <span className="text-stone-300">·</span>
                 <span className="inline-flex items-center gap-1">
                   <Check className="w-3 h-3 text-brand-navy" strokeWidth={2} />
-                  {t("Unused credits refundable")}
+                  {/* Matches /refund-policy: 14-day money-back on credit purchases. */}
+                  {t("14-day money-back on credit packs")}
                 </span>
               </p>
             </div>

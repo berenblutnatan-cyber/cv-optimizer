@@ -48,7 +48,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
             {data.experience.map((exp) => (
               <div key={exp.id}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <h3 className="text-sm font-semibold text-[#1a1a1a]">
+                  <h3 className="text-sm font-semibold text-brand-ink">
                     {exp.role}
                     {exp.company ? <span className="text-stone-500 font-normal"> · {exp.company}</span> : null}
                   </h3>
@@ -91,7 +91,7 @@ export async function ExampleResume({ data }: { data: ResumeData }) {
           <div className="space-y-2">
             {data.education.map((edu) => (
               <div key={edu.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <h3 className="text-sm text-[#1a1a1a]">
+                <h3 className="text-sm text-brand-ink">
                   <span className="font-semibold">
                     {edu.degree}
                     {edu.field ? ` ${t("in")} ${edu.field}` : ""}

@@ -234,7 +234,7 @@ export function TemplateGalleryModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("Search templates or roles")}
-              className="flex-1 bg-transparent text-[13px] text-[#1a1a1a] placeholder:text-stone-400 outline-none"
+              className="flex-1 bg-transparent text-[13px] text-brand-ink placeholder:text-stone-400 outline-none"
             />
           </div>
           <button
@@ -257,7 +257,7 @@ export function TemplateGalleryModal({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("Search templates or roles")}
-            className="flex-1 min-w-0 bg-transparent text-base text-[#1a1a1a] placeholder:text-stone-400 outline-none"
+            className="flex-1 min-w-0 bg-transparent text-base text-brand-ink placeholder:text-stone-400 outline-none"
           />
           {query ? (
             <button

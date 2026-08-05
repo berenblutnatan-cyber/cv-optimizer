@@ -68,7 +68,7 @@ export function CouponRedeem() {
         <div className="w-10 h-10 rounded-full bg-brand-navy/5 flex items-center justify-center flex-shrink-0">
           <Gift className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
         </div>
-        <h3 className="font-serif text-lg text-[#1a1a1a]">{t("Redeem Promo Code")}</h3>
+        <h3 className="font-serif text-lg text-brand-ink">{t("Redeem Promo Code")}</h3>
       </div>
 
       <form onSubmit={handleRedeem} className="space-y-4">
@@ -81,7 +81,7 @@ export function CouponRedeem() {
               setMessage(null); // Clear message when typing
             }}
             placeholder={t("Enter promo code")}
-            className="min-w-0 flex-1 px-4 py-2.5 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy text-base sm:text-sm font-light text-[#1a1a1a] placeholder:text-stone-500"
+            className="min-w-0 flex-1 px-4 py-2.5 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy text-base sm:text-sm font-light text-brand-ink placeholder:text-stone-500"
             disabled={isRedeeming}
           />
           <button

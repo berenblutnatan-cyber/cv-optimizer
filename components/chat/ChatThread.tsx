@@ -39,7 +39,7 @@ function ToolChips({ tools, theme = "dark" }: { tools: BuilderChatMessage["tools
         >
           <Sparkles
             className={`h-3 w-3 ${
-              t.pending ? (light ? "text-brand-navy/40" : "text-white/50") : light ? "text-brand-gold" : "text-[#f5b8c8]"
+              t.pending ? (light ? "text-brand-navy/40" : "text-white/50") : light ? "text-brand-gold" : "text-warm"
             }`}
           />
           {t.label}
@@ -116,7 +116,7 @@ export function ChatThread({
                 <div
                   dir="auto"
                   className={`max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
-                    light ? "bg-stone-100 text-[#1a1a1a]" : "bg-white text-[#1a1a1a]"
+                    light ? "bg-stone-100 text-brand-ink" : "bg-white text-brand-ink"
                   }`}
                 >
                   {m.display ?? m.content}
@@ -140,7 +140,7 @@ export function ChatThread({
                     dir="auto"
                     className={`text-[15px] leading-relaxed whitespace-pre-wrap ${
                       light
-                        ? "text-[#1f2937] px-0.5"
+                        ? "text-brand-ink px-0.5"
                         : "rounded-2xl rounded-bl-md bg-white/10 border border-glass-border text-white px-4 py-2.5"
                     }`}
                   >

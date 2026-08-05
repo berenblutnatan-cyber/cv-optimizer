@@ -67,12 +67,12 @@ export function InlineAssist({
       {suggestion ? (
         <div className="mt-2 rounded-xl border border-stone-200 bg-white p-3">
           {suggestion.text ? (
-            <p className="text-[13px] text-[#1a1a1a] leading-relaxed whitespace-pre-wrap">{suggestion.text}</p>
+            <p className="text-[13px] text-brand-ink leading-relaxed whitespace-pre-wrap">{suggestion.text}</p>
           ) : null}
           {suggestion.items && suggestion.items.length > 0 ? (
             <ul className="space-y-1.5">
               {suggestion.items.map((it, i) => (
-                <li key={i} className="flex gap-2 text-[13px] text-[#1a1a1a] leading-relaxed">
+                <li key={i} className="flex gap-2 text-[13px] text-brand-ink leading-relaxed">
                   <span className="text-brand-gold">•</span>
                   <span>{it}</span>
                 </li>
