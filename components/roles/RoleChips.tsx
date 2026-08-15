@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function RoleChips({ initial }: { initial: string[] }) {
   const { t } = useT();
+  const router = useRouter();
   const [roles, setRoles] = useState(initial);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,6 +23,8 @@ export function RoleChips({ initial }: { initial: string[] }) {
       });
       if (!res.ok) throw new Error("Failed to update roles");
       setRoles(next);
+      // The roles deck on this page reads targetRoles from the server render.
+      router.refresh();
     } catch (e) {
       toast.error(t("Couldn't save roles — try again"));
     } finally {

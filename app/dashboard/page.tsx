@@ -16,7 +16,6 @@ import { LevelBadge } from "@/components/shell/LevelBadge";
 import { ScoreRing } from "@/components/shell/ScoreRing";
 import { SquircleIcon } from "@/components/shell/SquircleIcon";
 import { Sparkline } from "@/components/dashboard/Sparkline";
-import { RoleChips } from "@/components/dashboard/RoleChips";
 import { getDashboardData } from "@/lib/dashboard";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -69,8 +68,8 @@ export default async function DashboardPage() {
         </div>
       </GlassCard>
 
-      {/* Top row: career score + applications + roles */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Top row: career score + applications */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlassCard padding="lg">
           <div className="flex items-start justify-between mb-3">
             <div>
@@ -110,20 +109,6 @@ export default async function DashboardPage() {
           <div className="mt-1 text-xs text-white/70">
             {t("CV optimizations and role generations to date.")}
           </div>
-        </GlassCard>
-
-        <GlassCard padding="lg">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/55">
-            {t("Roles you're targeting")}
-          </div>
-          <div className="mt-3">
-            <RoleChips initial={data.user.targetRoles} />
-          </div>
-          {data.user.targetRoles.length === 0 ? (
-            <div className="mt-3 text-xs text-white/55">
-              {t("Add up to 5 roles and we'll tailor a CV for each.")}
-            </div>
-          ) : null}
         </GlassCard>
       </div>
 
