@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { GradientShell } from "@/components/shell/GradientShell";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { prisma } from "@/lib/prisma";
+import { RoleChips } from "@/components/roles/RoleChips";
 import { RolesDeck } from "@/components/roles/RolesDeck";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -49,6 +50,15 @@ export default async function RolesPage() {
             {t("We tailor a fresh CV for each target role. The first is free — unlock the rest as you go.")}
           </p>
         </header>
+
+        <section className="mt-6">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-white/55">
+            {t("Roles you're targeting")}
+          </div>
+          <div className="mt-3">
+            <RoleChips initial={user?.targetRoles ?? []} />
+          </div>
+        </section>
 
         <RolesDeck
           targetRoles={user?.targetRoles ?? []}
