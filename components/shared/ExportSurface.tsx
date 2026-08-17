@@ -10,7 +10,7 @@
 // user's Font/Spacing sliders.
 
 import React, { forwardRef } from "react";
-import { densityClasses, densityInlineVars, densityOverrideCss } from "@/lib/builder/density";
+import { densityTokenVars } from "@/lib/builder/density";
 
 type ExportSurfaceProps = {
   /** Density levels 1-10; 5/5 = normal. Pass the SAME values the visible
@@ -29,17 +29,9 @@ export const ExportSurface = forwardRef<HTMLDivElement, ExportSurfaceProps>(
       <div aria-hidden className="fixed -left-[10000px] top-0 pointer-events-none">
         <div ref={ref} style={{ width: 794, background: "#ffffff" }}>
           {children ? (
-            <>
-              <style
-                dangerouslySetInnerHTML={{ __html: densityOverrideCss(fontLevel, spacingLevel) }}
-              />
-              <div
-                className={`smart-resume-override ${densityClasses(fontLevel, spacingLevel)}`}
-                style={densityInlineVars(fontLevel, spacingLevel)}
-              >
-                {children}
-              </div>
-            </>
+            <div className="smart-resume-override" style={densityTokenVars(fontLevel, spacingLevel)}>
+              {children}
+            </div>
           ) : null}
         </div>
       </div>

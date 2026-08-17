@@ -14,7 +14,7 @@ import { TemplateUnlockModal } from "@/components/TemplateUnlockModal";
 import { OutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/LanguageProvider";
-import { densityInlineVars, densityClasses, densityOverrideCss } from "@/lib/builder/density";
+import { densityTokenVars } from "@/lib/builder/density";
 
 // A4 dimensions at 96 DPI
 const A4_WIDTH_PX = 794;
@@ -385,9 +385,6 @@ export function SmartResumePreview({
         </div>
       )}
 
-      {/* Dynamic style overrides for font/spacing sliders */}
-      <style dangerouslySetInnerHTML={{ __html: densityOverrideCss(fontLevel, spacingLevel) }} />
-
       {/* PREVIEW AREA */}
       <div
         ref={containerRef}
@@ -421,12 +418,14 @@ export function SmartResumePreview({
             }}
             className={cn(
               "bg-white shadow-xl transition-all duration-200 ease-out relative",
-              isOverflowing && "ring-4 ring-amber-400/40",
-              densityClasses(fontLevel, spacingLevel)
+              isOverflowing && "ring-4 ring-amber-400/40"
             )}
           >
-            {/* Content wrapper for overflow measurement */}
-            <div ref={contentRef} className="smart-resume-override" style={densityInlineVars(fontLevel, spacingLevel)}>
+            {/* Content wrapper for overflow measurement. Density flows through
+                the --cv-*-mult tokens every template consumes via scaled()/
+                spaced()/leading() — headings, spans, and padding all follow
+                the sliders now (the old override CSS only reached p/li/td). */}
+            <div ref={contentRef} className="smart-resume-override" style={densityTokenVars(fontLevel, spacingLevel)}>
               <ResumePreview
                 data={data}
                 templateId={activeTemplate}

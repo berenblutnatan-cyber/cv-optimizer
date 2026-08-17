@@ -6,6 +6,7 @@ import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { scaled, spaced, leading } from "@/lib/builder/density";
 
 /**
  * Aurora
@@ -24,32 +25,32 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
         {/* Accent rail */}
         <div style={{ width: "10px", flexShrink: 0, background: `linear-gradient(180deg, ${colors.primary} 0%, ${colors.dark} 100%)` }} />
 
-        <div style={{ flex: 1, minWidth: 0, padding: "26px 30px" }}>
+        <div style={{ flex: 1, minWidth: 0, padding: `${spaced(26)} ${spaced(30)}` }}>
           {/* Header card */}
           <header
             style={{
               backgroundColor: colors.light,
               borderRadius: "8px",
-              padding: "18px 20px",
-              marginBottom: "16px",
+              padding: `${spaced(18)} ${spaced(20)}`,
+              marginBottom: spaced(16),
             }}
           >
             <h1 style={{
-              fontSize: "27px",
+              fontSize: scaled(27),
               fontWeight: 800,
               color: "#0f172a",
               fontFamily: FONTS.sans.heading,
               letterSpacing: "-0.01em",
-              lineHeight: 1.05,
+              lineHeight: leading(1.05),
             }}>
               {formatName(data.name)}
             </h1>
             {hasContent(data.title) && (
-              <p style={{ fontSize: "12px", fontWeight: 600, color: colors.dark, marginTop: "3px", letterSpacing: "0.02em" }}>
+              <p style={{ fontSize: scaled(12), fontWeight: 600, color: colors.dark, marginTop: spaced(3), letterSpacing: "0.02em" }}>
                 {formatJobTitle(data.title!)}
               </p>
             )}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "5px 12px", marginTop: "9px", fontSize: "9px", color: "#475569" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: `${spaced(5)} ${spaced(12)}`, marginTop: spaced(9), fontSize: scaled(9), color: "#475569" }}>
               {[
                 hasContent(data.contact.email) && data.contact.email,
                 hasContent(data.contact.phone) && data.contact.phone,
@@ -57,7 +58,7 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
                 hasContent(data.contact.linkedin) && data.contact.linkedin!.replace(/^https?:\/\//, ""),
                 hasContent(data.contact.website) && data.contact.website!.replace(/^https?:\/\//, ""),
               ].filter(Boolean).map((v, i) => (
-                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: spaced(6) }}>
                   <span style={{ width: "4px", height: "4px", borderRadius: "50%", backgroundColor: colors.primary }} />
                   {v}
                 </span>
@@ -67,27 +68,27 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
 
           {hasContent(data.summary) && (
             <AuroraSection title={t("Profile")} colors={colors}>
-              <p style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.5 }}>{data.summary}</p>
+              <p style={{ fontSize: scaled(9.5), color: "#374151", lineHeight: leading(1.5) }}>{data.summary}</p>
             </AuroraSection>
           )}
 
           {data.sections.map((section) => (
             <AuroraSection key={section.id} title={section.title} colors={colors}>
               {section.items.map((item) => (
-                <div key={item.id} style={{ marginBottom: "9px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "8px" }}>
-                    <h3 style={{ fontSize: "10.5px", fontWeight: 700, color: "#0f172a" }}>{formatJobTitle(item.title || "")}</h3>
-                    {item.date && <span style={{ fontSize: "8.5px", fontWeight: 600, color: colors.dark, whiteSpace: "nowrap" }}>{item.date}</span>}
+                <div key={item.id} className="cv-item" style={{ marginBottom: spaced(9) }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: spaced(8) }}>
+                    <h3 style={{ fontSize: scaled(10.5), fontWeight: 700, color: "#0f172a" }}>{formatJobTitle(item.title || "")}</h3>
+                    {item.date && <span style={{ fontSize: scaled(8.5), fontWeight: 600, color: colors.dark, whiteSpace: "nowrap" }}>{item.date}</span>}
                   </div>
                   {(item.subtitle || item.location) && (
-                    <p style={{ fontSize: "9px", color: "#64748b", marginTop: "1px" }}>
+                    <p style={{ fontSize: scaled(9), color: "#64748b", marginTop: spaced(1) }}>
                       {[item.subtitle, item.location].filter(Boolean).join(" · ")}
                     </p>
                   )}
                   {item.bullets && item.bullets.length > 0 && (
-                    <ul style={{ marginTop: "4px", paddingLeft: "0", listStyle: "none" }}>
+                    <ul style={{ marginTop: spaced(4), paddingLeft: "0", listStyle: "none" }}>
                       {item.bullets.filter(hasContent).map((b, i) => (
-                        <li key={i} style={{ fontSize: "9px", color: "#374151", lineHeight: 1.45, marginBottom: "2px", paddingLeft: "12px", position: "relative" }}>
+                        <li key={i} style={{ fontSize: scaled(9), color: "#374151", lineHeight: leading(1.45), marginBottom: spaced(2), paddingLeft: spaced(12), position: "relative" }}>
                           <span style={{ position: "absolute", left: 0, top: "5px", width: "4px", height: "4px", borderRadius: "1px", backgroundColor: colors.primary }} />
                           {formatBulletPoint(b)}
                         </li>
@@ -101,9 +102,9 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
 
           {data.skills && data.skills.length > 0 && (
             <AuroraSection title={t("Skills")} colors={colors}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: spaced(5) }}>
                 {data.skills.filter(hasContent).map((s, i) => (
-                  <span key={i} style={{ fontSize: "8.5px", fontWeight: 600, color: colors.dark, backgroundColor: colors.light, padding: "3px 9px", borderRadius: "11px" }}>{s}</span>
+                  <span key={i} style={{ fontSize: scaled(8.5), fontWeight: 600, color: colors.dark, backgroundColor: colors.light, padding: `${spaced(3)} ${spaced(9)}`, borderRadius: "11px" }}>{s}</span>
                 ))}
               </div>
             </AuroraSection>
@@ -111,7 +112,7 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
 
           {data.languages && data.languages.length > 0 && (
             <AuroraSection title={t("Languages")} colors={colors}>
-              <p style={{ fontSize: "9px", color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
+              <p style={{ fontSize: scaled(9), color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
             </AuroraSection>
           )}
         </div>
@@ -122,9 +123,9 @@ export function AuroraTemplate({ data, themeColor, className }: TemplateProps) {
 
 function AuroraSection({ title, colors, children }: { title: string; colors: { primary: string; dark: string }; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: "13px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "7px" }}>
-        <h2 style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: colors.primary, whiteSpace: "nowrap" }}>{title}</h2>
+    <section style={{ marginBottom: spaced(13) }}>
+      <div style={{ display: "flex", alignItems: "center", gap: spaced(8), marginBottom: spaced(7) }}>
+        <h2 style={{ fontSize: scaled(10), fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: colors.primary, whiteSpace: "nowrap" }}>{title}</h2>
         <div style={{ flex: 1, height: "2px", borderRadius: "1px", backgroundColor: colors.primary, opacity: 0.25 }} />
       </div>
       {children}

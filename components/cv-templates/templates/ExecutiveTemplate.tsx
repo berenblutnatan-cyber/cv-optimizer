@@ -6,6 +6,7 @@ import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { scaled, spaced, leading } from "@/lib/builder/density";
 
 /**
  * Template 4: Executive
@@ -28,10 +29,10 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
         {/* Dark Header Block */}
         <header style={{
           backgroundColor: "#111827",
-          padding: "40px 48px",
+          padding: `${spaced(40)} ${spaced(48)}`,
           display: "flex",
           alignItems: "center",
-          gap: "24px",
+          gap: spaced(24),
         }}>
           {/* Optional Photo */}
           {data.photo ? (
@@ -54,7 +55,7 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "32px",
+              fontSize: scaled(32),
               fontWeight: 700,
               color: "white",
               flexShrink: 0,
@@ -66,7 +67,7 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
           {/* Name & Title */}
           <div style={{ flex: 1 }}>
             <h1 style={{
-              fontSize: "34px",
+              fontSize: scaled(34),
               fontWeight: 700,
               color: "#ffffff",
               fontFamily: FONTS.sans.heading,
@@ -76,9 +77,9 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
             </h1>
             {data.title && (
               <p style={{
-                fontSize: "14px",
+                fontSize: scaled(14),
                 color: colors.primary,
-                marginTop: "6px",
+                marginTop: spaced(6),
                 fontWeight: 500,
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
@@ -92,24 +93,24 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
         {/* Contact Bar */}
         <div style={{
           backgroundColor: colors.primary,
-          padding: "12px 48px",
+          padding: `${spaced(12)} ${spaced(48)}`,
           display: "flex",
           justifyContent: "center",
-          gap: "32px",
+          gap: spaced(32),
           flexWrap: "wrap",
         }}>
           {hasContent(data.contact.email) && (
-            <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: 500 }}>
+            <span style={{ fontSize: scaled(11), color: "#ffffff", fontWeight: 500 }}>
               ✉ {data.contact.email}
             </span>
           )}
           {hasContent(data.contact.phone) && (
-            <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: 500 }}>
+            <span style={{ fontSize: scaled(11), color: "#ffffff", fontWeight: 500 }}>
               ☎ {data.contact.phone}
             </span>
           )}
           {hasContent(data.contact.location) && (
-            <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: 500 }}>
+            <span style={{ fontSize: scaled(11), color: "#ffffff", fontWeight: 500 }}>
               📍 {data.contact.location}
             </span>
           )}
@@ -118,7 +119,7 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
               href={data.contact.linkedin!.startsWith("http") ? data.contact.linkedin! : `https://${data.contact.linkedin}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontSize: "11px", color: "#bfdbfe", fontWeight: 500, textDecoration: "none" }}
+              style={{ fontSize: scaled(11), color: "#bfdbfe", fontWeight: 500, textDecoration: "none" }}
             >
               in {data.contact.linkedin!.replace(/^https?:\/\//, "").replace(/\/$/, "")}
             </a>
@@ -126,31 +127,31 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
         </div>
 
         {/* Main Content */}
-        <div style={{ padding: "32px 48px" }}>
+        <div style={{ padding: `${spaced(32)} ${spaced(48)}` }}>
           {/* Summary */}
           {hasContent(data.summary) && (
-            <section style={{ marginBottom: "28px" }}>
+            <section style={{ marginBottom: spaced(28) }}>
               <h2 style={{
-                fontSize: "12px",
+                fontSize: scaled(12),
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.15em",
                 color: "#111827",
-                marginBottom: "12px",
-                paddingBottom: "8px",
+                marginBottom: spaced(12),
+                paddingBottom: spaced(8),
                 borderBottom: `3px solid ${colors.primary}`,
                 display: "inline-block",
               }}>
                 {t("Executive Summary")}
               </h2>
-              <p style={{ fontSize: "11px", color: "#374151", lineHeight: 1.8 }}>
+              <p style={{ fontSize: scaled(11), color: "#374151", lineHeight: leading(1.8) }}>
                 {data.summary}
               </p>
             </section>
           )}
 
           {/* Two Column Layout */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "32px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: spaced(32) }}>
             {/* Left - Experience/Education */}
             <div>
               {data.sections.map((section) => (
@@ -166,14 +167,14 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
             <div>
               {data.skills && data.skills.length > 0 && (
                 <ExecSection title={t("Core Competencies")} color={colors.primary}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: spaced(8) }}>
                     {data.skills.filter(hasContent).map((skill, idx) => (
                       <span key={idx} style={{
-                        fontSize: "10px",
+                        fontSize: scaled(10),
                         fontWeight: 500,
                         color: colors.dark,
                         backgroundColor: `${colors.primary}15`,
-                        padding: "6px 12px",
+                        padding: `${spaced(6)} ${spaced(12)}`,
                         borderRadius: "16px",
                         border: `1px solid ${colors.primary}30`,
                       }}>
@@ -190,8 +191,8 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
                     <div key={idx} style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px",
-                      marginBottom: "6px",
+                      gap: spaced(8),
+                      marginBottom: spaced(6),
                     }}>
                       <span style={{
                         width: "8px",
@@ -199,7 +200,7 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
                         borderRadius: "50%",
                         backgroundColor: colors.primary,
                       }} />
-                      <span style={{ fontSize: "10px", color: "#4b5563" }}>{lang}</span>
+                      <span style={{ fontSize: scaled(10), color: "#4b5563" }}>{lang}</span>
                     </div>
                   ))}
                 </ExecSection>
@@ -215,15 +216,15 @@ export function ExecutiveTemplate({ data, themeColor, className }: TemplateProps
 // Helper Components
 function ExecSection({ title, color, children }: { title: string; color: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: "24px" }}>
+    <section style={{ marginBottom: spaced(24) }}>
       <h2 style={{
-        fontSize: "11px",
+        fontSize: scaled(11),
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.12em",
         color: "#111827",
-        marginBottom: "14px",
-        paddingBottom: "6px",
+        marginBottom: spaced(14),
+        paddingBottom: spaced(6),
         borderBottom: `2px solid ${color}`,
         display: "inline-block",
       }}>
@@ -236,25 +237,25 @@ function ExecSection({ title, color, children }: { title: string; color: string;
 
 function ExecSectionItem({ item, color }: { item: { title?: string; subtitle?: string; date?: string; location?: string; description?: string; bullets?: string[] }; color: string }) {
   return (
-    <div style={{ marginBottom: "18px" }}>
+    <div className="cv-item" style={{ marginBottom: spaced(18) }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: "12px", fontWeight: 700, color: "#111827" }}>
+          <h3 style={{ fontSize: scaled(12), fontWeight: 700, color: "#111827" }}>
             {formatJobTitle(item.title || "")}
           </h3>
           {item.subtitle && (
-            <p style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}>
+            <p style={{ fontSize: scaled(11), color: "#6b7280", marginTop: spaced(2) }}>
               {item.subtitle}
             </p>
           )}
         </div>
         {item.date && (
           <span style={{
-            fontSize: "10px",
+            fontSize: scaled(10),
             fontWeight: 600,
             color: "#ffffff",
             backgroundColor: color,
-            padding: "3px 10px",
+            padding: `${spaced(3)} ${spaced(10)}`,
             borderRadius: "4px",
             whiteSpace: "nowrap",
           }}>
@@ -264,22 +265,22 @@ function ExecSectionItem({ item, color }: { item: { title?: string; subtitle?: s
       </div>
 
       {item.description && (
-        <p style={{ fontSize: "10px", color: "#4b5563", marginTop: "8px", lineHeight: 1.6 }}>
+        <p style={{ fontSize: scaled(10), color: "#4b5563", marginTop: spaced(8), lineHeight: leading(1.6) }}>
           {item.description}
         </p>
       )}
 
       {item.bullets && item.bullets.length > 0 && (
-        <ul style={{ marginTop: "8px", paddingLeft: "0", listStyle: "none" }}>
+        <ul style={{ marginTop: spaced(8), paddingLeft: "0", listStyle: "none" }}>
           {item.bullets.filter(hasContent).map((bullet, idx) => (
             <li key={idx} style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: "8px",
-              marginBottom: "4px",
+              gap: spaced(8),
+              marginBottom: spaced(4),
             }}>
-              <span style={{ color, fontSize: "10px", marginTop: "2px", fontWeight: 700 }}>▸</span>
-              <span style={{ fontSize: "10px", color: "#374151", lineHeight: 1.6 }}>
+              <span style={{ color, fontSize: scaled(10), marginTop: spaced(2), fontWeight: 700 }}>▸</span>
+              <span style={{ fontSize: scaled(10), color: "#374151", lineHeight: leading(1.6) }}>
                 {formatBulletPoint(bullet)}
               </span>
             </li>

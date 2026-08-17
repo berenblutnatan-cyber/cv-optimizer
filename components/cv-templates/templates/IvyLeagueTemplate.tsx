@@ -6,6 +6,7 @@ import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { scaled, spaced, leading } from "@/lib/builder/density";
 
 /**
  * Template 2: Ivy League
@@ -22,31 +23,31 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
     <A4PageWrapper className={className}>
       <div style={{
         backgroundColor: "#ffffff",
-        padding: "20px 28px", // Reduced from 40px 48px
+        padding: `${spaced(20)} ${spaced(28)}`, // Reduced from 40px 48px
         minHeight: "100%",
         fontFamily: FONTS.serif.body,
       }}>
         {/* Header - Centered */}
-        <header style={{ textAlign: "center", marginBottom: "12px", paddingBottom: "8px", borderBottom: "2px solid #1e293b" }}>
+        <header style={{ textAlign: "center", marginBottom: spaced(12), paddingBottom: spaced(8), borderBottom: "2px solid #1e293b" }}>
           <h1 style={{
-            fontSize: "22px", // Reduced from 28px
+            fontSize: scaled(22), // Reduced from 28px
             fontWeight: 700,
             color: "#1e293b",
             fontFamily: FONTS.serif.heading,
             letterSpacing: "0.05em",
             textTransform: "uppercase",
-            marginBottom: "2px",
+            marginBottom: spaced(2),
           }}>
             {formatName(data.name)}
           </h1>
           {data.title && (
-            <p style={{ fontSize: "11px", color: "#475569", marginTop: "2px", fontStyle: "italic" }}>
+            <p style={{ fontSize: scaled(11), color: "#475569", marginTop: spaced(2), fontStyle: "italic" }}>
               {formatJobTitle(data.title)}
             </p>
           )}
           
           {/* Contact Row - Single line */}
-          <div style={{ marginTop: "6px", fontSize: "9px", color: "#64748b" }}>
+          <div style={{ marginTop: spaced(6), fontSize: scaled(9), color: "#64748b" }}>
             {[
               hasContent(data.contact.email) && data.contact.email,
               hasContent(data.contact.phone) && data.contact.phone,
@@ -71,7 +72,7 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
         {/* Summary */}
         {hasContent(data.summary) && (
           <ClassicSection title={t("Professional Summary")}>
-            <p style={{ fontSize: "9px", color: "#374151", lineHeight: 1.4, textAlign: "justify" }}>
+            <p style={{ fontSize: scaled(9), color: "#374151", lineHeight: leading(1.4), textAlign: "justify" }}>
               {data.summary}
             </p>
           </ClassicSection>
@@ -89,7 +90,7 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
         {/* Skills */}
         {data.skills && data.skills.length > 0 && (
           <ClassicSection title={t("Skills & Competencies")}>
-            <p style={{ fontSize: "9px", color: "#374151", lineHeight: 1.3 }}>
+            <p style={{ fontSize: scaled(9), color: "#374151", lineHeight: leading(1.3) }}>
               {data.skills.filter(hasContent).join(" • ")}
             </p>
           </ClassicSection>
@@ -98,7 +99,7 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
         {/* Languages */}
         {data.languages && data.languages.length > 0 && (
           <ClassicSection title={t("Languages")}>
-            <p style={{ fontSize: "9px", color: "#374151", lineHeight: 1.3 }}>
+            <p style={{ fontSize: scaled(9), color: "#374151", lineHeight: leading(1.3) }}>
               {data.languages.filter(hasContent).join(" • ")}
             </p>
           </ClassicSection>
@@ -111,7 +112,7 @@ export function IvyLeagueTemplate({ data, themeColor, className }: TemplateProps
 // Helper Components - Compact versions
 function ContactItem({ label, value }: { label: string; value: string }) {
   return (
-    <span style={{ fontSize: "9px", color: "#64748b" }}>
+    <span style={{ fontSize: scaled(9), color: "#64748b" }}>
       <strong style={{ fontWeight: 600 }}>{label}:</strong> {value}
     </span>
   );
@@ -119,15 +120,15 @@ function ContactItem({ label, value }: { label: string; value: string }) {
 
 function ClassicSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: "10px" }}>
+    <section style={{ marginBottom: spaced(10) }}>
       <h2 style={{
-        fontSize: "10px",
+        fontSize: scaled(10),
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.08em",
         color: "#1e293b",
-        marginBottom: "6px",
-        paddingBottom: "2px",
+        marginBottom: spaced(6),
+        paddingBottom: spaced(2),
         borderBottom: "1px solid #d1d5db",
         fontFamily: FONTS.serif.heading,
       }}>
@@ -140,14 +141,14 @@ function ClassicSection({ title, children }: { title: string; children: React.Re
 
 function ClassicSectionItem({ item, color }: { item: { title?: string; subtitle?: string; date?: string; location?: string; description?: string; bullets?: string[] }; color: string }) {
   return (
-    <div style={{ marginBottom: "8px" }}>
+    <div className="cv-item" style={{ marginBottom: spaced(8) }}>
       {/* Title Row with Date */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h3 style={{ fontSize: "10px", fontWeight: 700, color: "#1e293b", fontFamily: FONTS.serif.heading }}>
+        <h3 style={{ fontSize: scaled(10), fontWeight: 700, color: "#1e293b", fontFamily: FONTS.serif.heading }}>
           {formatJobTitle(item.title || "")}
         </h3>
         {item.date && (
-          <span style={{ fontSize: "9px", fontWeight: 500, color: "#64748b", fontStyle: "italic" }}>
+          <span style={{ fontSize: scaled(9), fontWeight: 500, color: "#64748b", fontStyle: "italic" }}>
             {item.date}
           </span>
         )}
@@ -155,30 +156,30 @@ function ClassicSectionItem({ item, color }: { item: { title?: string; subtitle?
 
       {/* Subtitle / Company */}
       {(item.subtitle || item.location) && (
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: spaced(1) }}>
           {item.subtitle && (
-            <p style={{ fontSize: "9px", fontStyle: "italic", color: "#475569" }}>
+            <p style={{ fontSize: scaled(9), fontStyle: "italic", color: "#475569" }}>
               {item.subtitle}
             </p>
           )}
           {item.location && (
-            <span style={{ fontSize: "8px", color: "#6b7280" }}>{item.location}</span>
+            <span style={{ fontSize: scaled(8), color: "#6b7280" }}>{item.location}</span>
           )}
         </div>
       )}
 
       {/* Description */}
       {item.description && (
-        <p style={{ fontSize: "9px", color: "#374151", marginTop: "3px", lineHeight: 1.4 }}>
+        <p style={{ fontSize: scaled(9), color: "#374151", marginTop: spaced(3), lineHeight: leading(1.4) }}>
           {item.description}
         </p>
       )}
 
       {/* Bullets - Compact */}
       {item.bullets && item.bullets.length > 0 && (
-        <ul style={{ marginTop: "3px", paddingLeft: "14px", marginBottom: "0" }}>
+        <ul style={{ marginTop: spaced(3), paddingLeft: spaced(14), marginBottom: "0" }}>
           {item.bullets.filter(hasContent).map((bullet, idx) => (
-            <li key={idx} style={{ fontSize: "9px", color: "#374151", lineHeight: 1.35, marginBottom: "1px" }}>
+            <li key={idx} style={{ fontSize: scaled(9), color: "#374151", lineHeight: leading(1.35), marginBottom: spaced(1) }}>
               {formatBulletPoint(bullet)}
             </li>
           ))}
