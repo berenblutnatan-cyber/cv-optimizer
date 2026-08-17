@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
 import { extractText } from "unpdf";
 import { checkRateLimit, clientIp } from "@/lib/rateLimit";
+import { buildTeaserPrompt } from "@/lib/optimizer/rubric";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -109,84 +110,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the SAME analysis prompt structure as the main optimizer
-    // This ensures consistent scoring methodology
-    const analysisPrompt = `You are a Senior Technical Recruiter and ATS Auditor.
-Your goal is to screen candidates ruthlessly based on their TARGET ROLE.
-
-════════════════════════════════════════════════════════════════════════════════
-STRICT SCORING AUDIT (Look at ORIGINAL Resume Data)
-════════════════════════════════════════════════════════════════════════════════
-**⚠️ CRITICAL: Apply HARSH scoring rules. This must match the logic used in the full optimizer.**
-
-## Resume:
-${cvText.slice(0, 8000)}
-
-## Target Role:
-${targetRole.trim()}
-
-STEP 1: KNOCKOUT CHECK (Immediate Disqualifiers)
-────────────────────────────────────────────────
-- **Domain Mismatch:** Is the candidate's current role fundamentally different from the target?
-  Examples: Lawyer → Engineer, Sales → Developer, Teacher → Data Scientist, Analyst → Software Engineer
-  → IF YES: Score MUST be < 35. This is an IMMEDIATE REJECT.
-
-- **Tech Stack Gap:** Does the CV miss >50% of critical hard skills typically required for "${targetRole}"?
-  → IF YES: Deduct 30 points from whatever score you calculate.
-
-STEP 2: SENIORITY CALCULATION
-────────────────────────────────────────────────
-Estimate candidate's years of RELEVANT experience and compare to typical role requirements:
-
-| Candidate Level | Target Level | MAX SCORE |
-|-----------------|--------------|-----------|
-| Junior (0-2 YOE) | Senior (5+ req) | 45 |
-| Junior (0-2 YOE) | Mid (3+ req) | 55 |
-| Mid (2-4 YOE) | Senior (5+ req) | 60 |
-| Mid (2-4 YOE) | Lead/Staff | 50 |
-| Intern/Student | Any Full-Time | 40 |
-
-STEP 3: ROLE FAMILY CHECK
-────────────────────────────────────────────────
-These are DIFFERENT job families - do NOT treat them as equivalent:
-- Engineering: Software Engineer, Developer, Architect, DevOps
-- Analytics: Data Analyst, Product Analyst, Business Analyst, BI Analyst  
-- Data Science: Data Scientist, ML Engineer
-- Product: Product Manager, Product Owner
-- Design: UX/UI Designer
-
-| Career Change | MAX SCORE |
-|---------------|-----------|
-| Analyst → Engineer | 50 |
-| PM → Engineer | 45 |
-| Designer → Engineer | 40 |
-| Unrelated (Sales, Legal, HR) → Engineer | 30 |
-
-STEP 4: FINAL BASELINE SCORE (Apply all caps above)
-────────────────────────────────────────────────
-- **85-100 (Exceptional):** Perfect role + seniority + tech stack match for ${targetRole}
-- **70-84 (Strong):** Same role family, meets seniority, minor skill gaps
-- **55-69 (Moderate):** Adjacent role OR minor seniority gap, some skill overlap
-- **40-54 (Weak):** Different role family OR significant gaps
-- **0-39 (Reject):** Failed knockout check OR multiple major mismatches
-
-CONCRETE EXAMPLES (Use these as calibration):
-- Product Analyst (3y) → Senior Software Engineer: Score 30-40
-- Junior Dev (1y) → Senior Dev (5y+ req): Score 35-45
-- Senior Java Dev → Senior Python Dev: Score 60-70
-- Marketing Manager → Software Engineer: Score 20-30
-- Senior React Dev → Senior React Dev: Score 80-95
-
-════════════════════════════════════════════════════════════════════════════════
-OUTPUT FORMAT
-════════════════════════════════════════════════════════════════════════════════
-Return ONLY a JSON object with exactly these fields:
-{
-  "overallScore": <number 0-100 - HARSH, STRICT score based on the rubric above>,
-  "summary": "<one brutally honest sentence explaining the score: mention specific knockout/mismatch if found>"
-}
-
-Return ONLY the JSON object, no markdown, no other text.`;
+    // Shared rubric from lib/optimizer/rubric.ts — the SAME scoring logic as
+    // /api/analyze and /api/score-deep, so /score and /optimize can never
+    // disagree on the same CV again.
+    const analysisPrompt = buildTeaserPrompt(cvText, targetRole.trim());
 
     const systemPrompt = "You are a Senior Technical Recruiter and ATS Auditor. Apply harsh, realistic scoring. Always respond with valid JSON only.";
 

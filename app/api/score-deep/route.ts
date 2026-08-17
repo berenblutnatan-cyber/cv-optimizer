@@ -96,7 +96,9 @@ Return ONLY the JSON object.`;
 
     const response = await anthropic.messages.create({
       model: "claude-opus-4-8",
-      max_tokens: 2000,
+      // 2000 truncated 5-8 rich improvements after a ~640-line prompt; give
+      // the diagnosis room to be specific instead of clipped.
+      max_tokens: 8000,
       system: OPTIMIZER_SYSTEM_PROMPT,
       messages: [{ role: "user", content: diagnosisPrompt }],
     });
