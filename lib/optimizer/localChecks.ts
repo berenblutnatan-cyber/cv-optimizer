@@ -15,6 +15,7 @@ import type { ResumeData } from "@/types/resume";
 import { resumeToText } from "@/types/resume";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 import type { CvToolName } from "@/lib/chat/cvTools";
+import { bandFor, type ScoreBand } from "@/lib/score/bands";
 
 export type ScoreCategory =
   | "impact"
@@ -26,7 +27,10 @@ export type ScoreCategory =
 
 export type GoalWeighting = "ats" | "recruiter" | "both";
 
-export type ScoreBand = "great" | "strong" | "fair" | "weak" | "poor";
+// Band scale lives in lib/score/bands.ts (one score language app-wide);
+// re-exported here so existing importers keep working.
+export type { ScoreBand } from "@/lib/score/bands";
+export { BAND_LABEL } from "@/lib/score/bands";
 
 /**
  * How a detected problem gets fixed.
@@ -491,13 +495,7 @@ function goalMultiplier(cat: ScoreCategory, goal: GoalWeighting): number {
   return 1.0; // both
 }
 
-function bandFor(overall: number): ScoreBand {
-  if (overall >= 85) return "great";
-  if (overall >= 75) return "strong";
-  if (overall >= 60) return "fair";
-  if (overall >= 45) return "weak";
-  return "poor";
-}
+// bandFor imported from lib/score/bands.ts — single source of thresholds.
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
@@ -543,10 +541,3 @@ export function flattenProblems(result: LocalScoreResult): LocalProblem[] {
     .sort((a, b) => b.scoreImpact - a.scoreImpact);
 }
 
-export const BAND_LABEL: Record<ScoreBand, string> = {
-  great: "Great",
-  strong: "Strong",
-  fair: "Fair",
-  weak: "Needs work",
-  poor: "Just starting",
-};
