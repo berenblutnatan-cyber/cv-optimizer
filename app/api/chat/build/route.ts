@@ -105,7 +105,21 @@ export async function POST(request: NextRequest) {
     customSections: resume.customSections ?? [],
   };
 
-  const system = buildChatSystemPrompt(resume);
+  // Fit telemetry from the client's auto-fit engine. Structured numbers only —
+  // the prompt line is formatted server-side, so client text never reaches the
+  // system prompt.
+  const fitRaw = (body as { fit?: Record<string, unknown> }).fit;
+  const fit =
+    fitRaw && typeof fitRaw.ratio === "number" && Number.isFinite(fitRaw.ratio)
+      ? {
+          ratio: fitRaw.ratio,
+          autoFit: fitRaw.autoFit === true,
+          atMinimum: fitRaw.atMinimum === true,
+          pageMode: fitRaw.pageMode === "multi" ? ("multi" as const) : ("one" as const),
+        }
+      : null;
+
+  const system = buildChatSystemPrompt(resume, fit);
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {

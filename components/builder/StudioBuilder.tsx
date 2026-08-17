@@ -29,6 +29,7 @@ import { useChatBuilderStore, CHAT_ACTIVE_SESSION_KEY } from "@/stores/chatBuild
 import { useFlashSaleStore } from "@/stores/flashSaleStore";
 import { applyCvToolCall, pendingToolLabel, DESIGN_TEMPLATES, DESIGN_COLORS } from "@/lib/chat/cvTools";
 import { ExportSurface } from "@/components/shared/ExportSurface";
+import { TrimContentModal } from "@/components/builder/TrimContentModal";
 import { chatGreeting, cvUploadIntake, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { generateId, type ResumeData } from "@/types/resume";
@@ -79,6 +80,9 @@ export function StudioBuilder() {
   // rides in the session save payload (see DesignState in useResumeStore).
   const design = useResumeStore((s) => s.design);
   const setDesign = useResumeStore((s) => s.setDesign);
+  const applyAutoFit = useResumeStore((s) => s.applyAutoFit);
+  const setFitReport = useResumeStore((s) => s.setFitReport);
+  const [trimOpen, setTrimOpen] = useState(false);
   const {
     messages,
     addMessage,
@@ -359,10 +363,21 @@ export function StudioBuilder() {
     // stream applies — matched by endUndoGroup in the finally below.
     useResumeStore.getState().beginUndoGroup();
     try {
+      // Fit telemetry: the model reads the REAL page-fit state instead of
+      // guessing density (the auto-fit engine owns the levels now).
+      const { fitReport, design: fitDesign } = useResumeStore.getState();
+      const fit = fitReport
+        ? {
+            ratio: fitReport.ratio,
+            autoFit: fitDesign.autoFit,
+            atMinimum: fitReport.atMinimum,
+            pageMode: fitDesign.pageMode,
+          }
+        : undefined;
       const res = await fetch("/api/chat/build", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, resumeData: outgoingCv }),
+        body: JSON.stringify({ messages: history, resumeData: outgoingCv, fit }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -407,6 +422,13 @@ export function StudioBuilder() {
           }
           if (typeof evt.spacingLevel === "number") {
             patch.spacingLevel = Math.min(10, Math.max(1, Math.round(evt.spacingLevel)));
+          }
+          if (typeof evt.autoFit === "boolean") {
+            patch.autoFit = evt.autoFit;
+          } else if (patch.fontLevel !== undefined || patch.spacingLevel !== undefined) {
+            // Explicit density from the agent = manual control (same rule as
+            // the user dragging a slider).
+            patch.autoFit = false;
           }
           if (Object.keys(patch).length > 0) setDesign(patch);
           if (mobileTabRef.current === "chat") setUnseenUpdates((n) => n + 1);
@@ -694,6 +716,8 @@ export function StudioBuilder() {
               typeof d.spacingLevel === "number"
                 ? Math.min(10, Math.max(1, Math.round(d.spacingLevel)))
                 : DEFAULT_DESIGN.spacingLevel,
+            autoFit: typeof d.autoFit === "boolean" ? d.autoFit : DEFAULT_DESIGN.autoFit,
+            pageMode: d.pageMode === "multi" ? "multi" : DEFAULT_DESIGN.pageMode,
           });
         } else {
           resetResume();
@@ -1194,6 +1218,32 @@ export function StudioBuilder() {
               spacingLevel={design.spacingLevel}
               onFontLevelChange={(v) => setDesign({ fontLevel: v })}
               onSpacingLevelChange={(v) => setDesign({ spacingLevel: v })}
+              autoFit={design.autoFit && design.pageMode === "one" && !isEmpty}
+              onAutoFitChange={(on) => setDesign({ autoFit: on })}
+              onFitSolution={(sol) => {
+                // Engine writes bypass undo history (derived state); the fit
+                // report feeds the banner + the AI's FIT context line.
+                if (
+                  sol.fits &&
+                  (sol.fontLevel !== design.fontLevel || sol.spacingLevel !== design.spacingLevel)
+                ) {
+                  applyAutoFit(sol.fontLevel, sol.spacingLevel);
+                }
+                setFitReport({
+                  fits: sol.fits,
+                  ratio: sol.ratio,
+                  fontLevel: sol.fontLevel,
+                  spacingLevel: sol.spacingLevel,
+                  atMinimum: sol.atMinimum,
+                });
+              }}
+              onTrimRequest={() => setTrimOpen(true)}
+              pageMode={design.pageMode}
+              onPageModeChange={(m) =>
+                // Leaving multi-page re-arms auto-fit so "Fit to one page"
+                // actually delivers a fitting document, not a clipped one.
+                setDesign(m === "one" ? { pageMode: m, autoFit: true } : { pageMode: m })
+              }
               showToolbar={docControls}
               hideTemplateSelector
               onTemplateChange={(id) => setDesign({ template: id })}
@@ -1338,7 +1388,14 @@ export function StudioBuilder() {
 
       {/* Off-screen full-size render — rasterized to PDF on Export. Uses the
           real CV data (never the sample). WYSIWYG density via ExportSurface. */}
-      <ExportSurface ref={exportRef} fontLevel={design.fontLevel} spacingLevel={design.spacingLevel}>
+      <TrimContentModal open={trimOpen} onClose={() => setTrimOpen(false)} />
+
+      <ExportSurface
+        ref={exportRef}
+        fontLevel={design.fontLevel}
+        spacingLevel={design.spacingLevel}
+        pageMode={design.pageMode}
+      >
         {!isEmpty ? (
           <ResumePreview data={previewData} templateId={design.template} themeColor={design.color} />
         ) : null}

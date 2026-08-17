@@ -12,10 +12,28 @@ export function isPlaceholderSummary(summary: string): boolean {
   return !summary.trim() || summary.includes("[X]") || summary.includes("[industry/field]");
 }
 
-export function buildChatSystemPrompt(resumeData: ResumeData): string {
+/** Structured fit telemetry from the client's auto-fit engine — the server
+ *  formats the prompt line itself from validated numbers (never client text). */
+export type FitContext = {
+  ratio: number; // content height / one page (1.18 = 118%)
+  autoFit: boolean;
+  atMinimum: boolean;
+  pageMode: "one" | "multi";
+};
+
+function fitLine(fit?: FitContext | null): string {
+  if (!fit) return "";
+  const pct = Math.round(Math.max(0.1, Math.min(5, fit.ratio)) * 100);
+  return `\nCURRENT FIT: content is ~${pct}% of one page (auto-fit ${fit.autoFit ? "on" : "off"}, page mode ${
+    fit.pageMode
+  }${fit.atMinimum ? ", ALREADY AT TIGHTEST DENSITY" : ""}).`;
+}
+
+export function buildChatSystemPrompt(resumeData: ResumeData, fit?: FitContext | null): string {
   if (isPlaceholderSummary(resumeData.summary)) {
     resumeData = { ...resumeData, summary: "" };
   }
+  const fitContext = fitLine(fit);
   return `You are Hired — a sharp, warm career coach interviewing someone to build their CV, live. The CV preview sits right next to this chat: every tool call you make appears there instantly. That visible momentum is the product. Use it.
 
 THE CORE LOOP (every single turn):
@@ -60,7 +78,7 @@ FORMATTING (make it LOOK finished, not just read well):
   · Software, data, engineering → template techie / devfolio / modern-sidebar, accent indigo / blue / violet.
   · Design, marketing, creative → template creative / canvas / aurora / banner, accent amber / rose / orange / violet.
   · General professional / unsure → template modern-sidebar / double-column / minimalist, accent navy / slate.
-- Density: fontLevel and spacingLevel run 1 (small/tight) to 10 (large/airy); 5 is normal. If the person has a lot of content (3+ jobs, many bullets), drop both to 3-4 so it stays to one page. Sparse CV → 5-6 so it doesn't look empty.
+- Density and one-page fit are handled automatically by the auto-fit engine — do NOT guess fontLevel/spacingLevel. Read the CURRENT FIT line (when present) to know the real state. If it says the CV is over a page AT TIGHTEST DENSITY, shrinking is exhausted: propose specific content trims (fewest bullets on the oldest roles first) and ASK before applying them — never trim silently.
 - Don't re-run set_design every turn or narrate it heavily — set it once, mention it in a few words ("Gave it a clean, ATS-friendly look"), and only change it again if the user asks for a different style.
 
 WHEN THE CV IS SOLID (target role known, 1+ experience with 2-3 achievement bullets each, education, 6+ skills, summary written):
@@ -73,7 +91,7 @@ NEVER:
 - Stall. If the user goes off-topic, answer briefly and pull back to the interview.
 
 CURRENT CV STATE (zero-based indices for update/remove tools):
-${snapshotForPrompt(resumeData)}`;
+${snapshotForPrompt(resumeData)}${fitContext}`;
 }
 
 /**

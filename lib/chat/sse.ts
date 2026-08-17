@@ -10,6 +10,7 @@ export type DesignPatch = {
   accentColor?: string;
   fontLevel?: number;
   spacingLevel?: number;
+  autoFit?: boolean;
 };
 
 export type SseEvent =

@@ -15,6 +15,9 @@ import { OutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { densityTokenVars } from "@/lib/builder/density";
+import { solveFit, type FitSolution } from "@/lib/builder/autofit";
+import { useAutoFit } from "@/hooks/useAutoFit";
+import { clearPagination, paginateCvItems } from "@/lib/builder/paginate";
 
 // A4 dimensions at 96 DPI
 const A4_WIDTH_PX = 794;
@@ -62,6 +65,22 @@ interface SmartResumePreviewProps {
   spacingLevel?: number;
   onFontLevelChange?: (level: number) => void;
   onSpacingLevelChange?: (level: number) => void;
+  /** Auto-fit (controlled): when true, the solver keeps the CV to one page by
+   *  re-solving font/spacing on every content/template change. Omit to keep
+   *  the manual one-shot Auto Fit button (which now runs a real solve too). */
+  autoFit?: boolean;
+  onAutoFitChange?: (on: boolean) => void;
+  /** Receives every solver result. When provided, the PARENT applies the
+   *  solved levels (e.g. via the store's history-bypassing applyAutoFit);
+   *  otherwise the component applies them itself. */
+  onFitSolution?: (solution: FitSolution) => void;
+  /** "one" (default): clip at one page + auto-fit. "multi": real page 2+ with
+   *  truthful page separators (spacer paginator keeps items off slice lines). */
+  pageMode?: "one" | "multi";
+  onPageModeChange?: (mode: "one" | "multi") => void;
+  /** Opens the parent's trim-content flow (shown when even the tightest
+   *  density overflows). */
+  onTrimRequest?: () => void;
   onClose?: () => void;
   onEdit?: () => void;
   className?: string;
@@ -92,6 +111,12 @@ export function SmartResumePreview({
   spacingLevel: spacingLevelProp,
   onFontLevelChange,
   onSpacingLevelChange,
+  autoFit,
+  onAutoFitChange,
+  onFitSolution,
+  pageMode = "one",
+  onPageModeChange,
+  onTrimRequest,
   onClose,
   onEdit,
   className = "",
@@ -148,6 +173,7 @@ export function SmartResumePreview({
   }, [initialThemeColor]);
 
   // Check overflow whenever controls, template, or data changes
+  const [overflowRatio, setOverflowRatio] = useState(1);
   useEffect(() => {
     const checkOverflow = () => {
       const node = contentRef.current;
@@ -158,6 +184,7 @@ export function SmartResumePreview({
       const wrapper = node.querySelector<HTMLElement>(".a4-wrapper");
       const contentHeight = wrapper ? wrapper.scrollHeight : node.scrollHeight;
       setIsOverflowing(contentHeight > A4_HEIGHT_PX + 10); // Small buffer
+      setOverflowRatio(contentHeight / A4_HEIGHT_PX);
     };
 
     // Delay check to allow rendering
@@ -165,10 +192,64 @@ export function SmartResumePreview({
     return () => clearTimeout(timer);
   }, [fontLevel, spacingLevel, activeTemplate, data]);
 
-  // "Auto Fit" - Aggressively reduce font and spacing
+  // ── Auto-fit ──────────────────────────────────────────────────────────────
+  const [lastSolution, setLastSolution] = useState<FitSolution | null>(null);
+
+  // The solve ceiling: the user's levels, but never below "normal" — when
+  // content shrinks, the document grows back toward its designed look instead
+  // of staying stuck at whatever tight levels a longer draft needed.
+  const solveCeiling = () => ({
+    fontLevel: Math.max(fontLevel, 5),
+    spacingLevel: Math.max(spacingLevel, 5),
+  });
+
+  const applySolution = (solution: FitSolution) => {
+    setLastSolution(solution);
+    if (onFitSolution) {
+      onFitSolution(solution);
+      return;
+    }
+    if (solution.fontLevel !== fontLevel) setFontLevel(solution.fontLevel);
+    if (solution.spacingLevel !== spacingLevel) setSpacingLevel(solution.spacingLevel);
+  };
+
+  // Continuous mode: re-solve on every content/template change while enabled.
+  const multiPage = pageMode === "multi";
+  useAutoFit({
+    containerRef: contentRef,
+    contentKey: data,
+    templateKey: activeTemplate,
+    enabled: autoFit === true && !multiPage,
+    getCurrent: solveCeiling,
+    onSolve: applySolution,
+  });
+
+  // Multi-page: lift the one-page clip, keep items off page boundaries, and
+  // draw truthful separators. Preview, print engine, and raster slicer all
+  // agree because nothing straddles a 1123px line after the paginate pass.
+  const [pageCount, setPageCount] = useState(1);
+  useEffect(() => {
+    const node = contentRef.current;
+    if (!node) return;
+    if (!multiPage) {
+      clearPagination(node);
+      setPageCount(1);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setPageCount(paginateCvItems(node));
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [multiPage, data, activeTemplate, fontLevel, spacingLevel]);
+
+  // One-shot (legacy button / turn-on click): run a real solve immediately —
+  // largest levels that fit, never a blind jump to the tightest.
   const handleAutoFit = () => {
-    setFontLevel(2);
-    setSpacingLevel(2);
+    const varsEl = contentRef.current;
+    if (!varsEl) return;
+    const measureEl = varsEl.querySelector<HTMLElement>(".a4-wrapper") ?? varsEl;
+    applySolution(solveFit(varsEl, measureEl, solveCeiling()));
+    onAutoFitChange?.(true);
   };
 
   // Font/spacing density styles are shared with the PDF-export render (see
@@ -340,7 +421,10 @@ export function SmartResumePreview({
                 max="10" 
                 step="1"
                 value={fontLevel}
-                onChange={(e) => setFontLevel(Number(e.target.value))}
+                onChange={(e) => {
+                  setFontLevel(Number(e.target.value));
+                  onAutoFitChange?.(false); // manual drag = user takes the wheel
+                }}
                 className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
               <span className="w-4 text-slate-400 text-center flex-shrink-0">{fontLevel}</span>
@@ -356,7 +440,10 @@ export function SmartResumePreview({
                 max="10" 
                 step="1"
                 value={spacingLevel}
-                onChange={(e) => setSpacingLevel(Number(e.target.value))}
+                onChange={(e) => {
+                  setSpacingLevel(Number(e.target.value));
+                  onAutoFitChange?.(false);
+                }}
                 className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
               <span className="w-4 text-slate-400 text-center flex-shrink-0">{spacingLevel}</span>
@@ -368,19 +455,61 @@ export function SmartResumePreview({
 
       {/* OVERFLOW NOTICE — always on (never gated behind the toolbar): the
           preview clips at one page, so the user must be told page 2 exists
-          and will be in their download. */}
-      {isOverflowing && (
+          and will be in their download. Magnitude-aware; the Auto Fit button
+          runs a real solve (largest levels that fit), and when even the
+          tightest fit overflows the message says so honestly. */}
+      {!multiPage && isOverflowing && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between gap-3 shrink-0 z-10 animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-2 text-amber-800 text-sm font-medium">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span>{t("Runs past one page — page 2 is included in your download.")}</span>
+            <span>
+              {autoFit === true && lastSolution?.atMinimum
+                ? t("Over a page even at the tightest fit — trim content, or keep page 2.")
+                : t("{percent}% of one page — page 2 is included in your download.", {
+                    percent: Math.round(overflowRatio * 100),
+                  })}
+            </span>
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {autoFit !== true && (
+              <button
+                onClick={handleAutoFit}
+                className="flex items-center gap-1.5 min-h-[44px] px-4 text-sm font-semibold border border-amber-300 text-amber-800 hover:bg-amber-100 bg-white rounded-md transition-colors"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                {t("Auto Fit")}
+              </button>
+            )}
+            {autoFit === true && lastSolution?.atMinimum && onTrimRequest && (
+              <button
+                onClick={onTrimRequest}
+                className="min-h-[44px] px-4 text-sm font-semibold border border-amber-300 text-amber-800 hover:bg-amber-100 bg-white rounded-md transition-colors"
+              >
+                {t("Trim…")}
+              </button>
+            )}
+            {onPageModeChange && (
+              <button
+                onClick={() => onPageModeChange("multi")}
+                className="min-h-[44px] px-3 text-sm font-medium text-amber-800 hover:bg-amber-100 rounded-md transition-colors"
+              >
+                {t("Keep page 2")}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {multiPage && onPageModeChange && (
+        <div className="bg-stone-50 border-b border-stone-200 px-4 py-2 flex items-center justify-between gap-3 shrink-0 z-10">
+          <span className="text-sm font-medium text-stone-600">
+            {t("{count} pages", { count: pageCount })}
+          </span>
           <button
-            onClick={handleAutoFit}
-            className="flex items-center gap-1.5 min-h-[44px] px-4 text-sm font-semibold border border-amber-300 text-amber-800 hover:bg-amber-100 bg-white rounded-md transition-colors shrink-0"
+            onClick={() => onPageModeChange("one")}
+            className="flex items-center gap-1.5 min-h-[44px] px-3 text-sm font-semibold text-brand-navy hover:bg-stone-100 rounded-md transition-colors"
           >
             <Zap className="w-3.5 h-3.5" />
-            {t("Auto Fit")}
+            {t("Fit to one page")}
           </button>
         </div>
       )}
@@ -404,28 +533,36 @@ export function SmartResumePreview({
           )}
         >
 
-          {/* The Scaled A4 Page */}
+          {/* The Scaled A4 Page (pageCount pages tall in multi mode) */}
           <div
             style={{
               width: `${A4_WIDTH_PX}px`,
-              minHeight: `${A4_HEIGHT_PX}px`,
+              minHeight: `${A4_HEIGHT_PX * pageCount}px`,
               transform: `scale(${scale})`,
               transformOrigin: zoomActive ? "top left" : "top center",
-              marginBottom: `-${A4_HEIGHT_PX - scaledHeight}px`,
+              marginBottom: `-${A4_HEIGHT_PX * pageCount - scaledHeight * pageCount}px`,
               // Reserve real layout width while zoomed so the scroll area pans
               // across the full page (transforms don't affect layout size).
               flexShrink: 0,
             }}
             className={cn(
               "bg-white shadow-xl transition-all duration-200 ease-out relative",
-              isOverflowing && "ring-4 ring-amber-400/40"
+              !multiPage && isOverflowing && "ring-4 ring-amber-400/40"
             )}
           >
+            {multiPage ? (
+              // Lift the one-page clip so pages 2+ render for real.
+              <style>{`.cv-multi .a4-wrapper { height: auto !important; max-height: none !important; overflow: visible !important; }`}</style>
+            ) : null}
             {/* Content wrapper for overflow measurement. Density flows through
                 the --cv-*-mult tokens every template consumes via scaled()/
                 spaced()/leading() — headings, spans, and padding all follow
                 the sliders now (the old override CSS only reached p/li/td). */}
-            <div ref={contentRef} className="smart-resume-override" style={densityTokenVars(fontLevel, spacingLevel)}>
+            <div
+              ref={contentRef}
+              className={cn("smart-resume-override", multiPage && "cv-multi")}
+              style={densityTokenVars(fontLevel, spacingLevel)}
+            >
               <ResumePreview
                 data={data}
                 templateId={activeTemplate}
@@ -433,15 +570,30 @@ export function SmartResumePreview({
               />
             </div>
 
-            {/* Page Break Marker (Visual Guide) */}
-            <div
-              className="absolute left-0 w-full border-b-2 border-dashed border-red-300/60 z-50 pointer-events-none"
-              style={{ top: `${A4_HEIGHT_PX}px` }}
-            >
-              <span className="absolute right-2 -top-4 text-[10px] text-red-400 bg-white/80 px-1.5 py-0.5 rounded">
-                {t("End of Page 1")}
-              </span>
-            </div>
+            {multiPage ? (
+              // Truthful page separators — items were pushed off these lines.
+              Array.from({ length: Math.max(0, pageCount - 1) }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute left-0 w-full border-b border-dashed border-stone-300 z-50 pointer-events-none"
+                  style={{ top: `${A4_HEIGHT_PX * (i + 1)}px` }}
+                >
+                  <span className="absolute right-2 -top-5 text-sm text-stone-400 bg-white/80 px-1.5 py-0.5 rounded">
+                    {i + 2}
+                  </span>
+                </div>
+              ))
+            ) : (
+              /* Page Break Marker (Visual Guide) */
+              <div
+                className="absolute left-0 w-full border-b-2 border-dashed border-red-300/60 z-50 pointer-events-none"
+                style={{ top: `${A4_HEIGHT_PX}px` }}
+              >
+                <span className="absolute right-2 -top-4 text-[10px] text-red-400 bg-white/80 px-1.5 py-0.5 rounded">
+                  {t("End of Page 1")}
+                </span>
+              </div>
+            )}
           </div>
 
         </div>
