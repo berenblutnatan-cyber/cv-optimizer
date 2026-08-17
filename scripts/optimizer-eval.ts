@@ -1,7 +1,19 @@
-// Optimizer scoring eval. Runs every fixture in evals/optimizer-fixtures.ts
-// through the EXACT prompt and model the production /api/analyze route uses,
-// then asserts the resulting score falls in the expected band and behavioral
-// invariants hold (LinkedIn URLs preserved, anti-collapse, score caps, etc).
+// Optimizer deep-analysis eval. Runs every fixture in
+// evals/optimizer-fixtures.ts through the EXACT pipeline the production
+// /api/analyze route uses (lib/optimizer/pipeline.ts — parse → audit →
+// rewrite → ground), then asserts:
+//
+//   1. Score bands hold (original + optimized) — rubric calibration.
+//   2. GROUNDING (zero tolerance): every coverage evidence quote and every
+//      suggestion `before` is literally present in the CV.
+//   3. APPLIABILITY: grounded suggestions carry whitelisted patches that
+//      apply non-noop via applyCvToolCall (verified again here from scratch).
+//   4. COVERAGE: expected JD requirements are extracted; planted gaps come
+//      back missing/partial.
+//   5. DEPTH: suggestion count floors, rationales reference requirement ids.
+//   6. STRUCTURAL PRESERVATION: no experience entry lost, personalInfo
+//      untouched (replaces the old string-grep preservation checks).
+//   7. Legacy fixture assertions on the projected v1 payload.
 //
 // Run: ANTHROPIC_API_KEY=sk-ant-... npx tsx scripts/optimizer-eval.ts
 //
@@ -10,9 +22,11 @@
 //   --json       Emit a machine-readable summary on stdout at the end.
 
 import Anthropic from "@anthropic-ai/sdk";
-import { extractBalancedJson } from "@/lib/extractJson";
-import { buildOptimizerPrompt, OPTIMIZER_SYSTEM_PROMPT } from "@/lib/optimizer/prompt";
-import { FIXTURES, type AnalysisShape, type OptimizerFixture } from "@/evals/optimizer-fixtures";
+import { runOptimizerPipeline } from "@/lib/optimizer/pipeline";
+import { containsNormalized, groundingSources } from "@/lib/optimizer/ground";
+import { applyCvToolCall } from "@/lib/chat/cvTools";
+import type { DeepAnalysis } from "@/lib/optimizer/types";
+import { FIXTURES, type OptimizerFixture } from "@/evals/optimizer-fixtures";
 
 const args = new Set(process.argv.slice(2));
 const onlyArg = process.argv.find((a) => a.startsWith("--only="));
@@ -38,41 +52,127 @@ type RunResult = {
   durationMs: number;
   score: number | null;
   optimizedScore: number | null;
+  suggestionCount: number;
+  groundedCount: number;
   failures: string[];
-  raw?: string;
 };
+
+function assertPipelineQuality(fx: OptimizerFixture, a: DeepAnalysis, failures: string[]) {
+  // 2. Grounding — zero tolerance. A quote may come from the raw upload OR
+  // the parsed structure's rendering (the doc patches apply to) — the same
+  // contract lib/optimizer/ground.ts enforces in production.
+  const sources = groundingSources(fx.cvText, a.resumeData);
+  const isQuoteGrounded = (q: string) => sources.some((src) => containsNormalized(src, q));
+  for (const row of a.coverage) {
+    for (const ev of row.evidence) {
+      if (!isQuoteGrounded(ev.quote)) {
+        failures.push(`ungrounded evidence quote for ${row.requirementId}: "${ev.quote.slice(0, 60)}"`);
+      }
+    }
+  }
+  for (const sug of a.suggestions) {
+    if (sug.before !== null && !isQuoteGrounded(sug.before)) {
+      failures.push(`ungrounded suggestion.before (${sug.id}): "${sug.before.slice(0, 60)}"`);
+    }
+  }
+
+  // 3. Appliability — re-verify every grounded patch from the original data.
+  for (const sug of a.suggestions) {
+    if (!sug.grounded) continue;
+    if (!sug.patch) {
+      failures.push(`${sug.id} marked grounded but has no patch`);
+      continue;
+    }
+    const applied = applyCvToolCall(a.resumeData, sug.patch.name, sug.patch.input);
+    if (applied === a.resumeData) {
+      failures.push(`${sug.id} patch (${sug.patch.name}) is a no-op against resumeData`);
+    }
+  }
+
+  // 4. Requirement extraction + planted gaps.
+  for (const pattern of fx.expectedRequirements ?? []) {
+    if (!a.jdRequirements.some((r) => pattern.test(r.text))) {
+      failures.push(`expected requirement not extracted: ${pattern}`);
+    }
+  }
+  const covByReq = new Map(a.coverage.map((c) => [c.requirementId, c]));
+  for (const gap of fx.expectedGaps ?? []) {
+    const reqs = a.jdRequirements.filter((r) => gap.pattern.test(r.text));
+    if (reqs.length === 0) continue; // extraction failure already reported above
+    const ok = reqs.some((r) => {
+      const row = covByReq.get(r.id);
+      return row && (gap.statuses as string[]).includes(row.status);
+    });
+    if (!ok) {
+      failures.push(
+        `planted gap ${gap.pattern} not detected (expected ${gap.statuses.join("/")}, got ${reqs
+          .map((r) => covByReq.get(r.id)?.status ?? "none")
+          .join(",")})`
+      );
+    }
+  }
+  // Every requirement has a coverage row.
+  for (const r of a.jdRequirements) {
+    if (!covByReq.has(r.id)) failures.push(`requirement ${r.id} has no coverage row`);
+  }
+
+  // 5. Depth floors + rationale linkage.
+  const minSuggestions = fx.minSuggestions ?? 10;
+  if (a.suggestions.length < minSuggestions) {
+    failures.push(`only ${a.suggestions.length} suggestions (< ${minSuggestions})`);
+  }
+  const grounded = a.suggestions.filter((s) => s.grounded);
+  const minGrounded = fx.minGroundedSuggestions ?? 5;
+  if (grounded.length < minGrounded) {
+    failures.push(`only ${grounded.length} grounded/appliable suggestions (< ${minGrounded})`);
+  }
+  if (a.jdRequirements.length > 0) {
+    const linked = a.suggestions.filter((s) => s.linkedRequirementIds.length > 0);
+    if (linked.length < Math.min(3, a.suggestions.length)) {
+      failures.push(`only ${linked.length} suggestions reference a requirement id`);
+    }
+  }
+  for (const sug of a.suggestions) {
+    if (!sug.rationale || sug.rationale.length < 20) {
+      failures.push(`${sug.id} rationale too thin: "${sug.rationale.slice(0, 40)}"`);
+    }
+  }
+  // Section critiques must exist and be substantive.
+  if (a.sectionCritiques.length < 3) {
+    failures.push(`only ${a.sectionCritiques.length} section critiques`);
+  }
+
+  // 6. Structural preservation (replaces prompt-begged string checks).
+  if (!a.parseDegraded) {
+    if (a.optimizedResumeData.experience.length < a.resumeData.experience.length) {
+      failures.push(
+        `experience entries lost: ${a.resumeData.experience.length} → ${a.optimizedResumeData.experience.length}`
+      );
+    }
+    if (JSON.stringify(a.optimizedResumeData.personalInfo) !== JSON.stringify(a.resumeData.personalInfo)) {
+      failures.push("personalInfo was modified by suggestions (contact immunity violated)");
+    }
+    if (a.parseDegraded === false && a.resumeData.experience.length === 0 && fx.cvText.length > 200) {
+      failures.push("parse produced 0 experience entries for a real CV");
+    }
+  } else {
+    failures.push("parse degraded on a well-formed fixture CV");
+  }
+}
 
 async function runFixture(fx: OptimizerFixture): Promise<RunResult> {
   const t0 = Date.now();
   const failures: string[] = [];
 
-  const { analysisPrompt } = buildOptimizerPrompt({
-    cvText: fx.cvText,
-    jobTitle: fx.jobTitle,
-    jobDescription: fx.jobDescription,
-    companyName: fx.companyName,
-    mode: fx.mode ?? "specific_role",
-  });
-
-  let raw = "";
+  let analysis: DeepAnalysis;
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 8000,
-      system: OPTIMIZER_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: analysisPrompt }],
+    analysis = await runOptimizerPipeline(anthropic, {
+      cvText: fx.cvText,
+      jobTitle: fx.jobTitle,
+      jobDescription: fx.jobDescription,
+      companyName: fx.companyName,
+      mode: fx.mode ?? "specific_role",
     });
-    if (response.stop_reason === "max_tokens") {
-      return {
-        fixture: fx,
-        ok: false,
-        durationMs: Date.now() - t0,
-        score: null,
-        optimizedScore: null,
-        failures: ["model hit max_tokens — output truncated"],
-      };
-    }
-    raw = response.content[0]?.type === "text" ? response.content[0].text : "";
   } catch (err) {
     return {
       fixture: fx,
@@ -80,60 +180,31 @@ async function runFixture(fx: OptimizerFixture): Promise<RunResult> {
       durationMs: Date.now() - t0,
       score: null,
       optimizedScore: null,
-      failures: [`model error: ${err instanceof Error ? err.message : String(err)}`],
+      suggestionCount: 0,
+      groundedCount: 0,
+      failures: [`pipeline error: ${err instanceof Error ? err.message : String(err)}`],
     };
   }
 
-  const jsonText = extractBalancedJson(raw);
-  if (!jsonText) {
-    return {
-      fixture: fx,
-      ok: false,
-      durationMs: Date.now() - t0,
-      score: null,
-      optimizedScore: null,
-      failures: ["no JSON object in model output"],
-      raw: raw.slice(0, 400),
-    };
-  }
+  const score = analysis.scoreComparison.original.total;
+  const optimizedScore = analysis.scoreComparison.optimized.total;
 
-  let analysis: AnalysisShape;
-  try {
-    analysis = JSON.parse(jsonText);
-  } catch (err) {
-    return {
-      fixture: fx,
-      ok: false,
-      durationMs: Date.now() - t0,
-      score: null,
-      optimizedScore: null,
-      failures: [`JSON parse error: ${err instanceof Error ? err.message : String(err)}`],
-      raw: raw.slice(0, 400),
-    };
-  }
-
-  const score = analysis.scoreComparison?.original?.total ?? analysis.overallScore ?? null;
-  const optimizedScore = analysis.scoreComparison?.optimized?.total ?? null;
-
-  // Band check on the original score
-  if (score == null || !Number.isFinite(score)) {
-    failures.push("score missing or non-numeric");
-  } else {
+  // 1. Band checks.
+  {
     const [lo, hi] = fx.originalBand;
-    if (score < lo || score > hi) {
-      failures.push(`original score ${score} outside band [${lo}, ${hi}]`);
-    }
+    if (score < lo || score > hi) failures.push(`original score ${score} outside band [${lo}, ${hi}]`);
   }
-
-  // Band check on the optimized score (if asserted)
-  if (fx.optimizedBand && optimizedScore != null) {
+  if (fx.optimizedBand) {
     const [lo, hi] = fx.optimizedBand;
     if (optimizedScore < lo || optimizedScore > hi) {
       failures.push(`optimized score ${optimizedScore} outside band [${lo}, ${hi}]`);
     }
   }
 
-  // Custom assertions
+  // 2-6. Pipeline quality gates.
+  assertPipelineQuality(fx, analysis, failures);
+
+  // 7. Legacy fixture assertions against the projected v1 payload.
   for (const a of fx.assertions ?? []) {
     try {
       const r = a.check(analysis);
@@ -149,6 +220,8 @@ async function runFixture(fx: OptimizerFixture): Promise<RunResult> {
     durationMs: Date.now() - t0,
     score,
     optimizedScore,
+    suggestionCount: analysis.suggestions.length,
+    groundedCount: analysis.suggestions.filter((s) => s.grounded).length,
     failures,
   };
 }
@@ -161,12 +234,11 @@ async function main() {
   }
 
   console.log(
-    `${DIM}Running ${selected.length} fixture${selected.length === 1 ? "" : "s"} (model: claude-opus-4-8)…${RESET}\n`
+    `${DIM}Running ${selected.length} fixture${selected.length === 1 ? "" : "s"} through the 3-pass pipeline…${RESET}\n`
   );
 
-  // Sequential. Each call is ~6-15s and the rate ceiling is generous enough
-  // that parallelism doesn't buy much for 6 fixtures, but trips message
-  // ordering in the log.
+  // Sequential — each fixture is now 3 model calls (~60-90s); parallelism
+  // would garble the log and bump into rate ceilings on full runs.
   const results: RunResult[] = [];
   for (const fx of selected) {
     process.stdout.write(`${DIM}▶ ${fx.id}…${RESET} `);
@@ -174,14 +246,13 @@ async function main() {
     results.push(r);
     if (r.ok) {
       console.log(
-        `${GREEN}PASS${RESET} ${DIM}(${(r.durationMs / 1000).toFixed(1)}s, score ${r.score}${r.optimizedScore != null ? `→${r.optimizedScore}` : ""})${RESET}`
+        `${GREEN}PASS${RESET} ${DIM}(${(r.durationMs / 1000).toFixed(1)}s, score ${r.score}→${r.optimizedScore}, ${r.suggestionCount} suggestions / ${r.groundedCount} appliable)${RESET}`
       );
     } else {
       console.log(
-        `${RED}FAIL${RESET} ${DIM}(${(r.durationMs / 1000).toFixed(1)}s, score ${r.score ?? "?"})${RESET}`
+        `${RED}FAIL${RESET} ${DIM}(${(r.durationMs / 1000).toFixed(1)}s, score ${r.score ?? "?"}, ${r.suggestionCount} suggestions)${RESET}`
       );
       for (const f of r.failures) console.log(`    ${YELLOW}× ${f}${RESET}`);
-      if (r.raw) console.log(`    ${DIM}raw: ${r.raw}…${RESET}`);
     }
   }
 
@@ -203,6 +274,8 @@ async function main() {
             ok: r.ok,
             score: r.score,
             optimizedScore: r.optimizedScore,
+            suggestions: r.suggestionCount,
+            grounded: r.groundedCount,
             durationMs: r.durationMs,
             failures: r.failures,
           })),

@@ -17,6 +17,16 @@ export type OptimizerFixture = {
   originalBand: [number, number];
   // Optional band for the optimized score, derived from the constraint table.
   optimizedBand?: [number, number];
+  // Pipeline depth/quality expectations (deep-analysis eval):
+  /** Patterns that MUST each match at least one extracted jdRequirement.text. */
+  expectedRequirements?: RegExp[];
+  /** Planted gaps: pattern over requirement text → expected coverage statuses. */
+  expectedGaps?: Array<{ pattern: RegExp; statuses: Array<"missing" | "partial"> }>;
+  /** Minimum number of suggestions (defaults to 10; lower for tiny CVs that
+   *  simply don't have 10 distinct targets). */
+  minSuggestions?: number;
+  /** Minimum number of grounded (appliable-patch) suggestions. */
+  minGroundedSuggestions?: number;
   // Free-form assertions on the analysis output.
   assertions?: Array<{
     name: string;
@@ -191,6 +201,11 @@ export const FIXTURES: OptimizerFixture[] = [
     companyName: "Outbrain",
     originalBand: [78, 95],
     optimizedBand: [85, 99],
+    expectedRequirements: [/sql/i, /amplitude|mixpanel/i, /a\/b test|experiment/i, /2\+ years/i],
+    // Maya's CV has Amplitude + SQL + A/B testing → these must NOT be missing.
+    expectedGaps: [],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
     assertions: [
       {
         name: "preserves LinkedIn URL verbatim",
@@ -221,6 +236,9 @@ export const FIXTURES: OptimizerFixture[] = [
     companyName: "Acme",
     originalBand: [82, 95],
     optimizedBand: [88, 99],
+    expectedRequirements: [/react/i, /typescript/i, /5\+ years/i, /mentor/i, /graphql|rest/i],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
     assertions: [
       {
         name: "preserves Stripe company name",
@@ -251,6 +269,14 @@ export const FIXTURES: OptimizerFixture[] = [
     jobDescription: SENIOR_PRODUCT_ANALYST_JD,
     companyName: "Acme",
     originalBand: [55, 78],
+    expectedRequirements: [/5\+ years/i, /mentor/i],
+    // Maya has 3y and no mentoring track record → these must surface as gaps.
+    expectedGaps: [
+      { pattern: /5\+ years/i, statuses: ["missing", "partial"] },
+      { pattern: /mentor/i, statuses: ["missing", "partial"] },
+    ],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
     assertions: [
       {
         name: "honors seniority hard cap (no higher than 78)",
@@ -267,6 +293,9 @@ export const FIXTURES: OptimizerFixture[] = [
     cvText: JUNIOR_DEV_CV,
     mode: "quick",
     originalBand: [30, 65],
+    // Tiny CV (1 bullet total) — fewer distinct targets exist.
+    minSuggestions: 5,
+    minGroundedSuggestions: 3,
     assertions: [
       {
         name: "summary critiques presentation, not seniority gap",
@@ -284,6 +313,14 @@ export const FIXTURES: OptimizerFixture[] = [
     jobDescription: REACT_JD,
     originalBand: [15, 40],
     optimizedBand: [25, 60],
+    expectedRequirements: [/react/i, /5\+ years/i],
+    // A lawyer's CV covers none of the React JD's core requirements.
+    expectedGaps: [
+      { pattern: /react/i, statuses: ["missing", "partial"] },
+      { pattern: /typescript/i, statuses: ["missing", "partial"] },
+    ],
+    minSuggestions: 6,
+    minGroundedSuggestions: 3,
     assertions: [
       {
         name: "improvement stays bounded (≤ 28 pts for 35-54 tier)",
@@ -307,6 +344,13 @@ export const FIXTURES: OptimizerFixture[] = [
     jobDescription: SOCIAL_WORKER_JD,
     originalBand: [15, 40],
     optimizedBand: [20, 60],
+    expectedRequirements: [/msw|master of social work/i, /lcsw|license/i],
+    expectedGaps: [
+      { pattern: /msw|master of social work/i, statuses: ["missing"] },
+      { pattern: /lcsw|license/i, statuses: ["missing"] },
+    ],
+    minSuggestions: 6,
+    minGroundedSuggestions: 3,
     assertions: [
       {
         name: "missing required credential surfaces in improvements OR missingKeySkills",

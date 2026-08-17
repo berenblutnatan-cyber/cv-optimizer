@@ -20,6 +20,7 @@ export type CvToolName =
   | "update_summary"
   | "add_experience"
   | "update_experience"
+  | "update_experience_bullet"
   | "remove_experience"
   | "add_education"
   | "update_education"
@@ -438,6 +439,26 @@ export function applyCvToolCall(
       };
     }
 
+    case "update_experience_bullet": {
+      // Surgical single-bullet rewrite (used by the optimizer's appliable
+      // suggestions). Replaces one bullet in place, so applying several
+      // suggestions in any order can never shift indices.
+      const i = atIndex(input, data.experience.length);
+      if (i === -1) return data;
+      const b = Number(input.bulletIndex);
+      const text = s(input.text);
+      if (!Number.isInteger(b) || b < 0 || text === undefined) return data;
+      if (b >= data.experience[i].description.length) return data;
+      return {
+        ...data,
+        experience: data.experience.map((e, idx) =>
+          idx === i
+            ? { ...e, description: e.description.map((d, bi) => (bi === b ? text : d)) }
+            : e
+        ),
+      };
+    }
+
     case "remove_experience": {
       const i = atIndex(input, data.experience.length);
       if (i === -1) return data;
@@ -621,6 +642,8 @@ export function describeToolCall(
     }
     case "update_experience":
       return t("Polished an experience entry");
+    case "update_experience_bullet":
+      return t("Rewrote a bullet");
     case "remove_experience":
       return t("Removed an experience entry");
     case "add_education": {
@@ -724,6 +747,8 @@ export function pendingToolLabel(name: string, t: ChatLabelTranslate = englishT)
       return t("Adding a role…");
     case "update_experience":
       return t("Polishing an experience entry…");
+    case "update_experience_bullet":
+      return t("Rewriting a bullet…");
     case "remove_experience":
       return t("Removing an experience entry…");
     case "add_education":
