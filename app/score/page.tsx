@@ -572,6 +572,47 @@ export default function ScoreTeaserPage() {
                       </>
                     )}
 
+                    {file ? (
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            track("score_upsell_clicked", { cta: "optimize_handoff", match_score: result.score });
+                            // Stash the uploaded CV into the optimizer's draft so
+                            // /optimize opens with it already attached — write
+                            // BEFORE navigating (FileReader is async).
+                            try {
+                              const base64 = await new Promise<string>((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result as string);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(file);
+                              });
+                              localStorage.setItem(
+                                "optimizer_draft",
+                                JSON.stringify({
+                                  cvText: "",
+                                  cvFileName: file.name,
+                                  cvFileMimeType: file.type,
+                                  cvFileBase64: base64,
+                                  jobTitle: "",
+                                  jobDescription: "",
+                                  jobUrl: "",
+                                  summary: "",
+                                })
+                              );
+                            } catch {
+                              /* storage full — /optimize just opens empty */
+                            }
+                            window.location.assign("/optimize");
+                          }}
+                          className="text-sm text-brand-navy hover:text-brand-navy-hover underline underline-offset-4 font-light"
+                        >
+                          {t("Tailor it to a specific job →")}
+                        </button>
+                      </div>
+                    ) : null}
+
                     <p className="text-sm text-stone-500 mt-4 flex items-center justify-center gap-4 font-light flex-wrap">
                       <span className="flex items-center gap-1">
                         <Check className="w-4 h-4 text-brand-navy" strokeWidth={1.5} />

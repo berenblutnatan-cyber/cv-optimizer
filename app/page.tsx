@@ -35,6 +35,12 @@ export default async function LandingPage() {
           <ActiveNavLinks />
           <div className="flex items-center gap-2 sm:gap-3 md:gap-5">
             <Link
+              href="/optimize"
+              className="hidden sm:inline-flex min-h-11 items-center px-4 py-2.5 text-sm font-medium text-brand-navy border border-brand-navy/30 hover:border-brand-navy hover:bg-brand-navy hover:text-white rounded-sm transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none"
+            >
+              {t("Optimize for a Job")}
+            </Link>
+            <Link
               href="/score"
               className="inline-flex min-h-11 items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-brand-navy hover:bg-brand-navy-hover text-white text-xs sm:text-sm font-medium rounded-sm shadow-sm hover:shadow-md transition-all duration-200 tracking-wide whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/70 focus-visible:ring-offset-2"
             >
