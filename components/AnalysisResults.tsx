@@ -6,6 +6,7 @@ import { TemplateType } from "./cv-templates";
 import { EditableResumePreview, ResumePreviewData, BuilderTemplateId, ThemeColor, ResumePreview } from "./builder";
 import { TEMPLATE_LIST, type TemplateRegistryId } from "@/lib/templates/registry";
 import { SmartResumePreview, TemplateGallery } from "./shared";
+import { ExportSurface } from "./shared/ExportSurface";
 import { useTemplateGating, TEMPLATE_OPTIONS as GATED_TEMPLATE_OPTIONS } from "./builder/TemplateSwitcher";
 import { TemplateUnlockModal } from "./TemplateUnlockModal";
 import { OutOfCreditsModal } from "./OutOfCreditsModal";
@@ -167,8 +168,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
   // Fixed accent color for consistency (updated to indigo)
   const [selectedColor, setSelectedColor] = useState<ThemeColor>("indigo");
   
-  // Density state for A4 content fitting
-  const [density, setDensity] = useState<"compact" | "normal" | "spacious">("normal");
+  // Density (Font/Spacing sliders in the preview toolbar) — lifted here so the
+  // hidden PDF-export render uses the SAME levels the visible preview shows.
+  const [fontLevel, setFontLevel] = useState(5);
+  const [spacingLevel, setSpacingLevel] = useState(5);
   
   // Download states
   const [isDownloading, setIsDownloading] = useState(false);
@@ -359,26 +362,16 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
 
   return (
     <div ref={rootRef} className="bg-white rounded-sm shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] overflow-hidden h-full flex flex-col min-h-0 scroll-mt-20">
-      {/* Hidden PDF Capture Element - ONLY the CV, no toolbar */}
-      <div className="absolute left-[-9999px] top-0 pointer-events-none">
-        <div 
-          ref={pdfCaptureRef} 
-          style={{ 
-            width: "210mm", 
-            minHeight: "297mm", 
-            background: "#ffffff",
-            padding: 0,
-            margin: 0,
-          }}
-        >
-          <ResumePreview
-            data={resumeData}
-            templateId={selectedTemplate}
-            themeColor={selectedColor}
-          />
-        </div>
-      </div>
-      
+      {/* Hidden PDF Capture Element - ONLY the CV, no toolbar. ExportSurface
+          applies the same font/spacing density as the visible preview. */}
+      <ExportSurface ref={pdfCaptureRef} fontLevel={fontLevel} spacingLevel={spacingLevel}>
+        <ResumePreview
+          data={resumeData}
+          templateId={selectedTemplate}
+          themeColor={selectedColor}
+        />
+      </ExportSurface>
+
       {/* Top Navigation - Premium Step Flow */}
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 bg-white border-b border-stone-100">
         {/* Horizontally scrollable on mobile; wrapping flex on larger screens */}
@@ -890,6 +883,10 @@ export function AnalysisResults({ results, coverLetterTab, onEnhanceWithDeepDive
                     hideTemplateSelector={true}
                     onTemplateChange={setSelectedTemplate}
                     onColorChange={setSelectedColor}
+                    fontLevel={fontLevel}
+                    spacingLevel={spacingLevel}
+                    onFontLevelChange={setFontLevel}
+                    onSpacingLevelChange={setSpacingLevel}
                     minScale={0.4}
                     maxScale={0.9}
                   />

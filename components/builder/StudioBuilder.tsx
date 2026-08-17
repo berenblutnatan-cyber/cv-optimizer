@@ -28,7 +28,7 @@ import { DEFAULT_DESIGN, useResumeStore, type DesignState } from "@/store/useRes
 import { useChatBuilderStore, CHAT_ACTIVE_SESSION_KEY } from "@/stores/chatBuilderStore";
 import { useFlashSaleStore } from "@/stores/flashSaleStore";
 import { applyCvToolCall, pendingToolLabel, DESIGN_TEMPLATES, DESIGN_COLORS } from "@/lib/chat/cvTools";
-import { densityInlineVars, densityClasses, densityOverrideCss } from "@/lib/builder/density";
+import { ExportSurface } from "@/components/shared/ExportSurface";
 import { chatGreeting, cvUploadIntake, isPlaceholderSummary } from "@/lib/chat/prompts";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { generateId, type ResumeData } from "@/types/resume";
@@ -1337,24 +1337,12 @@ export function StudioBuilder() {
       />
 
       {/* Off-screen full-size render — rasterized to PDF on Export. Uses the
-          real CV data (never the sample). */}
-      <div aria-hidden className="fixed -left-[10000px] top-0 pointer-events-none">
-        <div ref={exportRef} style={{ width: 794, background: "#ffffff" }}>
-          {!isEmpty ? (
-            <>
-              {/* Same font/spacing density the live preview shows, so the
-                  downloaded PDF is WYSIWYG (shared math in lib/builder/density). */}
-              <style dangerouslySetInnerHTML={{ __html: densityOverrideCss(design.fontLevel, design.spacingLevel) }} />
-              <div
-                className={`smart-resume-override ${densityClasses(design.fontLevel, design.spacingLevel)}`}
-                style={densityInlineVars(design.fontLevel, design.spacingLevel)}
-              >
-                <ResumePreview data={previewData} templateId={design.template} themeColor={design.color} />
-              </div>
-            </>
-          ) : null}
-        </div>
-      </div>
+          real CV data (never the sample). WYSIWYG density via ExportSurface. */}
+      <ExportSurface ref={exportRef} fontLevel={design.fontLevel} spacingLevel={design.spacingLevel}>
+        {!isEmpty ? (
+          <ResumePreview data={previewData} templateId={design.template} themeColor={design.color} />
+        ) : null}
+      </ExportSurface>
     </div>
   );
 }
