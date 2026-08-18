@@ -37,7 +37,7 @@ export function RolesDeck({
 
   async function regenerate() {
     if (targetRoles.length === 0) {
-      toast.message(t("Add target roles in the dashboard first."));
+      toast.message(t("Add a target role above first."));
       return;
     }
     setGenerating(true);
@@ -138,7 +138,7 @@ export function RolesDeck({
         <GlassCard padding="lg" className="text-center py-12">
           <div className="font-serif italic text-2xl text-white">{t("No cards yet")}</div>
           <p className="mt-2 text-white/70 max-w-md mx-auto">
-            {t("Add the roles you're targeting from the dashboard, then run a quick optimization. We'll tailor a fresh CV for each role.")}
+            {t("Add the roles you're targeting above, then run a quick optimization. We'll tailor a fresh CV for each role.")}
           </p>
         </GlassCard>
       ) : null}
