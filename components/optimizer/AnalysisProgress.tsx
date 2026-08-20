@@ -115,6 +115,18 @@ export function AnalysisProgress({
             </div>
           </div>
           <p className="mt-3 text-sm text-stone-600 leading-relaxed">{audit.summary}</p>
+          {audit.strengths.length > 0 ? (
+            <ul className="mt-3 space-y-1.5">
+              {audit.strengths.slice(0, 3).map((s, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3" strokeWidth={3} />
+                  </span>
+                  <span className="text-sm text-stone-600 leading-snug">{s}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       )}
     </div>

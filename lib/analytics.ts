@@ -24,6 +24,17 @@ export type EventName =
   | "optimize_succeeded"
   | "optimize_failed"
   | "suggestion_applied"
+  // Feedback-first review studio
+  | "review_tab_changed"
+  | "critique_fix_clicked"
+  | "coverage_row_expanded"
+  | "next_steps_clicked"
+  // Career toolkit (free generators)
+  | "toolkit_viewed"
+  | "toolkit_tool_opened"
+  | "toolkit_generated"
+  | "toolkit_generation_failed"
+  | "toolkit_copy_clicked"
   | "credit_check_failed"
   | "out_of_credits_modal_shown"
   | "out_of_credits_modal_dismissed"

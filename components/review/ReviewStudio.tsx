@@ -28,7 +28,8 @@ import { ScoreRing } from "@/components/shell/ScoreRing";
 import { SmartResumePreview } from "@/components/shared";
 import { ExportSurface } from "@/components/shared/ExportSurface";
 import { ResumePreview, type BuilderTemplateId, type ThemeColor } from "@/components/builder";
-import { CoverageMatrix } from "./CoverageMatrix";
+import { OverviewPanel } from "./OverviewPanel";
+import { JobFitPanel } from "./JobFitPanel";
 import { SuggestionCard, type SuggestionStatus } from "./SuggestionCard";
 import { applyCvToolCall } from "@/lib/chat/cvTools";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
@@ -37,7 +38,7 @@ import { useResumeStore } from "@/store/useResumeStore";
 import { isEmptyResume } from "@/lib/builder/sampleResume";
 import { track } from "@/lib/analytics";
 import { useT } from "@/lib/i18n/LanguageProvider";
-import type { ResumeData } from "@/types/resume";
+import { resumeToText, type ResumeData } from "@/types/resume";
 import type { DeepAnalysis, GroundedSuggestion, JdRequirement } from "@/lib/optimizer/types";
 import type { AnalyzeMeta } from "@/lib/optimizer/stream";
 
@@ -74,6 +75,7 @@ export function ReviewStudio({
     () => (analysis.suggestionState && typeof analysis.suggestionState === "object" ? analysis.suggestionState : {})
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [railView, setRailView] = useState<"overview" | "fit" | "fixes">("overview");
   const [mobilePane, setMobilePane] = useState<"review" | "preview">("review");
   const [pulse, setPulse] = useState(0);
 
@@ -189,6 +191,21 @@ export function ReviewStudio({
   }, [suggestions]);
 
   const pendingCount = suggestions.filter((s) => !statusMap[s.id]).length;
+  const activeSuggestions = useMemo(
+    () => suggestions.filter((s) => statusMap[s.id] !== "dismissed"),
+    [suggestions, statusMap]
+  );
+  const appliedByCategory = useMemo(() => {
+    const acc: Record<"ats" | "impact" | "clarity", number> = { ats: 0, impact: 0, clarity: 0 };
+    for (const s of appliedSuggestions) acc[s.category] += s.scoreImpact;
+    return acc;
+  }, [appliedSuggestions]);
+  const missingReqCount = useMemo(() => {
+    const covByReq = new Map((analysis.coverage ?? []).map((c) => [c.requirementId, c.status]));
+    return (analysis.jdRequirements ?? []).filter(
+      (r) => !addedSkillReqIds.has(r.id) && (covByReq.get(r.id) ?? "missing") === "missing"
+    ).length;
+  }, [analysis.coverage, analysis.jdRequirements, addedSkillReqIds]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
   const applySuggestion = (s: GroundedSuggestion) => {
@@ -206,6 +223,7 @@ export function ReviewStudio({
 
   const jumpToSuggestion = (id: string) => {
     setExpandedId(id);
+    setRailView("fixes");
     setMobilePane("review");
     requestAnimationFrame(() => {
       document.getElementById(`suggestion-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -258,7 +276,10 @@ export function ReviewStudio({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cvText: meta.cvTextUsed || cvText,
+          cvText:
+            analysis.parseDegraded || !currentResume
+              ? meta.cvTextUsed || cvText
+              : resumeToText(currentResume),
           jobDescription: meta.jobDescriptionUsed || "",
           jobTitle: meta.jobTitle,
           companyName: meta.companyName,
@@ -378,50 +399,89 @@ export function ReviewStudio({
       <div className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-[400px_1fr] gap-5 min-h-0">
         {/* Rail */}
         <div className={`space-y-4 sm:overflow-y-auto sm:max-h-[calc(100vh-160px)] sm:pr-1 ${mobilePane === "preview" ? "hidden sm:block" : ""}`}>
-          {analysis.summary ? (
-            <p className="text-sm text-stone-600 leading-relaxed px-0.5">{analysis.summary}</p>
+          {/* Rail segments: Overview (feedback) / Job fit / Fixes */}
+          <div className="flex items-center gap-1 p-1 rounded-full bg-stone-100 sticky top-0 z-10">
+            {(
+              [
+                { id: "overview" as const, label: t("Overview"), count: 0 },
+                { id: "fit" as const, label: t("Job fit"), count: missingReqCount },
+                { id: "fixes" as const, label: t("Fixes"), count: pendingCount },
+              ]
+            ).map((seg) => (
+              <button
+                key={seg.id}
+                type="button"
+                onClick={() => {
+                  setRailView(seg.id);
+                  track("review_tab_changed", { tab: seg.id });
+                }}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                  railView === seg.id ? "bg-white text-brand-navy shadow-sm" : "text-stone-500 hover:text-stone-700"
+                }`}
+              >
+                {seg.label}
+                {seg.count > 0 ? (
+                  <span className="px-1.5 rounded-full bg-stone-200/80 text-stone-600 text-sm tabular-nums leading-5">
+                    {seg.count}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+
+          {railView === "overview" ? (
+            <OverviewPanel
+              analysis={analysis}
+              resumeData={baseResume}
+              activeSuggestions={activeSuggestions}
+              appliedByCategory={appliedByCategory}
+              onJumpToSuggestion={jumpToSuggestion}
+            />
           ) : null}
 
-          <CoverageMatrix
-            requirements={analysis.jdRequirements}
-            coverage={analysis.coverage}
-            addedSkillReqIds={addedSkillReqIds}
-            onAddSkill={addSkill}
-            onJumpToSuggestion={jumpToSuggestion}
-            suggestionIdByReq={suggestionIdByReq}
-          />
+          {railView === "fit" ? (
+            <JobFitPanel
+              analysis={analysis}
+              addedSkillReqIds={addedSkillReqIds}
+              onAddSkill={addSkill}
+              onJumpToSuggestion={jumpToSuggestion}
+              suggestionIdByReq={suggestionIdByReq}
+            />
+          ) : null}
 
-          {grouped.map(({ cat, items }) => {
-            const applicable = items.filter((s) => !statusMap[s.id] && s.grounded && s.patch);
-            return (
-              <div key={cat} className="space-y-2">
-                <div className="flex items-center justify-between px-0.5">
-                  <span className="text-sm font-semibold text-brand-navy">{t(CATEGORY_LABEL[cat])}</span>
-                  {applicable.length > 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => applyAll(cat)}
-                      className="text-sm font-medium text-brand-navy hover:underline underline-offset-2"
-                    >
-                      {t("Apply all")}
-                    </button>
-                  ) : null}
-                </div>
-                {items.map((s) => (
-                  <SuggestionCard
-                    key={s.id}
-                    suggestion={s}
-                    status={statusMap[s.id] ?? "pending"}
-                    expanded={expandedId === s.id}
-                    onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                    onApply={() => applySuggestion(s)}
-                    onUndo={() => setStatus(s.id, null)}
-                    onDismiss={() => setStatus(s.id, "dismissed")}
-                  />
-                ))}
-              </div>
-            );
-          })}
+          {railView === "fixes"
+            ? grouped.map(({ cat, items }) => {
+                const applicable = items.filter((s) => !statusMap[s.id] && s.grounded && s.patch);
+                return (
+                  <div key={cat} className="space-y-2">
+                    <div className="flex items-center justify-between px-0.5">
+                      <span className="text-sm font-semibold text-brand-navy">{t(CATEGORY_LABEL[cat])}</span>
+                      {applicable.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => applyAll(cat)}
+                          className="text-sm font-medium text-brand-navy hover:underline underline-offset-2"
+                        >
+                          {t("Apply all")}
+                        </button>
+                      ) : null}
+                    </div>
+                    {items.map((s) => (
+                      <SuggestionCard
+                        key={s.id}
+                        suggestion={s}
+                        status={statusMap[s.id] ?? "pending"}
+                        expanded={expandedId === s.id}
+                        onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                        onApply={() => applySuggestion(s)}
+                        onUndo={() => setStatus(s.id, null)}
+                        onDismiss={() => setStatus(s.id, "dismissed")}
+                      />
+                    ))}
+                  </div>
+                );
+              })
+            : null}
         </div>
 
         {/* Preview — gold pulse on every apply (keyed remount restarts the animation) */}
