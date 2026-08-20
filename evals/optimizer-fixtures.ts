@@ -191,7 +191,86 @@ REQUIREMENTS (non-negotiable):
 - 200+ supervised clinical hours
 - Experience with trauma-informed care`;
 
+
+const VP_MARKETING_CV = `Dana Peretz
+dana.peretz@example.com | +972-54-555-7788 | Tel Aviv | https://www.linkedin.com/in/dana-peretz-mkt
+
+PROFESSIONAL SUMMARY
+Marketing executive with 12 years leading B2B SaaS marketing organizations.
+
+EXPERIENCE
+VP Marketing | Monday.com | 2021 - Present
+• Own $18M annual marketing budget across demand gen, brand, and product marketing
+• Grew marketing-sourced pipeline from $40M to $95M in two years
+• Built and lead a 45-person org across 4 teams and 3 regions
+
+Director of Marketing | Wix | 2017 - 2021
+• Led 20-person demand-gen team; grew MQLs 3x while cutting CAC 25%
+• Launched ABM motion that landed 30 enterprise logos in year one
+
+Marketing Manager | SimilarWeb | 2013 - 2017
+• Ran paid acquisition ($4M/yr) across search and social
+
+EDUCATION
+MBA | Tel Aviv University | 2015
+B.A. Communications | IDC Herzliya | 2012
+
+SKILLS
+Demand Generation, ABM, Product Marketing, Brand, Marketing Analytics, Team Leadership, Budget Management`;
+
+const VP_MARKETING_JD = `VP Marketing
+
+We're hiring a VP Marketing to own our go-to-market engine.
+
+Requirements:
+- 10+ years in B2B SaaS marketing, 5+ leading teams
+- Owned pipeline targets and multi-million dollar budgets
+- Demand generation and ABM expertise
+- Experience scaling marketing orgs through growth stages`;
+
 export const FIXTURES: OptimizerFixture[] = [
+  {
+    id: "executive-vp-marketing",
+    description: "VP Marketing → VP Marketing (executive persona calibration)",
+    cvText: VP_MARKETING_CV,
+    jobTitle: "VP Marketing",
+    jobDescription: VP_MARKETING_JD,
+    companyName: "Acme",
+    originalBand: [78, 95],
+    expectedRequirements: [/10\+ years/i, /demand gen|abm/i, /budget/i],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
+    assertions: [
+      {
+        name: "executive-calibrated critique (P&L/budget/scope/strategy language)",
+        check: (a) => {
+          const withCritiques = a as AnalysisShape & {
+            sectionCritiques?: Array<{ verdict: string; issues: string[] }>;
+          };
+          const haystack = [
+            ...(withCritiques.sectionCritiques ?? []).flatMap((c) => [c.verdict, ...c.issues]),
+            ...(a.improvements ?? []).map((i) => i.text),
+          ]
+            .join(" ")
+            .toLowerCase();
+          return (
+            /p&l|budget|team size|org|scope|strateg|scale/i.test(haystack) ||
+            "expected executive-calibration signals in critiques/improvements"
+          );
+        },
+      },
+      {
+        name: "applyVerdict is code-consistent with the score",
+        check: (a) => {
+          const withVerdict = a as AnalysisShape & { applyVerdict?: string };
+          const score = a.scoreComparison?.original?.total ?? a.overallScore ?? 0;
+          const expected =
+            score >= 90 ? "strong_apply" : score >= 75 ? "apply" : score >= 60 ? "apply_with_cover_letter" : score >= 50 ? "stretch" : "skip";
+          return withVerdict.applyVerdict === expected || `applyVerdict ${withVerdict.applyVerdict} != ${expected} for score ${score}`;
+        },
+      },
+    ],
+  },
   {
     id: "pa-pa-direct-match",
     description: "Product Analyst → Product Analyst (direct match, strong fit)",
