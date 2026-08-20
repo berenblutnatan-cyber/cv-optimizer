@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { Loader2, Sparkles, Lock, MessageSquareQuote } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useFlashSaleStore } from "@/stores/flashSaleStore";
@@ -19,7 +20,9 @@ export function InterviewPrepClient() {
   const { openSignUp } = useClerk();
   const resumeData = useResumeStore((s) => s.resumeData);
 
-  const [role, setRole] = useState(resumeData.personalInfo.title || "");
+  // ?role= comes from the Review Studio's next-steps handoff.
+  const roleParam = useSearchParams().get("role");
+  const [role, setRole] = useState(roleParam || resumeData.personalInfo.title || "");
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [pitch, setPitch] = useState<string | undefined>();
   const [locked, setLocked] = useState(true);

@@ -30,6 +30,9 @@ import { ExportSurface } from "@/components/shared/ExportSurface";
 import { ResumePreview, type BuilderTemplateId, type ThemeColor } from "@/components/builder";
 import { OverviewPanel } from "./OverviewPanel";
 import { JobFitPanel } from "./JobFitPanel";
+import { NextStepsStrip } from "./NextStepsStrip";
+import { ToolDrawer } from "@/components/toolkit/ToolDrawer";
+import type { ToolId } from "@/lib/toolkit/tools";
 import { SuggestionCard, type SuggestionStatus } from "./SuggestionCard";
 import { applyCvToolCall } from "@/lib/chat/cvTools";
 import { convertToPreviewData } from "@/lib/resumeDataConverter";
@@ -93,6 +96,7 @@ export function ReviewStudio({
   const [coverCopied, setCoverCopied] = useState(false);
 
   const [exporting, setExporting] = useState(false);
+  const [openTool, setOpenTool] = useState<ToolId | null>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -482,6 +486,12 @@ export function ReviewStudio({
                 );
               })
             : null}
+
+          <NextStepsStrip
+            jobTitle={analysis.meta?.jobTitle || jobTitle || ""}
+            onCoverLetter={() => setCoverOpen(true)}
+            onOpenTool={setOpenTool}
+          />
         </div>
 
         {/* Preview — gold pulse on every apply (keyed remount restarts the animation) */}
@@ -509,6 +519,21 @@ export function ReviewStudio({
           <style>{`@keyframes reviewPulse { 0% { box-shadow: inset 0 0 0 3px rgba(184,134,11,0.55); } 100% { box-shadow: inset 0 0 0 3px rgba(184,134,11,0); } }`}</style>
         </div>
       </div>
+
+      {/* Toolkit tools, prefilled from this analysis (patched CV + job context) */}
+      <ToolDrawer
+        toolId={openTool}
+        builderCvText=""
+        prefill={{
+          cvText: currentResume && !analysis.parseDegraded ? resumeToText(currentResume) : cvText,
+          ...(analysis.meta?.jobDescriptionUsed ? { jobDescription: analysis.meta.jobDescriptionUsed } : {}),
+          ...(analysis.meta?.jobTitle ? { jobTitle: analysis.meta.jobTitle, targetRole: analysis.meta.jobTitle } : {}),
+          ...(analysis.meta?.companyName && analysis.meta.companyName !== "Target Company"
+            ? { companyName: analysis.meta.companyName }
+            : {}),
+        }}
+        onClose={() => setOpenTool(null)}
+      />
 
       {/* Cover letter drawer */}
       {coverOpen ? (

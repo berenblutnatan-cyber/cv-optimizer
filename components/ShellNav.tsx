@@ -10,7 +10,7 @@ import { useT } from "@/lib/i18n/LanguageProvider";
 type ShellNavProps = {
   rightSlot?: React.ReactNode;
   /** Highlight the active product link */
-  active?: "builder" | "optimizer" | null;
+  active?: "builder" | "optimizer" | "toolkit" | null;
 };
 
 export function ShellNav({ rightSlot, active = null }: ShellNavProps) {
@@ -45,6 +45,14 @@ export function ShellNav({ rightSlot, active = null }: ShellNavProps) {
               className={linkClass(active === "optimizer")}
             >
               {t("Optimizer")}
+            </Link>
+            <span className="w-px h-4 bg-stone-300" />
+            <Link
+              href="/toolkit"
+              aria-current={active === "toolkit" ? "page" : undefined}
+              className={linkClass(active === "toolkit")}
+            >
+              {t("Toolkit")}
             </Link>
           </nav>
 

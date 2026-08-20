@@ -10,6 +10,7 @@ import {
   MessageSquareQuote,
   Mic,
   Wand2,
+  Wrench,
 } from "lucide-react";
 import { GlassCard } from "@/components/shell/GlassCard";
 import { LevelBadge } from "@/components/shell/LevelBadge";
@@ -129,6 +130,12 @@ export default async function DashboardPage() {
             label={t("Optimize")}
             href="/optimize"
             gradient={["#f5b8c8", "#c9b8ff"]}
+          />
+          <SquircleIcon
+            icon={Wrench}
+            label={t("Toolkit")}
+            href="/toolkit"
+            gradient={["#c9b8ff", "#f5b8c8"]}
           />
           <SquircleIcon
             icon={Mic}
