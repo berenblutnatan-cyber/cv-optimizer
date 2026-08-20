@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
 import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 import { runAuditPass } from "@/lib/optimizer/pipeline";
+import { applyVerdict, seniorityFromExperience } from "@/lib/knowledge";
 import { resumeToText, type ResumeData } from "@/types/resume";
 import type { GoalWeighting } from "@/lib/optimizer/localChecks";
 
@@ -43,7 +44,9 @@ export async function POST(request: NextRequest) {
     const jobText = typeof body?.jobText === "string" ? body.jobText.slice(0, 8000) : "";
     const jobTitle = typeof body?.jobTitle === "string" ? body.jobTitle.slice(0, 100) : "";
     const goal = body?.goal as GoalWeighting | undefined;
-    void goal; // goal weighting is applied client-side to the merged problem list
+    const seniority = seniorityFromExperience(
+      typeof body?.experienceLevel === "string" ? body.experienceLevel : null
+    );
 
     if (!resumeData || typeof resumeData !== "object" || !Array.isArray(resumeData.experience)) {
       return NextResponse.json({ error: "Missing resume data." }, { status: 400 });
@@ -63,10 +66,13 @@ export async function POST(request: NextRequest) {
       jobTitle,
       jobDescription: jobText,
       mode: jobText || jobTitle ? "specific_role" : "quick",
+      goal: goal ?? null,
+      seniority,
     });
 
     return NextResponse.json({
       overallScore: audit.originalScore.total,
+      applyVerdict: applyVerdict(audit.originalScore.total),
       summary: audit.summary.slice(0, 280),
       strengths: audit.strengths,
       improvements: audit.improvements.map((imp, i) => ({ ...imp, id: `deep:${i}` })),

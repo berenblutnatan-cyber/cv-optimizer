@@ -23,6 +23,15 @@ import {
 } from "./prompts";
 import { parseCvText } from "./parseCv";
 import {
+  applyVerdict,
+  detectCareerChange,
+  detectTrack,
+  knowledgeFor,
+  type Goal,
+  type Seniority,
+  type Track,
+} from "@/lib/knowledge";
+import {
   clampOptimizedScore,
   groundAndFold,
   groundingSources,
@@ -59,6 +68,11 @@ export type PipelineInput = {
   userSummary?: string;
   deepDiveAnswers?: DeepDiveAnswers | null;
   mode?: "quick" | "specific_role";
+  // Persona hints (all optional — coaching degrades gracefully without them).
+  /** Overrides track detection from the job title/JD. */
+  track?: Track;
+  seniority?: Seniority | null;
+  goal?: Goal | null;
 };
 
 export type PipelineProgress = {
@@ -319,6 +333,7 @@ export async function runAuditPass(
   opts?: { snapshot?: string }
 ): Promise<DeepAudit> {
   const effectiveJobTitle = resolveEffectiveJobTitle(input);
+  const track = input.track ?? detectTrack(effectiveJobTitle, input.jobDescription);
   const user = buildAuditPrompt({
     cvText: input.cvText,
     snapshot: opts?.snapshot ?? (input.resumeData ? snapshotForPrompt(input.resumeData) : ""),
@@ -326,6 +341,12 @@ export async function runAuditPass(
     jobDescription: input.jobDescription,
     companyName: input.companyName,
     mode: input.mode,
+    knowledge: knowledgeFor({
+      surface: "audit",
+      track,
+      seniority: input.seniority ?? null,
+      goal: input.goal ?? null,
+    }),
   });
   const raw = await forcedToolCall(anthropic, "auditing", {
     model: AUDIT_MODEL,
@@ -350,6 +371,7 @@ export async function runOptimizerPipeline(
   progress: PipelineProgress = {}
 ): Promise<DeepAnalysis> {
   const effectiveJobTitle = resolveEffectiveJobTitle(input);
+  const resolvedTrack: Track = input.track ?? detectTrack(effectiveJobTitle, input.jobDescription);
 
   // Pass 0 — parse (skipped when structured data was provided)
   let resumeData = input.resumeData ?? null;
@@ -387,6 +409,13 @@ export async function runOptimizerPipeline(
       userSummary: input.userSummary,
       deepDiveAnswers: input.deepDiveAnswers,
       degraded,
+      knowledge: knowledgeFor({
+        surface: "rewrite",
+        track: resolvedTrack,
+        seniority: input.seniority ?? null,
+        goal: input.goal ?? null,
+        careerChange: detectCareerChange(resumeData.experience[0]?.role ?? "", resolvedTrack),
+      }),
     }),
   });
   const rewrite = validateRewrite(rewriteRaw, audit);
@@ -404,6 +433,10 @@ export async function runOptimizerPipeline(
 
   return {
     schemaVersion: 2,
+    // Apply-strategy verdict (job-description-analyzer 5-band rubric) —
+    // computed in code from the audit score, never model-emitted.
+    applyVerdict: applyVerdict(audit.originalScore.total),
+    track: resolvedTrack,
     // Legacy projection — byte-compatible with the v1 payload consumers.
     scoreComparison: {
       original: audit.originalScore,

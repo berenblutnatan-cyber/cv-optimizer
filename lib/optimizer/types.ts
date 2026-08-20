@@ -126,6 +126,10 @@ export type LegacyAnalysis = {
 
 export type DeepAnalysis = LegacyAnalysis & {
   schemaVersion: 2;
+  /** Apply-strategy verdict (5-band rubric), computed in code from the score. */
+  applyVerdict?: import("@/lib/knowledge").ApplyVerdict;
+  /** Persona track the coaching was calibrated for. */
+  track?: import("@/lib/knowledge").Track;
   jdRequirements: JdRequirement[];
   coverage: RequirementCoverage[];
   sectionCritiques: SectionCritique[];

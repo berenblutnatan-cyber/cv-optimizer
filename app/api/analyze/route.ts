@@ -12,6 +12,7 @@ import { hasActiveSubscription } from "@/lib/subscription";
 // by the eval harness (npm run eval:optimizer) — the route and the eval run
 // the EXACT same code.
 import { runOptimizerPipeline, resolveEffectiveJobTitle, PipelineError } from "@/lib/optimizer/pipeline";
+import { seniorityFromExperience } from "@/lib/knowledge";
 import type { DeepAnalysis } from "@/lib/optimizer/types";
 import type { AnalyzeStreamEvent } from "@/lib/optimizer/stream";
 
@@ -113,6 +114,12 @@ export async function POST(request: NextRequest) {
 
     const userSummary = (formData.get("summary") as string) || "";
 
+    // Persona hints (optional — coaching degrades gracefully without them).
+    const experienceLevel = (formData.get("experienceLevel") as string) || "";
+    const seniority = seniorityFromExperience(experienceLevel);
+    const goalRaw = (formData.get("goal") as string) || "";
+    const goal = goalRaw === "ats" || goalRaw === "recruiter" || goalRaw === "both" ? goalRaw : null;
+
     // Extract text from the uploaded file (PDF / DOCX / plain text).
     if (cvFile && !cvText) {
       try {
@@ -181,6 +188,8 @@ export async function POST(request: NextRequest) {
               userSummary,
               deepDiveAnswers,
               mode: isQuickMode ? "quick" : "specific_role",
+              seniority,
+              goal,
             },
             {
               onStage: (stage) => send({ type: "stage", stage }),

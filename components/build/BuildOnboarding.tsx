@@ -320,6 +320,8 @@ export function BuildOnboarding({ embedded = false }: { embedded?: boolean } = {
     if (!roles.length) return;
     useResumeStore.getState().updatePersonalInfo({ title: roles[0] });
     useOnboardingStore.getState().setRoles(roles);
+    // Seniority feeds persona-calibrated coaching (was collected then dropped).
+    useOnboardingStore.getState().setExperience(experience || null);
   }
 
   /**

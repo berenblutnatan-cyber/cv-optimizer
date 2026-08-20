@@ -37,6 +37,9 @@ export type AuditPromptInput = {
   jobDescription?: string;
   companyName?: string;
   mode?: "quick" | "specific_role";
+  /** Persona-calibrated critique standards (lib/knowledge knowledgeFor).
+   *  Empty string ⇒ the prompt is byte-identical to the pre-knowledge build. */
+  knowledge?: string;
 };
 
 export const AUDIT_SYSTEM_PROMPT =
@@ -163,7 +166,7 @@ export const EMIT_AUDIT_TOOL = {
 };
 
 export function buildAuditPrompt(input: AuditPromptInput): string {
-  const { cvText, snapshot, effectiveJobTitle, jobDescription = "", companyName = "", mode } = input;
+  const { cvText, snapshot, effectiveJobTitle, jobDescription = "", companyName = "", mode, knowledge = "" } = input;
   const isQuick = mode === "quick";
 
   return `${isQuick ? QUICK_MODE_OVERRIDE : ""}You must score the original CV ruthlessly AND produce a deep, evidence-grounded audit.
@@ -210,7 +213,15 @@ AUDIT INSTRUCTIONS
 3. **Critique every section** (summary, skills, education, plus EACH experience entry individually via experienceIndex, and one "overall"): what works, what a recruiter hiring for "${effectiveJobTitle}" would question, weak bullets, missing metrics, vague claims, tense/consistency problems. Verdicts are 2-4 sentences and cite the actual content. This is the deep review the candidate is paying for — do not produce generic advice that could apply to any CV.
 
 4. **Score** via the rubric above: originalScore.total plus the ats/impact/clarity breakdown, then summary, exactly 3 strengths, 5-8 improvements (sorted by scoreImpact descending, each naming the specific gap and its importance to this role), and up to 5 missingKeySkills.
+${
+  knowledge
+    ? `
+5. **CRITIQUE CALIBRATION (persona-specific)** — apply the standards below to the WORDING and DEPTH of sectionCritiques, improvements, and missingKeySkills ONLY. They do NOT modify the scoring rubric above; the rubric remains the sole authority for originalScore.
 
+${knowledge}
+`
+    : ""
+}
 Call emit_audit with the complete result.`;
 }
 
@@ -227,6 +238,9 @@ export type RewritePromptInput = {
   /** When true, the CV couldn't be parsed — suggestions must set patch to
    *  null and anchor by quote only. */
   degraded: boolean;
+  /** Persona-calibrated writing standards (lib/knowledge knowledgeFor).
+   *  Empty string ⇒ byte-identical to the pre-knowledge prompt. */
+  knowledge?: string;
 };
 
 export const REWRITE_SYSTEM_PROMPT =
@@ -318,6 +332,7 @@ export function buildRewritePrompt(input: RewritePromptInput): string {
     userSummary = "",
     deepDiveAnswers = null,
     degraded,
+    knowledge = "",
   } = input;
 
   return `Produce the improvement plan for this CV: 10-20 rich, specific, appliable suggestions.
@@ -354,7 +369,14 @@ ${PATCH_DOCS}
       ? "\n7. **The CV could not be parsed** — OMIT patch on every suggestion; set before to the exact raw-CV text you're improving."
       : ""
   }
-
+${
+    knowledge
+      ? `
+## WRITING STANDARDS (persona-specific — apply to every "after" you write)
+${knowledge}
+`
+      : ""
+  }
 ${OPTIMIZED_SCORE_CONSTRAINTS}
 
 Set optimizedScore to the constrained post-improvement score (per the table above, applied to the audit's originalScore), with its ats/impact/clarity breakdown, and list keywordsAdded.

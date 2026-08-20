@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { AnalysisProgress, type AuditPreview } from "@/components/optimizer/AnalysisProgress";
 import { readAnalyzeStream, type AnalyzeStage, type AnalyzeStreamEvent } from "@/lib/optimizer/stream";
+import { useOnboardingStore } from "@/stores/onboardingStore";
+import { useResumeStore } from "@/store/useResumeStore";
 import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
 import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
 import { FreeCreditToast } from "@/components/FreeCreditToast";
@@ -361,6 +363,14 @@ export function OptimizerClient() {
       
       const companyName = extractCompanyFromContext() || "Target Company";
       formData.append("companyName", companyName);
+
+      // Persona hints for seniority/goal-calibrated coaching (collected by the
+      // onboarding funnel; absent for direct visitors — the server degrades
+      // gracefully).
+      const { experience } = useOnboardingStore.getState();
+      if (experience) formData.append("experienceLevel", experience);
+      const goal = useResumeStore.getState().scoringGoal;
+      if (goal) formData.append("goal", goal);
       
       if (summary.trim()) {
         formData.append("summary", summary.trim());
