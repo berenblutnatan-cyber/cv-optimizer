@@ -24,9 +24,11 @@ import {
   Target,
   Sparkles
 } from "lucide-react";
-import { AnalyzingScreen } from "@/components/AnalyzingScreen";
+import { AnalysisProgress, type AuditPreview } from "@/components/optimizer/AnalysisProgress";
+import { readAnalyzeStream, type AnalyzeStage, type AnalyzeStreamEvent } from "@/lib/optimizer/stream";
+import { useOnboardingStore } from "@/stores/onboardingStore";
+import { useResumeStore } from "@/store/useResumeStore";
 import { OutOfCreditsModal, useOutOfCreditsModal } from "@/components/OutOfCreditsModal";
-import { saveAnalysisToSession } from "@/lib/analysisSession";
 import { AuthModal, useAuthModal } from "@/components/shared/AuthModal";
 import { FreeCreditToast } from "@/components/FreeCreditToast";
 import { track } from "@/lib/analytics";
@@ -34,8 +36,9 @@ import { useT } from "@/lib/i18n/LanguageProvider";
 
 const DRAFT_KEY = "optimizer_draft";
 
-// The analyze route is slow by design (Opus rewrite, ~20-40s typical). Give it
-// generous room, but never let the user hang forever on a dead connection.
+// Inactivity watchdog for the analyze stream: the route streams a progress
+// event at every pipeline stage, so this only fires on a genuinely dead
+// connection — not on a long (60-90s by design) healthy run.
 const ANALYZE_TIMEOUT_MS = 150_000;
 
 // Helper: Convert File to base64
@@ -81,6 +84,8 @@ export function OptimizerClient() {
   
   // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeStage, setAnalyzeStage] = useState<AnalyzeStage | null>(null);
+  const [auditPreview, setAuditPreview] = useState<AuditPreview | null>(null);
   const [error, setError] = useState("");
   
   // Job input mode toggle
@@ -343,6 +348,8 @@ export function OptimizerClient() {
       cv_size: cvText.length || (cvFile?.size ?? 0),
     });
     setIsAnalyzing(true);
+    setAnalyzeStage(null);
+    setAuditPreview(null);
 
     try {
       const formData = new FormData();
@@ -356,21 +363,35 @@ export function OptimizerClient() {
       
       const companyName = extractCompanyFromContext() || "Target Company";
       formData.append("companyName", companyName);
+
+      // Persona hints for seniority/goal-calibrated coaching (collected by the
+      // onboarding funnel; absent for direct visitors — the server degrades
+      // gracefully).
+      const { experience } = useOnboardingStore.getState();
+      if (experience) formData.append("experienceLevel", experience);
+      const goal = useResumeStore.getState().scoringGoal;
+      if (goal) formData.append("goal", goal);
       
       if (summary.trim()) {
         formData.append("summary", summary.trim());
       }
 
-      // Abortable fetch with a generous timeout — the route is slow by design,
-      // but a dead connection or gateway 504 must never hang the user forever.
+      // Abortable fetch. The response streams progress events, so the timeout
+      // is an INACTIVITY watchdog — reset on every event — rather than a hard
+      // cap on the whole (60-90s by design) pipeline.
       const controller = new AbortController();
       abortRef.current = controller;
       timedOutRef.current = false;
       cancelledRef.current = false;
-      const timeoutId = setTimeout(() => {
-        timedOutRef.current = true;
-        controller.abort();
-      }, ANALYZE_TIMEOUT_MS);
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      const armTimeout = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          timedOutRef.current = true;
+          controller.abort();
+        }, ANALYZE_TIMEOUT_MS);
+      };
+      armTimeout();
 
       let response: Response;
       try {
@@ -379,45 +400,73 @@ export function OptimizerClient() {
           body: formData,
           signal: controller.signal,
         });
-      } finally {
-        clearTimeout(timeoutId);
+      } catch (fetchErr) {
+        if (timeoutId) clearTimeout(timeoutId);
+        throw fetchErr;
       }
 
-      // Gateway timeouts (504) return HTML, not JSON — never parse blindly, or
-      // the user sees a raw SyntaxError instead of a retryable message.
       const contentType = response.headers.get("content-type") ?? "";
-      const data = contentType.includes("application/json")
-        ? await response.json().catch(() => null)
-        : null;
 
-      if (response.status === 402) {
-        track("credit_check_failed", { reason: "insufficient_credits" });
-        // Save the user's work BEFORE the paywall: checkout is a hard
-        // navigation, and their inputs must survive the round trip.
-        await persistDraft();
-        oocModal.open({ trigger: "optimize" });
-        return;
-      }
-      if (!response.ok || !data) {
+      // Pre-flight failures (401/402/400, bad file, dead job URL) come back as
+      // plain JSON before the stream starts. Gateway timeouts (504) return
+      // HTML — never parse blindly.
+      if (!contentType.includes("text/event-stream")) {
+        if (timeoutId) clearTimeout(timeoutId);
+        const data = contentType.includes("application/json")
+          ? await response.json().catch(() => null)
+          : null;
+        if (response.status === 402) {
+          track("credit_check_failed", { reason: "insufficient_credits" });
+          // Save the user's work BEFORE the paywall: checkout is a hard
+          // navigation, and their inputs must survive the round trip.
+          await persistDraft();
+          oocModal.open({ trigger: "optimize" });
+          return;
+        }
         throw new Error(
           data?.error ||
             t("Our analysis service hit a snag. Your inputs are safe — please try again.")
         );
       }
 
-      saveAnalysisToSession({ 
-        analysis: data.analysis, 
-        meta: data.meta,
-        originalInputs: {
-          cvFile: cvFile ? cvFile.name : null,
-          cvText,
-          jobTitle: jobTitle.trim(),
-          jobDescription: jobDescription.trim(),
-          jobUrl: jobUrl.trim(),
-          summary: summary.trim(),
+      if (!response.body) throw new Error(t("Our analysis service hit a snag. Your inputs are safe — please try again."));
+
+      let resultEvent: Extract<AnalyzeStreamEvent, { type: "result" }> | null = null;
+      let errorEvent: Extract<AnalyzeStreamEvent, { type: "error" }> | null = null;
+      try {
+        await readAnalyzeStream(response.body, (evt) => {
+          armTimeout();
+          if (evt.type === "stage") {
+            setAnalyzeStage(evt.stage);
+            track("optimize_stage_completed", { stage: evt.stage });
+          } else if (evt.type === "audit") {
+            setAuditPreview(evt);
+          } else if (evt.type === "result") {
+            resultEvent = evt;
+          } else if (evt.type === "error") {
+            errorEvent = evt;
+          }
+        });
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+
+      if (errorEvent !== null) {
+        const errEvt = errorEvent as Extract<AnalyzeStreamEvent, { type: "error" }>;
+        if (errEvt.code === "INSUFFICIENT_CREDITS") {
+          track("credit_check_failed", { reason: "insufficient_credits" });
+          await persistDraft();
+          oocModal.open({ trigger: "optimize" });
+          return;
         }
-      });
-      
+        throw new Error(errEvt.error);
+      }
+      if (resultEvent === null) {
+        // Stream ended without a terminal event — connection dropped mid-run.
+        throw new Error(t("The connection dropped mid-analysis. Please try again."));
+      }
+      const result = resultEvent as Extract<AnalyzeStreamEvent, { type: "result" }>;
+
       try {
         await fetch("/api/track", { method: "POST" });
       } catch {
@@ -426,15 +475,12 @@ export function OptimizerClient() {
 
       track("optimize_succeeded", {
         job_title: jobTitle.trim() || null,
-        match_score:
-          typeof data?.analysis?.matchScore === "number"
-            ? data.analysis.matchScore
-            : typeof data?.analysis?.overall_score === "number"
-              ? data.analysis.overall_score
-              : null,
+        match_score: result.analysis.overallScore ?? null,
       });
 
-      router.push("/results");
+      // Results are persisted server-side — the Review Studio reads them back
+      // by id, so a refresh or a closed tab never loses (or re-charges) a run.
+      router.push(`/results/${result.analysisId}`);
 
     } catch (err) {
       // User pressed Cancel — back to the form silently, inputs intact.
@@ -467,6 +513,8 @@ export function OptimizerClient() {
     cancelledRef.current = true;
     abortRef.current?.abort();
     setIsAnalyzing(false);
+    setAnalyzeStage(null);
+    setAuditPreview(null);
   };
 
   const extractCompanyFromContext = (): string | null => {
@@ -530,6 +578,13 @@ export function OptimizerClient() {
                 : t("Upload your resume and provide the target role — we'll tailor it for maximum impact.")}
             </p>
           </div>
+
+          {/* Inline real-progress panel (replaces the form while analyzing) */}
+          {isAnalyzing && (
+            <AnalysisProgress stage={analyzeStage} audit={auditPreview} onCancel={handleCancelAnalyze} />
+          )}
+
+          <div className={isAnalyzing ? "hidden" : ""}>
 
           {/* Mode Toggle: Quick (CV only) vs Targeted (with role) */}
           <div className="max-w-2xl mx-auto mb-8 sm:mb-12">
@@ -858,11 +913,10 @@ export function OptimizerClient() {
               ? t("Want a job-specific tailor? Switch to Tailor to Role above.")
               : t("For best results, provide the complete job description")}
           </p>
+
+          </div>
         </div>
       </main>
-
-      {/* Full-screen analyzing overlay */}
-      <AnalyzingScreen open={isAnalyzing} mode={analysisMode} jobTitle={jobTitle} onCancel={handleCancelAnalyze} />
 
       {/* Out-of-credits paywall — shown when /api/analyze returns 402 */}
       <OutOfCreditsModal

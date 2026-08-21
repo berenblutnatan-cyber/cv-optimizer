@@ -25,6 +25,12 @@ export type DesignState = {
   color: ThemeColor;
   fontLevel: number;
   spacingLevel: number;
+  /** Auto-fit keeps the CV to one page by solving for the largest font/spacing
+   * levels that fit (lib/builder/autofit.ts). Turned off the moment the user
+   * drags a slider manually. */
+  autoFit: boolean;
+  /** "one" = clip + auto-fit to a single page; "multi" = real page 2+. */
+  pageMode: "one" | "multi";
 };
 
 export const DEFAULT_DESIGN: DesignState = {
@@ -32,6 +38,18 @@ export const DEFAULT_DESIGN: DesignState = {
   color: "indigo",
   fontLevel: 5,
   spacingLevel: 5,
+  autoFit: true,
+  pageMode: "one",
+};
+
+/** What the fit engine measured on the last pass — feeds the overflow banner,
+ * the trim ladder, and the AI's FIT context line. Session-local. */
+export type FitReport = {
+  fits: boolean;
+  ratio: number; // contentHeight / one page (1.18 = 118% of a page)
+  fontLevel: number;
+  spacingLevel: number;
+  atMinimum: boolean; // even the tightest density overflows → trim content
 };
 
 /** One undo step: the CV document AND its design, together — so Cmd+Z reverts
@@ -120,6 +138,16 @@ interface ResumeStore {
   setDesign: (patch: Partial<DesignState>) => void;
   setScoringGoal: (goal: GoalWeighting) => void;
   resetResume: () => void;
+
+  // Auto-fit
+  /** Latest fit measurement (session-local, not persisted). */
+  fitReport: FitReport | null;
+  setFitReport: (report: FitReport | null) => void;
+  /** Engine write of the solved font/spacing levels. Bypasses undo history:
+   * auto-fit output is DERIVED state — undoing the content edit that triggered
+   * it re-derives the levels, and engine writes polluting `past` would make
+   * Cmd+Z feel broken. */
+  applyAutoFit: (fontLevel: number, spacingLevel: number) => void;
 }
 
 // Undo history tuning: cap the stack so localStorage/memory can't balloon, and
@@ -749,6 +777,18 @@ export const useResumeStore = create<ResumeStore>()(
             { resumeData: initialResumeState, design: DEFAULT_DESIGN, currentStep: 0 },
             false,
             "resetResume"
+          ),
+
+        // Auto-fit
+        fitReport: null,
+
+        setFitReport: (report) => rawSet({ fitReport: report }, false, "setFitReport"),
+
+        applyAutoFit: (fontLevel, spacingLevel) =>
+          rawSet(
+            (state) => ({ design: { ...state.design, fontLevel, spacingLevel } }),
+            false,
+            "applyAutoFit"
           ),
         };
       },

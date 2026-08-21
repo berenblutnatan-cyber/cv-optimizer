@@ -1,326 +1,86 @@
-"use client";
+// Analysis history — results finally persist. Each run links to its Review
+// Studio at /results/[id]; closing a tab no longer costs a credit.
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth, SignInButton } from "@clerk/nextjs";
-import { toast } from "sonner";
-import { Download, X, ArrowLeft } from "lucide-react";
-import { AnalysisResults } from "@/components/AnalysisResults";
-import { AnalysisSessionPayload, clearAnalysisSession, loadAnalysisFromSession, saveAnalysisToSession } from "@/lib/analysisSession";
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+import { ChevronRight, FileSearch } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { ShellNav } from "@/components/ShellNav";
-import { track } from "@/lib/analytics";
-import { useT } from "@/lib/i18n/LanguageProvider";
+import { getServerT } from "@/lib/i18n/server";
+import { scoreColor } from "@/lib/score/bands";
 
-export default function ResultsPage() {
-  const { t } = useT();
-  const router = useRouter();
-  const { isSignedIn } = useAuth();
-  const [payload, setPayload] = useState<AnalysisSessionPayload | null>(null);
-  const [coverLetter, setCoverLetter] = useState<string>("");
-  const [generatingCoverLetter, setGeneratingCoverLetter] = useState(false);
-  const [downloadingCoverLetterPdf, setDownloadingCoverLetterPdf] = useState(false);
-  const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
-  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
-  const [coverLetterError, setCoverLetterError] = useState<string | null>(null);
-  const [isEnhancing, setIsEnhancing] = useState(false);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const stored = loadAnalysisFromSession<AnalysisSessionPayload>();
-    setPayload(stored);
-    setCoverLetter(stored?.coverLetter || "");
+export default async function ResultsHistoryPage() {
+  const { userId } = await auth();
+  if (!userId) redirect("/optimize");
 
-    if (stored) {
-      const score =
-        (stored.analysis as { matchScore?: number; overall_score?: number; overallScore?: number })?.matchScore ??
-        (stored.analysis as { matchScore?: number; overall_score?: number; overallScore?: number })?.overall_score ??
-        (stored.analysis as { matchScore?: number; overall_score?: number; overallScore?: number })?.overallScore ??
-        null;
-      const band = score == null ? "unknown" : score >= 85 ? "great" : score >= 70 ? "good" : score >= 50 ? "partial" : "weak";
-      track("results_viewed", {
-        mode: stored.meta?.mode || null,
-        match_score: typeof score === "number" ? score : null,
-        score_band: band,
-      });
-    }
-  }, []);
-
-  const closeSignInPrompt = useCallback(() => setShowSignInPrompt(false), []);
-
-  // ESC closes the sign-in prompt
-  useEffect(() => {
-    if (!showSignInPrompt) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeSignInPrompt();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [showSignInPrompt, closeSignInPrompt]);
-
-  const cleanTitleForUi = (raw: string) => raw.replace(/[*_`~]/g, "").replace(/\s+/g, " ").trim();
-
-  if (!payload) {
-    return (
-      <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
-        <ShellNav active="optimizer" />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="max-w-lg w-full">
-            <div className="bg-white rounded-sm shadow-card border border-stone-100 p-8 sm:p-10 text-center reveal-up">
-              <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-brand-navy/5 flex items-center justify-center">
-                <ArrowLeft className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />
-              </div>
-              <h1 className="font-serif text-2xl text-brand-ink mb-3">{t("No analysis yet")}</h1>
-              <p className="text-stone-500 font-light mb-8">
-                {t("Run an analysis first to see your tailored results, suggested changes, and downloadable resume.")}
-              </p>
-              <button
-                onClick={() => router.push("/optimize")}
-                className="inline-flex items-center gap-3 px-8 py-3.5 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none"
-              >
-                {t("Start an Analysis")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const { t } = await getServerT();
+  const analyses = await prisma.analysis.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: { id: true, jobTitle: true, overallScore: true, optimizedScore: true, createdAt: true },
+  });
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex flex-col overflow-hidden">
-      <ShellNav
-        active="optimizer"
-        rightSlot={
-          <button
-            onClick={() => {
-              clearAnalysisSession();
-              router.push("/optimize");
-            }}
-            className="inline-flex items-center min-h-[44px] px-3 sm:px-4 py-2 text-sm font-medium text-brand-navy hover:text-white hover:bg-brand-navy border border-brand-navy/30 hover:border-brand-navy rounded-sm transition-colors tracking-wide whitespace-nowrap focus-visible:outline-none"
+    <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
+      <ShellNav active="optimizer" />
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-8 py-10">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-serif text-3xl font-light text-brand-ink">{t("Your analyses")}</h1>
+          <Link
+            href="/optimize"
+            className="inline-flex items-center px-4 py-2.5 bg-brand-navy hover:bg-brand-navy-hover text-white text-sm font-medium rounded-sm transition-colors"
           >
-            <span className="sm:hidden">{t("New")}</span>
-            <span className="hidden sm:inline">{t("New Analysis")}</span>
-          </button>
-        }
-      />
-
-      {/* Main Content */}
-      <main className="flex-1 w-full px-8 lg:px-16 py-10 relative z-10">
-        <AnalysisResults
-          results={payload.analysis as any}
-          coverLetterTab={
-            payload.meta.mode === "specific_role"
-              ? {
-                  title: t("Cover Letter"),
-                  subtitle: t("Tailored to {company} — {role}", { company: payload.meta.companyName ?? "", role: cleanTitleForUi(payload.meta.jobTitle) }),
-                  text: coverLetter,
-                  onTextChange: setCoverLetter,
-                  onGenerate: async () => {
-                    try {
-                      setGeneratingCoverLetter(true);
-                      setCoverLetterError(null);
-                      const res = await fetch("/api/cover-letter", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          cvText: payload.meta.cvTextUsed || "",
-                          jobDescription: payload.meta.jobDescriptionUsed || "",
-                          jobTitle: payload.meta.jobTitle,
-                          companyName: payload.meta.companyName,
-                        }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) {
-                        const errorMsg = data?.error || t("Cover letter generation failed");
-                        if (errorMsg.includes("API key") || errorMsg.includes("OPENAI")) {
-                          setCoverLetterError(t("AI service is temporarily unavailable. Please try again later."));
-                        } else if (errorMsg.includes("cvText") || errorMsg.includes("Missing")) {
-                          setCoverLetterError(t("Please ensure your CV text is available. Try re-analyzing your resume first."));
-                        } else if (errorMsg.includes("rate limit") || errorMsg.includes("429")) {
-                          setCoverLetterError(t("Too many requests. Please wait a moment and try again."));
-                        } else {
-                          setCoverLetterError(errorMsg);
-                        }
-                        return;
-                      }
-                      setCoverLetter(data.coverLetter);
-                      const nextPayload: AnalysisSessionPayload = { ...payload, coverLetter: data.coverLetter };
-                      setPayload(nextPayload);
-                      saveAnalysisToSession(nextPayload);
-                    } catch (e) {
-                      const errorMsg = e instanceof Error ? e.message : t("Cover letter generation failed");
-                      if (errorMsg.includes("fetch") || errorMsg.includes("network") || errorMsg.includes("Failed to fetch")) {
-                        setCoverLetterError(t("Network error. Please check your internet connection and try again."));
-                      } else {
-                        setCoverLetterError(errorMsg);
-                      }
-                    } finally {
-                      setGeneratingCoverLetter(false);
-                    }
-                  },
-                  isGenerating: generatingCoverLetter,
-                  onCopy: () => {
-                    if (!coverLetter) return;
-                    navigator.clipboard.writeText(coverLetter);
-                    setCopiedCoverLetter(true);
-                    setTimeout(() => setCopiedCoverLetter(false), 1500);
-                  },
-                  copied: copiedCoverLetter,
-                  onDownloadPdf: async () => {
-                    if (!isSignedIn) {
-                      setShowSignInPrompt(true);
-                      return;
-                    }
-                    try {
-                      if (!coverLetter) return;
-                      setDownloadingCoverLetterPdf(true);
-                      const res = await fetch("/api/export-cover-letter-pdf", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ text: coverLetter, fileName: "Cover-Letter.pdf" }),
-                      });
-                      if (!res.ok) {
-                        const data = await res.json().catch(() => ({}));
-                        throw new Error(data?.error || t("PDF export failed"));
-                      }
-                      const blob = await res.blob();
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "Cover-Letter.pdf";
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL.revokeObjectURL(url);
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : t("PDF export failed"));
-                    } finally {
-                      setDownloadingCoverLetterPdf(false);
-                    }
-                  },
-                  isDownloadingPdf: downloadingCoverLetterPdf,
-                  error: coverLetterError,
-                  onDismissError: () => setCoverLetterError(null),
-                }
-              : undefined
-          }
-          jobTitle={payload.meta.jobTitle}
-          isEnhancing={isEnhancing}
-          // ENHANCE FEATURE TEMPORARILY HIDDEN
-          onEnhanceWithDeepDive={undefined}
-          /* onEnhanceWithDeepDive={async (answers) => {
-            setIsEnhancing(true);
-            try {
-              const formData = new FormData();
-              
-              const optimizedCV = (payload.analysis as { optimizedCV?: string })?.optimizedCV;
-              if (optimizedCV) {
-                formData.append("cvText", optimizedCV);
-              } else if (payload.meta.cvTextUsed) {
-                formData.append("cvText", payload.meta.cvTextUsed);
-              }
-              
-              formData.append("mode", "specific_role");
-              
-              if (payload.meta.jobTitle) {
-                formData.append("jobTitle", payload.meta.jobTitle);
-              }
-              if (payload.meta.jobDescriptionUsed) {
-                formData.append("jobDescription", payload.meta.jobDescriptionUsed);
-              }
-              if (payload.meta.jobUrl) {
-                formData.append("jobUrl", payload.meta.jobUrl);
-              }
-              formData.append("companyName", payload.meta.companyName || "Target Company");
-              
-              console.log("=== SENDING ENHANCE REQUEST ===");
-              console.log("Deep dive answers:", JSON.stringify(answers, null, 2));
-              formData.append("deepDiveAnswers", JSON.stringify(answers));
-
-              const response = await fetch("/api/analyze", { method: "POST", body: formData });
-              const data = await response.json();
-              
-              console.log("=== ENHANCE RESPONSE ===");
-              console.log("Suggested changes count:", data.analysis?.suggestedChanges?.length || 0);
-              console.log("Suggested changes:", JSON.stringify(data.analysis?.suggestedChanges?.slice(0, 3), null, 2));
-              
-              if (!response.ok) throw new Error(data.error || "Enhancement failed");
-
-              const newPayload: AnalysisSessionPayload = {
-                ...payload,
-                analysis: data.analysis,
-                meta: data.meta,
-              };
-              setPayload(newPayload);
-              saveAnalysisToSession(newPayload);
-
-            } catch (err) {
-              alert(err instanceof Error ? err.message : "Enhancement failed");
-            } finally {
-              setIsEnhancing(false);
-            }
-          }} */
-        />
-      </main>
-
-      <footer className="w-full border-t border-stone-200/60 py-5 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16 text-center text-stone-500 text-xs font-light tracking-wide">
-          {/* Honest privacy line — analyses ARE saved so results survive
-              refreshes; never claim "never stored". */}
-          {t("Powered by AI • Processed securely •")}{" "}
-          <Link href="/privacy" className="underline underline-offset-2 hover:text-stone-700 transition-colors">
-            {t("Privacy Policy")}
+            {t("New Analysis")}
           </Link>
         </div>
-      </footer>
 
-      {/* Sign In Prompt Modal */}
-      {showSignInPrompt && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-fade-in"
-          onClick={closeSignInPrompt}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="signin-prompt-title"
-        >
-          <div
-            className="relative bg-white rounded-sm shadow-modal border border-stone-200/80 p-8 sm:p-10 max-w-md w-full text-center reveal-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={closeSignInPrompt}
-              aria-label={t("Close")}
-              className="absolute top-4 right-4 p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors focus-visible:outline-none"
-            >
-              <X className="w-5 h-5" strokeWidth={1.5} />
-            </button>
-            <div className="mb-6">
-              <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-brand-navy/10 flex items-center justify-center">
-                <Download className="w-7 h-7 text-brand-navy" strokeWidth={1.5} />
-              </div>
-              <h3 id="signin-prompt-title" className="font-serif text-2xl text-brand-ink mb-3">
-                {t("Sign in to Download")}
-              </h3>
-              <p className="text-stone-500 font-light">
-                {t("Create a free account to download your cover letter as a PDF.")}
-              </p>
+        {analyses.length === 0 ? (
+          <div className="bg-white rounded-sm border border-stone-200 p-10 text-center">
+            <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-brand-navy/5 flex items-center justify-center">
+              <FileSearch className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />
             </div>
-            <div className="flex flex-col gap-3">
-              <SignInButton mode="modal">
-                <button className="w-full px-6 py-3.5 bg-brand-navy hover:bg-brand-navy-hover text-white font-medium rounded-sm transition-colors tracking-wide focus-visible:outline-none">
-                  {t("Sign In")}
-                </button>
-              </SignInButton>
-              <button
-                onClick={closeSignInPrompt}
-                className="w-full px-6 py-3.5 text-stone-600 hover:text-stone-900 hover:bg-stone-50 font-medium rounded-sm transition-colors focus-visible:outline-none"
-              >
-                {t("Maybe Later")}
-              </button>
-            </div>
+            <p className="text-stone-500 font-light">{t("No analyses yet.")}</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <ul className="space-y-2">
+            {analyses.map((a) => (
+              <li key={a.id}>
+                <Link
+                  href={`/results/${a.id}`}
+                  className="flex items-center gap-4 bg-white rounded-sm border border-stone-200 px-5 py-4 hover:border-brand-navy/40 hover:shadow-sm transition-all"
+                >
+                  {typeof a.overallScore === "number" ? (
+                    <span
+                      className="text-xl font-bold tabular-nums w-10 text-center flex-shrink-0"
+                      style={{ color: scoreColor(a.overallScore) }}
+                    >
+                      {a.overallScore}
+                    </span>
+                  ) : (
+                    <span className="text-xl font-bold text-stone-300 w-10 text-center flex-shrink-0">–</span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-brand-ink truncate">
+                      {a.jobTitle || t("General Role")}
+                    </div>
+                    <div className="text-sm text-stone-400 mt-0.5">
+                      {a.createdAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      {typeof a.optimizedScore === "number" && typeof a.overallScore === "number" && a.optimizedScore > a.overallScore
+                        ? ` · +${a.optimizedScore - a.overallScore} ${t("possible")}`
+                        : ""}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-stone-300 flex-shrink-0" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
     </div>
   );
 }

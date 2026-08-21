@@ -83,7 +83,30 @@ export interface TemplateRegistryEntry {
   fonts: TemplateFontKey;
   layout: TemplateLayoutKind;
   supportsPhoto: boolean;
+  /** Rough one-page capacity at default density (level 5/5). ESTIMATES derived
+   *  from each template's designed body font/line-height/padding — advisory
+   *  only (seeds fit heuristics and template advice); the DOM auto-fit solver
+   *  (lib/builder/autofit.ts) is always the ground truth. */
+  capacity: TemplateCapacity;
 }
+
+export interface TemplateCapacity {
+  /** Body-text lines that fit one page at level 5/5. */
+  linesAtDefault: number;
+  /** Lines at the tightest auto-fit density (font 2 / spacing 1). */
+  linesAtMin: number;
+  /** Approx characters per body line in the main content column. */
+  charsPerLine: number;
+}
+
+// Capacity tiers by layout/density character. Derivation: content height ≈
+// 1123px − vertical padding; line ≈ bodyFont × lineHeight; minus header +
+// section-heading overhead. Tightest density ≈ ×1.5 (0.75 font × 0.92 lh ×
+// tighter gaps).
+const CAP_COMPACT: TemplateCapacity = { linesAtDefault: 62, linesAtMin: 92, charsPerLine: 105 };
+const CAP_SINGLE: TemplateCapacity = { linesAtDefault: 54, linesAtMin: 80, charsPerLine: 100 };
+const CAP_AIRY: TemplateCapacity = { linesAtDefault: 46, linesAtMin: 70, charsPerLine: 95 };
+const CAP_SIDEBAR: TemplateCapacity = { linesAtDefault: 48, linesAtMin: 72, charsPerLine: 70 };
 
 export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry> = {
   "modern-sidebar": {
@@ -99,6 +122,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "sans",
     layout: "sidebar",
+    capacity: CAP_SIDEBAR,
     supportsPhoto: true,
   },
   "ivy-league": {
@@ -115,6 +139,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "serif",
     layout: "single",
+    capacity: CAP_COMPACT,
     supportsPhoto: false,
   },
   minimalist: {
@@ -130,6 +155,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "clean",
     layout: "single",
+    capacity: CAP_AIRY,
     supportsPhoto: false,
   },
   executive: {
@@ -145,6 +171,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "sans",
     layout: "header",
+    capacity: CAP_SINGLE,
     supportsPhoto: true,
   },
   techie: {
@@ -160,6 +187,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "mono",
     layout: "single",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   creative: {
@@ -175,6 +203,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "sans",
     layout: "split",
+    capacity: CAP_AIRY,
     supportsPhoto: true,
   },
   startup: {
@@ -190,6 +219,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "sans",
     layout: "single",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   international: {
@@ -205,6 +235,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "clean",
     layout: "sidebar",
+    capacity: CAP_SIDEBAR,
     supportsPhoto: true,
   },
   aurora: {
@@ -220,6 +251,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "sans",
     layout: "single",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   banner: {
@@ -235,6 +267,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "sans",
     layout: "header",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   spotlight: {
@@ -250,6 +283,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "clean",
     layout: "single",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   ledger: {
@@ -265,6 +299,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "serif",
     layout: "single",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   devfolio: {
@@ -280,6 +315,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "mono",
     layout: "single",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   canvas: {
@@ -295,6 +331,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: false,
     fonts: "sans",
     layout: "sidebar",
+    capacity: CAP_SIDEBAR,
     supportsPhoto: true,
   },
   timeline: {
@@ -310,6 +347,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: true,
     fonts: "sans",
     layout: "single",
+    capacity: CAP_SINGLE,
     supportsPhoto: false,
   },
   "double-column": {
@@ -325,6 +363,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: true,
     fonts: "sans",
     layout: "split",
+    capacity: CAP_SIDEBAR,
     supportsPhoto: false,
   },
   compact: {
@@ -340,6 +379,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: true,
     fonts: "sans",
     layout: "single",
+    capacity: CAP_COMPACT,
     supportsPhoto: false,
   },
   "photo-left": {
@@ -355,6 +395,7 @@ export const TEMPLATE_REGISTRY: Record<TemplateRegistryId, TemplateRegistryEntry
     isNew: true,
     fonts: "sans",
     layout: "sidebar",
+    capacity: CAP_SIDEBAR,
     supportsPhoto: true,
   },
 };

@@ -11,7 +11,8 @@
     "eval:optimizer": "tsx scripts/optimizer-eval.ts",
     "eval:chat": "tsx scripts/chat-builder-eval.ts",
     "eval:localchecks": "tsx scripts/local-checks-eval.ts",
-    "eval:assist": "tsx scripts/assist-actions-eval.ts"
+    "eval:assist": "tsx scripts/assist-actions-eval.ts",
+    "eval:knowledge": "tsx scripts/knowledge-eval.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

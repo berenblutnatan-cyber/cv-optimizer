@@ -17,10 +17,49 @@ export const runtime = "nodejs";
 
 const HOURLY_CAP = 15;
 
+// Forced tool for the PAID pack — guaranteed-parseable output, so the
+// generate-failed → credit-refund path can't trigger on JSON scraping.
+const EMIT_PREP_TOOL = {
+  name: "emit_interview_prep",
+  description: "Return the complete interview-prep pack.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      questions: {
+        type: "array" as const,
+        items: {
+          type: "object" as const,
+          properties: {
+            question: { type: "string" as const },
+            starAnswer: { type: "string" as const },
+          },
+          required: ["question", "starAnswer"],
+        },
+      },
+      pitch: { type: "string" as const },
+    },
+    required: ["questions", "pitch"],
+  },
+};
+
 async function generate(opts: { cvText: string; role: string; jobText?: string; full: boolean }) {
+  if (opts.full) {
+    const response = await anthropic.messages.create({
+      model: "claude-opus-4-8",
+      max_tokens: 4000,
+      system: INTERVIEW_SYSTEM_PROMPT,
+      tools: [EMIT_PREP_TOOL],
+      tool_choice: { type: "tool", name: "emit_interview_prep" },
+      messages: [{ role: "user", content: buildInterviewPrompt(opts) }],
+    });
+    const toolUse = response.content.find((c) => c.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") return null;
+    return toolUse.input as { questions?: unknown; pitch?: unknown };
+  }
+  // Free preview stays on the cheap plain-text call (trivial payload).
   const response = await anthropic.messages.create({
     model: "claude-opus-4-8",
-    max_tokens: opts.full ? 2500 : 500,
+    max_tokens: 500,
     system: INTERVIEW_SYSTEM_PROMPT,
     messages: [{ role: "user", content: buildInterviewPrompt(opts) }],
   });

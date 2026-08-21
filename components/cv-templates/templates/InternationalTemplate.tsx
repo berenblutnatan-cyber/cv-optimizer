@@ -6,6 +6,7 @@ import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { scaled, spaced, leading } from "@/lib/builder/density";
 
 /**
  * Template 8: International
@@ -25,14 +26,14 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
         backgroundColor: "#ffffff",
         minHeight: "100%",
         fontFamily: FONTS.clean.body,
-        padding: "36px 40px",
+        padding: `${spaced(36)} ${spaced(40)}`,
       }}>
         {/* Header with optional photo */}
         <header style={{
           display: "flex",
-          gap: "24px",
-          marginBottom: "24px",
-          paddingBottom: "20px",
+          gap: spaced(24),
+          marginBottom: spaced(24),
+          paddingBottom: spaced(20),
           borderBottom: `2px solid ${colors.primary}`,
         }}>
           {/* Photo (Optional) */}
@@ -51,20 +52,20 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
           {/* Personal Info */}
           <div style={{ flex: 1 }}>
             <h1 style={{
-              fontSize: "26px",
+              fontSize: scaled(26),
               fontWeight: 700,
               color: "#1e293b",
               fontFamily: FONTS.clean.heading,
-              marginBottom: "4px",
+              marginBottom: spaced(4),
             }}>
               {formatName(data.name)}
             </h1>
             {data.title && (
               <p style={{
-                fontSize: "13px",
+                fontSize: scaled(13),
                 color: colors.primary,
                 fontWeight: 500,
-                marginBottom: "12px",
+                marginBottom: spaced(12),
               }}>
                 {formatJobTitle(data.title)}
               </p>
@@ -74,7 +75,7 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
             <div style={{
               display: "grid",
               gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "6px 20px",
+              gap: `${spaced(6)} ${spaced(20)}`,
             }}>
               {hasContent(data.contact.email) && (
                 <IntlContactItem label={t("Email")} value={data.contact.email!} />
@@ -103,9 +104,9 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
             {hasContent(data.summary) && (
               <IntlSection title={t("Profile")} color={colors.primary}>
                 <p style={{
-                  fontSize: "10px",
+                  fontSize: scaled(10),
                   color: "#374151",
-                  lineHeight: 1.8,
+                  lineHeight: leading(1.8),
                 }}>
                   {data.summary}
                 </p>
@@ -127,14 +128,14 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
             {/* Skills - Tag Cloud */}
             {data.skills && data.skills.length > 0 && (
               <IntlSection title={t("Skills")} color={colors.primary}>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: spaced(6) }}>
                   {data.skills.filter(hasContent).map((skill, idx) => (
                     <span key={idx} style={{
-                      fontSize: "9px",
+                      fontSize: scaled(9),
                       fontWeight: 500,
                       color: colors.dark,
                       backgroundColor: `${colors.primary}15`,
-                      padding: "4px 10px",
+                      padding: `${spaced(4)} ${spaced(10)}`,
                       borderRadius: "10px",
                     }}>
                       {skill}
@@ -152,12 +153,12 @@ export function InternationalTemplate({ data, themeColor, className }: TemplateP
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    marginBottom: "6px",
-                    padding: "6px 0",
+                    marginBottom: spaced(6),
+                    padding: `${spaced(6)} 0`,
                     borderBottom: "1px solid #f3f4f6",
                   }}>
-                    <span style={{ fontSize: "10px", color: "#374151" }}>{lang.split(" - ")[0] || lang}</span>
-                    <span style={{ fontSize: "9px", color: "#6b7280" }}>{lang.split(" - ")[1] || ""}</span>
+                    <span style={{ fontSize: scaled(10), color: "#374151" }}>{lang.split(" - ")[0] || lang}</span>
+                    <span style={{ fontSize: scaled(9), color: "#6b7280" }}>{lang.split(" - ")[1] || ""}</span>
                   </div>
                 ))}
               </IntlSection>
@@ -175,19 +176,19 @@ function IntlContactItem({ label, value, isLinkedIn = false }: { label: string; 
   const displayValue = isLinkedIn ? value.replace(/^https?:\/\//, "").replace(/\/$/, "") : value;
   
   return (
-    <div style={{ display: "flex", gap: "8px" }}>
-      <span style={{ fontSize: "10px", fontWeight: 600, color: "#6b7280", minWidth: "55px" }}>{label}:</span>
+    <div style={{ display: "flex", gap: spaced(8) }}>
+      <span style={{ fontSize: scaled(10), fontWeight: 600, color: "#6b7280", minWidth: "55px" }}>{label}:</span>
       {isLinkedIn ? (
         <a 
           href={getLinkedInHref(value)} 
           target="_blank" 
           rel="noopener noreferrer"
-          style={{ fontSize: "10px", color: "#4f46e5", textDecoration: "none" }}
+          style={{ fontSize: scaled(10), color: "#4f46e5", textDecoration: "none" }}
         >
           {displayValue}
         </a>
       ) : (
-        <span style={{ fontSize: "10px", color: "#374151" }}>{value}</span>
+        <span style={{ fontSize: scaled(10), color: "#374151" }}>{value}</span>
       )}
     </div>
   );
@@ -195,15 +196,15 @@ function IntlContactItem({ label, value, isLinkedIn = false }: { label: string; 
 
 function IntlSection({ title, color, children }: { title: string; color: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: "20px" }}>
+    <section style={{ marginBottom: spaced(20) }}>
       <h2 style={{
-        fontSize: "11px",
+        fontSize: scaled(11),
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.08em",
         color: "#1e293b",
-        marginBottom: "12px",
-        paddingBottom: "6px",
+        marginBottom: spaced(12),
+        paddingBottom: spaced(6),
         borderBottom: `2px solid ${color}`,
         display: "inline-block",
       }}>
@@ -216,22 +217,22 @@ function IntlSection({ title, color, children }: { title: string; color: string;
 
 function IntlSectionItem({ item, color }: { item: { title?: string; subtitle?: string; date?: string; location?: string; description?: string; bullets?: string[] }; color: string }) {
   return (
-    <div style={{ marginBottom: "14px" }}>
+    <div className="cv-item" style={{ marginBottom: spaced(14) }}>
       {/* Date aligned right */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: "12px", fontWeight: 600, color: "#1e293b" }}>
+          <h3 style={{ fontSize: scaled(12), fontWeight: 600, color: "#1e293b" }}>
             {formatJobTitle(item.title || "")}
           </h3>
           {item.subtitle && (
-            <p style={{ fontSize: "10px", color: "#6b7280", marginTop: "2px" }}>
+            <p style={{ fontSize: scaled(10), color: "#6b7280", marginTop: spaced(2) }}>
               {item.subtitle}{item.location ? ` — ${item.location}` : ""}
             </p>
           )}
         </div>
         {item.date && (
           <span style={{
-            fontSize: "10px",
+            fontSize: scaled(10),
             fontWeight: 500,
             color,
             textAlign: "right",
@@ -244,20 +245,20 @@ function IntlSectionItem({ item, color }: { item: { title?: string; subtitle?: s
 
       {/* Description */}
       {item.description && (
-        <p style={{ fontSize: "10px", color: "#4b5563", marginTop: "6px", lineHeight: 1.6 }}>
+        <p style={{ fontSize: scaled(10), color: "#4b5563", marginTop: spaced(6), lineHeight: leading(1.6) }}>
           {item.description}
         </p>
       )}
 
       {/* Bullets */}
       {item.bullets && item.bullets.length > 0 && (
-        <ul style={{ marginTop: "6px", paddingLeft: "14px" }}>
+        <ul style={{ marginTop: spaced(6), paddingLeft: spaced(14) }}>
           {item.bullets.filter(hasContent).map((bullet, idx) => (
             <li key={idx} style={{
-              fontSize: "10px",
+              fontSize: scaled(10),
               color: "#374151",
-              lineHeight: 1.6,
-              marginBottom: "3px",
+              lineHeight: leading(1.6),
+              marginBottom: spaced(3),
             }}>
               {formatBulletPoint(bullet)}
             </li>

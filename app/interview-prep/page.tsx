@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { InterviewPrepClient } from "@/components/interview/InterviewPrepClient";
 
@@ -10,7 +11,9 @@ export default function InterviewPrepPage() {
   return (
     <main className="min-h-screen bg-[#F8F7F4]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <InterviewPrepClient />
+        <Suspense>
+          <InterviewPrepClient />
+        </Suspense>
       </div>
     </main>
   );

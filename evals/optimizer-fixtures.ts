@@ -17,6 +17,16 @@ export type OptimizerFixture = {
   originalBand: [number, number];
   // Optional band for the optimized score, derived from the constraint table.
   optimizedBand?: [number, number];
+  // Pipeline depth/quality expectations (deep-analysis eval):
+  /** Patterns that MUST each match at least one extracted jdRequirement.text. */
+  expectedRequirements?: RegExp[];
+  /** Planted gaps: pattern over requirement text → expected coverage statuses. */
+  expectedGaps?: Array<{ pattern: RegExp; statuses: Array<"missing" | "partial"> }>;
+  /** Minimum number of suggestions (defaults to 10; lower for tiny CVs that
+   *  simply don't have 10 distinct targets). */
+  minSuggestions?: number;
+  /** Minimum number of grounded (appliable-patch) suggestions. */
+  minGroundedSuggestions?: number;
   // Free-form assertions on the analysis output.
   assertions?: Array<{
     name: string;
@@ -181,7 +191,86 @@ REQUIREMENTS (non-negotiable):
 - 200+ supervised clinical hours
 - Experience with trauma-informed care`;
 
+
+const VP_MARKETING_CV = `Dana Peretz
+dana.peretz@example.com | +972-54-555-7788 | Tel Aviv | https://www.linkedin.com/in/dana-peretz-mkt
+
+PROFESSIONAL SUMMARY
+Marketing executive with 12 years leading B2B SaaS marketing organizations.
+
+EXPERIENCE
+VP Marketing | Monday.com | 2021 - Present
+• Own $18M annual marketing budget across demand gen, brand, and product marketing
+• Grew marketing-sourced pipeline from $40M to $95M in two years
+• Built and lead a 45-person org across 4 teams and 3 regions
+
+Director of Marketing | Wix | 2017 - 2021
+• Led 20-person demand-gen team; grew MQLs 3x while cutting CAC 25%
+• Launched ABM motion that landed 30 enterprise logos in year one
+
+Marketing Manager | SimilarWeb | 2013 - 2017
+• Ran paid acquisition ($4M/yr) across search and social
+
+EDUCATION
+MBA | Tel Aviv University | 2015
+B.A. Communications | IDC Herzliya | 2012
+
+SKILLS
+Demand Generation, ABM, Product Marketing, Brand, Marketing Analytics, Team Leadership, Budget Management`;
+
+const VP_MARKETING_JD = `VP Marketing
+
+We're hiring a VP Marketing to own our go-to-market engine.
+
+Requirements:
+- 10+ years in B2B SaaS marketing, 5+ leading teams
+- Owned pipeline targets and multi-million dollar budgets
+- Demand generation and ABM expertise
+- Experience scaling marketing orgs through growth stages`;
+
 export const FIXTURES: OptimizerFixture[] = [
+  {
+    id: "executive-vp-marketing",
+    description: "VP Marketing → VP Marketing (executive persona calibration)",
+    cvText: VP_MARKETING_CV,
+    jobTitle: "VP Marketing",
+    jobDescription: VP_MARKETING_JD,
+    companyName: "Acme",
+    originalBand: [78, 95],
+    expectedRequirements: [/10\+ years/i, /demand gen|abm/i, /budget/i],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
+    assertions: [
+      {
+        name: "executive-calibrated critique (P&L/budget/scope/strategy language)",
+        check: (a) => {
+          const withCritiques = a as AnalysisShape & {
+            sectionCritiques?: Array<{ verdict: string; issues: string[] }>;
+          };
+          const haystack = [
+            ...(withCritiques.sectionCritiques ?? []).flatMap((c) => [c.verdict, ...c.issues]),
+            ...(a.improvements ?? []).map((i) => i.text),
+          ]
+            .join(" ")
+            .toLowerCase();
+          return (
+            /p&l|budget|team size|org|scope|strateg|scale/i.test(haystack) ||
+            "expected executive-calibration signals in critiques/improvements"
+          );
+        },
+      },
+      {
+        name: "applyVerdict is code-consistent with the score",
+        check: (a) => {
+          const withVerdict = a as AnalysisShape & { applyVerdict?: string };
+          const score = a.scoreComparison?.original?.total ?? a.overallScore ?? 0;
+          const expected =
+            score >= 90 ? "strong_apply" : score >= 75 ? "apply" : score >= 60 ? "apply_with_cover_letter" : score >= 50 ? "stretch" : "skip";
+          return withVerdict.applyVerdict === expected || `applyVerdict ${withVerdict.applyVerdict} != ${expected} for score ${score}`;
+        },
+      },
+    ],
+  },
   {
     id: "pa-pa-direct-match",
     description: "Product Analyst → Product Analyst (direct match, strong fit)",
@@ -191,6 +280,11 @@ export const FIXTURES: OptimizerFixture[] = [
     companyName: "Outbrain",
     originalBand: [78, 95],
     optimizedBand: [85, 99],
+    expectedRequirements: [/sql/i, /amplitude|mixpanel/i, /a\/b test|experiment/i, /2\+ years/i],
+    // Maya's CV has Amplitude + SQL + A/B testing → these must NOT be missing.
+    expectedGaps: [],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
     assertions: [
       {
         name: "preserves LinkedIn URL verbatim",
@@ -221,6 +315,9 @@ export const FIXTURES: OptimizerFixture[] = [
     companyName: "Acme",
     originalBand: [82, 95],
     optimizedBand: [88, 99],
+    expectedRequirements: [/react/i, /typescript/i, /5\+ years/i, /mentor/i, /graphql|rest/i],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
     assertions: [
       {
         name: "preserves Stripe company name",
@@ -251,6 +348,14 @@ export const FIXTURES: OptimizerFixture[] = [
     jobDescription: SENIOR_PRODUCT_ANALYST_JD,
     companyName: "Acme",
     originalBand: [55, 78],
+    expectedRequirements: [/5\+ years/i, /mentor/i],
+    // Maya has 3y and no mentoring track record → these must surface as gaps.
+    expectedGaps: [
+      { pattern: /5\+ years/i, statuses: ["missing", "partial"] },
+      { pattern: /mentor/i, statuses: ["missing", "partial"] },
+    ],
+    minSuggestions: 10,
+    minGroundedSuggestions: 6,
     assertions: [
       {
         name: "honors seniority hard cap (no higher than 78)",
@@ -267,6 +372,9 @@ export const FIXTURES: OptimizerFixture[] = [
     cvText: JUNIOR_DEV_CV,
     mode: "quick",
     originalBand: [30, 65],
+    // Tiny CV (1 bullet total) — fewer distinct targets exist.
+    minSuggestions: 5,
+    minGroundedSuggestions: 3,
     assertions: [
       {
         name: "summary critiques presentation, not seniority gap",
@@ -284,6 +392,14 @@ export const FIXTURES: OptimizerFixture[] = [
     jobDescription: REACT_JD,
     originalBand: [15, 40],
     optimizedBand: [25, 60],
+    expectedRequirements: [/react/i, /5\+ years/i],
+    // A lawyer's CV covers none of the React JD's core requirements.
+    expectedGaps: [
+      { pattern: /react/i, statuses: ["missing", "partial"] },
+      { pattern: /typescript/i, statuses: ["missing", "partial"] },
+    ],
+    minSuggestions: 6,
+    minGroundedSuggestions: 3,
     assertions: [
       {
         name: "improvement stays bounded (≤ 28 pts for 35-54 tier)",
@@ -307,6 +423,13 @@ export const FIXTURES: OptimizerFixture[] = [
     jobDescription: SOCIAL_WORKER_JD,
     originalBand: [15, 40],
     optimizedBand: [20, 60],
+    expectedRequirements: [/msw|master of social work/i, /lcsw|license/i],
+    expectedGaps: [
+      { pattern: /msw|master of social work/i, statuses: ["missing"] },
+      { pattern: /lcsw|license/i, statuses: ["missing"] },
+    ],
+    minSuggestions: 6,
+    minGroundedSuggestions: 3,
     assertions: [
       {
         name: "missing required credential surfaces in improvements OR missingKeySkills",

@@ -148,6 +148,12 @@ async function exportViaPrint(element: HTMLElement, fileName: string): Promise<v
         margin: 0 !important;
         box-shadow: none !important;
       }
+      /* Print safety: never split a bullet/paragraph or a whole CV entry
+         (.cv-item) across the page boundary, and never strand a section
+         heading at the bottom of a page. */
+      .a4-wrapper li, .a4-wrapper p { break-inside: avoid; page-break-inside: avoid; }
+      .a4-wrapper .cv-item { break-inside: avoid; page-break-inside: avoid; }
+      .a4-wrapper h1, .a4-wrapper h2, .a4-wrapper h3 { break-after: avoid; page-break-after: avoid; }
     `;
     doc.head.appendChild(overrides);
 
@@ -313,6 +319,9 @@ export function printToPdf(element: HTMLElement): void {
           body { margin: 0; padding: 0; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .a4-wrapper { height: auto !important; max-height: none !important; overflow: visible !important; }
+          .a4-wrapper li, .a4-wrapper p { break-inside: avoid; page-break-inside: avoid; }
+          .a4-wrapper .cv-item { break-inside: avoid; page-break-inside: avoid; }
+          .a4-wrapper h1, .a4-wrapper h2, .a4-wrapper h3 { break-after: avoid; page-break-after: avoid; }
         </style>
       </head>
       <body>

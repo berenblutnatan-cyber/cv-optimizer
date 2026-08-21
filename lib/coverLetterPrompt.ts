@@ -4,6 +4,7 @@
 // helpers are reused from the optimizer.
 
 import { cleanTitle, inferJobTitleFromDescription } from "@/lib/optimizer/prompt";
+import { detectTrack, knowledgeFor, type Seniority } from "@/lib/knowledge";
 
 export const COVER_LETTER_SYSTEM_PROMPT =
   "You are an expert cover letter writer who creates personalized, compelling letters that get interviews. Your letters are: 1) Highly specific to the role and company, 2) Full of concrete achievements with metrics, 3) Show genuine company research, 4) Sound authentically human, 5) 250-350 words, 4 paragraphs. Never use clichés like 'team player', 'passionate', or 'I believe I would be a great fit'. Every letter should be impossible to reuse for another application.";
@@ -13,6 +14,8 @@ export function buildCoverLetterPrompt(input: {
   jobTitle?: string;
   jobDescription?: string;
   companyName?: string;
+  /** Optional persona hint for seniority-calibrated tone. */
+  seniority?: Seniority | null;
 }): { prompt: string; effectiveJobTitle: string; effectiveCompany: string } {
   const cvText = input.cvText ?? "";
   const jobDescription = input.jobDescription ?? "";
@@ -24,6 +27,12 @@ export function buildCoverLetterPrompt(input: {
     cleanTitle(jobTitle).trim() || inferJobTitleFromDescription(jobDescription, companyName) || "Role";
   const effectiveCompany = companyName.trim() || "Target Company";
 
+  const hooks = knowledgeFor({
+    surface: "coverLetter",
+    track: detectTrack(effectiveJobTitle, jobDescription),
+    seniority: input.seniority ?? null,
+  });
+
   const prompt = `Create an EXCEPTIONAL, personalized cover letter that makes the recruiter excited to interview this candidate.
 
 ═══════════════════════════════════════════════════════════════
@@ -31,10 +40,7 @@ STRUCTURE (Exactly 4 paragraphs, 250-350 words total)
 ═══════════════════════════════════════════════════════════════
 
 **PARAGRAPH 1 - OPENING (Hook the reader immediately)**
-- Open with genuine enthusiasm for THIS specific role at THIS company
-- Mention how you found the position (or a compelling reason for interest)
-- One powerful sentence on why you're a strong fit
-- Make them want to keep reading!
+${hooks}
 
 **PARAGRAPH 2 - YOUR VALUE (Prove your worth)**
 - 2-3 most relevant achievements that DIRECTLY match job requirements

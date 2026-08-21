@@ -20,6 +20,7 @@ export type CvToolName =
   | "update_summary"
   | "add_experience"
   | "update_experience"
+  | "update_experience_bullet"
   | "remove_experience"
   | "add_education"
   | "update_education"
@@ -59,6 +60,7 @@ export type DesignPatchValidated = {
   accentColor?: (typeof DESIGN_COLORS)[number];
   fontLevel?: number;
   spacingLevel?: number;
+  autoFit?: boolean;
 };
 
 /**
@@ -87,6 +89,7 @@ export function sanitizeDesign(input: Record<string, unknown>): DesignPatchValid
   if (font !== undefined) out.fontLevel = font;
   const spacing = clampLevel(input.spacingLevel);
   if (spacing !== undefined) out.spacingLevel = spacing;
+  if (typeof input.autoFit === "boolean") out.autoFit = input.autoFit;
   return Object.keys(out).length > 0 ? out : null;
 }
 
@@ -318,7 +321,7 @@ export const CV_TOOLS = [
   {
     name: "set_design",
     description:
-      "Set the CV's visual format — template, accent color, and density — so the document looks polished, not just the default. The template also picks the font family. Call this ONCE after importing an uploaded CV or once there's enough content, and again only if the user asks for a different look. Choose a template that fits the person's field, an accent color that's tasteful for it, and font/spacing levels (1=tight/small … 10=airy/large; 4-6 is normal) that keep the CV to one page — tighten when there's a lot of content.",
+      "Set the CV's visual format — template and accent color — so the document looks polished, not just the default. The template also picks the font family. Call this ONCE after importing an uploaded CV or once there's enough content, and again only if the user asks for a different look. Choose a template that fits the person's field and a tasteful accent color. One-page density is handled by the auto-fit engine (autoFit: true by default) — only pass fontLevel/spacingLevel if the user explicitly asks for bigger/smaller text, which also turns auto-fit off.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -344,7 +347,11 @@ export const CV_TOOLS = [
           type: "integer" as const,
           minimum: 1,
           maximum: 10,
-          description: "Whitespace, 1 (tight) – 10 (airy). 5 is normal; drop to 3-4 to fit more on one page.",
+          description: "Whitespace, 1 (tight) – 10 (airy). Only when the user explicitly asks; auto-fit handles it otherwise.",
+        },
+        autoFit: {
+          type: "boolean" as const,
+          description: "Keep the CV auto-fitted to one page (default true). Set false only if the user wants manual density control.",
         },
       },
     },
@@ -435,6 +442,26 @@ export function applyCvToolCall(
       return {
         ...data,
         experience: data.experience.map((e, idx) => (idx === i ? { ...e, ...patch } : e)),
+      };
+    }
+
+    case "update_experience_bullet": {
+      // Surgical single-bullet rewrite (used by the optimizer's appliable
+      // suggestions). Replaces one bullet in place, so applying several
+      // suggestions in any order can never shift indices.
+      const i = atIndex(input, data.experience.length);
+      if (i === -1) return data;
+      const b = Number(input.bulletIndex);
+      const text = s(input.text);
+      if (!Number.isInteger(b) || b < 0 || text === undefined) return data;
+      if (b >= data.experience[i].description.length) return data;
+      return {
+        ...data,
+        experience: data.experience.map((e, idx) =>
+          idx === i
+            ? { ...e, description: e.description.map((d, bi) => (bi === b ? text : d)) }
+            : e
+        ),
       };
     }
 
@@ -621,6 +648,8 @@ export function describeToolCall(
     }
     case "update_experience":
       return t("Polished an experience entry");
+    case "update_experience_bullet":
+      return t("Rewrote a bullet");
     case "remove_experience":
       return t("Removed an experience entry");
     case "add_education": {
@@ -724,6 +753,8 @@ export function pendingToolLabel(name: string, t: ChatLabelTranslate = englishT)
       return t("Adding a role…");
     case "update_experience":
       return t("Polishing an experience entry…");
+    case "update_experience_bullet":
+      return t("Rewriting a bullet…");
     case "remove_experience":
       return t("Removing an experience entry…");
     case "add_education":

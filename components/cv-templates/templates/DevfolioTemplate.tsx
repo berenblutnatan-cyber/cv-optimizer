@@ -6,6 +6,7 @@ import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { scaled, spaced, leading } from "@/lib/builder/density";
 
 /**
  * Devfolio
@@ -24,19 +25,19 @@ export function DevfolioTemplate({ data, themeColor, className }: TemplateProps)
       <div style={{ minHeight: "100%", backgroundColor: "#ffffff", fontFamily: FONTS.mono.body }}>
         <div style={{ height: "6px", background: `linear-gradient(90deg, ${colors.primary}, ${colors.dark})` }} />
 
-        <div style={{ padding: "24px 32px" }}>
+        <div style={{ padding: `${spaced(24)} ${spaced(32)}` }}>
           {/* Header */}
-          <header style={{ marginBottom: "16px" }}>
-            <div style={{ fontFamily: mono, fontSize: "9px", color: colors.primary, marginBottom: "4px" }}>{"// "}{(data.contact.location || "résumé").toString().toLowerCase()}</div>
-            <h1 style={{ fontSize: "25px", fontWeight: 700, color: "#0f172a", fontFamily: mono, letterSpacing: "-0.02em", lineHeight: 1.05 }}>
+          <header style={{ marginBottom: spaced(16) }}>
+            <div style={{ fontFamily: mono, fontSize: scaled(9), color: colors.primary, marginBottom: spaced(4) }}>{"// "}{(data.contact.location || "résumé").toString().toLowerCase()}</div>
+            <h1 style={{ fontSize: scaled(25), fontWeight: 700, color: "#0f172a", fontFamily: mono, letterSpacing: "-0.02em", lineHeight: leading(1.05) }}>
               {formatName(data.name)}
             </h1>
             {hasContent(data.title) && (
-              <p style={{ fontFamily: mono, fontSize: "11px", color: "#475569", marginTop: "4px" }}>
+              <p style={{ fontFamily: mono, fontSize: scaled(11), color: "#475569", marginTop: spaced(4) }}>
                 <span style={{ color: colors.primary }}>role</span>: {formatJobTitle(data.title!)}
               </p>
             )}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", marginTop: "10px", fontFamily: mono, fontSize: "8.5px", color: "#64748b" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: `${spaced(4)} ${spaced(14)}`, marginTop: spaced(10), fontFamily: mono, fontSize: scaled(8.5), color: "#64748b" }}>
               {[
                 hasContent(data.contact.email) && data.contact.email,
                 hasContent(data.contact.github) && data.contact.github!.replace(/^https?:\/\//, ""),
@@ -51,15 +52,15 @@ export function DevfolioTemplate({ data, themeColor, className }: TemplateProps)
 
           {hasContent(data.summary) && (
             <DevSection title={t("about")} mono={mono} colors={colors}>
-              <p style={{ fontSize: "9.5px", color: "#374151", lineHeight: 1.5, fontFamily: FONTS.mono.body }}>{data.summary}</p>
+              <p style={{ fontSize: scaled(9.5), color: "#374151", lineHeight: leading(1.5), fontFamily: FONTS.mono.body }}>{data.summary}</p>
             </DevSection>
           )}
 
           {data.skills && data.skills.length > 0 && (
             <DevSection title={t("stack")} mono={mono} colors={colors}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: spaced(5) }}>
                 {data.skills.filter(hasContent).map((s, i) => (
-                  <span key={i} style={{ fontFamily: mono, fontSize: "8.5px", color: colors.dark, border: `1px solid ${colors.primary}`, backgroundColor: colors.light, padding: "2px 7px", borderRadius: "3px" }}>{s}</span>
+                  <span key={i} style={{ fontFamily: mono, fontSize: scaled(8.5), color: colors.dark, border: `1px solid ${colors.primary}`, backgroundColor: colors.light, padding: `${spaced(2)} ${spaced(7)}`, borderRadius: "3px" }}>{s}</span>
                 ))}
               </div>
             </DevSection>
@@ -68,18 +69,18 @@ export function DevfolioTemplate({ data, themeColor, className }: TemplateProps)
           {data.sections.map((section) => (
             <DevSection key={section.id} title={section.title.toLowerCase()} mono={mono} colors={colors}>
               {section.items.map((item) => (
-                <div key={item.id} style={{ marginBottom: "9px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "8px" }}>
-                    <h3 style={{ fontFamily: mono, fontSize: "10px", fontWeight: 700, color: "#0f172a" }}>{formatJobTitle(item.title || "")}</h3>
-                    {item.date && <span style={{ fontFamily: mono, fontSize: "8px", color: "#94a3b8", whiteSpace: "nowrap" }}>{item.date}</span>}
+                <div key={item.id} className="cv-item" style={{ marginBottom: spaced(9) }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: spaced(8) }}>
+                    <h3 style={{ fontFamily: mono, fontSize: scaled(10), fontWeight: 700, color: "#0f172a" }}>{formatJobTitle(item.title || "")}</h3>
+                    {item.date && <span style={{ fontFamily: mono, fontSize: scaled(8), color: "#94a3b8", whiteSpace: "nowrap" }}>{item.date}</span>}
                   </div>
                   {(item.subtitle || item.location) && (
-                    <p style={{ fontFamily: mono, fontSize: "8.5px", color: colors.primary, marginTop: "1px" }}>@ {[item.subtitle, item.location].filter(Boolean).join(" · ")}</p>
+                    <p style={{ fontFamily: mono, fontSize: scaled(8.5), color: colors.primary, marginTop: spaced(1) }}>@ {[item.subtitle, item.location].filter(Boolean).join(" · ")}</p>
                   )}
                   {item.bullets && item.bullets.length > 0 && (
-                    <ul style={{ marginTop: "4px", paddingLeft: 0, listStyle: "none" }}>
+                    <ul style={{ marginTop: spaced(4), paddingLeft: 0, listStyle: "none" }}>
                       {item.bullets.filter(hasContent).map((b, i) => (
-                        <li key={i} style={{ fontSize: "9px", color: "#374151", lineHeight: 1.45, marginBottom: "2px", paddingLeft: "13px", position: "relative", fontFamily: FONTS.mono.body }}>
+                        <li key={i} style={{ fontSize: scaled(9), color: "#374151", lineHeight: leading(1.45), marginBottom: spaced(2), paddingLeft: spaced(13), position: "relative", fontFamily: FONTS.mono.body }}>
                           <span style={{ position: "absolute", left: 0, color: colors.primary, fontFamily: mono }}>-</span>
                           {formatBulletPoint(b)}
                         </li>
@@ -93,7 +94,7 @@ export function DevfolioTemplate({ data, themeColor, className }: TemplateProps)
 
           {data.languages && data.languages.length > 0 && (
             <DevSection title={t("lang")} mono={mono} colors={colors}>
-              <p style={{ fontFamily: FONTS.mono.body, fontSize: "9px", color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
+              <p style={{ fontFamily: FONTS.mono.body, fontSize: scaled(9), color: "#374151" }}>{data.languages.filter(hasContent).join("  ·  ")}</p>
             </DevSection>
           )}
         </div>
@@ -104,8 +105,8 @@ export function DevfolioTemplate({ data, themeColor, className }: TemplateProps)
 
 function DevSection({ title, mono, colors, children }: { title: string; mono: string; colors: { primary: string }; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: "13px" }}>
-      <h2 style={{ fontFamily: mono, fontSize: "10px", fontWeight: 700, color: colors.primary, marginBottom: "7px" }}>
+    <section style={{ marginBottom: spaced(13) }}>
+      <h2 style={{ fontFamily: mono, fontSize: scaled(10), fontWeight: 700, color: colors.primary, marginBottom: spaced(7) }}>
         <span style={{ color: "#cbd5e1" }}>## </span>{title}
       </h2>
       {children}

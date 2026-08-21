@@ -17,6 +17,7 @@ export function SiteFooter() {
           <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 text-xs sm:text-sm font-light tracking-wide">
             <Link href="/resume-examples" className={linkClass}>{t("Resume Examples")}</Link>
             <Link href="/interview-prep" className={linkClass}>{t("Interview Prep")}</Link>
+            <Link href="/toolkit" className={linkClass}>{t("Toolkit")}</Link>
             <Link href="/pricing" className={linkClass}>{t("Pricing")}</Link>
             <Link href="/privacy" className={linkClass}>{t("Privacy")}</Link>
             <Link href="/terms" className={linkClass}>{t("Terms")}</Link>

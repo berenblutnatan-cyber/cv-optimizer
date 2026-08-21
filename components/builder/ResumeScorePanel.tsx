@@ -10,8 +10,8 @@ import {
   BAND_LABEL,
   type GoalWeighting,
   type LocalProblem,
-  type ScoreBand,
 } from "@/lib/optimizer/localChecks";
+import { ScoreRing } from "@/components/shell/ScoreRing";
 import { track } from "@/lib/analytics";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
@@ -36,51 +36,11 @@ export interface ResumeScorePanelProps {
   onClose?: () => void;
 }
 
-const BAND_COLOR: Record<ScoreBand, string> = {
-  great: "#059669",
-  strong: "#059669",
-  fair: "#B8860B",
-  weak: "#ea580c",
-  poor: "#e11d48",
-};
-
 const SEVERITY_DOT: Record<LocalProblem["severity"], string> = {
   high: "bg-rose-500",
   medium: "bg-amber-500",
   low: "bg-stone-300",
 };
-
-function ScoreRing({ score, band }: { score: number; band: ScoreBand }) {
-  const r = 46;
-  const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - score / 100);
-  const color = BAND_COLOR[band];
-  return (
-    <div className="relative h-[120px] w-[120px] flex-shrink-0">
-      <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="#E7E5E4" strokeWidth="9" />
-        <circle
-          cx="60"
-          cy="60"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="9"
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1), stroke 400ms" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold tabular-nums leading-none" style={{ color }}>
-          {score}
-        </span>
-        <span className="text-[10px] uppercase tracking-[0.14em] text-stone-400 mt-1">/ 100</span>
-      </div>
-    </div>
-  );
-}
 
 export function ResumeScorePanel({
   resumeData,
@@ -169,7 +129,7 @@ export function ResumeScorePanel({
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 space-y-5">
         {/* Ring + band */}
         <div className="flex items-center gap-4">
-          <ScoreRing score={result.overall} band={result.band} />
+          <ScoreRing value={result.overall} size={120} variant="band" />
           <div className="min-w-0">
             <div className="text-lg font-semibold text-brand-navy">{BAND_LABEL[result.band]}</div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">

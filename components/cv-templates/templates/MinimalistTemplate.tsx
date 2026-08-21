@@ -6,6 +6,7 @@ import { getThemeColors, FONTS } from "../ThemeEngine";
 import { TemplateProps } from "./TemplateProps";
 import { formatName, formatJobTitle, formatBulletPoint, hasContent } from "@/utils/formatting";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { scaled, spaced, leading } from "@/lib/builder/density";
 
 /**
  * Template 3: Minimalist
@@ -22,14 +23,14 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
     <A4PageWrapper className={className}>
       <div style={{
         backgroundColor: "#ffffff",
-        padding: "48px 56px",
+        padding: `${spaced(48)} ${spaced(56)}`,
         minHeight: "100%",
         fontFamily: FONTS.clean.body,
       }}>
         {/* Header - Centered & Minimal */}
-        <header style={{ textAlign: "center", marginBottom: "36px" }}>
+        <header style={{ textAlign: "center", marginBottom: spaced(36) }}>
           <h1 style={{
-            fontSize: "32px",
+            fontSize: scaled(32),
             fontWeight: 300,
             color: "#111827",
             fontFamily: FONTS.clean.heading,
@@ -38,13 +39,13 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
             {formatName(data.name)}
           </h1>
           {data.title && (
-            <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <p style={{ fontSize: scaled(12), color: "#6b7280", marginTop: spaced(8), letterSpacing: "0.1em", textTransform: "uppercase" }}>
               {formatJobTitle(data.title)}
             </p>
           )}
           
           {/* Contact - Simple line */}
-          <div style={{ marginTop: "16px", fontSize: "10px", color: "#9ca3af" }}>
+          <div style={{ marginTop: spaced(16), fontSize: scaled(10), color: "#9ca3af" }}>
             {[
               data.contact.email,
               data.contact.phone,
@@ -58,17 +59,17 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
             width: "40px",
             height: "2px",
             backgroundColor: colors.primary,
-            margin: "24px auto 0",
+            margin: `${spaced(24)} auto 0`,
           }} />
         </header>
 
         {/* Summary */}
         {hasContent(data.summary) && (
-          <section style={{ marginBottom: "32px", maxWidth: "480px", margin: "0 auto 32px" }}>
+          <section style={{ marginBottom: spaced(32), maxWidth: "480px", margin: `0 auto ${spaced(32)}` }}>
             <p style={{
-              fontSize: "11px",
+              fontSize: scaled(11),
               color: "#4b5563",
-              lineHeight: 1.8,
+              lineHeight: leading(1.8),
               textAlign: "center",
             }}>
               {data.summary}
@@ -88,12 +89,12 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
         {/* Skills - Horizontal Tags */}
         {data.skills && data.skills.length > 0 && (
           <MinimalSection title={t("Skills")} color={colors.primary}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: spaced(8), justifyContent: "center" }}>
               {data.skills.filter(hasContent).map((skill, idx) => (
                 <span key={idx} style={{
-                  fontSize: "10px",
+                  fontSize: scaled(10),
                   color: "#374151",
-                  padding: "4px 12px",
+                  padding: `${spaced(4)} ${spaced(12)}`,
                   borderRadius: "16px",
                   border: "1px solid #e5e7eb",
                   backgroundColor: "#fafafa",
@@ -108,7 +109,7 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
         {/* Languages */}
         {data.languages && data.languages.length > 0 && (
           <MinimalSection title={t("Languages")} color={colors.primary}>
-            <div style={{ textAlign: "center", fontSize: "10px", color: "#6b7280" }}>
+            <div style={{ textAlign: "center", fontSize: scaled(10), color: "#6b7280" }}>
               {data.languages.filter(hasContent).join("  ·  ")}
             </div>
           </MinimalSection>
@@ -121,14 +122,14 @@ export function MinimalistTemplate({ data, themeColor, className }: TemplateProp
 // Helper Components
 function MinimalSection({ title, color, children }: { title: string; color: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: "28px" }}>
+    <section style={{ marginBottom: spaced(28) }}>
       <h2 style={{
-        fontSize: "10px",
+        fontSize: scaled(10),
         fontWeight: 600,
         textTransform: "uppercase",
         letterSpacing: "0.15em",
         color: "#9ca3af",
-        marginBottom: "16px",
+        marginBottom: spaced(16),
         textAlign: "center",
       }}>
         {title}
@@ -140,35 +141,35 @@ function MinimalSection({ title, color, children }: { title: string; color: stri
 
 function MinimalSectionItem({ item }: { item: { title?: string; subtitle?: string; date?: string; location?: string; description?: string; bullets?: string[] } }) {
   return (
-    <div style={{ marginBottom: "20px" }}>
+    <div className="cv-item" style={{ marginBottom: spaced(20) }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <div>
-          <h3 style={{ fontSize: "12px", fontWeight: 600, color: "#111827" }}>
+          <h3 style={{ fontSize: scaled(12), fontWeight: 600, color: "#111827" }}>
             {formatJobTitle(item.title || "")}
           </h3>
           {item.subtitle && (
-            <p style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}>
+            <p style={{ fontSize: scaled(11), color: "#6b7280", marginTop: spaced(2) }}>
               {item.subtitle}
             </p>
           )}
         </div>
         {item.date && (
-          <span style={{ fontSize: "10px", color: "#9ca3af", textAlign: "right", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: scaled(10), color: "#9ca3af", textAlign: "right", whiteSpace: "nowrap" }}>
             {item.date}
           </span>
         )}
       </div>
 
       {item.description && (
-        <p style={{ fontSize: "10px", color: "#6b7280", marginTop: "8px", lineHeight: 1.7 }}>
+        <p style={{ fontSize: scaled(10), color: "#6b7280", marginTop: spaced(8), lineHeight: leading(1.7) }}>
           {item.description}
         </p>
       )}
 
       {item.bullets && item.bullets.length > 0 && (
-        <ul style={{ marginTop: "8px", paddingLeft: "16px" }}>
+        <ul style={{ marginTop: spaced(8), paddingLeft: spaced(16) }}>
           {item.bullets.filter(hasContent).map((bullet, idx) => (
-            <li key={idx} style={{ fontSize: "10px", color: "#4b5563", lineHeight: 1.6, marginBottom: "3px" }}>
+            <li key={idx} style={{ fontSize: scaled(10), color: "#4b5563", lineHeight: leading(1.6), marginBottom: spaced(3) }}>
               {formatBulletPoint(bullet)}
             </li>
           ))}
