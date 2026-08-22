@@ -33,7 +33,36 @@ export type CvToolName =
   | "remove_certification"
   | "add_custom_section"
   | "remove_custom_section"
+  | "rewrite_bullet"
+  | "remove_bullet"
+  | "insert_bullet"
   | "set_design";
+
+/**
+ * Sections whose entries hold a list of bullet lines. The bullet tools address
+ * ONE line inside one entry — the granularity the review engine needs to say
+ * "cut this bullet" without rewriting the whole entry.
+ */
+export type BulletSection = "experience" | "projects" | "education" | "customSections";
+
+const BULLET_SECTION_ALIASES: Record<string, BulletSection> = {
+  experience: "experience",
+  experiences: "experience",
+  work: "experience",
+  projects: "projects",
+  project: "projects",
+  education: "education",
+  custom: "customSections",
+  customsections: "customSections",
+  custom_sections: "customSections",
+  section: "customSections",
+};
+
+/** Map a model-supplied section name onto a real section, or null. */
+export function normalizeBulletSection(v: unknown): BulletSection | null {
+  const raw = typeof v === "string" ? v.trim().toLowerCase() : "";
+  return BULLET_SECTION_ALIASES[raw] ?? null;
+}
 
 // Design targets the agent can set via set_design. Derived from the canonical
 // template registry (lib/templates/registry.ts — pure data, server-safe, no
@@ -316,6 +345,78 @@ export const CV_TOOLS = [
     },
   },
   {
+    name: "rewrite_bullet",
+    description:
+      "Replace ONE bullet line with a stronger version, leaving every other bullet untouched. Use this instead of update_experience when you are improving a single line. Keep the person's real facts — never invent a metric.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        section: {
+          type: "string" as const,
+          enum: ["experience", "projects", "education", "custom"],
+          description: "Which list the entry lives in.",
+        },
+        index: {
+          type: "integer" as const,
+          minimum: 0,
+          description: "Zero-based entry index from the CV snapshot, e.g. 1 in [1.2].",
+        },
+        bulletIndex: {
+          type: "integer" as const,
+          minimum: 0,
+          description: "Zero-based bullet index within that entry, e.g. 2 in [1.2].",
+        },
+        text: { ...str, description: "The full replacement line." },
+      },
+      required: ["section", "index", "bulletIndex", "text"],
+    },
+  },
+  {
+    name: "remove_bullet",
+    description:
+      "Delete ONE bullet line — use for filler, duplicated points, or to cut a CV down to one page. Remove the weakest line, never a person's only evidence for a role.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        section: {
+          type: "string" as const,
+          enum: ["experience", "projects", "education", "custom"],
+          description: "Which list the entry lives in.",
+        },
+        index: { type: "integer" as const, minimum: 0, description: "Zero-based entry index." },
+        bulletIndex: {
+          type: "integer" as const,
+          minimum: 0,
+          description: "Zero-based bullet index within that entry.",
+        },
+      },
+      required: ["section", "index", "bulletIndex"],
+    },
+  },
+  {
+    name: "insert_bullet",
+    description:
+      "Add ONE bullet line to an existing entry. Only for facts the user actually gave you.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        section: {
+          type: "string" as const,
+          enum: ["experience", "projects", "education", "custom"],
+          description: "Which list the entry lives in.",
+        },
+        index: { type: "integer" as const, minimum: 0, description: "Zero-based entry index." },
+        text: { ...str, description: "The new line." },
+        atIndex: {
+          type: "integer" as const,
+          minimum: 0,
+          description: "Where to insert. Omit to append at the end.",
+        },
+      },
+      required: ["section", "index", "text"],
+    },
+  },
+  {
     name: "set_design",
     description:
       "Set the CV's visual format — template, accent color, and density — so the document looks polished, not just the default. The template also picks the font family. Call this ONCE after importing an uploaded CV or once there's enough content, and again only if the user asks for a different look. Choose a template that fits the person's field, an accent color that's tasteful for it, and font/spacing levels (1=tight/small … 10=airy/large; 4-6 is normal) that keep the CV to one page — tighten when there's a lot of content.",
@@ -372,6 +473,138 @@ function atIndex(input: Record<string, unknown>, length: number): number {
   const i = Number(input.index);
   if (!Number.isInteger(i) || i < 0 || i >= length) return -1;
   return i;
+}
+
+/** One edit against a single entry's bullet list. */
+type BulletOp =
+  | { kind: "rewrite"; at: number; text: string }
+  | { kind: "remove"; at: number }
+  | { kind: "insert"; at: number; text: string };
+
+/**
+ * Apply a bullet op to a plain string[] list. Returns null for any no-op
+ * (out-of-range index, or a rewrite that changes nothing) so callers can
+ * return the SAME ResumeData reference — identity is what stops the preview
+ * and autosave from churning on a confused model's call.
+ */
+function editBulletList(bullets: string[], op: BulletOp): string[] | null {
+  if (op.kind === "rewrite") {
+    if (op.at < 0 || op.at >= bullets.length) return null;
+    if (bullets[op.at] === op.text) return null;
+    return bullets.map((b, i) => (i === op.at ? op.text : b));
+  }
+  if (op.kind === "remove") {
+    if (op.at < 0 || op.at >= bullets.length) return null;
+    return bullets.filter((_, i) => i !== op.at);
+  }
+  const at = Math.min(Math.max(op.at, 0), bullets.length);
+  return [...bullets.slice(0, at), op.text, ...bullets.slice(at)];
+}
+
+/**
+ * Read one entry's bullet lines. Returns null when the section or entry index
+ * is out of range. Shared with the review layer's target resolver so both
+ * agree on what "bullet [1.2]" means.
+ */
+export function getEntryBullets(
+  data: ResumeData,
+  section: BulletSection,
+  index: number
+): string[] | null {
+  switch (section) {
+    case "experience":
+      return data.experience[index]?.description ?? null;
+    case "projects":
+      return data.projects[index]?.bullets ?? null;
+    case "education":
+      return data.education[index]?.achievements ?? null;
+    case "customSections":
+      return data.customSections[index]?.items.map((it) => it.text) ?? null;
+    default:
+      return null;
+  }
+}
+
+/** Apply one bullet op, preserving custom-section item ids on rewrite. */
+function applyBulletOp(
+  data: ResumeData,
+  section: BulletSection,
+  index: number,
+  op: BulletOp
+): ResumeData {
+  switch (section) {
+    case "experience": {
+      const entry = data.experience[index];
+      if (!entry) return data;
+      const next = editBulletList(entry.description, op);
+      if (!next) return data;
+      return {
+        ...data,
+        experience: data.experience.map((e, i) => (i === index ? { ...e, description: next } : e)),
+      };
+    }
+    case "projects": {
+      const entry = data.projects[index];
+      if (!entry) return data;
+      const next = editBulletList(entry.bullets, op);
+      if (!next) return data;
+      return {
+        ...data,
+        projects: data.projects.map((p, i) => (i === index ? { ...p, bullets: next } : p)),
+      };
+    }
+    case "education": {
+      const entry = data.education[index];
+      if (!entry) return data;
+      const next = editBulletList(entry.achievements, op);
+      if (!next) return data;
+      return {
+        ...data,
+        education: data.education.map((e, i) => (i === index ? { ...e, achievements: next } : e)),
+      };
+    }
+    case "customSections": {
+      const entry = data.customSections[index];
+      if (!entry) return data;
+      const items = entry.items;
+      let nextItems;
+      if (op.kind === "rewrite") {
+        if (op.at < 0 || op.at >= items.length) return data;
+        if (items[op.at].text === op.text) return data;
+        // Keep the item's id so React keys and any saved reference survive.
+        nextItems = items.map((it, i) => (i === op.at ? { ...it, text: op.text } : it));
+      } else if (op.kind === "remove") {
+        if (op.at < 0 || op.at >= items.length) return data;
+        nextItems = items.filter((_, i) => i !== op.at);
+      } else {
+        const at = Math.min(Math.max(op.at, 0), items.length);
+        nextItems = [
+          ...items.slice(0, at),
+          { id: generateId(), text: op.text },
+          ...items.slice(at),
+        ];
+      }
+      return {
+        ...data,
+        customSections: data.customSections.map((cs, i) =>
+          i === index ? { ...cs, items: nextItems } : cs
+        ),
+      };
+    }
+    default:
+      return data;
+  }
+}
+
+/** Shared arg parsing for the three bullet tools. */
+function bulletTarget(
+  input: Record<string, unknown>
+): { section: BulletSection; index: number } | null {
+  const section = normalizeBulletSection(input.section);
+  if (!section) return null;
+  const index = Number(input.index);
+  if (!Number.isInteger(index) || index < 0) return null;
+  return { section, index };
 }
 
 /**
@@ -579,6 +812,36 @@ export function applyCvToolCall(
       return { ...data, customSections: data.customSections.filter((_, idx) => idx !== i) };
     }
 
+    case "rewrite_bullet": {
+      const target = bulletTarget(input);
+      if (!target) return data;
+      const text = s(input.text)?.trim();
+      if (!text) return data; // never blank a line out via "rewrite"
+      const at = Number(input.bulletIndex);
+      if (!Number.isInteger(at)) return data;
+      return applyBulletOp(data, target.section, target.index, { kind: "rewrite", at, text });
+    }
+
+    case "remove_bullet": {
+      const target = bulletTarget(input);
+      if (!target) return data;
+      const at = Number(input.bulletIndex);
+      if (!Number.isInteger(at)) return data;
+      return applyBulletOp(data, target.section, target.index, { kind: "remove", at });
+    }
+
+    case "insert_bullet": {
+      const target = bulletTarget(input);
+      if (!target) return data;
+      const text = s(input.text)?.trim();
+      if (!text) return data;
+      const raw = Number(input.atIndex);
+      const existing = getEntryBullets(data, target.section, target.index);
+      if (!existing) return data;
+      const at = Number.isInteger(raw) && raw >= 0 ? raw : existing.length;
+      return applyBulletOp(data, target.section, target.index, { kind: "insert", at, text });
+    }
+
     default:
       return data;
   }
@@ -657,6 +920,12 @@ export function describeToolCall(
     }
     case "remove_custom_section":
       return t("Removed a section");
+    case "rewrite_bullet":
+      return t("Rewrote a bullet");
+    case "remove_bullet":
+      return t("Cut a bullet");
+    case "insert_bullet":
+      return t("Added a bullet");
     case "set_design":
       return t("Styled your CV");
     default:
@@ -687,7 +956,9 @@ export function snapshotForPrompt(data: ResumeData): string {
         e.location ? `, ${e.location}` : ""
       }`
     );
-    e.description.forEach((b) => lines.push(`      • ${b}`));
+    // Bullets carry [entry.bullet] indices so the model can target ONE line
+    // with rewrite_bullet / remove_bullet instead of replacing the whole entry.
+    e.description.forEach((b, bi) => lines.push(`      [${i}.${bi}] ${b}`));
   });
   lines.push(`EDUCATION (${data.education.length}):`);
   data.education.forEach((e, i) => {
@@ -696,11 +967,15 @@ export function snapshotForPrompt(data: ResumeData): string {
         e.endDate || "?"
       })`
     );
+    e.achievements.forEach((a, ai) => lines.push(`      [${i}.${ai}] ${a}`));
   });
   lines.push(`SKILLS: ${data.skills.join(", ") || "(none)"}`);
   lines.push(`LANGUAGES: ${data.languages.join(", ") || "(none)"}`);
   lines.push(`PROJECTS (${data.projects.length}):`);
-  data.projects.forEach((p, i) => lines.push(`  [${i}] ${p.name} — ${p.description}`));
+  data.projects.forEach((p, i) => {
+    lines.push(`  [${i}] ${p.name} — ${p.description}`);
+    p.bullets.forEach((b, bi) => lines.push(`      [${i}.${bi}] ${b}`));
+  });
   lines.push(`CERTIFICATIONS (${data.certifications.length}):`);
   data.certifications.forEach((c, i) => lines.push(`  [${i}] ${c.name}${c.issuer ? ` — ${c.issuer}` : ""}`));
   lines.push(`CUSTOM SECTIONS (${data.customSections.length}):`);
@@ -750,6 +1025,12 @@ export function pendingToolLabel(name: string, t: ChatLabelTranslate = englishT)
       return t("Adding a section…");
     case "remove_custom_section":
       return t("Removing a section…");
+    case "rewrite_bullet":
+      return t("Rewriting a bullet…");
+    case "remove_bullet":
+      return t("Cutting a bullet…");
+    case "insert_bullet":
+      return t("Adding a bullet…");
     case "set_design":
       return t("Styling your CV…");
     default:

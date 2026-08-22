@@ -103,6 +103,19 @@ export type EventName =
   | "score_problem_fix_clicked"
   | "score_fix_applied"
   | "score_fix_gated"
+  // CV review engine (upload -> verdict -> per-line keep/cut/rewrite)
+  | "review_started"
+  | "review_succeeded"
+  | "review_failed"
+  | "review_panel_opened"
+  | "advice_applied"
+  | "advice_skipped"
+  | "advice_gated"
+  | "advice_stale"
+  | "advice_apply_all"
+  | "fit_plan_shown"
+  | "fit_applied"
+  | "fit_content_needed"
   // Inline per-section AI assist (Edit pane ✨ buttons)
   | "inline_assist_generated"
   | "inline_assist_applied"
@@ -133,6 +146,7 @@ type EventProps = Record<string, string | number | boolean | null | undefined>;
 // Extend this set as new categorical props get added to `track()`.
 const CLARITY_TAG_KEYS = new Set<string>([
   "source",
+  "verdict",
   "cta",
   "choice",
   "mode",

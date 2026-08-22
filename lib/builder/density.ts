@@ -97,3 +97,19 @@ export function densityOverrideCss(fontLevel: number, spacingLevel: number): str
       }
     `;
 }
+
+/**
+ * The rendered metrics of a single line at these levels. Derived from the
+ * SAME formulas as densityInlineVars above — the one-page fit loop needs to
+ * convert "px over one page" into "lines to cut", and it must not re-derive
+ * these numbers independently or the two would drift.
+ */
+export function lineMetrics(fontLevel: number, spacingLevel: number): {
+  fontSize: number;
+  lineHeight: number;
+  linePx: number;
+} {
+  const fontSize = 8 + (fontLevel - 1) * (6 / 9);
+  const lineHeight = 1.1 + (spacingLevel - 1) * (0.8 / 9);
+  return { fontSize, lineHeight, linePx: fontSize * lineHeight };
+}

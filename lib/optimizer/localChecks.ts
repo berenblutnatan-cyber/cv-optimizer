@@ -15,6 +15,7 @@ import type { ResumeData } from "@/types/resume";
 import { resumeToText } from "@/types/resume";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 import type { CvToolName } from "@/lib/chat/cvTools";
+import { bandForScore } from "@/lib/review/rubric";
 
 export type ScoreCategory =
   | "impact"
@@ -491,13 +492,9 @@ function goalMultiplier(cat: ScoreCategory, goal: GoalWeighting): number {
   return 1.0; // both
 }
 
-function bandFor(overall: number): ScoreBand {
-  if (overall >= 85) return "great";
-  if (overall >= 75) return "strong";
-  if (overall >= 60) return "fair";
-  if (overall >= 45) return "weak";
-  return "poor";
-}
+// Band cutoffs live in lib/review/rubric.ts so the live meter, the AI review,
+// /score and /results can never disagree about what "strong" means.
+const bandFor = bandForScore;
 
 // ── Public API ──────────────────────────────────────────────────────────────
 

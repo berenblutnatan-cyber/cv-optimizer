@@ -34,8 +34,11 @@ import { convertToPreviewData } from "@/lib/resumeDataConverter";
 import { generateId, type ResumeData } from "@/types/resume";
 import { SmartResumePreview } from "@/components/shared/SmartResumePreview";
 import { ResumePreview } from "@/components/builder/ResumePreview";
-import { ResumeScorePanel } from "@/components/builder/ResumeScorePanel";
-import type { LocalProblem } from "@/lib/optimizer/localChecks";
+import { ReviewPanel } from "@/components/builder/ReviewPanel";
+import { usePageFit } from "@/hooks/usePageFit";
+import { buildToolCall, isStale } from "@/lib/review/targetRef";
+import type { Advice } from "@/lib/review/types";
+import type { FitPlan } from "@/lib/builder/autoFit";
 import { TemplateGalleryModal } from "@/components/builder/TemplateGalleryModal";
 import { SAMPLE_RESUME, SAMPLE_RESUME_DATA, isEmptyResume } from "@/lib/builder/sampleResume";
 import { exportToPdf } from "@/utils/exportToPdf";
@@ -104,6 +107,9 @@ export function StudioBuilder() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [scoreOpen, setScoreOpen] = useState(false);
   const [applyingFixId, setApplyingFixId] = useState<string | null>(null);
+  // Bumped once a CV import finishes, which auto-runs the review so an upload
+  // lands on a verdict instead of an empty chat window.
+  const [reviewToken, setReviewToken] = useState(0);
   // Last job posting text the user pasted (folded into the score panel + deep
   // check so "Job match" reflects the real JD). Transient — not persisted.
   const [lastJobText, setLastJobText] = useState("");
@@ -483,48 +489,6 @@ export function StudioBuilder() {
     track("chat_builder_mode_switched", { mode });
   }
 
-  // Apply a fix from the score panel. Seeing the problem is always free; the
-  // payoff (applying an AI rewrite) is the paywall: anon → sign-up, out-of-credits
-  // → arm the flash sale. Deterministic cleanups stay free.
-  async function applyFix(p: LocalProblem) {
-    if (!p.fix) return;
-    if (p.fix.kind === "deterministic") {
-      const current = useResumeStore.getState().resumeData;
-      setResumeData(applyCvToolCall(current, p.fix.tool, p.fix.input));
-      track("score_fix_applied", { category: p.category });
-      useFlashSaleStore.getState().recordAction();
-      return;
-    }
-    // AI fix — gate the payoff.
-    if (!isSignedIn) {
-      track("score_fix_gated", { reason: "anon" });
-      useFlashSaleStore.getState().recordAction();
-      toast.message(t("Create a free account to apply AI fixes."), { description: t("Your first one's on us.") });
-      openSignUp?.();
-      return;
-    }
-    if (!entitlement.unlimited && entitlement.credits <= 0) {
-      track("score_fix_gated", { reason: "no_credits" });
-      useFlashSaleStore.getState().recordAction();
-      toast.message(t("Unlock AI fixes to apply this"), {
-        description: t("Top up or grab the Pro offer — your work is saved."),
-      });
-      return;
-    }
-    // Entitled → run the fix through the existing chat pipeline (free per message),
-    // so the live CV patches via the same deterministic reducer.
-    setApplyingFixId(p.id);
-    setLeftMode("chat");
-    setChatOpen(true);
-    setMobileTab("chat");
-    track("score_fix_applied", { category: p.category });
-    try {
-      await send(p.fix.instruction);
-    } finally {
-      setApplyingFixId(null);
-    }
-  }
-
   async function handleSend(text: string) {
     if (streaming || uploadingCv || fetchingJob) return;
     const url = firstUrl(text);
@@ -563,6 +527,11 @@ export function StudioBuilder() {
       if (!res.ok) throw new Error(data?.error ?? t("Couldn't read that file"));
       const intake = cvUploadIntake(data.fileName, data.text);
       await send(intake.content, intake.display);
+      // The CV is populated now — show the verdict, don't make them ask for it.
+      setScoreOpen(true);
+      setMobileTab("score");
+      setReviewToken((n) => n + 1);
+      track("review_panel_opened", { source: "upload" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("Upload failed"));
     } finally {
@@ -740,6 +709,157 @@ export function StudioBuilder() {
   // the template gallery read like a finished CV instead of "YOUR NAME".
   const isEmpty = isEmptyResume(previewData);
   const docData = isEmpty ? SAMPLE_RESUME : previewData;
+
+  // ── One-page measurement ──────────────────────────────────────────────────
+  // Measured on the OFF-SCREEN EXPORT RENDER, not the scaled preview: that
+  // node is what exportToPdf rasterizes, so "fits on one page" here and "the
+  // PDF is one page" are the same measurement rather than two guesses.
+  const pageFit = usePageFit(exportRef, {
+    fontLevel: design.fontLevel,
+    spacingLevel: design.spacingLevel,
+    watch: `${design.template}|${JSON.stringify(resumeData).length}|${isEmpty}`,
+  });
+
+  const bulletCount =
+    resumeData.experience.reduce((n, e) => n + e.description.length, 0) +
+    resumeData.projects.reduce((n, p) => n + p.bullets.length, 0) +
+    resumeData.education.reduce((n, e) => n + e.achievements.length, 0);
+  const sectionCount =
+    1 +
+    (resumeData.experience.length ? 1 : 0) +
+    (resumeData.education.length ? 1 : 0) +
+    (resumeData.skills.length ? 1 : 0) +
+    (resumeData.projects.length ? 1 : 0) +
+    (resumeData.certifications.length ? 1 : 0) +
+    resumeData.customSections.length;
+
+  /** True when applying an AI rewrite would hit the paywall. */
+  const aiGated = !isSignedIn || (!entitlement.unlimited && entitlement.credits <= 0);
+
+  /** The shared gate for AI-powered applies. Returns false if it blocked. */
+  function passesAiGate(reason: "advice" | "apply_all"): boolean {
+    if (!isSignedIn) {
+      track("advice_gated", { reason: "anon" });
+      useFlashSaleStore.getState().recordAction();
+      toast.message(t("Create a free account to apply AI rewrites."), { description: t("Your first one's on us.") });
+      openSignUp?.();
+      return false;
+    }
+    if (!entitlement.unlimited && entitlement.credits <= 0) {
+      track("advice_gated", { reason: "no_credits" });
+      useFlashSaleStore.getState().recordAction();
+      toast.message(t("Unlock AI rewrites to apply this"), {
+        description: t("Top up or grab the Pro offer — your work is saved."),
+      });
+      return false;
+    }
+    void reason;
+    return true;
+  }
+
+  // Apply ONE piece of advice. The tool call is derived here, against the CV
+  // as it is RIGHT NOW — never from indices frozen at review time.
+  async function applyAdvice(a: Advice) {
+    if (isStale(resumeData, a)) {
+      track("advice_stale", { verdict: a.verdict });
+      toast.message(t("You've changed this line since the review — re-run it."));
+      return;
+    }
+    // Deterministic cleanups and pure deletions cost nothing: no model runs.
+    const isFree = a.fix?.kind === "deterministic" || a.verdict === "cut";
+    if (!isFree && !passesAiGate("advice")) return;
+
+    if (a.fix?.kind === "ai") {
+      // Needs a model rewrite — route it through the chat pipeline, which
+      // patches the CV via the same reducer.
+      setApplyingFixId(a.id);
+      setLeftMode("chat");
+      setChatOpen(true);
+      setMobileTab("chat");
+      try {
+        await send(a.fix.instruction);
+      } finally {
+        setApplyingFixId(null);
+      }
+      track("advice_applied", { verdict: a.verdict, source: a.source });
+      return;
+    }
+
+    const current = useResumeStore.getState().resumeData;
+    const call = buildToolCall(current, a);
+    if (!call) {
+      toast.message(t("Couldn't apply that one — re-run the review."));
+      return;
+    }
+    setResumeData(applyCvToolCall(current, call.name, call.input));
+    track("advice_applied", { verdict: a.verdict, source: a.source });
+    useFlashSaleStore.getState().recordAction();
+  }
+
+  // Apply everything as ONE undo step.
+  //
+  // Order matters: each call carries array indices, and applying a cut shifts
+  // every later index in that entry. Deriving the NEXT call from the CV as it
+  // stands after the previous one (rather than from the original snapshot) is
+  // what makes a batch safe — the content hash re-locates each target.
+  async function applyAllAdvice(list: Advice[]) {
+    const needsAi = list.some((a) => a.fix?.kind === "ai" || (a.verdict === "rewrite" && a.source === "ai"));
+    if (needsAi && !passesAiGate("apply_all")) return;
+
+    const store = useResumeStore.getState();
+    store.beginUndoGroup();
+    let applied = 0;
+    try {
+      for (const a of list) {
+        if (a.fix?.kind === "ai") continue; // chat-routed fixes aren't batchable
+        const current = useResumeStore.getState().resumeData;
+        if (isStale(current, a)) continue;
+        const call = buildToolCall(current, a);
+        if (!call) continue;
+        const next = applyCvToolCall(current, call.name, call.input);
+        if (next !== current) {
+          setResumeData(next);
+          applied++;
+        }
+      }
+    } finally {
+      store.endUndoGroup();
+    }
+    if (applied === 0) {
+      toast.message(t("Nothing left to apply — re-run the review."));
+      return;
+    }
+    toast.success(applied === 1 ? t("1 change applied") : t("{count} changes applied", { count: applied }));
+    useFlashSaleStore.getState().recordAction();
+  }
+
+  // Apply a fit plan's DESIGN steps in one undo group. Content cuts are never
+  // applied here — they surface as advice cards the user approves per line.
+  function applyFitPlan(plan: FitPlan) {
+    const store = useResumeStore.getState();
+    store.beginUndoGroup();
+    try {
+      const patch: Partial<DesignState> = {};
+      for (const step of plan.steps) {
+        if (step.kind === "spacing") patch.spacingLevel = step.to;
+        if (step.kind === "font") patch.fontLevel = step.to;
+        if (step.kind === "template") patch.template = step.to as BuilderTemplateId;
+      }
+      if (Object.keys(patch).length > 0) setDesign(patch);
+    } finally {
+      store.endUndoGroup();
+    }
+    if (!plan.fitsWithDesignAlone) {
+      track("fit_content_needed", { });
+      toast.message(
+        plan.linesToCut === 1
+          ? t("Tightened the layout — 1 line still needs cutting.")
+          : t("Tightened the layout — {count} lines still need cutting.", { count: plan.linesToCut })
+      );
+    } else {
+      toast.success(t("Fitted to one page."));
+    }
+  }
 
   const progress = computeProgress(resumeData);
   const pct = Math.round((progress.filter((p) => p.done).length / progress.length) * 100);
@@ -1213,13 +1333,25 @@ export function StudioBuilder() {
               mobileTab === "score" ? "flex" : "hidden"
             } ${scoreOpen ? "md:flex" : "md:hidden"}`}
           >
-            <ResumeScorePanel
+            <ReviewPanel
               resumeData={resumeData}
               jobText={lastJobText || undefined}
               jobTitle={resumeData.personalInfo.title || undefined}
               goal={scoringGoal}
-              onApplyFix={applyFix}
-              applyingFixId={applyingFixId}
+              design={{
+                fontLevel: design.fontLevel,
+                spacingLevel: design.spacingLevel,
+                template: design.template,
+              }}
+              pageFit={pageFit}
+              bulletCount={bulletCount}
+              sectionCount={sectionCount}
+              onApplyAdvice={applyAdvice}
+              onApplyAll={applyAllAdvice}
+              onApplyFitPlan={applyFitPlan}
+              aiGated={aiGated}
+              applyingId={applyingFixId}
+              autoRunToken={reviewToken}
               onClose={() => {
                 setScoreOpen(false);
                 if (mobileTabRef.current === "score") setMobileTab("document");
