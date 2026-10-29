@@ -174,14 +174,67 @@ model OptimizationLog {
 model Resume {
   id         String   @id @default(cuid())
   title      String   // e.g. "Software Engineer CV"
-  data       Json     // Stores the full resume object structure
-  template   String   // e.g. "modern-sidebar"
-  themeColor String?  // e.g. "#10b981"
+  // dataVersion 1: bare ResumeData (legacy builder). dataVersion 2: the v2
+  // ResumeDocument {schemaVersion, locale, direction, content, design}
+  // (lib/resume/document.ts) — toDocument() reads both.
+  data       Json
+  template   String   // mirrors data.design.template for list queries
+  themeColor String?
+  dataVersion Int     @default(1)
+  // Last applied ResumeOp.seq — the op log's high-water mark.
+  lastSeq    Int      @default(0)
+  source     String   @default("manual") // manual | voice | import | tailor
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  // Owner: a signed-in user, OR an anonymous draft (sha256 of the httpOnly
+  // draft cookie) that is claimed into the account on sign-in.
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  anonKeyHash   String?
+  anonExpiresAt DateTime?
+
+  versions ResumeVersion[]
+  ops      ResumeOp[]
+
+  @@index([userId, updatedAt])
+  @@index([anonKeyHash])
+}
+
+// Immutable snapshots: the user's "save point", the base a tailoring branches
+// from, and what an export reproduces.
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  resumeId  String
+  number    Int
+  data      Json     // ResumeDocument
+  label     String?
+  createdBy String   // user | chat | intake_agent | tailor | migration
+  createdAt DateTime @default(now())
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, number])
+}
+
+// Append-only operation log. Typed edits, chat tool calls and voice tool
+// calls all land here and are replayed through applyDocumentOp in seq order,
+// so concurrent sources serialize. clientOpId makes retries idempotent.
+model ResumeOp {
+  id             String   @id @default(cuid())
+  resumeId       String
+  seq            Int
+  actor          String   // user | chat | intake_agent | tailor
+  toolName       String
+  input          Json
+  clientOpId     String
+  voiceSessionId String?
+  createdAt      DateTime @default(now())
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, seq])
+  @@unique([resumeId, clientOpId])
 }
 
 model Feedback {

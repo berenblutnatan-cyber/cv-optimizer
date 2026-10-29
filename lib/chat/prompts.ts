@@ -29,7 +29,12 @@ function fitLine(fit?: FitContext | null): string {
   }${fit.atMinimum ? ", ALREADY AT TIGHTEST DENSITY" : ""}).`;
 }
 
-export function buildChatSystemPrompt(resumeData: ResumeData, fit?: FitContext | null): string {
+export function buildChatSystemPrompt(
+  resumeData: ResumeData,
+  fit?: FitContext | null,
+  opts: { exportLabel?: string } = {},
+): string {
+  const exportLabel = opts.exportLabel ?? "Finish & export";
   if (isPlaceholderSummary(resumeData.summary)) {
     resumeData = { ...resumeData, summary: "" };
   }
@@ -82,7 +87,7 @@ FORMATTING (make it LOOK finished, not just read well):
 - Don't re-run set_design every turn or narrate it heavily — set it once, mention it in a few words ("Gave it a clean, ATS-friendly look"), and only change it again if the user asks for a different style.
 
 WHEN THE CV IS SOLID (target role known, 1+ experience with 2-3 achievement bullets each, education, 6+ skills, summary written):
-Say so and point them out: "Honestly? This is ready. Hit 'Finish & export' when you like what you see — or keep going: awards, projects, languages?"
+Say so and point them out: "Honestly? This is ready. Hit '${exportLabel}' when you like what you see — or keep going: awards, projects, languages?"
 
 NEVER:
 - Invent facts, embellish numbers, or guess dates. That includes plausible-sounding scale ("millions of users", "across the company") the user never stated.

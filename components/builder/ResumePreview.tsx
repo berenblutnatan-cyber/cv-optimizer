@@ -2,26 +2,7 @@
 
 import React from "react";
 import { BuilderTemplateId, ThemeColor } from "@/context/BuilderContext";
-import {
-  ModernSidebarTemplate,
-  IvyLeagueTemplate,
-  MinimalistTemplate,
-  ExecutiveTemplate,
-  TechieTemplate,
-  CreativeTemplate,
-  StartupTemplate,
-  InternationalTemplate,
-  AuroraTemplate,
-  BannerTemplate,
-  SpotlightTemplate,
-  LedgerTemplate,
-  DevfolioTemplate,
-  CanvasTemplate,
-  TimelineTemplate,
-  DoubleColumnTemplate,
-  CompactTemplate,
-  PhotoLeftTemplate,
-} from "@/components/cv-templates/templates";
+import { TemplateRenderer } from "@/components/cv-templates/TemplateRenderer";
 
 /**
  * ResumePreview Component
@@ -110,47 +91,7 @@ export function ResumePreview({
     photo: data.photo,
   };
 
-  // Render the appropriate template
-  switch (templateId) {
-    case "modern-sidebar":
-      return <ModernSidebarTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "ivy-league":
-      return <IvyLeagueTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "minimalist":
-      return <MinimalistTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "executive":
-      return <ExecutiveTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "techie":
-      return <TechieTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "creative":
-      return <CreativeTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "startup":
-      return <StartupTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "international":
-      return <InternationalTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "aurora":
-      return <AuroraTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "banner":
-      return <BannerTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "spotlight":
-      return <SpotlightTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "ledger":
-      return <LedgerTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "devfolio":
-      return <DevfolioTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "canvas":
-      return <CanvasTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "timeline":
-      return <TimelineTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "double-column":
-      return <DoubleColumnTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "compact":
-      return <CompactTemplate data={templateData} themeColor={themeColor} className={className} />;
-    case "photo-left":
-      return <PhotoLeftTemplate data={templateData} themeColor={themeColor} className={className} />;
-    default:
-      return <ModernSidebarTemplate data={templateData} themeColor={themeColor} className={className} />;
-  }
+  return <TemplateRenderer templateId={templateId} data={templateData} themeColor={themeColor} className={className} />;
 }
 
 export default ResumePreview;

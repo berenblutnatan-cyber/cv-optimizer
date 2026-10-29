@@ -20,6 +20,8 @@ const nextConfig = {
     ];
   },
   skipTrailingSlashRedirect: true,
+  // Dev-only badge. Bottom-left covered the v2 editor's chat box.
+  devIndicators: { position: "bottom-right" },
 };
 
 module.exports = nextConfig;
