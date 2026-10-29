@@ -1,12 +1,16 @@
 import { clientIp, limit, limitResponse } from "@/lib/limits";
 import { currentOwner, ownerKey } from "@/lib/resume/owner";
-import { appendOps } from "@/lib/resume/store";
+import { appendOps, parseOps } from "@/lib/resume/store";
 import { readJson, storeErrorResponse } from "@/lib/resume/http";
+import { authorizeVoiceOps, VoiceError } from "@/lib/voice/sessions";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/cv/[id]/ops — append the editor's typed edits (actor "user").
-// Body: { ops: [{ clientOpId, name, input }] }. Returns the authoritative doc.
+// POST /api/cv/[id]/ops — append the editor's edits. Typed edits are actor
+// "user"; edits a voice agent made during a call carry their voiceSessionId
+// (actor "intake_agent") and must belong to a live session of this user on
+// this CV. Body: { ops: [{ clientOpId, name, input, voiceSessionId? }] }.
+// Returns the authoritative doc.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const owner = await currentOwner();
@@ -16,8 +20,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await readJson(request);
   if (!body) return Response.json({ error: "Invalid JSON", code: "BAD_REQUEST" }, { status: 400 });
   try {
-    return Response.json(await appendOps(id, owner, body.ops, "user"));
+    const ops = parseOps(body.ops);
+    await authorizeVoiceOps(owner, id, ops);
+    return Response.json(await appendOps(id, owner, ops, "user"));
   } catch (err) {
+    if (err instanceof VoiceError) return Response.json({ error: err.message, code: err.code }, { status: 400 });
     return storeErrorResponse(err, "cv:ops");
   }
 }

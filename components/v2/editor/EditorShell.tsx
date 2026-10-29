@@ -13,6 +13,7 @@ import {
   History,
   Loader2,
   MessageSquare,
+  Mic,
   Palette,
   PenLine,
   RotateCcw,
@@ -46,8 +47,9 @@ import { SectionEditor, type SectionId } from "./SectionEditor";
 import { ChatPanel } from "./ChatPanel";
 import { DesignPanel } from "./DesignPanel";
 import { useVersions, versionTitle, VersionsPanel } from "./VersionsPanel";
+import { VoicePanel } from "./VoicePanel";
 
-type Mode = "type" | "chat";
+type Mode = "type" | "chat" | "talk";
 type MobilePane = "edit" | "preview";
 type Panel = "edit" | "design" | "versions";
 
@@ -124,12 +126,25 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function EditorShell({ id, initial }: { id: string; initial: { doc: ResumeDocument; lastSeq: number } }) {
-  const { doc, saveState, apply, applyRemote, adoptServer, settle, retry } = useCvDocument(id, initial);
+export function EditorShell({
+  id,
+  initial,
+  signedIn,
+  startInTalk = false,
+}: {
+  id: string;
+  initial: { doc: ResumeDocument; lastSeq: number };
+  signedIn: boolean;
+  startInTalk?: boolean;
+}) {
+  const { doc, saveState, apply, applyRemote, applyVoice, adoptServer, settle, retry, getDoc } = useCvDocument(id, initial);
   const docRef = React.useRef<HTMLDivElement>(null);
   const viewRef = React.useRef<HTMLDivElement>(null);
   const hasContent = React.useMemo(() => completeness(initial.doc.content).some((i) => i.done), [initial.doc.content]);
-  const [mode, setModeState] = React.useState<Mode>(hasContent ? "type" : "chat");
+  const [mode, setModeState] = React.useState<Mode>(startInTalk ? "talk" : hasContent ? "type" : "chat");
+  // Each voice edit pulses the preview; on a phone it marks the Preview tab.
+  const [pulse, setPulse] = React.useState(0);
+  const [previewDirty, setPreviewDirty] = React.useState(false);
   const [panel, setPanel] = React.useState<Panel>("edit");
   const [mobilePane, setMobilePane] = React.useState<MobilePane>("edit");
   const [openSections, setOpenSections] = React.useState<Set<SectionId>>(new Set(["profile", "experience"]));
@@ -139,11 +154,18 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
   const { viewing } = versions;
 
   React.useEffect(() => {
+    if (startInTalk) return;
     try {
       const m = localStorage.getItem(MODE_KEY);
-      if (hasContent && (m === "type" || m === "chat")) setModeState(m);
+      if (hasContent && (m === "type" || m === "chat" || m === "talk")) setModeState(m);
+      // A blank CV on a phone starts by talking: it's faster than typing on glass.
+      else if (!hasContent && signedIn && window.matchMedia("(max-width: 1023px)").matches) setModeState("talk");
     } catch {}
-  }, [hasContent]);
+  }, [hasContent, signedIn, startInTalk]);
+  const onVoiceEdit = React.useCallback(() => {
+    setPulse((n) => n + 1);
+    setPreviewDirty(true);
+  }, []);
   const setMode = (m: Mode) => {
     setModeState(m);
     setPanel("edit");
@@ -222,6 +244,7 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
   const actions: CommandAction[] = [
     { id: "type", label: "Edit by typing", group: "Mode", icon: <PenLine />, run: () => setMode("type") },
     { id: "chat", label: "Edit by chatting", group: "Mode", icon: <MessageSquare />, run: () => setMode("chat") },
+    { id: "talk", label: "Edit by talking", group: "Mode", icon: <Mic />, run: () => setMode("talk") },
     { id: "design", label: "Change design", group: "Design", icon: <Palette />, run: () => togglePanel("design") },
     { id: "multi", label: doc.design.pageMode === "one" ? "Allow multiple pages" : "Fit to one page", group: "Design", icon: <Palette />, run: () => apply("set_design", doc.design.pageMode === "one" ? { pageMode: "multi" } : { pageMode: "one", autoFit: true }) },
     { id: "versions", label: "Version history", group: "Versions", icon: <History />, run: () => togglePanel("versions") },
@@ -247,6 +270,7 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
             options={[
               { value: "type", label: "Type", icon: <PenLine /> },
               { value: "chat", label: "Chat", icon: <MessageSquare /> },
+              { value: "talk", label: "Talk", icon: <Mic /> },
             ]}
           />
           <CompletenessButton doc={doc} onJump={jumpTo} />
@@ -257,6 +281,19 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
         {/* Kept mounted while hidden so a streaming reply survives a mode or panel switch. */}
         <div className={cn("min-h-0 flex-1", mode === "chat" ? "flex flex-col" : "hidden")}>
           <ChatPanel cvId={id} hasContent={hasContent} fit={fit} flush={settle} applyRemote={applyRemote} adoptServer={adoptServer} />
+        </div>
+        {/* Kept mounted too: switching mode mid-call doesn't hang up. */}
+        <div className={cn("min-h-0 flex-1", mode === "talk" ? "flex flex-col" : "hidden")}>
+          <VoicePanel
+            cvId={id}
+            signedIn={signedIn}
+            applyVoice={applyVoice}
+            getDoc={getDoc}
+            settle={settle}
+            onEdit={onVoiceEdit}
+            onUseChat={() => setMode("chat")}
+            onKeepEditing={() => setMode("type")}
+          />
         </div>
       </div>
     </div>
@@ -280,7 +317,8 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
       )}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-10 md:py-10">
         {/* The live CV stays mounted while a version is shown: it is the export root. */}
-        <div className={cn(viewing && "hidden")}>
+        <div className={cn("relative", viewing && "hidden")}>
+          {pulse > 0 && <span key={pulse} aria-hidden className="pointer-events-none absolute inset-0 z-10 mx-auto max-w-[860px] rounded-[2px] animate-voice-pulse" />}
           <CvPreview
             doc={doc}
             docRef={docRef}
@@ -371,10 +409,22 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
           aria-label="View"
           size="sm"
           value={mobilePane}
-          onChange={setMobilePane}
+          onChange={(p) => {
+            setMobilePane(p);
+            if (p === "preview") setPreviewDirty(false);
+          }}
           options={[
             { value: "edit", label: panel === "design" ? "Design" : panel === "versions" ? "Versions" : "Edit", icon: panel === "design" ? <Palette /> : panel === "versions" ? <History /> : <PenLine /> },
-            { value: "preview", label: "Preview", icon: <Eye /> },
+            {
+              value: "preview",
+              label: "Preview",
+              icon: (
+                <span className="relative">
+                  <Eye />
+                  {previewDirty && mobilePane !== "preview" && <span aria-label="Updated" className="absolute -end-1 -top-1 size-2 rounded-full bg-accent" />}
+                </span>
+              ),
+            },
           ]}
         />
       </div>

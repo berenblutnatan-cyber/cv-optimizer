@@ -62,6 +62,7 @@ export function useCvDocument(id: string, initial: ServerState) {
     () => ({
       apply: (name: string, input: Record<string, unknown>, key?: string) => q.apply(name, input, key),
       applyRemote: (name: string, input: Record<string, unknown>) => q.applyRemote(name, input),
+      applyVoice: (name: string, input: Record<string, unknown>, clientOpId: string, voiceSessionId: string) => q.applyVoice(name, input, clientOpId, voiceSessionId),
       adoptServer: (s: ServerState) => q.adoptServer(s),
       /** Resolves true once everything typed so far is saved. */
       settle: () => q.settle(),

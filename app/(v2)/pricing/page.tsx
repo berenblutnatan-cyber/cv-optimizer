@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, Infinity as InfinityIcon } from "lucide-react";
+import { Check, Infinity as InfinityIcon, Info } from "lucide-react";
 import { POLAR_PLANS, type PolarPlanKey } from "@/lib/polar";
-import { Badge, Card, cn } from "@/components/ui";
+import { VOICE } from "@/lib/voice/protocol";
+import { Badge, Card, cn, Tooltip } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { CheckoutButton } from "@/components/v2/billing/CheckoutButton";
 
@@ -14,8 +15,8 @@ export const dynamic = "force-dynamic";
 
 const PACKS: { key: PolarPlanKey; best?: boolean }[] = [{ key: "mini" }, { key: "pro", best: true }, { key: "ultimate" }];
 
-const FREE = ["Build and edit by typing or chat", "Import a PDF or Word CV", "All 18 templates", "PDF, Word and text downloads", "Version history"];
-const ONE_CREDIT = ["CV analysis against a job", "Cover letter", "Interview prep with answers", "A CV tailored to one job"];
+const FREE = ["Build and edit by typing or chat", "Your first 5-minute voice call", "Import a PDF or Word CV", "All 18 templates", "PDF, Word and text downloads", "Version history"];
+const ONE_CREDIT = ["CV analysis against a job", "An 8-minute voice call", "Cover letter", "Interview prep with answers", "A CV tailored to one job"];
 
 const money = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
 
@@ -95,7 +96,11 @@ export default function PricingPage() {
             <h2 id="unlimited" className="flex items-center gap-2 text-h2 font-semibold text-ink">
               <InfinityIcon className="size-6 text-accent" aria-hidden /> Unlimited
             </h2>
-            <p className="text-body text-ink-2">No credits counted</p>
+            <Tooltip content={`Voice calls: ${VOICE.unlimitedSecondsPer30d / 60} minutes a month, then credits.`}>
+              <p tabIndex={0} className="inline-flex items-center gap-1.5 text-body text-ink-2">
+                No credits counted <Info className="size-4 text-ink-3" aria-hidden />
+              </p>
+            </Tooltip>
           </div>
           <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <li>

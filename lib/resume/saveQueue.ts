@@ -14,7 +14,7 @@ import { applyDocumentOp, type ResumeDocument } from "./document";
 //   (chat, export, restore) must settle first.
 
 export type SaveState = "saved" | "saving" | "retrying" | "error";
-export type PendingOp = { clientOpId: string; name: string; input: Record<string, unknown>; key?: string };
+export type PendingOp = { clientOpId: string; name: string; input: Record<string, unknown>; key?: string; voiceSessionId?: string };
 export type ServerState = { doc: ResumeDocument; lastSeq: number };
 /** ok: saved. `retryable: false`: the server rejected the batch (4xx), resync instead of retrying. */
 export type SendResult = ({ ok: true } & ServerState) | { ok: false; retryable: boolean };
@@ -104,6 +104,21 @@ export class SaveQueue {
     return true;
   }
 
+  /**
+   * A voice agent's tool call: applied and saved like a typed edit, but under
+   * the agent's own op id (so the server can match it against the call
+   * transcript later) and never coalesced. Returns whether it changed the CV.
+   */
+  applyVoice(name: string, input: Record<string, unknown>, clientOpId: string, voiceSessionId: string): boolean {
+    const next = applyDocumentOp(this.local, name, input);
+    if (next === this.local) return false;
+    this.pending.push({ clientOpId, name, input, voiceSessionId });
+    this.commit(next);
+    if (this.state === "saved" || this.state === "error") this.setState("saving");
+    this.schedule(this.d.debounceMs);
+    return true;
+  }
+
   /** A change the server already persisted (a chat tool call): show it, don't send it. */
   applyRemote(name: string, input: Record<string, unknown>) {
     const next = applyDocumentOp(this.local, name, input);
@@ -137,7 +152,7 @@ export class SaveQueue {
     let res: SendResult;
     try {
       res = await this.d.send(
-        batch.map(({ clientOpId, name, input }) => ({ clientOpId, name, input })),
+        batch.map(({ clientOpId, name, input, voiceSessionId }) => ({ clientOpId, name, input, ...(voiceSessionId ? { voiceSessionId } : {}) })),
         opts,
       );
     } catch {

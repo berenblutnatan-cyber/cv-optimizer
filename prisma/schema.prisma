@@ -148,16 +148,61 @@ model GeneratedResume {
 // store the transcript — it lives in sessionStorage during the call and is
 // discarded server-side after Claude returns the finalized ResumeData.
 model VoiceSession {
-  id          String   @id @default(cuid())
-  userId      String
-  durationSec Int
-  turns       Int
-  finalized   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id             String    @id @default(cuid())
+  userId         String
+  kind           String    @default("intake") // intake | interview
+  resumeId       String?
+  status         String    @default("ended") // minted | active | ended | reconciled | failed
+  free           Boolean   @default(false) // the one free intake every account gets
+  maxSeconds     Int       @default(480)
+  attempts       Int       @default(0) // connection tokens minted (reconnects reuse the session)
+  durationSec    Int       @default(0)
+  turns          Int       @default(0)
+  finalized      Boolean   @default(false) // legacy (OpenAI Realtime builder)
+  creditsCharged Int       @default(0)
+  refunded       Boolean   @default(false)
+  error          String?
+  createdAt      DateTime  @default(now())
+  startedAt      DateTime?
+  endedAt        DateTime?
+  reconciledAt   DateTime?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume        Resume?             @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  conversations VoiceConversation[]
 
   @@index([userId])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+// One ElevenLabs connection inside a voice session (id = their conversation_id).
+model VoiceConversation {
+  id           String    @id
+  sessionId    String
+  attempt      Int
+  startedAt    DateTime  @default(now())
+  durationSec  Int?
+  transcript   Json?
+  reconciledAt DateTime?
+  error        String?
+
+  session VoiceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, attempt])
+}
+
+// Raw ElevenLabs webhook deliveries; the payload is cleared once processed.
+model ElevenLabsWebhookEvent {
+  id             String    @id
+  type           String
+  conversationId String?
+  receivedAt     DateTime  @default(now())
+  processedAt    DateTime?
+  error          String?
+  payload        Json
+
+  @@index([conversationId])
 }
 
 model OptimizationLog {
@@ -203,6 +248,7 @@ model Resume {
 
   @@index([userId, updatedAt])
   @@index([anonKeyHash])
+  voiceSessions VoiceSession[]
 }
 
 // Immutable snapshots: the user's "save point", the base a tailoring branches

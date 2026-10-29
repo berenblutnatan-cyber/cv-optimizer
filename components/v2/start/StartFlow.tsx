@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, ClipboardPaste, FileUp, PenLine } from "lucide-react";
+import { Check, ClipboardPaste, FileUp, Mic, PenLine } from "lucide-react";
 import { DEFAULT_DESIGN, emptyDocument, type ResumeDocument } from "@/lib/resume/document";
 import { IMPORT_ACCEPT, MAX_IMPORT_BYTES, type ImportEvent } from "@/lib/resume/import-types";
 import { readSse } from "@/lib/http/readSse";
@@ -76,7 +76,7 @@ export function StartFlow() {
   const router = useRouter();
   const [phase, setPhase] = React.useState<Phase>({ kind: "choose" });
   const [dragging, setDragging] = React.useState(false);
-  const [creatingBlank, setCreatingBlank] = React.useState(false);
+  const [creatingBlank, setCreatingBlank] = React.useState<false | "blank" | "talk">(false);
   const [pasted, setPasted] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const abortRef = React.useRef<AbortController | null>(null);
@@ -130,13 +130,14 @@ export function StartFlow() {
     void run(JSON.stringify({ text: pasted }), "Pasted text", { "content-type": "application/json" });
   };
 
-  const startBlank = async () => {
-    setCreatingBlank(true);
+  // Talk opens the editor in Talk mode; the call itself starts on a tap there (never automatically).
+  const startBlank = async (then: "blank" | "talk" = "blank") => {
+    setCreatingBlank(then);
     try {
       const res = await fetch("/api/cv", { method: "POST" });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body?.id) throw new Error(body?.error ?? "Couldn't create a CV. Try again.");
-      router.push(`/cv/${body.id}`);
+      router.push(then === "talk" ? `/cv/${body.id}?talk=1` : `/cv/${body.id}`);
     } catch (err) {
       setCreatingBlank(false);
       setPhase({ kind: "error", message: (err as Error).message, canPaste: false });
@@ -267,16 +268,17 @@ export function StartFlow() {
         </form>
       ) : (
         <>
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Tile
               icon={<FileUp />}
               title={dragging ? "Drop to upload" : "Upload a CV"}
               meta="PDF or Word"
               highlighted={dragging}
               onClick={() => inputRef.current?.click()}
-              busy={creatingBlank}
+              busy={!!creatingBlank}
             />
-            <Tile icon={<PenLine />} title="Start blank" meta="Type or chat" onClick={() => void startBlank()} busy={creatingBlank} aria-busy={creatingBlank} />
+            <Tile icon={<Mic />} title="Talk it through" meta="About 5 minutes" onClick={() => void startBlank("talk")} busy={!!creatingBlank} aria-busy={creatingBlank === "talk"} />
+            <Tile icon={<PenLine />} title="Start blank" meta="Type or chat" onClick={() => void startBlank()} busy={!!creatingBlank} aria-busy={creatingBlank === "blank"} />
           </div>
           <input
             ref={inputRef}

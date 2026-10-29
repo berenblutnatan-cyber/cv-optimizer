@@ -73,8 +73,9 @@ export default async function PrivacyPolicy() {
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-3">{t("4. Third-Party AI Services")}</h2>
               <p className="mb-3">
-                {t("To provide our optimization services, we use third-party AI providers (such as OpenAI, Anthropic) to process your resume content. These providers have their own privacy policies and data handling practices.")}
+                {t("To provide our services, we use third-party AI providers (Anthropic, and ElevenLabs for voice calls) to process your resume content. These providers have their own privacy policies and data handling practices.")}
               </p>
+              <p className="mb-3">{t("Voice calls: we don't record audio. ElevenLabs keeps the call transcript for 30 days; we keep only the edits the call made to your CV and how long it lasted.")}</p>
               <p>
                 <strong>{t("Important:")}</strong> {t("When you upload your resume, it may be processed by these third-party services. We do not control how these providers handle your data, but we select providers with strong privacy commitments.")}
               </p>

@@ -17,7 +17,7 @@ const LABELS: Record<string, string> = {
   voice_finalize: "CV from voice",
   use_credit: "AI edit",
   tailor: "Tailored to a job",
-  voice: "Voice session",
+  voice: "Voice call",
   toolkit: "Career tool",
 };
 

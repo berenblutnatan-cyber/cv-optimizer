@@ -10,7 +10,8 @@ import { DRAFT_TTL_DAYS, type Owner } from "./owner-types";
 
 export type Actor = "user" | "chat" | "intake_agent" | "tailor";
 export type VersionAuthor = "user" | "chat" | "intake_agent" | "tailor" | "migration" | "import";
-export type OpInput = { clientOpId: string; name: string; input: Record<string, unknown> };
+/** voiceSessionId: the op came from a voice agent's tool call (actor intake_agent). The caller authorizes it. */
+export type OpInput = { clientOpId: string; name: string; input: Record<string, unknown>; voiceSessionId?: string };
 
 export const MAX_OPS_PER_BATCH = 50;
 const MAX_OP_BYTES = 24_000;
@@ -108,8 +109,16 @@ function validateOps(ops: unknown): OpInput[] {
     if (typeof op.name !== "string" || op.name.length > 64) throw new StoreError("BAD_REQUEST", "Bad operation name");
     if (!op.input || typeof op.input !== "object" || Array.isArray(op.input)) throw new StoreError("BAD_REQUEST", "Bad operation input");
     if (JSON.stringify(op.input).length > MAX_OP_BYTES) throw new StoreError("BAD_REQUEST", "Operation too large");
-    return { clientOpId: op.clientOpId, name: op.name, input: op.input as Record<string, unknown> };
+    if (op.voiceSessionId !== undefined && (typeof op.voiceSessionId !== "string" || !/^[A-Za-z0-9_-]{8,40}$/.test(op.voiceSessionId))) {
+      throw new StoreError("BAD_REQUEST", "Bad voiceSessionId");
+    }
+    return { clientOpId: op.clientOpId, name: op.name, input: op.input as Record<string, unknown>, ...(op.voiceSessionId ? { voiceSessionId: op.voiceSessionId } : {}) };
   });
+}
+
+/** Validate a request's ops without applying them (routes authorize voice ops first). */
+export function parseOps(rawOps: unknown): OpInput[] {
+  return validateOps(rawOps);
 }
 
 /**
@@ -170,11 +179,11 @@ export async function appendOps(
       log.push({
         resumeId: id,
         seq,
-        actor,
+        actor: op.voiceSessionId ? "intake_agent" : actor,
         toolName: op.name,
         input: op.input as Prisma.InputJsonValue,
         clientOpId: op.clientOpId,
-        voiceSessionId: opts.voiceSessionId ?? null,
+        voiceSessionId: op.voiceSessionId ?? opts.voiceSessionId ?? null,
       });
     }
 

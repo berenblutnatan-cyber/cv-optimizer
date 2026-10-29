@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 async function load(id: string) {
   const owner = await currentOwner();
-  return owner ? loadResume(id, owner) : null;
+  const cv = owner ? await loadResume(id, owner) : null;
+  return cv ? { ...cv, signedIn: !!owner?.userId } : null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -17,10 +18,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: cv ? documentTitle(cv.doc) : "CV not found", robots: { index: false } };
 }
 
-export default async function CvEditorPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CvEditorPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const { talk } = await searchParams;
   const cv = await load(id);
   if (!cv) notFound();
   // Keyed by id: a different CV is a fresh editor with its own save queue.
-  return <EditorShell key={cv.id} id={cv.id} initial={{ doc: cv.doc, lastSeq: cv.lastSeq }} />;
+  return <EditorShell key={cv.id} id={cv.id} initial={{ doc: cv.doc, lastSeq: cv.lastSeq }} signedIn={cv.signedIn} startInTalk={talk === "1"} />;
 }

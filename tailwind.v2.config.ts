@@ -83,6 +83,10 @@ const config: Config = {
           "100%": { backgroundColor: "rgb(var(--c-accent-wash) / 0)" },
         },
         breathe: { "0%,100%": { transform: "scale(1)" }, "50%": { transform: "scale(1.06)" } },
+        "voice-pulse": {
+          "0%": { boxShadow: "0 0 0 2px rgb(var(--c-accent) / 0.55)" },
+          "100%": { boxShadow: "0 0 0 12px rgb(var(--c-accent) / 0)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 150ms var(--ease) both",
@@ -90,6 +94,7 @@ const config: Config = {
         shimmer: "shimmer 1.6s linear infinite",
         "flash-patch": "flash-patch 1.2s var(--ease) both",
         breathe: "breathe 2.4s ease-in-out infinite",
+        "voice-pulse": "voice-pulse 900ms var(--ease) both",
       },
     },
   },

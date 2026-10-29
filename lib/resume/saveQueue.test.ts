@@ -174,4 +174,20 @@ describe("SaveQueue", () => {
     expect(q.doc.content.summary).toBe("restored");
     expect(name(q.doc)).toBe("Dana");
   });
+  it("saves a voice edit under the agent's op id with its session, in order with typing, never merged", async () => {
+    const server = fakeServer();
+    const q = new SaveQueue({ doc: emptyDocument(), lastSeq: 0 }, { newId: ids, onDoc: () => {}, onState: () => {}, fetchFresh: async () => null, send: async (ops) => server.apply(ops) });
+    q.apply("update_personal_info", setName("Da"), "name");
+    expect(q.applyVoice("add_experience", { company: "Acme", role: "PM" }, "vc:sess12345678:0:0", "sess12345678")).toBe(true);
+    q.apply("update_personal_info", setName("Dana"), "name");
+    // A no-op isn't queued.
+    expect(q.applyVoice("remove_experience", { index: 9 }, "vc:sess12345678:0:1", "sess12345678")).toBe(false);
+    expect(await q.settle()).toBe(true);
+    const sent = server.calls.flat();
+    expect(sent.map((o) => o.name)).toEqual(["update_personal_info", "add_experience", "update_personal_info"]);
+    expect(sent[1]).toEqual({ clientOpId: "vc:sess12345678:0:0", name: "add_experience", input: { company: "Acme", role: "PM" }, voiceSessionId: "sess12345678" });
+    expect(sent[0]).not.toHaveProperty("voiceSessionId");
+    expect(name(server.doc)).toBe("Dana");
+    expect(server.doc.content.experience).toHaveLength(1);
+  });
 });

@@ -67,7 +67,7 @@ async function existing(tx: Tx, key: string) {
  */
 export async function charge(
   tx: Tx,
-  p: { userId: string; reason: LedgerReason; key: string; amount?: number } & Ref,
+  p: { userId: string; reason: LedgerReason; key: string; amount?: number; ignoreUnlimited?: boolean } & Ref,
 ): Promise<ChargeResult> {
   const amount = p.amount ?? 1;
   if (!Number.isInteger(amount) || amount < 1) throw new Error("charge amount must be a positive integer");
@@ -75,7 +75,8 @@ export async function charge(
 
   const user = await lockUser(tx, p.userId);
   if (!user) throw new InsufficientCredits(0);
-  const unlimited = hasActiveSubscription(user);
+  // ignoreUnlimited: use beyond Unlimited's fair-use cap is paid in credits.
+  const unlimited = hasActiveSubscription(user) && !p.ignoreUnlimited;
 
   const prior = await existing(tx, p.key);
   if (prior) {
