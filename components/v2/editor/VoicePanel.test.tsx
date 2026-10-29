@@ -41,9 +41,13 @@ function fakeSdk() {
 }
 
 let posted: string[] = [];
+let startResponse: { status: number; body: Record<string, unknown> } | null = null;
+let endEdits = 2;
 
 beforeEach(() => {
   posted = [];
+  startResponse = null;
+  endEdits = 2;
   vi.useFakeTimers({ shouldAdvanceTime: true });
   Object.defineProperty(navigator, "mediaDevices", {
     configurable: true,
@@ -53,13 +57,18 @@ beforeEach(() => {
   vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
     const method = init?.method ?? "GET";
     if (method === "POST") posted.push(url);
+    if (method === "POST" && url.endsWith("/api/voice/sessions") && startResponse) {
+      const r = startResponse;
+      startResponse = null;
+      return new Response(JSON.stringify(r.body), { status: r.status, headers: { "content-type": "application/json" } });
+    }
     const body =
       method === "GET"
         ? { free: true, credits: 0, seconds: 300, unlimited: false, balance: 1, available: true }
         : url.endsWith("/api/voice/sessions")
-          ? { sessionId: "sess_test_0001", attempt: 0, token: "tok", seconds: 300, variables: {} }
+          ? { sessionId: "sess_test_0001", attempt: 0, token: "tok", seconds: 300, charged: 0, variables: {} }
           : url.endsWith("/end")
-            ? { versionNumber: 2, edits: 2 }
+            ? { versionNumber: 2, edits: endEdits }
             : { ok: true };
     return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
   });
@@ -76,8 +85,10 @@ function Editor({ sdk }: { sdk: VoiceSdk }) {
   const ref = React.useRef(doc);
   ref.current = doc;
   const [, bump] = React.useState(0);
+  const [slot, setSlot] = React.useState<HTMLDivElement | null>(null);
   return (
     <TooltipProvider>
+      <div data-testid="call-slot" ref={setSlot} />
       <div data-testid="name">{doc.content.personalInfo.name}</div>
       <VoicePanel
         cvId="cv1"
@@ -95,19 +106,22 @@ function Editor({ sdk }: { sdk: VoiceSdk }) {
         onEdit={() => bump((n) => n + 1)}
         onUseChat={() => {}}
         onKeepEditing={() => {}}
+        onShowPreview={() => {}}
+        onShowCall={() => {}}
+        onCallChange={() => {}}
+        callBarSlot={slot}
       />
     </TooltipProvider>
   );
 }
 
-async function startCall() {
-  const fake = fakeSdk();
+async function startCall(fake = fakeSdk()) {
   render(<Editor sdk={fake.sdk} />);
   await act(async () => {
     await vi.advanceTimersByTimeAsync(50);
   });
   await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: "Tap to talk" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start talking" }));
     await vi.advanceTimersByTimeAsync(50);
   });
   // The connection starts on the next tick (dev double-mount guard).
@@ -131,7 +145,8 @@ describe("VoicePanel", () => {
       await vi.advanceTimersByTimeAsync(100);
     });
     expect(screen.getByTestId("name").textContent).toBe("Dana");
-    expect(screen.getByText("Added PM at Acme")).toBeTruthy();
+    // Shown in the feed and announced once to screen readers.
+    expect(screen.getAllByText("Added PM at Acme")).toHaveLength(2);
     expect(fake.calls.end).toBe(0);
     expect(fake.calls.start).toBe(1);
     expect(screen.getByRole("button", { name: /End/ })).toBeTruthy();
@@ -145,7 +160,7 @@ describe("VoicePanel", () => {
     });
     expect(posted.filter((u) => u.endsWith("/end"))).toHaveLength(1);
     expect(fake.calls.end).toBeLessThanOrEqual(2);
-    expect(screen.getByText("Saved as v2")).toBeTruthy();
+    expect(screen.getByText("2 changes saved")).toBeTruthy();
   });
 
   it("a failed end request still leaves the panel, never stuck on Saving", async () => {
@@ -158,7 +173,47 @@ describe("VoicePanel", () => {
       await vi.advanceTimersByTimeAsync(100);
     });
     expect(screen.queryByText("Saving…")).toBeNull();
-    expect(screen.getByText("Saved")).toBeTruthy();
+    expect(screen.getByText("1 change saved")).toBeTruthy();
+  });
+
+  it("the call controls render in the shell's call slot, outside the panel", async () => {
+    await startCall();
+    const slot = screen.getByTestId("call-slot");
+    expect(slot.querySelector("button[aria-label='Mute']")).toBeTruthy();
+    expect([...slot.querySelectorAll("button")].some((b) => b.textContent?.includes("End"))).toBe(true);
+  });
+
+  it("a call with no edits ends as 'Call ended', not a success", async () => {
+    endEdits = 0;
+    await startCall();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /End/ }));
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(screen.getByText("Call ended")).toBeTruthy();
+  });
+
+  it("already in a call elsewhere: ending that call starts this one", async () => {
+    startResponse = { status: 409, body: { error: "busy", code: "BUSY", activeSessionId: "sess_other_0001" } };
+    const fake = fakeSdk();
+    render(<Editor sdk={fake.sdk} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Start talking" }));
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /End it and start here/ }));
+      await vi.advanceTimersByTimeAsync(60);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    expect(posted).toContain("/api/voice/sessions/sess_other_0001/end");
+    expect(posted.filter((u) => u === "/api/voice/sessions")).toHaveLength(2);
+    expect(fake.calls.start).toBe(1);
   });
 
   it("an agent hang-up ends the call the same way", async () => {
@@ -168,6 +223,6 @@ describe("VoicePanel", () => {
       await vi.advanceTimersByTimeAsync(100);
     });
     expect(posted.filter((u) => u.endsWith("/end"))).toHaveLength(1);
-    expect(screen.getByText("Saved as v2")).toBeTruthy();
+    expect(screen.getByText("2 changes saved")).toBeTruthy();
   });
 });

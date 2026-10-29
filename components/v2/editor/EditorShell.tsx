@@ -47,7 +47,7 @@ import { SectionEditor, type SectionId } from "./SectionEditor";
 import { ChatPanel } from "./ChatPanel";
 import { DesignPanel } from "./DesignPanel";
 import { useVersions, versionTitle, VersionsPanel } from "./VersionsPanel";
-import { VoicePanel } from "./VoicePanel";
+import { VoicePanel, type VoiceSdk } from "./VoicePanel";
 
 type Mode = "type" | "chat" | "talk";
 type MobilePane = "edit" | "preview";
@@ -131,11 +131,14 @@ export function EditorShell({
   initial,
   signedIn,
   startInTalk = false,
+  voiceSdk,
 }: {
   id: string;
   initial: { doc: ResumeDocument; lastSeq: number };
   signedIn: boolean;
   startInTalk?: boolean;
+  /** Tests and QA only: a scripted agent in place of ElevenLabs. */
+  voiceSdk?: VoiceSdk;
 }) {
   const { doc, saveState, apply, applyRemote, applyVoice, adoptServer, settle, retry, getDoc } = useCvDocument(id, initial);
   const docRef = React.useRef<HTMLDivElement>(null);
@@ -145,6 +148,8 @@ export function EditorShell({
   // Each voice edit pulses the preview; on a phone it marks the Preview tab.
   const [pulse, setPulse] = React.useState(0);
   const [previewDirty, setPreviewDirty] = React.useState(false);
+  const [onCall, setOnCall] = React.useState(false);
+  const [callSlot, setCallSlot] = React.useState<HTMLDivElement | null>(null);
   const [panel, setPanel] = React.useState<Panel>("edit");
   const [mobilePane, setMobilePane] = React.useState<MobilePane>("edit");
   const [openSections, setOpenSections] = React.useState<Set<SectionId>>(new Set(["profile", "experience"]));
@@ -165,6 +170,11 @@ export function EditorShell({
   const onVoiceEdit = React.useCallback(() => {
     setPulse((n) => n + 1);
     setPreviewDirty(true);
+  }, []);
+  const showCall = React.useCallback(() => {
+    setModeState("talk");
+    setPanel("edit");
+    setMobilePane("edit");
   }, []);
   const setMode = (m: Mode) => {
     setModeState(m);
@@ -255,6 +265,7 @@ export function EditorShell({
   ];
 
   const overflowing = doc.design.pageMode === "one" && fit && !fit.fits;
+  const hasAnyContent = completeness(doc.content).some((i) => i.done);
 
   const left = (
     <div className="flex h-full min-h-0 flex-col bg-surface">
@@ -270,7 +281,16 @@ export function EditorShell({
             options={[
               { value: "type", label: "Type", icon: <PenLine /> },
               { value: "chat", label: "Chat", icon: <MessageSquare /> },
-              { value: "talk", label: "Talk", icon: <Mic /> },
+              {
+                value: "talk",
+                label: "Talk",
+                icon: (
+                  <span className="relative">
+                    <Mic />
+                    {onCall && mode !== "talk" && <span aria-label="On a call" className="absolute -end-1 -top-1 size-2 rounded-full bg-danger" />}
+                  </span>
+                ),
+              },
             ]}
           />
           <CompletenessButton doc={doc} onJump={jumpTo} />
@@ -293,6 +313,14 @@ export function EditorShell({
             onEdit={onVoiceEdit}
             onUseChat={() => setMode("chat")}
             onKeepEditing={() => setMode("type")}
+            onShowPreview={() => {
+              setMobilePane("preview");
+              setPreviewDirty(false);
+            }}
+            onShowCall={showCall}
+            onCallChange={setOnCall}
+            callBarSlot={callSlot}
+            sdk={voiceSdk}
           />
         </div>
       </div>
@@ -384,7 +412,8 @@ export function EditorShell({
           </Button>
           <Menu>
             <MenuTrigger asChild>
-              <Button variant="primary" size="sm" aria-label="Export" loading={exporting !== null}>
+              {/* Primary once there is something to export; on a blank CV the next step (type, chat, talk) leads. */}
+              <Button variant={hasAnyContent ? "primary" : "secondary"} size="sm" aria-label="Export" loading={exporting !== null}>
                 <Download /> <span className="hidden sm:inline">Export</span>
               </Button>
             </MenuTrigger>
@@ -402,6 +431,9 @@ export function EditorShell({
           </Menu>
         </div>
       </header>
+
+      {/* A live call's controls: above every mode and pane, so the mic is never on unseen. */}
+      <div ref={setCallSlot} />
 
       {/* Phone: one pane at a time. */}
       <div className="flex h-12 shrink-0 items-center justify-center border-b border-hairline bg-surface lg:hidden">

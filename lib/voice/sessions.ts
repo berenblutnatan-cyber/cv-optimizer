@@ -20,6 +20,8 @@ export class VoiceError extends Error {
   constructor(
     public code: "NOT_FOUND" | "BUSY" | "NO_CREDITS" | "EXPIRED" | "UNAVAILABLE" | "BAD_REQUEST",
     message: string,
+    /** Safe to return to the caller (e.g. the open session a BUSY refers to; it is theirs). */
+    public detail?: Record<string, string>,
   ) {
     super(message);
   }
@@ -85,7 +87,7 @@ export async function startVoiceSession(userId: string, resumeId: string): Promi
         },
         select: { id: true },
       });
-      if (busy) throw new VoiceError("BUSY", "You're already in a call. End it first.");
+      if (busy) throw new VoiceError("BUSY", "You're already in a call. End it first.", { activeSessionId: busy.id });
 
       const free = !(await tx.voiceSession.findFirst({ where: { userId, kind: "intake", free: true, refunded: false }, select: { id: true } }));
       const session = await tx.voiceSession.create({

@@ -29,6 +29,10 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;
     }
+    /* A colour fade, not movement: it is the only sign a voice edit landed, so it stays. */
+    .animate-voice-pulse {
+      animation-duration: 900ms !important;
+    }
   }
 }
 

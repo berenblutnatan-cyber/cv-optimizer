@@ -70,6 +70,11 @@ run("voice sessions (local Postgres)", () => {
     expect(s).toMatchObject({ free: true, maxSeconds: VOICE.freeSeconds, status: "minted", creditsCharged: 0 });
     expect(await credits(a.id)).toBe(3);
     expect(await code(startVoiceSession(a.id, a.cvId))).toBe("BUSY");
+    // The refusal names the open call (the user's own), so the UI can end it.
+    const busy = await startVoiceSession(a.id, a.cvId).catch((e: VoiceError) => e);
+    expect((busy as VoiceError).detail).toEqual({ activeSessionId: s.id });
+    await endVoiceSession(a.id, s.id);
+    expect((await startVoiceSession(a.id, a.cvId)).status).toBe("minted");
   });
 
   it("a call that never connects is refunded, and the free call comes back", async () => {

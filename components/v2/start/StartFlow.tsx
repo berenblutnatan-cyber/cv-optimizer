@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { Check, ClipboardPaste, FileUp, Mic, PenLine } from "lucide-react";
 import { DEFAULT_DESIGN, emptyDocument, type ResumeDocument } from "@/lib/resume/document";
 import { IMPORT_ACCEPT, MAX_IMPORT_BYTES, type ImportEvent } from "@/lib/resume/import-types";
@@ -74,6 +75,7 @@ function Tile({
 
 export function StartFlow() {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
   const [phase, setPhase] = React.useState<Phase>({ kind: "choose" });
   const [dragging, setDragging] = React.useState(false);
   const [creatingBlank, setCreatingBlank] = React.useState<false | "blank" | "talk">(false);
@@ -137,7 +139,10 @@ export function StartFlow() {
       const res = await fetch("/api/cv", { method: "POST" });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body?.id) throw new Error(body?.error ?? "Couldn't create a CV. Try again.");
-      router.push(then === "talk" ? `/cv/${body.id}?talk=1` : `/cv/${body.id}`);
+      const editor = then === "talk" ? `/cv/${body.id}?talk=1` : `/cv/${body.id}`;
+      // Talking needs an account: go straight to sign-in (the draft is claimed after), never to a wall.
+      if (then === "talk" && isSignedIn === false) window.location.assign(`/sign-in?redirect_url=${encodeURIComponent(editor)}`);
+      else router.push(editor);
     } catch (err) {
       setCreatingBlank(false);
       setPhase({ kind: "error", message: (err as Error).message, canPaste: false });
