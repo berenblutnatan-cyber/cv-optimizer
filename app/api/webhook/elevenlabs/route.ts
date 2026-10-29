@@ -1,4 +1,7 @@
+import { after } from "next/server";
 import { Prisma } from "@prisma/client";
+import { scoreWhenReady } from "@/lib/interview/http";
+import { interviewStatus, recordInterviewConversation } from "@/lib/interview/store";
 import { prisma } from "@/lib/prisma";
 import { verifyWebhookSignature } from "@/lib/voice/elevenlabs";
 import { parseConversation } from "@/lib/voice/protocol";
@@ -34,6 +37,21 @@ export async function POST(request: Request) {
   const rec = parseConversation(event.data);
   if (!rec) return Response.json({ received: true, ignored: "no conversation" });
 
+  // A mock interview: its transcript is read back from the API when scoring,
+  // so the webhook only makes sure the call is counted and scoring runs.
+  const interviewId = interviewSessionId(event.data);
+  if (interviewId) {
+    try {
+      await recordInterviewConversation(interviewId, rec.conversationId, rec.attempt);
+      const status = await interviewStatus(interviewId);
+      if (status === "scoring") after(() => scoreWhenReady(interviewId, { tries: 6 }));
+      return Response.json({ received: true, status: status ?? "unknown" });
+    } catch (err) {
+      console.error("[elevenlabs webhook] interview failed", interviewId, err);
+      return Response.json({ received: false }, { status: 500 });
+    }
+  }
+
   // One row per conversation: a repeated delivery finds it.
   const eventId = `${type}:${rec.conversationId}`;
   const prior = await prisma.elevenLabsWebhookEvent.findUnique({ where: { id: eventId }, select: { processedAt: true } });
@@ -61,4 +79,12 @@ export async function POST(request: Request) {
       .catch(() => {});
     return Response.json({ received: false }, { status: 500 });
   }
+}
+
+function interviewSessionId(data: unknown): string | null {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : null;
+  const init = d?.conversation_initiation_client_data as Record<string, unknown> | undefined;
+  const vars = init?.dynamic_variables as Record<string, unknown> | undefined;
+  const id = vars?.interview_session_id;
+  return typeof id === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(id) ? id : null;
 }

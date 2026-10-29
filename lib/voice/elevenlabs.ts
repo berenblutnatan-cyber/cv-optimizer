@@ -23,6 +23,19 @@ export function voiceConfig(): { apiKey: string; agentId: string } | null {
   return apiKey && agentId ? { apiKey, agentId } : null;
 }
 
+/** The mock-interviewer agent (a separate agent: other prompt, no CV tools). */
+export function interviewVoiceConfig(): { apiKey: string; agentId: string } | null {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const agentId = process.env.EL_AGENT_INTERVIEW;
+  return apiKey && agentId ? { apiKey, agentId } : null;
+}
+
+/** A finished conversation's transcript, or not final yet. */
+export async function fetchTranscript(apiKey: string, conversationId: string): Promise<{ final: boolean; transcript: unknown }> {
+  const c = (await fetchConversation(apiKey, conversationId)) as { status?: unknown; transcript?: unknown };
+  return { final: c.status === "done" || c.status === "failed", transcript: c.transcript ?? [] };
+}
+
 async function call(path: string, apiKey: string, signal?: AbortSignal): Promise<unknown> {
   let res: Response;
   try {

@@ -19,17 +19,32 @@ export const SCORE_DISCLAIMER =
   "A rubric estimate of how a recruiter and an ATS read this CV against this job. It does not predict callbacks or know this company's system.";
 
 /** The overall score: a quiet ring with the number; the band sits underneath so it never clips. */
-export function ScoreGauge({ value, size = 112, loading, className }: { value: number | null; size?: number; loading?: boolean; className?: string }) {
+export function ScoreGauge({
+  value,
+  size = 112,
+  loading,
+  className,
+  label = "CV score",
+  tip = SCORE_DISCLAIMER,
+}: {
+  value: number | null;
+  size?: number;
+  loading?: boolean;
+  className?: string;
+  /** Accessible name: what this number scores. */
+  label?: string;
+  tip?: string;
+}) {
   const stroke = size >= 100 ? 8 : 6;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const v = value == null ? 0 : Math.max(0, Math.min(100, Math.round(value)));
   const band = bandFor(v);
   return (
-    <Tooltip content={SCORE_DISCLAIMER}>
+    <Tooltip content={tip}>
       <div
         role="meter"
-        aria-label="CV score"
+        aria-label={label}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={value ?? undefined}

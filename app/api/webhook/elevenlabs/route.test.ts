@@ -1,8 +1,15 @@
 import { localDbUrl } from "@/test/local-db";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { randomBytes } from "node:crypto";
 import { intakeConversation } from "@/test/fixtures/voiceConversation";
 import { signWebhook } from "@/lib/voice/elevenlabs";
+
+// after() needs a Next request scope; capture the scheduled work instead.
+const scheduled: (() => unknown)[] = [];
+vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: (fn: () => unknown) => void scheduled.push(fn) }));
+// Scoring itself is covered in lib/interview/store.test.ts.
+const scored: string[] = [];
+vi.mock("@/lib/interview/http", () => ({ scoreWhenReady: async (id: string) => void scored.push(id) }));
 
 const SECRET = "wsec_route_" + randomBytes(8).toString("hex");
 const run = localDbUrl() ? describe : describe.skip;
@@ -77,6 +84,41 @@ run("POST /api/webhook/elevenlabs (local Postgres)", () => {
     const evt = await prisma.elevenLabsWebhookEvent.findUniqueOrThrow({ where: { id: `post_call_transcription:${conversationId}` } });
     expect(evt.processedAt).toBeNull();
     await sessions.endVoiceSession(userId, s.id);
+  });
+
+  it("an interview call is counted and, once the browser finished, scored after the ack", async () => {
+    const { createInterview, finishVoice, reserveVoiceAttempt, getInterview } = await import("@/lib/interview/store");
+    const { QUESTION_MODEL } = await import("@/lib/interview/ai");
+    const { appendOps } = await import("@/lib/resume/store");
+    const { grant } = await import("@/lib/billing/ledger");
+    await prisma.$transaction((tx) => grant(tx, { userId, amount: 1, reason: "admin", key: `test-grant-iv:${userId}` }));
+    await appendOps(cvId, { userId, anonKeyHash: null }, [{ clientOpId: `t:${randomBytes(5).toString("hex")}`, name: "add_experience", input: { company: "Acme", role: "PM" } }], "user");
+    const claude = {
+      beta: { messages: { create: async (p: { model: string }) => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(p.model === QUESTION_MODEL ? { questions: [1, 2, 3].map((n) => ({ text: `Question ${n} here?`, kind: "role", focus: "x" })) } : {}) }] }) } },
+    } as unknown as import("@anthropic-ai/sdk").default;
+    const iv = await createInterview(claude, userId, { resumeId: cvId, jd: "Payments PM. ".repeat(10), mode: "voice" });
+    await reserveVoiceAttempt(userId, iv.id);
+    const conversationId = `conv_${randomBytes(5).toString("hex")}`;
+    const event = (cid: string) =>
+      JSON.stringify({
+        type: "post_call_transcription",
+        data: { conversation_id: cid, status: "done", transcript: [], conversation_initiation_client_data: { dynamic_variables: { interview_session_id: iv.id, voice_attempt: "0" } } },
+      });
+
+    // The browser crashed before reporting the call: the webhook counts it, nothing to score yet.
+    const live = await POST(request(event(conversationId), signWebhook(event(conversationId), SECRET)));
+    expect(await live.json()).toMatchObject({ status: "live" });
+    expect((await getInterview(userId, iv.id)).conversationIds).toEqual([conversationId]);
+    expect(scheduled).toHaveLength(0);
+
+    await finishVoice(userId, iv.id);
+    const again = await POST(request(event(conversationId), signWebhook(event(conversationId), SECRET)));
+    expect(await again.json()).toMatchObject({ status: "scoring" });
+    expect(scheduled).toHaveLength(1);
+    await scheduled[0]();
+    expect(scored).toEqual([iv.id]);
+    // Not routed into the CV reconciler.
+    expect(await prisma.elevenLabsWebhookEvent.findUnique({ where: { id: `post_call_transcription:${conversationId}` } })).toBeNull();
   });
 
   it("acknowledges other event types without processing", async () => {

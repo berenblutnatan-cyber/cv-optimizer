@@ -26,7 +26,7 @@ describe("voice secrets", () => {
   it("only the server module and the setup script read the API key", () => {
     const readers = all.filter((f) => /ELEVENLABS_API_KEY/.test(f.src)).map((f) => f.p).sort();
     // Server code and the two Node scripts (agent setup, live smoke test); nothing a browser loads.
-    expect(readers).toEqual([join("lib", "voice", "elevenlabs.ts"), join("scripts", "voice-agent.ts"), join("scripts", "voice-smoke.ts")].sort());
+    expect(readers).toEqual([join("lib", "voice", "elevenlabs.ts"), join("scripts", "interview-smoke.ts"), join("scripts", "voice-agent.ts"), join("scripts", "voice-smoke.ts")].sort());
   });
   it("no ElevenLabs secret is ever public", () => {
     expect(all.filter((f) => /NEXT_PUBLIC_(ELEVEN|EL_)/.test(f.src)).map((f) => f.p)).toEqual([]);

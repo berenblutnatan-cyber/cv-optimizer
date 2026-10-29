@@ -1,9 +1,11 @@
+import { anthropic, transcriptFetcher } from "@/lib/interview/http";
+import { drainInterviews } from "@/lib/interview/store";
 import { fetchConversation, voiceConfig } from "@/lib/voice/elevenlabs";
 import { parseConversation } from "@/lib/voice/protocol";
 import { drainVoice } from "@/lib/voice/sessions";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // Voice re-drive (daily in vercel.json, so it works on every Vercel plan;
 // the webhook is the primary path): refunds sessions that never connected,
@@ -16,5 +18,7 @@ export async function GET(request: Request) {
   const cfg = voiceConfig();
   const out = await drainVoice(cfg ? async (id) => parseConversation(await fetchConversation(cfg.apiKey, id)) : null);
   console.log("[voice drain]", JSON.stringify(out));
-  return Response.json(out);
+  const interviews = await drainInterviews(anthropic, transcriptFetcher());
+  console.log("[interview drain]", JSON.stringify(interviews));
+  return Response.json({ ...out, interviews });
 }

@@ -1,7 +1,7 @@
 // Create or update the ElevenLabs intake agent from lib/voice/agent.ts.
 //
-//   npx tsx scripts/voice-agent.ts            # dry run: print the config
-//   npx tsx scripts/voice-agent.ts --apply    # create/update tools + agent
+//   npx tsx scripts/voice-agent.ts [--agent=interview]            # dry run
+//   npx tsx scripts/voice-agent.ts [--agent=interview] --apply    # create/update tools + agent
 //
 // Needs ELEVENLABS_API_KEY. Updates EL_AGENT_INTAKE when set, otherwise
 // creates the agent and prints the id to put in EL_AGENT_INTAKE.
@@ -10,35 +10,53 @@
 
 import { config } from "dotenv";
 import { ElevenLabsClient, type ElevenLabs } from "@elevenlabs/elevenlabs-js";
-import { INTAKE_AGENT_NAME, INTAKE_EXCLUDED_TOOLS, INTAKE_FIRST_MESSAGE, INTAKE_PROMPT, intakeClientTools } from "../lib/voice/agent";
+import {
+  INTAKE_AGENT_NAME,
+  INTAKE_EXCLUDED_TOOLS,
+  INTAKE_FIRST_MESSAGE,
+  INTAKE_PROMPT,
+  intakeClientTools,
+  INTERVIEW_AGENT_NAME,
+  INTERVIEW_FIRST_MESSAGE,
+  INTERVIEW_PROMPT,
+  interviewClientTools,
+} from "../lib/voice/agent";
+import { INTERVIEW } from "../lib/interview/types";
 import { VOICE } from "../lib/voice/protocol";
 
 config({ path: ".env.local" });
 config({ path: ".env" });
 
 const apply = process.argv.includes("--apply");
+const which = process.argv.includes("--agent=interview") || process.argv.includes("interview") ? "interview" : "intake";
 const apiKey = process.env.ELEVENLABS_API_KEY;
-const agentId = process.env.EL_AGENT_INTAKE;
+const agentId = which === "interview" ? process.env.EL_AGENT_INTERVIEW : process.env.EL_AGENT_INTAKE;
+const envName = which === "interview" ? "EL_AGENT_INTERVIEW" : "EL_AGENT_INTAKE";
 // Optional: a voice from your ElevenLabs library. Unset keeps the agent's default voice.
-const voiceId = process.env.EL_INTAKE_VOICE_ID || undefined;
+const voiceId = (which === "interview" ? process.env.EL_INTERVIEW_VOICE_ID : process.env.EL_INTAKE_VOICE_ID) || undefined;
 
-const tools = intakeClientTools();
+const tools = which === "interview" ? interviewClientTools() : intakeClientTools();
+const AGENT_NAME = which === "interview" ? INTERVIEW_AGENT_NAME : INTAKE_AGENT_NAME;
 
 const conversationConfig = {
   agent: {
-    firstMessage: INTAKE_FIRST_MESSAGE,
+    firstMessage: which === "interview" ? INTERVIEW_FIRST_MESSAGE : INTAKE_FIRST_MESSAGE,
     language: "en",
     disableFirstMessageInterruptions: false,
-    maxConversationDurationMessage: "We're out of time for this call. Everything's saved on your CV.",
+    maxConversationDurationMessage:
+      which === "interview" ? "That's our time. Press End to see your feedback." : "We're out of time for this call. Everything's saved on your CV.",
     dynamicVariables: {
-      dynamicVariablePlaceholders: { voice_session_id: "", voice_attempt: "0", cv_snapshot: "(empty)", minutes: "5", opening: "Hi, I'm Hired." },
+      dynamicVariablePlaceholders:
+        which === "interview"
+          ? { interview_session_id: "", voice_attempt: "0", job_title: "this role", company_clause: "", question_plan: "1. Tell me about yourself.", resume_note: "", opening: "Hi, ready?" }
+          : { voice_session_id: "", voice_attempt: "0", cv_snapshot: "(empty)", minutes: "5", opening: "Hi, I'm Hired." },
     },
-    prompt: { prompt: INTAKE_PROMPT, llm: "claude-sonnet-5-5" as const, temperature: 0.3, toolIds: [] as string[] },
+    prompt: { prompt: which === "interview" ? INTERVIEW_PROMPT : INTAKE_PROMPT, llm: "claude-sonnet-5-5" as const, temperature: 0.3, toolIds: [] as string[] },
   },
   // voiceId is left out entirely when unset: the API rejects null.
   tts: { modelId: "eleven_v4_turbo" as const, ...(voiceId ? { voiceId } : {}) },
-  turn: { turnEagerness: "patient" as const, turnTimeout: 12, silenceEndCallTimeout: 60 },
-  conversation: { maxDurationSeconds: VOICE.paidSeconds + 30 },
+  turn: { turnEagerness: "patient" as const, turnTimeout: which === "interview" ? 20 : 12, silenceEndCallTimeout: which === "interview" ? 90 : 60 },
+  conversation: { maxDurationSeconds: (which === "interview" ? INTERVIEW.maxSeconds : VOICE.paidSeconds) + 30 },
 };
 
 const platformSettings = {
@@ -49,7 +67,7 @@ const platformSettings = {
 
 async function main() {
   if (!apply) {
-    console.log(JSON.stringify({ name: INTAKE_AGENT_NAME, conversationConfig, platformSettings, tools: tools.map((t) => t.name) }, null, 2));
+    console.log(JSON.stringify({ name: AGENT_NAME, conversationConfig, platformSettings, tools: tools.map((t) => t.name) }, null, 2));
     console.log("\nDry run. Pass --apply to write it to ElevenLabs.");
     return;
   }
@@ -82,15 +100,15 @@ async function main() {
   conversationConfig.agent.prompt.toolIds = toolIds;
 
   if (agentId) {
-    await client.conversationalAi.agents.update(agentId, { name: INTAKE_AGENT_NAME, conversationConfig, platformSettings });
+    await client.conversationalAi.agents.update(agentId, { name: AGENT_NAME, conversationConfig, platformSettings });
     console.log(`updated agent ${agentId}`);
   } else {
-    const created = await client.conversationalAi.agents.create({ name: INTAKE_AGENT_NAME, conversationConfig, platformSettings });
-    console.log(`created agent ${created.agentId}\nSet EL_AGENT_INTAKE=${created.agentId} in .env.local and on Vercel.`);
+    const created = await client.conversationalAi.agents.create({ name: AGENT_NAME, conversationConfig, platformSettings });
+    console.log(`created agent ${created.agentId}\nSet ${envName}=${created.agentId} in .env.local and on Vercel.`);
   }
 
   // A tool this script once created but the agent no longer has (detached above first).
-  for (const name of INTAKE_EXCLUDED_TOOLS) {
+  for (const name of which === "intake" ? INTAKE_EXCLUDED_TOOLS : []) {
     const id = existing.get(name);
     if (!id) continue;
     await client.conversationalAi.tools.delete(id);

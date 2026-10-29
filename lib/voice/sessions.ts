@@ -55,12 +55,14 @@ export async function voiceOffer(userId: string): Promise<{ free: boolean; credi
   };
 }
 
-async function unlimitedSecondsUsed(db: Prisma.TransactionClient | typeof prisma, userId: string): Promise<number> {
-  const agg = await db.voiceSession.aggregate({
-    where: { userId, free: false, creditsCharged: 0, refunded: false, createdAt: { gt: new Date(Date.now() - 30 * 86_400_000) } },
-    _sum: { durationSec: true },
-  });
-  return agg._sum.durationSec ?? 0;
+/** Voice seconds Unlimited covered in the last 30 days: intake calls and mock interviews share one fair-use pool. */
+export async function unlimitedSecondsUsed(db: Prisma.TransactionClient | typeof prisma, userId: string): Promise<number> {
+  const since = new Date(Date.now() - 30 * 86_400_000);
+  const [intake, interview] = await Promise.all([
+    db.voiceSession.aggregate({ where: { userId, free: false, creditsCharged: 0, refunded: false, createdAt: { gt: since } }, _sum: { durationSec: true } }),
+    db.interviewSession.aggregate({ where: { userId, mode: "voice", creditsCharged: 0, refunded: false, createdAt: { gt: since } }, _sum: { durationSec: true } }),
+  ]);
+  return (intake._sum.durationSec ?? 0) + (interview._sum.durationSec ?? 0);
 }
 
 /**

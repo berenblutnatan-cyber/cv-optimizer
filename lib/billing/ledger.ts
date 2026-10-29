@@ -28,6 +28,7 @@ export type LedgerReason =
   | "use_credit"
   | "tailor"
   | "voice"
+  | "interview"
   | "toolkit";
 
 export class InsufficientCredits extends Error {

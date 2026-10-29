@@ -3,21 +3,20 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { Check, Copy, CreditCard, Eye, Info, LogIn, MessageSquare, Mic, MicOff, PhoneOff, RotateCw } from "lucide-react";
 import type { ResumeDocument } from "@/lib/resume/document";
 import { VoiceToolBridge } from "@/lib/voice/bridge";
 import { readVoiceSupport } from "@/lib/voice/support";
-import { Badge, Button, cn, EmptyState, IconButton, Skeleton, toast, Tooltip, VoiceOrb, Waveform, type VoiceState } from "@/components/ui";
+import { Badge, Button, cn, EmptyState, IconButton, Skeleton, toast, Tooltip, VoiceOrb, type VoiceState } from "@/components/ui";
+import { askMic as requestMic, Connection, ELEVENLABS, fmt, LiveOrb, micHelp, postJson, type CallControls, type VoiceSdk } from "@/components/v2/voice/call";
+
+export type { VoiceSdk } from "@/components/v2/voice/call";
 
 // Talk mode: an ElevenLabs agent interviews the user and edits the CV through
 // the same save queue as typing (see lib/voice/protocol.ts for the contract).
 // Each connection attempt mounts its own ConversationProvider, so a dropped
 // or errored SDK state never leaks into the reconnect.
 
-/** The SDK surface Talk mode uses. Injectable so the call UI can be exercised without a live agent. */
-export type VoiceSdk = { Provider: React.ComponentType<{ children?: React.ReactNode }>; useConversation: typeof useConversation };
-const ELEVENLABS: VoiceSdk = { Provider: ConversationProvider, useConversation };
 
 type Offer = { free: boolean; credits: number; seconds: number; unlimited: boolean; balance: number; available: boolean };
 type Conn = { sessionId: string; attempt: number; token: string; variables: Record<string, string> };
@@ -40,17 +39,7 @@ const MAX_RECONNECTS = 3;
 const WRAP_UP_AT = 30;
 const HIDDEN_END_MS = 60_000;
 
-const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
-/** One line telling the user where their browser hides the microphone switch. */
-function micHelp(): string {
-  if (typeof navigator === "undefined") return "Allow the microphone for this site, then try again.";
-  const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/.test(ua)) return "Settings › Apps › Safari › Microphone › Allow, then try again.";
-  if (/Firefox\//.test(ua)) return "Click the microphone icon in the address bar, allow it, then try again.";
-  if (/Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua)) return "Safari › Settings for This Website › Microphone › Allow, then try again.";
-  return "Click the icon left of the address bar › Microphone › Allow, then try again.";
-}
 
 function priceLabel(o: Offer): { label: string; tip: string } {
   const minutes = Math.round(o.seconds / 60);
@@ -60,134 +49,8 @@ function priceLabel(o: Offer): { label: string; tip: string } {
   return { label: `1 credit · ${minutes} min`, tip: `You have ${o.balance} ${o.balance === 1 ? "credit" : "credits"}. ${refund}` };
 }
 
-async function postJson(url: string, body?: unknown, init?: RequestInit) {
-  const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), ...init });
-  const json = await res.json().catch(() => null);
-  return { ok: res.ok, status: res.status, json: json as Record<string, unknown> | null };
-}
 
-/** One live ElevenLabs connection. Starts on mount, reports up, never decides what happens next. */
-function Connection({
-  sdk,
-  conn,
-  bridge,
-  muted,
-  controlsRef,
-  onConnected,
-  onLine,
-  onDropped,
-  onMode,
-}: {
-  sdk: VoiceSdk;
-  conn: Conn;
-  bridge: VoiceToolBridge;
-  muted: boolean;
-  controlsRef: React.MutableRefObject<{ end: () => void; nudge: (text: string) => void; level: () => number; freq: () => Uint8Array } | null>;
-  onConnected: (conversationId: string) => void;
-  onLine: (kind: "user" | "agent", text: string) => void;
-  onDropped: (error: string | null) => void;
-  onMode: (speaking: boolean) => void;
-}) {
-  const conversation = sdk.useConversation({ micMuted: muted });
-  const endedByUs = React.useRef(false);
-  const live = React.useRef(conversation);
-  live.current = conversation;
-  const cb = React.useRef({ onConnected, onLine, onDropped, onMode });
-  cb.current = { onConnected, onLine, onDropped, onMode };
 
-  // Start on mount, end on unmount: the connection lives exactly as long as
-  // `conn` (one attempt). The start is deferred a tick so React's dev
-  // double-mount cancels it before it runs: the token is single-use.
-  const tools = React.useRef(bridge);
-  tools.current = bridge;
-  React.useEffect(() => {
-    endedByUs.current = false;
-    let started = false;
-    const timer = setTimeout(() => {
-      started = true;
-      live.current.startSession({
-        conversationToken: conn.token,
-        connectionType: "webrtc",
-        dynamicVariables: conn.variables,
-        clientTools: tools.current.clientTools(),
-        onConnect: ({ conversationId }) => cb.current.onConnected(conversationId),
-        onMessage: (m) => {
-          const text = m.message?.trim();
-          if (text) cb.current.onLine(m.source === "user" ? "user" : "agent", text);
-        },
-        onModeChange: ({ mode }) => cb.current.onMode(mode === "speaking"),
-        onError: (message) => console.error("[voice] sdk error", message),
-        onDisconnect: (details) => {
-          if (endedByUs.current || details.reason === "user") return cb.current.onDropped(null);
-          cb.current.onDropped(details.reason === "error" ? details.message || "Connection lost" : "agent");
-        },
-      });
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      if (!started) return;
-      // Unmounting mid-call (end, reconnect, navigating away): close it so the minutes stop.
-      endedByUs.current = true;
-      try {
-        live.current.endSession();
-      } catch {}
-    };
-  }, [conn]);
-
-  React.useEffect(() => {
-    controlsRef.current = {
-      end: () => {
-        endedByUs.current = true;
-        live.current.endSession();
-      },
-      nudge: (text) => live.current.sendContextualUpdate(text),
-      level: () => (live.current.isSpeaking ? live.current.getOutputVolume() : live.current.getInputVolume()),
-      freq: () => live.current.getInputByteFrequencyData(),
-    };
-  }, [controlsRef]);
-
-  return null;
-}
-
-/** Live mic visuals, sampled on animation frames (no React state churn at 60fps). */
-function LiveOrb({
-  state,
-  controlsRef,
-  muted,
-  onToggleMute,
-}: {
-  state: VoiceState;
-  controlsRef: React.MutableRefObject<{ level: () => number; freq: () => Uint8Array } | null>;
-  muted: boolean;
-  onToggleMute: () => void;
-}) {
-  const [level, setLevel] = React.useState(0);
-  const [freq, setFreq] = React.useState<Uint8Array | undefined>();
-  React.useEffect(() => {
-    let raf = 0;
-    let last = 0;
-    const tick = (t: number) => {
-      raf = requestAnimationFrame(tick);
-      if (t - last < 66) return;
-      last = t;
-      const c = controlsRef.current;
-      if (!c) return;
-      try {
-        setLevel(c.level());
-        setFreq(new Uint8Array(c.freq()));
-      } catch {}
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [controlsRef]);
-  return (
-    <div className="flex flex-col items-center gap-4">
-      {/* Tapping the orb mutes: it is a control, never a push-to-talk button. Its state isn't announced every turn. */}
-      <VoiceOrb state={state} level={level} size={88} announce={false} onClick={onToggleMute} actionLabel={muted ? "Unmute" : "Mute"} />
-      <Waveform data={state === "listening" ? freq : undefined} className="w-40" />
-    </div>
-  );
-}
 
 export function VoicePanel({
   cvId,
@@ -229,7 +92,7 @@ export function VoicePanel({
   const [speaking, setSpeaking] = React.useState(false);
   const [connected, setConnected] = React.useState(false);
   const [left, setLeft] = React.useState<number | null>(null);
-  const controlsRef = React.useRef<{ end: () => void; nudge: (text: string) => void; level: () => number; freq: () => Uint8Array } | null>(null);
+  const controlsRef = React.useRef<CallControls | null>(null);
   const deadline = React.useRef<number | null>(null);
   const reconnects = React.useRef(0);
   const nudged = React.useRef(false);
@@ -321,16 +184,10 @@ export function VoicePanel({
 
   const sessionRef = React.useRef<string | null>(null);
 
-  /** Ask for the mic inside the click (iOS needs the gesture), before anything is charged. */
   const askMic = async (): Promise<boolean> => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop());
-      return true;
-    } catch {
-      setPhase({ name: "blocked", reason: "mic_denied" });
-      return false;
-    }
+    if (await requestMic()) return true;
+    setPhase({ name: "blocked", reason: "mic_denied" });
+    return false;
   };
 
   const start = async (micReady = false) => {
@@ -655,7 +512,7 @@ export function VoicePanel({
           <Connection
             sdk={sdk}
             conn={conn}
-            bridge={bridge}
+            clientTools={() => bridge.clientTools()}
             muted={muted}
             controlsRef={controlsRef}
             onConnected={onConnected}

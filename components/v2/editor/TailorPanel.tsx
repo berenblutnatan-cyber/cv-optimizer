@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, CircleDashed, History, Link2, LogIn, RotateCw, Target } from "lucide-react";
+import { ArrowLeft, Check, CircleDashed, History, Link2, LogIn, MessagesSquare, RotateCw, Target } from "lucide-react";
 import { readSse } from "@/lib/http/readSse";
 import { computeLocalScore, flattenProblems } from "@/lib/optimizer/localChecks";
 import { completeness, type ResumeDocument } from "@/lib/resume/document";
@@ -345,6 +345,13 @@ export function TailorPanel({
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-body font-medium text-ink">{VERDICT[a.applyVerdict ?? applyVerdict(original.total)]}</p>
+              <Tooltip content="Mock interview for this job, aimed at its weak spots.">
+                <Button asChild size="sm" variant="secondary" className="ms-auto">
+                  <Link href={`/interview/new?cv=${cvId}&tailoring=${t.id}`}>
+                    <MessagesSquare /> Practice interview
+                  </Link>
+                </Button>
+              </Tooltip>
               {a.scoreComparison.improvement > 0 && (
                 <Tooltip content="With every grounded change applied.">
                   <span tabIndex={0}>

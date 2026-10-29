@@ -18,6 +18,7 @@ const LABELS: Record<string, string> = {
   use_credit: "AI edit",
   tailor: "Tailored to a job",
   voice: "Voice call",
+  interview: "Interview practice",
   toolkit: "Career tool",
 };
 
