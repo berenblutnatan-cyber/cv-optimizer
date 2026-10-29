@@ -115,7 +115,11 @@ export async function limitSignedOut(request: Request, signedIn: boolean, opts: 
 }
 
 export function clientIp(request: Request): string {
-  const fwd = request.headers.get("x-forwarded-for");
-  const first = fwd?.split(",")[0]?.trim();
-  return first || request.headers.get("x-real-ip")?.trim() || "unknown";
+  return ipFromHeaders(request.headers);
+}
+
+/** The caller's IP from proxy headers (server components pass `await headers()`). */
+export function ipFromHeaders(h: Pick<Headers, "get">): string {
+  const first = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return first || h.get("x-real-ip")?.trim() || "unknown";
 }

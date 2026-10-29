@@ -8,6 +8,8 @@ export function Toaster() {
     <Sonner
       position="bottom-right"
       gap={8}
+      // Phones: above the bottom tab bar when the page has one.
+      mobileOffset={{ bottom: "calc(var(--bottom-nav, 0px) + 16px)", left: 16, right: 16 }}
       toastOptions={{
         unstyled: true,
         classNames: {

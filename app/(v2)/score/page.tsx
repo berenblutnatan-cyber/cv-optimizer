@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function ScorePage() {
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
-      <AppHeader>
+      <AppHeader nav={false}>
         <Link href="/pricing" className="inline-flex h-9 items-center rounded-control px-3 text-body font-medium text-ink-2 hover:bg-surface-2 hover:text-ink">
           Pricing
         </Link>

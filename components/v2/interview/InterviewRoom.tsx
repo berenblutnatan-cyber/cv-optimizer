@@ -558,7 +558,7 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
   const status = phase.name === "reconnecting" ? "Reconnecting" : phase.name === "ending" ? "Ending" : null;
   const timeNotice = left === null ? "" : left <= 30 ? "30 seconds left" : left <= 60 ? "1 minute left" : "";
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-57px)] w-full max-w-2xl flex-col px-4 py-6 md:px-8 md:py-10">
+    <div className="mx-auto flex min-h-[calc(100dvh-57px-var(--bottom-nav,0px))] w-full max-w-2xl flex-col px-4 py-6 md:px-8 md:py-10">
       {conn && (
         <sdk.Provider key={conn.attempt}>
           <Connection
@@ -611,7 +611,7 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
         <p className="line-clamp-3 min-h-18 max-w-md text-center text-body text-ink-2">{caption}</p>
       </div>
 
-      <div className="sticky bottom-4 flex items-center justify-center gap-3">
+      <div className="sticky bottom-[calc(var(--bottom-nav,0px)+16px)] flex items-center justify-center gap-3">
         <IconButton size="lg" label={muted ? "Unmute" : "Mute"} active={muted} disabled={phase.name !== "live"} onClick={() => setMuted((m) => !m)}>
           {muted ? <MicOff /> : <Mic />}
         </IconButton>
