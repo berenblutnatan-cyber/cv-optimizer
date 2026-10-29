@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Check, ClipboardPaste, Copy, CreditCard, LogIn, Sparkles } from "lucide-react";
 import type { ToolField, ToolOutputField, ToolSpec } from "@/lib/toolkit/tools";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { Badge, Button, cn, ErrorState, Field, Input, Select, Skeleton, Textarea, toast } from "@/components/ui";
 
 // One career tool: the form on the left, the result on the right (stacked on
@@ -15,12 +16,13 @@ type Matrix = { factor: string; weight: number; a: number; b: number; edge: "A" 
 type Result = Record<string, string | string[] | Matrix>;
 
 function CopyButton({ text, label }: { text: string; label: string }) {
+  const { t } = useT();
   const [done, setDone] = React.useState(false);
   return (
     <Button
       size="sm"
       variant="ghost"
-      aria-label={`Copy ${label}`}
+      aria-label={t("Copy {what}", { what: label })}
       onClick={() =>
         void navigator.clipboard
           ?.writeText(text)
@@ -28,15 +30,16 @@ function CopyButton({ text, label }: { text: string; label: string }) {
             setDone(true);
             setTimeout(() => setDone(false), 1500);
           })
-          .catch(() => toast.error("Couldn't copy"))
+          .catch(() => toast.error(t("Couldn't copy")))
       }
     >
-      {done ? <Check /> : <Copy />} {done ? "Copied" : "Copy"}
+      {done ? <Check /> : <Copy />} {done ? t("Copied") : t("Copy")}
     </Button>
   );
 }
 
 function MatrixTable({ rows }: { rows: Matrix }) {
+  const { t } = useT();
   const total = (k: "a" | "b") => Math.round(rows.reduce((sum, r) => sum + r[k] * r.weight, 0) / 10) / 10;
   return (
     <div className="overflow-x-auto relative rounded-card border border-hairline">
@@ -44,10 +47,10 @@ function MatrixTable({ rows }: { rows: Matrix }) {
         <thead>
           <tr className="border-b border-hairline text-ink-2">
             <th scope="col" className="px-3 py-2 text-start font-medium">
-              Factor
+              {t("Factor")}
             </th>
             <th scope="col" className="px-3 py-2 text-end font-medium">
-              Weight
+              {t("Weight")}
             </th>
             <th scope="col" className="px-3 py-2 text-end font-medium">
               A
@@ -68,7 +71,7 @@ function MatrixTable({ rows }: { rows: Matrix }) {
           ))}
           <tr className="bg-surface-2/60">
             <th scope="row" className="px-3 py-2 text-start font-medium text-ink">
-              Weighted score
+              {t("Weighted score")}
             </th>
             <td />
             <td className="tabular px-3 py-2 text-end font-semibold text-ink">{total("a")}</td>
@@ -81,6 +84,7 @@ function MatrixTable({ rows }: { rows: Matrix }) {
 }
 
 function Output({ spec, result }: { spec: ToolSpec; result: Result }) {
+  const { t } = useT();
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
       {spec.output.map((o: ToolOutputField) => {
@@ -88,10 +92,10 @@ function Output({ spec, result }: { spec: ToolSpec; result: Result }) {
         if (v == null || (Array.isArray(v) && v.length === 0)) return null;
         const asText = o.kind === "list" ? (v as string[]).join("\n") : o.kind === "text" ? String(v) : "";
         return (
-          <section key={o.key} aria-label={o.label} className="flex flex-col gap-2">
+          <section key={o.key} aria-label={t(o.label)} className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-body font-medium text-ink-2">{o.label}</h3>
-              {o.kind !== "matrix" && <CopyButton text={asText} label={o.label} />}
+              <h3 className="text-body font-medium text-ink-2">{t(o.label)}</h3>
+              {o.kind !== "matrix" && <CopyButton text={asText} label={t(o.label)} />}
             </div>
             {o.kind === "matrix" ? (
               <MatrixTable rows={v as Matrix} />
@@ -115,12 +119,13 @@ function Output({ spec, result }: { spec: ToolSpec; result: Result }) {
 
 /** Pick one of your CVs; its text is what the tool reads. */
 function CvField({ field, cvs, onChange }: { field: ToolField; cvs: Cv[]; onChange: (text: string) => void }) {
+  const { t } = useT();
   const [cvId, setCvId] = React.useState(cvs[0]?.id ?? "");
   React.useEffect(() => {
     onChange(cvs.find((c) => c.id === cvId)?.text ?? "");
   }, [cvId]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <Field label={field.label} optional={!field.required}>
+    <Field label={t(field.label)} optional={!field.required}>
       <Select value={cvId} onChange={(e) => setCvId(e.target.value)}>
         {cvs.map((c) => (
           <option key={c.id} value={c.id}>
@@ -133,6 +138,7 @@ function CvField({ field, cvs, onChange }: { field: ToolField; cvs: Cv[]; onChan
 }
 
 export function ToolRunner({ spec, cvs, signedIn, freeToday }: { spec: ToolSpec; cvs: Cv[]; signedIn: boolean; freeToday: boolean }) {
+  const { t } = useT();
   const [values, setValues] = React.useState<Record<string, string>>(() => Object.fromEntries(spec.fields.map((f) => [f.name, f.type === "select" ? (f.options?.[0] ?? "") : ""])));
   const [result, setResult] = React.useState<Result | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -155,7 +161,7 @@ export function ToolRunner({ spec, cvs, signedIn, freeToday }: { spec: ToolSpec;
     setBusy(false);
     if (!res?.ok) {
       if (res?.status === 402) setFree(false);
-      return setError({ message: typeof j?.error === "string" ? j.error : "Couldn't generate. Try again.", code: j?.code });
+      return setError({ message: t(typeof j?.error === "string" ? j.error : "Couldn't generate. Try again."), code: j?.code });
     }
     setResult(j.result as Result);
     setFree(false);
@@ -164,12 +170,12 @@ export function ToolRunner({ spec, cvs, signedIn, freeToday }: { spec: ToolSpec;
   const action = !canPay ? (
     <Button asChild variant="primary" size="lg">
       <Link href={`/sign-in?redirect_url=${encodeURIComponent(`/toolkit/${spec.id}`)}`}>
-        <LogIn /> Sign in to use again
+        <LogIn /> {t("Sign in to use again")}
       </Link>
     </Button>
   ) : (
     <Button type="submit" variant="primary" size="lg" loading={busy} disabled={missing.length > 0}>
-      <Sparkles /> {result ? "Again" : "Generate"}
+      <Sparkles /> {result ? t("Again") : t("Generate")}
     </Button>
   );
 
@@ -186,8 +192,8 @@ export function ToolRunner({ spec, cvs, signedIn, freeToday }: { spec: ToolSpec;
           f.type === "cv" ? (
             <div key={f.name} className="flex flex-col gap-1">
               {pasteCv || cvs.length === 0 ? (
-                <Field label={f.label} optional={!f.required}>
-                  <Textarea rows={6} value={values[f.name] ?? ""} onChange={(e) => set(f.name, e.target.value)} maxLength={30_000} placeholder="Paste your CV" />
+                <Field label={t(f.label)} optional={!f.required}>
+                  <Textarea rows={6} value={values[f.name] ?? ""} onChange={(e) => set(f.name, e.target.value)} maxLength={30_000} placeholder={t("Paste your CV")} />
                 </Field>
               ) : (
                 <CvField field={f} cvs={cvs} onChange={(v) => set(f.name, v)} />
@@ -203,32 +209,32 @@ export function ToolRunner({ spec, cvs, signedIn, freeToday }: { spec: ToolSpec;
                     set(f.name, "");
                   }}
                 >
-                  <ClipboardPaste /> {pasteCv ? "Use a saved CV" : "Paste instead"}
+                  <ClipboardPaste /> {pasteCv ? t("Use a saved CV") : t("Paste instead")}
                 </Button>
               )}
             </div>
           ) : f.type === "select" ? (
-            <Field key={f.name} label={f.label} optional={!f.required}>
+            <Field key={f.name} label={t(f.label)} optional={!f.required}>
               <Select value={values[f.name]} onChange={(e) => set(f.name, e.target.value)}>
                 {f.options?.map((o) => (
                   <option key={o} value={o}>
-                    {o}
+                    {t(o)}
                   </option>
                 ))}
               </Select>
             </Field>
           ) : f.type === "textarea" ? (
-            <Field key={f.name} label={f.label} optional={!f.required}>
-              <Textarea rows={f.rows ?? 4} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} placeholder={f.placeholder} maxLength={f.name === "jobDescription" ? 30_000 : 2000} />
+            <Field key={f.name} label={t(f.label)} optional={!f.required}>
+              <Textarea rows={f.rows ?? 4} value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} placeholder={f.placeholder && t(f.placeholder)} maxLength={f.name === "jobDescription" ? 30_000 : 2000} />
             </Field>
           ) : (
-            <Field key={f.name} label={f.label} optional={!f.required}>
-              <Input value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} placeholder={f.placeholder} maxLength={2000} />
+            <Field key={f.name} label={t(f.label)} optional={!f.required}>
+              <Input value={values[f.name]} onChange={(e) => set(f.name, e.target.value)} placeholder={f.placeholder && t(f.placeholder)} maxLength={2000} />
             </Field>
           ),
         )}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
-          <Badge tone={free ? "accent" : "neutral"}>{free ? "Free today" : signedIn ? "1 credit" : "Free use spent"}</Badge>
+          <Badge tone={free ? "accent" : "neutral"}>{free ? t("Free today") : signedIn ? t("1 credit") : t("Free use spent")}</Badge>
           {action}
         </div>
       </form>
@@ -248,7 +254,7 @@ export function ToolRunner({ spec, cvs, signedIn, freeToday }: { spec: ToolSpec;
               error.code === "NO_CREDITS" ? (
                 <Button asChild size="sm" variant="secondary">
                   <Link href="/pricing">
-                    <CreditCard /> Add credits
+                    <CreditCard /> {t("Add credits")}
                   </Link>
                 </Button>
               ) : undefined

@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { he } from "./he";
+import { heV2 } from "./he.v2";
 import {
   DEFAULT_LANG,
   LANG_COOKIE,
@@ -35,7 +36,7 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 const DICTS: Record<Lang, Record<string, string>> = {
   en: {},
-  he,
+  he: { ...he, ...heV2 },
 };
 
 function interpolate(str: string, vars?: Vars): string {
@@ -71,9 +72,16 @@ function applyDocument(lang: Lang) {
 
 export function LanguageProvider({
   initialLang = DEFAULT_LANG,
+  applyToDocument = true,
   children,
 }: {
   initialLang?: Lang;
+  /**
+   * Set <html lang/dir> to the language. The v2 app turns this off: only its
+   * translated surfaces turn right-to-left (they set `dir` themselves), so an
+   * untranslated screen never renders English laid out right to left.
+   */
+  applyToDocument?: boolean;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -86,12 +94,12 @@ export function LanguageProvider({
       if (!isLang(next)) return;
       setLangState(next);
       writeCookie(next);
-      applyDocument(next);
+      if (applyToDocument) applyDocument(next);
       // Re-render Server Components with the new cookie so server-rendered text
       // (landing, legal pages, etc.) updates in step with client components.
       router.refresh();
     },
-    [router],
+    [router, applyToDocument],
   );
 
   const toggle = useCallback(() => {
@@ -102,8 +110,8 @@ export function LanguageProvider({
   // value (e.g. a stale prerender). The server already sets these correctly on
   // first paint, so this is just a safety net — no flash in the common case.
   useEffect(() => {
-    applyDocument(lang);
-  }, [lang]);
+    if (applyToDocument) applyDocument(lang);
+  }, [lang, applyToDocument]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({

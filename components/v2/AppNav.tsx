@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Briefcase, FileText, MessagesSquare, Wrench } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { cn } from "@/components/ui";
 
 const ITEMS = [
@@ -22,9 +23,10 @@ const isCurrent = (path: string, href: string) => path === href || path.startsWi
  */
 export function AppNav() {
   const path = usePathname() ?? "";
+  const { t, dir } = useT();
   return (
     <>
-      <nav aria-label="Sections" className="hidden items-center gap-1 sm:flex">
+      <nav aria-label={t("Sections")} dir={dir} className="hidden items-center gap-1 sm:flex">
         {ITEMS.map((i) => {
           const current = isCurrent(path, i.href);
           return (
@@ -37,13 +39,14 @@ export function AppNav() {
                 current ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink",
               )}
             >
-              {i.label}
+              {t(i.label)}
             </Link>
           );
         })}
       </nav>
       <nav
-        aria-label="Sections"
+        aria-label={t("Sections")}
+        dir={dir}
         data-bottom-nav
         className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-hairline bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
@@ -58,7 +61,7 @@ export function AppNav() {
               className={cn("flex h-16 flex-col items-center justify-center gap-1 text-dense font-medium transition-colors duration-micro", current ? "text-ink" : "text-ink-3 hover:text-ink")}
             >
               <Icon className={cn("size-5", current && "text-accent")} aria-hidden />
-              {i.label}
+              {t(i.label)}
             </Link>
           );
         })}

@@ -7,6 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toast";
 import { themeBootScript } from "@/components/ui/theme-toggle";
 import { ClaimDrafts } from "@/components/v2/cv/ClaimDrafts";
+import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
+import { getServerLang } from "@/lib/i18n/server";
 import "@/styles/v2/app.css";
 import "@/styles/v2/cv.css";
 
@@ -34,20 +36,25 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function V2RootLayout({ children }: { children: React.ReactNode }) {
+export default async function V2RootLayout({ children }: { children: React.ReactNode }) {
+  // The language cookie picks the words; the page stays left-to-right except
+  // where a translated surface sets dir itself (see LanguageProvider).
+  const lang = await getServerLang();
   return (
     <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
-      <html lang="en" dir="ltr" suppressHydrationWarning>
+      <html lang={lang} dir="ltr" suppressHydrationWarning>
         <head>
           <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         </head>
         <body className={`${sans.variable} ${mono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable}`}>
           <AnalyticsScripts />
-          <TooltipProvider>
-            <UserSyncProvider>{children}</UserSyncProvider>
-            <Toaster />
-            <ClaimDrafts />
-          </TooltipProvider>
+          <LanguageProvider initialLang={lang} applyToDocument={false}>
+            <TooltipProvider>
+              <UserSyncProvider>{children}</UserSyncProvider>
+              <Toaster />
+              <ClaimDrafts />
+            </TooltipProvider>
+          </LanguageProvider>
         </body>
       </html>
     </ClerkProvider>

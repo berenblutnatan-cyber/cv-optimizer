@@ -4,6 +4,7 @@ import * as React from "react";
 import { Info } from "lucide-react";
 import { cn } from "./cn";
 import { Tooltip } from "./tooltip";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Label + control + error. The label is always programmatically associated
@@ -25,6 +26,7 @@ export function Field({
   className?: string;
   children: React.ReactElement<{ id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }>;
 }) {
+  const { t } = useT();
   const id = React.useId();
   const errId = `${id}-err`;
   const control = React.cloneElement(children, {
@@ -38,7 +40,7 @@ export function Field({
         <label htmlFor={id} className="text-dense font-medium text-ink">
           {label}
         </label>
-        {optional && <span className="text-dense text-ink-3">optional</span>}
+        {optional && <span className="text-dense text-ink-3">{t("optional")}</span>}
         {hint && (
           <Tooltip content={hint}>
             <button type="button" aria-label={`About ${label}`} className="text-ink-3 hover:text-ink-2">

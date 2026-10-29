@@ -6,6 +6,7 @@
 
 import { cookies } from "next/headers";
 import { he } from "./he";
+import { heV2 } from "./he.v2";
 import {
   DEFAULT_LANG,
   LANG_COOKIE,
@@ -16,7 +17,7 @@ import {
 
 type Vars = Record<string, string | number>;
 
-const DICTS: Record<Lang, Record<string, string>> = { en: {}, he };
+const DICTS: Record<Lang, Record<string, string>> = { en: {}, he: { ...he, ...heV2 } };
 
 function interpolate(str: string, vars?: Vars): string {
   if (!vars) return str;

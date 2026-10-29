@@ -11,6 +11,7 @@ import { readSse } from "@/lib/http/readSse";
 import { trackConversion } from "@/lib/gtag";
 import { computeLocalScore } from "@/lib/optimizer/localChecks";
 import type { ResumeData } from "@/types/resume";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { Button, cn, ErrorState, Textarea } from "@/components/ui";
 import { CvPreview } from "@/components/v2/editor/CvPreview";
 
@@ -82,6 +83,7 @@ function Tile({
  * straight into the editor's score + tailor panel.
  */
 export function StartFlow({ variant = "start", voice = true }: { variant?: "start" | "score"; /** Voice is set up (the Talk tile shows). */ voice?: boolean }) {
+  const { t, dir } = useT();
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const [phase, setPhase] = React.useState<Phase>({ kind: "choose" });
@@ -208,11 +210,11 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
     const c = phase.content;
     const doc: ResumeDocument = { ...emptyDocument(), content: c ?? emptyDocument().content, design: { ...DEFAULT_DESIGN, pageMode: "multi", autoFit: false } };
     return (
-      <div className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-8 px-4 py-8 md:px-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:py-12">
+      <div dir={dir} className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-8 px-4 py-8 md:px-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:py-12">
         <aside className="flex flex-col gap-6 lg:sticky lg:top-12 lg:self-start" aria-live="polite">
           <div>
-            <h1 className="text-h2 font-semibold text-ink">{phase.kind === "opening" ? "Opening your CV" : "Reading your CV"}</h1>
-            <p className="mt-1 truncate text-body text-ink-2">{phase.label}</p>
+            <h1 className="text-h2 font-semibold text-ink">{phase.kind === "opening" ? t("Opening your CV") : t("Reading your CV")}</h1>
+            <p className="mt-1 truncate text-body text-ink-2">{t(phase.label)}</p>
           </div>
           <ul className="flex flex-col gap-1">
             {SECTIONS.map((s) => {
@@ -222,15 +224,15 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
                   <span className={cn("grid size-6 place-items-center rounded-full transition-colors duration-panel", done ? "bg-accent text-on-accent" : "border border-hairline-strong")}>
                     {done ? <Check className="size-3.5" aria-hidden /> : <span className="size-1.5 animate-pulse rounded-full bg-ink-3" aria-hidden />}
                   </span>
-                  <span className={done ? "text-ink" : "text-ink-2"}>{s.label}</span>
-                  <span className="sr-only">{done ? "found" : "reading"}</span>
+                  <span className={done ? "text-ink" : "text-ink-2"}>{t(s.label)}</span>
+                  <span className="sr-only">{done ? t("found") : t("reading")}</span>
                 </li>
               );
             })}
           </ul>
           {phase.kind === "importing" && (
             <Button variant="ghost" className="w-fit" onClick={cancel}>
-              Cancel
+              {t("Cancel")}
             </Button>
           )}
         </aside>
@@ -257,17 +259,17 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
   }
 
   return (
-    <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-10 md:px-8 md:py-16" {...dropProps}>
-      <h1 className="text-h1 font-semibold text-ink">{variant === "score" ? "Score your CV" : "Start your CV"}</h1>
+    <div dir={dir} className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-10 md:px-8 md:py-16" {...dropProps}>
+      <h1 className="text-h1 font-semibold text-ink">{variant === "score" ? t("Score your CV") : t("Start your CV")}</h1>
 
       {phase.kind === "error" && (
         <ErrorState
           className="mt-6"
-          title={phase.message}
+          title={t(phase.message)}
           action={
             phase.canPaste ? (
               <Button size="sm" onClick={() => setPhase({ kind: "paste" })}>
-                <ClipboardPaste /> Paste text
+                <ClipboardPaste /> {t("Paste text")}
               </Button>
             ) : undefined
           }
@@ -283,15 +285,15 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
           }}
         >
           <label htmlFor="paste-cv" className="text-emph font-medium text-ink">
-            Paste your CV
+            {t("Paste your CV")}
           </label>
           <Textarea id="paste-cv" autoFocus rows={14} value={pasted} onChange={(e) => setPasted(e.target.value)} maxLength={30_000} className="min-h-72" />
           <div className="flex items-center gap-2">
             <Button type="submit" variant="primary" disabled={pasted.trim().length < 50}>
-              Import
+              {t("Import")}
             </Button>
             <Button type="button" variant="ghost" onClick={() => setPhase({ kind: "choose" })}>
-              Back
+              {t("Back")}
             </Button>
           </div>
         </form>
@@ -301,31 +303,31 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Tile
                 icon={<FileUp />}
-                title={dragging ? "Drop to upload" : "Upload a CV"}
-                meta="PDF or Word"
+                title={dragging ? t("Drop to upload") : t("Upload a CV")}
+                meta={t("PDF or Word")}
                 highlighted={dragging}
                 onClick={() => inputRef.current?.click()}
               />
-              <Tile icon={<ClipboardPaste />} title="Paste it" meta="Any text" onClick={() => setPhase({ kind: "paste" })} />
+              <Tile icon={<ClipboardPaste />} title={t("Paste it")} meta={t("Any text")} onClick={() => setPhase({ kind: "paste" })} />
             </div>
           ) : (
             <div className={cn("mt-8 grid grid-cols-1 gap-4", voice ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
               <Tile
                 icon={<FileUp />}
-                title={dragging ? "Drop to upload" : "Upload a CV"}
-                meta="PDF or Word"
+                title={dragging ? t("Drop to upload") : t("Upload a CV")}
+                meta={t("PDF or Word")}
                 highlighted={dragging}
                 onClick={() => inputRef.current?.click()}
                 busy={!!creatingBlank}
               />
-              {voice && <Tile icon={<Mic />} title="Talk it through" meta="About 5 minutes" onClick={() => void startBlank("talk")} busy={!!creatingBlank} aria-busy={creatingBlank === "talk"} />}
-              <Tile icon={<PenLine />} title="Start blank" meta="Type or chat" onClick={() => void startBlank()} busy={!!creatingBlank} aria-busy={creatingBlank === "blank"} />
+              {voice && <Tile icon={<Mic />} title={t("Talk it through")} meta={t("About 5 minutes")} onClick={() => void startBlank("talk")} busy={!!creatingBlank} aria-busy={creatingBlank === "talk"} />}
+              <Tile icon={<PenLine />} title={t("Start blank")} meta={t("Type or chat")} onClick={() => void startBlank()} busy={!!creatingBlank} aria-busy={creatingBlank === "blank"} />
             </div>
           )}
           {variant === "score" && (
             <div className="mt-6 flex flex-col gap-1.5">
               <label htmlFor="score-job" className="flex items-center gap-2 text-dense font-medium text-ink">
-                Job description <span className="font-normal text-ink-3">optional</span>
+                {t("Job description")} <span className="font-normal text-ink-3">{t("optional")}</span>
               </label>
               <Textarea id="score-job" rows={5} value={jobText} onChange={(e) => setJobText(e.target.value)} maxLength={30_000} />
             </div>
@@ -345,7 +347,7 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
           />
           {variant === "start" && (
             <Button variant="ghost" className="mt-4 w-fit" onClick={() => setPhase({ kind: "paste" })}>
-              <ClipboardPaste /> Paste text instead
+              <ClipboardPaste /> {t("Paste text instead")}
             </Button>
           )}
         </>
