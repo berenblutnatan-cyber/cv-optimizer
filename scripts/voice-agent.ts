@@ -10,7 +10,7 @@
 
 import { config } from "dotenv";
 import { ElevenLabsClient, type ElevenLabs } from "@elevenlabs/elevenlabs-js";
-import { INTAKE_AGENT_NAME, INTAKE_FIRST_MESSAGE, INTAKE_PROMPT, intakeClientTools } from "../lib/voice/agent";
+import { INTAKE_AGENT_NAME, INTAKE_EXCLUDED_TOOLS, INTAKE_FIRST_MESSAGE, INTAKE_PROMPT, intakeClientTools } from "../lib/voice/agent";
 import { VOICE } from "../lib/voice/protocol";
 
 config({ path: ".env.local" });
@@ -35,7 +35,8 @@ const conversationConfig = {
     },
     prompt: { prompt: INTAKE_PROMPT, llm: "claude-sonnet-5-5" as const, temperature: 0.3, toolIds: [] as string[] },
   },
-  tts: { modelId: "eleven_v4_turbo" as const, voiceId },
+  // voiceId is left out entirely when unset: the API rejects null.
+  tts: { modelId: "eleven_v4_turbo" as const, ...(voiceId ? { voiceId } : {}) },
   turn: { turnEagerness: "patient" as const, turnTimeout: 12, silenceEndCallTimeout: 60 },
   conversation: { maxDurationSeconds: VOICE.paidSeconds + 30 },
 };
@@ -86,6 +87,14 @@ async function main() {
   } else {
     const created = await client.conversationalAi.agents.create({ name: INTAKE_AGENT_NAME, conversationConfig, platformSettings });
     console.log(`created agent ${created.agentId}\nSet EL_AGENT_INTAKE=${created.agentId} in .env.local and on Vercel.`);
+  }
+
+  // A tool this script once created but the agent no longer has (detached above first).
+  for (const name of INTAKE_EXCLUDED_TOOLS) {
+    const id = existing.get(name);
+    if (!id) continue;
+    await client.conversationalAi.tools.delete(id);
+    console.log(`deleted tool ${name}`);
   }
 }
 

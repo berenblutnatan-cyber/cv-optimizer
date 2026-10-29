@@ -66,3 +66,19 @@ describe("voice protocol", () => {
     expect(toolResultText("add_experience", {}, doc.content, false)).toMatch(/^No change/);
   });
 });
+
+describe("intake agent tools", () => {
+  it("never include design: restyling is the user's call", async () => {
+    const { intakeClientTools } = await import("./agent");
+    const names = intakeClientTools().map((t) => t.name);
+    expect(names).not.toContain("set_design");
+    expect(names).toContain("add_experience");
+    // Every parameter carries a description (ElevenLabs requires one).
+    const missing = (schema: { description?: string; properties?: Record<string, unknown>; items?: unknown }, path: string): string[] => [
+      ...(schema.description ? [] : [path]),
+      ...Object.entries(schema.properties ?? {}).flatMap(([k, v]) => missing(v as typeof schema, `${path}.${k}`)),
+      ...(schema.items ? missing(schema.items as typeof schema, `${path}[]`) : []),
+    ];
+    expect(intakeClientTools().flatMap((t) => missing(t.parameters, t.name))).toEqual([]);
+  });
+});

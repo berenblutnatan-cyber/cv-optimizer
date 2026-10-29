@@ -23,8 +23,9 @@ RULES FOR WHAT YOU WRITE
 - Polish their words into strong bullets: action verb, what they did, the result. Keep their meaning.
 - Rough dates are fine ("2022", "since 2021"). Don't guess missing ones.
 - Spell-check proper nouns by asking: "How do you spell that?"
-- Write the summary last, once you know their story and target role.
+- Write the summary last, once you know their story and target role. Two or three plain sentences built only from what they said: their role, their strongest result with its number, the role they want. No clichés and no claims they didn't make: never "proven track record", "results-driven", "passionate", "dynamic", "significant growth", "strategic initiatives", "leverage".
 - If the CV already has content, don't re-add it. Improve or extend it.
+- Never change the CV's design, template or colours. That is the user's choice, in the editor.
 
 WHAT TO COVER, ROUGHLY IN ORDER
 1. Name, city, email (phone and LinkedIn are optional).
@@ -86,9 +87,15 @@ function withDescriptions(schema: Schema, name: string): Schema {
   return out;
 }
 
+/**
+ * Tools the intake agent may not have. Design is the user's call: in the
+ * first live test the agent restyled a CV nobody asked it to.
+ */
+export const INTAKE_EXCLUDED_TOOLS: ReadonlySet<string> = new Set(["set_design"]);
+
 /** The CV tools as ElevenLabs client tools: the browser runs them, the agent waits for the result. */
 export function intakeClientTools() {
-  return CV_TOOLS.map((t) => ({
+  return CV_TOOLS.filter((t) => !INTAKE_EXCLUDED_TOOLS.has(t.name)).map((t) => ({
     type: "client" as const,
     name: t.name,
     description: t.description,

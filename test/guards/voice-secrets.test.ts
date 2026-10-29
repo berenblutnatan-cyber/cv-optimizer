@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 // The ElevenLabs key buys minutes: it stays on the server. Only
-// lib/voice/elevenlabs.ts (marked server-only) and the setup script read it,
+// lib/voice/elevenlabs.ts (marked server-only) and the two Node scripts read it,
 // nothing ever exposes it as NEXT_PUBLIC_, and no client component imports
 // the module that holds it. The browser only ever sees single-use tokens.
 
@@ -25,7 +25,8 @@ const all = ROOTS.flatMap(files).map((p) => ({ p, src: readFileSync(p, "utf8") }
 describe("voice secrets", () => {
   it("only the server module and the setup script read the API key", () => {
     const readers = all.filter((f) => /ELEVENLABS_API_KEY/.test(f.src)).map((f) => f.p).sort();
-    expect(readers).toEqual([join("lib", "voice", "elevenlabs.ts"), join("scripts", "voice-agent.ts")].sort());
+    // Server code and the two Node scripts (agent setup, live smoke test); nothing a browser loads.
+    expect(readers).toEqual([join("lib", "voice", "elevenlabs.ts"), join("scripts", "voice-agent.ts"), join("scripts", "voice-smoke.ts")].sort());
   });
   it("no ElevenLabs secret is ever public", () => {
     expect(all.filter((f) => /NEXT_PUBLIC_(ELEVEN|EL_)/.test(f.src)).map((f) => f.p)).toEqual([]);
