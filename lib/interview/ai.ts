@@ -4,64 +4,16 @@ import { snapshotForPrompt } from "@/lib/chat/cvTools";
 import { INTERVIEW_STANDARDS } from "@/lib/knowledge/blocks/interview";
 import type { DeepAnalysis } from "@/lib/optimizer/types";
 import type { ResumeData } from "@/types/resume";
+import { structured, type Schema } from "@/lib/ai/structured";
 import { groundAddToCv } from "./ground";
 import { INTERVIEW, type AnswerFeedback, type InterviewAnswer, type InterviewQuestion, type InterviewReport } from "./types";
 
 // The two model calls of interview practice. Both return JSON constrained to a
-// schema (structured outputs), then validated and clamped here, never trusted
-// raw. The 5.5 models reject forced tool_choice, so this is the supported path.
+// schema (lib/ai/structured.ts), then validated and clamped here, never
+// trusted raw.
 
 export const QUESTION_MODEL = "claude-sonnet-5-5";
 export const SCORING_MODEL = "claude-opus-5-5";
-
-type Effort = "low" | "medium" | "high";
-type Schema = Record<string, unknown>;
-
-// The installed SDK predates `output_config.format` and `fallbacks`; the API
-// accepts them, so the params are sent through the beta endpoint as-is.
-async function structured(
-  anthropic: Anthropic,
-  p: {
-    model: string;
-    maxTokens: number;
-    effort: Effort;
-    system: string;
-    schema: Schema;
-    user: string;
-  },
-): Promise<Record<string, unknown>> {
-  const params = {
-    model: p.model,
-    max_tokens: p.maxTokens,
-    system: p.system,
-    thinking: { type: "adaptive" },
-    output_config: {
-      effort: p.effort,
-      format: { type: "json_schema", schema: p.schema },
-    },
-    // A policy decline is re-run on a fallback model inside the same call.
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    messages: [{ role: "user", content: p.user }],
-  };
-  const r = (await anthropic.beta.messages.create(params as unknown as Parameters<typeof anthropic.beta.messages.create>[0])) as {
-    stop_reason: string | null;
-    content: { type: string; text?: string }[];
-  };
-  if (r.stop_reason === "max_tokens") throw new Error("model output was cut off");
-  if (r.stop_reason === "refusal") throw new Error("model declined the request");
-  const text = r.content
-    .filter((c) => c.type === "text")
-    .map((c) => c.text ?? "")
-    .join("");
-  try {
-    const out = JSON.parse(text) as unknown;
-    if (out && typeof out === "object" && !Array.isArray(out)) return out as Record<string, unknown>;
-  } catch {
-    // fall through
-  }
-  throw new Error("no structured output");
-}
 
 const s = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 const sa = (v: unknown, max = 6) => (Array.isArray(v) ? v.map(s).filter(Boolean).slice(0, max) : []);

@@ -49,10 +49,11 @@ model User {
   voiceSessions     VoiceSession[]
   chatSessions      ChatSession[]
   jobApplications   JobApplication[]
-
-  @@index([createdAt])
+  coverLetters      CoverLetter[]
   tailorings        Tailoring[]
   interviews        InterviewSession[]
+
+  @@index([createdAt])
 }
 
 // A saved chat-builder conversation. Unlike the voice session (metadata only),
@@ -255,14 +256,16 @@ model Resume {
   anonKeyHash   String?
   anonExpiresAt DateTime?
 
-  versions ResumeVersion[]
-  ops      ResumeOp[]
-
-  @@index([userId, updatedAt])
-  @@index([anonKeyHash])
+  versions      ResumeVersion[]
+  ops           ResumeOp[]
   voiceSessions VoiceSession[]
   tailorings    Tailoring[]
   interviews    InterviewSession[]
+  jobs          JobApplication[]
+  coverLetters  CoverLetter[]
+
+  @@index([userId, updatedAt])
+  @@index([anonKeyHash])
 }
 
 // Immutable snapshots: the user's "save point", the base a tailoring branches
@@ -363,24 +366,54 @@ model CouponRedemption {
 // this schema. Free to use; the paid payoff (tailor CV / cover letter) gates on
 // credits at the action, not here.
 model JobApplication {
-  id        String    @id @default(cuid())
-  userId    String
-  company   String
-  title     String
-  url       String?
-  jdText    String?   @db.Text
-  location  String?
-  salary    String?
-  status    String    @default("BOOKMARKED") // BOOKMARKED | APPLIED | INTERVIEWING | OFFER | REJECTED
-  notes     String?   @db.Text
-  appliedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  userId     String
+  company    String
+  title      String
+  url        String?
+  jdText     String?   @db.Text
+  location   String?
+  salary     String?
+  status     String    @default("BOOKMARKED") // BOOKMARKED | APPLIED | INTERVIEWING | OFFER | REJECTED
+  notes      String?   @db.Text
+  appliedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  /// The CV used for this application (v2).
+  resumeId   String?
+  nextStep   String?
+  nextStepAt DateTime?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume       Resume?       @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  tailorings   Tailoring[]
+  coverLetters CoverLetter[]
 
   @@index([userId, updatedAt])
-  tailorings Tailoring[]
+  @@index([resumeId])
+}
+
+// A cover letter from one CV for one job. `flags` lists numbers that are on
+// neither the CV nor the job post, so the user checks them before sending.
+model CoverLetter {
+  id               String   @id @default(cuid())
+  userId           String
+  jobApplicationId String?
+  resumeId         String?
+  company          String   @default("")
+  jobTitle         String   @default("")
+  body             String   @db.Text
+  flags            Json     @default("[]")
+  creditsCharged   Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobApplication JobApplication? @relation(fields: [jobApplicationId], references: [id], onDelete: SetNull)
+  resume         Resume?         @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([jobApplicationId])
 }
 
 // Every change to User.credits, append-only. Written only by lib/billing/ledger
@@ -437,13 +470,13 @@ model Tailoring {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @default(now()) @updatedAt
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resume         Resume          @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  jobApplication JobApplication? @relation(fields: [jobApplicationId], references: [id], onDelete: SetNull)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume         Resume             @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobApplication JobApplication?    @relation(fields: [jobApplicationId], references: [id], onDelete: SetNull)
+  interviews     InterviewSession[]
 
   @@index([resumeId, createdAt])
   @@index([userId, createdAt])
-  interviews InterviewSession[]
 }
 
 // One interview practice: questions built from the CV + the job's weak spots,
@@ -451,35 +484,39 @@ model Tailoring {
 // and report are JSON (lib/interview/types.ts). appliedAdds = indices of the
 // debrief's "add to CV" items already applied.
 model InterviewSession {
-  id             String    @id @default(cuid())
-  userId         String
-  resumeId       String?
-  tailoringId    String?
-  jobTitle       String    @default("")
-  company        String    @default("")
-  jdText         String    @db.Text
-  mode           String // voice | text
-  status         String    @default("ready") // ready | live | scoring | done | failed
-  questions      Json
-  answers        Json      @default("[]")
-  report         Json?
-  appliedAdds    Int[]     @default([])
-  /** One ElevenLabs conversation per connection (reconnects add more). */
-  conversationIds String[] @default([])
-  /** Set while one worker scores, so the webhook, the cron and finish never score twice. */
+  id               String    @id @default(cuid())
+  userId           String
+  resumeId         String?
+  tailoringId      String?
+  jobTitle         String    @default("")
+  company          String    @default("")
+  jdText           String    @db.Text
+  mode             String // voice | text
+  status           String    @default("ready") // ready | live | scoring | done | failed
+  questions        Json
+  answers          Json      @default("[]")
+  report           Json?
+  appliedAdds      Int[]     @default([])
+  /**
+   * One ElevenLabs conversation per connection (reconnects add more).
+   */
+  conversationIds  String[]  @default([])
+  /**
+   * Set while one worker scores, so the webhook, the cron and finish never score twice.
+   */
   scoringClaimedAt DateTime?
-  attempts       Int       @default(0)
-  startedAt      DateTime?
-  durationSec    Int?
-  creditsCharged Int       @default(0)
-  refunded       Boolean   @default(false)
-  error          String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @default(now()) @updatedAt
+  attempts         Int       @default(0)
+  startedAt        DateTime?
+  durationSec      Int?
+  creditsCharged   Int       @default(0)
+  refunded         Boolean   @default(false)
+  error            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resume     Resume?    @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  tailoring  Tailoring? @relation(fields: [tailoringId], references: [id], onDelete: SetNull)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume    Resume?    @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  tailoring Tailoring? @relation(fields: [tailoringId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([conversationIds], type: Gin)

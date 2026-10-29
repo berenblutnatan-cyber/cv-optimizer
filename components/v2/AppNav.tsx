@@ -6,6 +6,7 @@ import { cn } from "@/components/ui";
 
 const ITEMS = [
   { href: "/cv", label: "CVs" },
+  { href: "/jobs", label: "Jobs" },
   { href: "/interview", label: "Interview" },
 ];
 

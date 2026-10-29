@@ -46,6 +46,7 @@ export type TailorDetail = {
   analysis: DeepAnalysis;
   appliedSuggestionIds: string[];
   createdAt: string;
+  jobApplicationId: string | null;
   applicable: boolean;
 };
 

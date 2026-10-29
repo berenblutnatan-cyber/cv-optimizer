@@ -15,7 +15,7 @@ import { InterviewSetup } from "@/components/v2/interview/InterviewSetup";
 export const metadata: Metadata = { title: "New practice", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-type Search = { cv?: string; tailoring?: string; again?: string };
+type Search = { cv?: string; tailoring?: string; again?: string; job?: string };
 
 export default async function NewInterviewPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
@@ -45,7 +45,13 @@ export default async function NewInterviewPage({ searchParams }: { searchParams:
       listResumeCards({ userId, anonKeyHash: null }),
       prisma.tailoring.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 60, select: { id: true, resumeId: true, jobTitle: true, company: true } }),
       prisma.user.findUnique({ where: { id: userId } }),
-      sp.again ? prisma.interviewSession.findFirst({ where: { id: sp.again, userId }, select: { resumeId: true, tailoringId: true, jdText: true, jobTitle: true, company: true } }) : null,
+      sp.again
+        ? prisma.interviewSession.findFirst({ where: { id: sp.again, userId }, select: { resumeId: true, tailoringId: true, jdText: true, jobTitle: true, company: true } })
+        : sp.job
+          ? prisma.jobApplication
+              .findFirst({ where: { id: sp.job, userId }, select: { resumeId: true, jdText: true, title: true, company: true } })
+              .then((j) => (j ? { resumeId: j.resumeId, tailoringId: null, jdText: j.jdText ?? "", jobTitle: j.title, company: j.company } : null))
+          : null,
     ]);
     const cvs = cards.filter((c) => c.doc.content.experience.length > 0).map((c) => ({ id: c.id, title: c.title || "Untitled CV" }));
     if (cvs.length === 0) {
@@ -66,7 +72,7 @@ export default async function NewInterviewPage({ searchParams }: { searchParams:
 
     const wanted = again?.resumeId ?? sp.cv;
     const cvId = cvs.some((c) => c.id === wanted) ? wanted! : cvs[0].id;
-    // "Practice again" on a pasted job brings the job back; on a tailored job, picks it.
+    // "Practice again" (or a tracked job) brings the job back; a tailored job is picked.
     const tailoringId = again ? again.tailoringId : (sp.tailoring ?? null);
     const unlimited = !!user && hasActiveSubscription(user);
     const voiceOverFairUse = unlimited && (await unlimitedSecondsUsed(prisma, userId)) >= VOICE.unlimitedSecondsPer30d;

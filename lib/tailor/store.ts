@@ -108,6 +108,8 @@ export async function getTailoring(userId: string, resumeId: string, id: string)
     analysis: row.analysis as unknown as DeepAnalysis,
     appliedSuggestionIds: row.appliedSuggestionIds,
     createdAt: row.createdAt,
+    /** The tracked job this run belongs to, if any. */
+    jobApplicationId: row.jobApplicationId,
     /** False once the CV changed since this run (apply is then refused). */
     applicable: current !== null && current === (row.appliedHash ?? row.baseHash),
   };

@@ -95,6 +95,17 @@ export async function charge(
   return { charged: Math.abs(delta), balance, unlimited, duplicate: false };
 }
 
+/**
+ * A read-only check before expensive work: could `charge` succeed right now?
+ * Not a reservation (the charge itself stays the authority, under its lock);
+ * it only stops a model call that the user could never have paid for.
+ */
+export async function canAfford(userId: string, amount = 1, opts: { ignoreUnlimited?: boolean } = {}): Promise<boolean> {
+  const b = await getBalance(userId);
+  if (!b) return false;
+  return (b.unlimited && !opts.ignoreUnlimited) || b.credits >= amount;
+}
+
 /** Add credits inside `tx` (purchase, coupon, reward). Idempotent on `key`. */
 export async function grant(
   tx: Tx,

@@ -2,7 +2,7 @@ import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { charge, InsufficientCredits, refundCharge } from "@/lib/billing/ledger";
+import { canAfford, charge, InsufficientCredits, refundCharge } from "@/lib/billing/ledger";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { appendOps, createVersion, loadResume } from "@/lib/resume/store";
 import { unlimitedSecondsUsed } from "@/lib/voice/sessions";
@@ -79,6 +79,10 @@ export async function createInterview(
     tailoringId = t.id;
   }
   if (jd.length < 80) throw new InterviewError("BAD_REQUEST", "Paste the full job description.");
+
+  // Out of credits: say so before paying for a model call.
+  const overFairUse = p.mode === "voice" && (await unlimitedSecondsUsed(prisma, userId)) >= VOICE.unlimitedSecondsPer30d;
+  if (!(await canAfford(userId, INTERVIEW.credits, { ignoreUnlimited: overFairUse }))) throw new InterviewError("NO_CREDITS", "Out of credits");
 
   // Before charging: a failed question run costs nothing.
   const questions = await generateQuestions(anthropic, { content: resume.doc.content, jd, jobTitle, company, analysis });

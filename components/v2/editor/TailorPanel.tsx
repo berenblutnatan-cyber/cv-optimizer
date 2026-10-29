@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, CircleDashed, History, Link2, LogIn, MessagesSquare, RotateCw, Target } from "lucide-react";
+import { ArrowLeft, Briefcase, Check, CircleDashed, History, Link2, LogIn, MessagesSquare, RotateCw, Target } from "lucide-react";
 import { readSse } from "@/lib/http/readSse";
 import { computeLocalScore, flattenProblems } from "@/lib/optimizer/localChecks";
 import { completeness, type ResumeDocument } from "@/lib/resume/document";
@@ -66,6 +66,40 @@ const STATUS: Record<"strong" | "partial" | "missing", { label: string; classNam
 
 function day(iso: string) {
   return new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric" });
+}
+
+/** Put this job in the tracker (once): the run, its CV and the job post go with it. */
+function TrackJob({ tailoringId, jobId, onTracked }: { tailoringId: string; jobId: string | null; onTracked: (jobId: string) => void }) {
+  const [busy, setBusy] = React.useState(false);
+  if (jobId) {
+    return (
+      <Button asChild size="sm" variant="ghost">
+        <Link href={`/jobs?job=${jobId}`}>
+          <Check /> In Jobs
+        </Link>
+      </Button>
+    );
+  }
+  return (
+    <Tooltip content="Track this application: stage, next step, cover letter.">
+      <Button
+        size="sm"
+        variant="secondary"
+        loading={busy}
+        onClick={async () => {
+          setBusy(true);
+          const res = await fetch("/api/jobs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ fromTailoringId: tailoringId }) }).catch(() => null);
+          const j = res ? await res.json().catch(() => null) : null;
+          setBusy(false);
+          if (!res?.ok || !j?.job?.id) return toast.error(typeof j?.error === "string" ? j.error : "Couldn't add it. Try again.");
+          onTracked(j.job.id);
+          toast.success("Added to Jobs", { action: { label: "Open", onClick: () => window.location.assign(`/jobs?job=${j.job.id}`) } });
+        }}
+      >
+        <Briefcase /> Track job
+      </Button>
+    </Tooltip>
+  );
 }
 
 export function TailorPanel({
@@ -345,13 +379,16 @@ export function TailorPanel({
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-body font-medium text-ink">{VERDICT[a.applyVerdict ?? applyVerdict(original.total)]}</p>
-              <Tooltip content="Mock interview for this job, aimed at its weak spots.">
-                <Button asChild size="sm" variant="secondary" className="ms-auto">
-                  <Link href={`/interview/new?cv=${cvId}&tailoring=${t.id}`}>
-                    <MessagesSquare /> Practice interview
-                  </Link>
-                </Button>
-              </Tooltip>
+              <span className="ms-auto flex flex-wrap items-center gap-2">
+                <TrackJob tailoringId={t.id} jobId={t.jobApplicationId} onTracked={(jobId) => setView({ name: "result", t: { ...t, jobApplicationId: jobId } })} />
+                <Tooltip content="Mock interview for this job, aimed at its weak spots.">
+                  <Button asChild size="sm" variant="secondary">
+                    <Link href={`/interview/new?cv=${cvId}&tailoring=${t.id}`}>
+                      <MessagesSquare /> Practice interview
+                    </Link>
+                  </Button>
+                </Tooltip>
+              </span>
               {a.scoreComparison.improvement > 0 && (
                 <Tooltip content="With every grounded change applied.">
                   <span tabIndex={0}>

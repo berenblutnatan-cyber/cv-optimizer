@@ -241,10 +241,11 @@ run("voice sessions (local Postgres)", () => {
     await endVoiceSession(a.id, free.s.id);
     const covered = await startVoiceSession(a.id, a.cvId);
     expect(covered.creditsCharged).toBe(0);
-    await prisma.voiceSession.update({ where: { id: covered.id }, data: { status: "reconciled", durationSec: 3600 } });
+    // Calls that connected (startedAt set, as every v2 connection does).
+    await prisma.voiceSession.update({ where: { id: covered.id }, data: { status: "reconciled", durationSec: 3600, startedAt: new Date() } });
     // Three more hours of covered calls this month: past the fair-use minutes.
     await prisma.voiceSession.createMany({
-      data: [1, 2, 3].map(() => ({ userId: a.id, resumeId: a.cvId, status: "reconciled", free: false, durationSec: 3600, creditsCharged: 0 })),
+      data: [1, 2, 3].map(() => ({ userId: a.id, resumeId: a.cvId, status: "reconciled", free: false, durationSec: 3600, creditsCharged: 0, attempts: 1, startedAt: new Date() })),
     });
     expect((await voiceOffer(a.id)).unlimited).toBe(false);
     const over = await startVoiceSession(a.id, a.cvId);

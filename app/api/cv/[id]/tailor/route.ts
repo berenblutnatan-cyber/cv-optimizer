@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
-import { getBalance, InsufficientCredits } from "@/lib/billing/ledger";
+import { canAfford, InsufficientCredits } from "@/lib/billing/ledger";
 import { fetchJobDescription } from "@/lib/jobFetcher";
 import { limit, limitResponse } from "@/lib/limits";
 import { runOptimizerPipeline, PipelineError } from "@/lib/optimizer/pipeline";
@@ -58,8 +58,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return Response.json({ error: "Add your experience first, then tailor.", code: "EMPTY_CV" }, { status: 400 });
   }
 
-  const balance = await getBalance(userId);
-  if (!balance || (!balance.unlimited && balance.credits < 1)) return Response.json({ error: "Out of credits", code: "NO_CREDITS" }, { status: 402 });
+  if (!(await canAfford(userId))) return Response.json({ error: "Out of credits", code: "NO_CREDITS" }, { status: 402 });
 
   if (!jd && jobUrl) {
     const fetched = await fetchJobDescription(jobUrl, anthropic);
