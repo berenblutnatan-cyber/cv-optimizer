@@ -19,6 +19,7 @@ import {
   RotateCcw,
   RotateCw,
   Save,
+  Target,
 } from "lucide-react";
 import { completeness, documentTitle, type ResumeDocument } from "@/lib/resume/document";
 import { cvFileBase } from "@/lib/export/filename";
@@ -48,10 +49,11 @@ import { ChatPanel } from "./ChatPanel";
 import { DesignPanel } from "./DesignPanel";
 import { useVersions, versionTitle, VersionsPanel } from "./VersionsPanel";
 import { VoicePanel, type VoiceSdk } from "./VoicePanel";
+import { TailorPanel } from "./TailorPanel";
 
 type Mode = "type" | "chat" | "talk";
 type MobilePane = "edit" | "preview";
-type Panel = "edit" | "design" | "versions";
+type Panel = "edit" | "design" | "versions" | "tailor";
 
 const MODE_KEY = "hired:editor-mode";
 
@@ -83,7 +85,7 @@ function CompletenessButton({ doc, onJump }: { doc: ResumeDocument; onJump: (s: 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="inline-flex h-8 items-center gap-2 rounded-control px-2 text-dense font-medium text-ink-2 hover:bg-surface-2 hover:text-ink" aria-label={`Completeness ${done} of ${items.length}`}>
+        <button type="button" className="inline-flex h-8 items-center gap-2 rounded-control px-2 text-dense font-medium text-ink-2 hover:bg-surface-2 hover:text-ink touch:h-11" aria-label={`Completeness ${done} of ${items.length}`}>
           <svg width="22" height="22" className="-rotate-90" aria-hidden>
             <circle cx="11" cy="11" r={r} fill="none" strokeWidth="3" className="stroke-hairline-strong" />
             <circle cx="11" cy="11" r={r} fill="none" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} className="stroke-accent transition-[stroke-dashoffset] duration-500" />
@@ -131,12 +133,15 @@ export function EditorShell({
   initial,
   signedIn,
   startInTalk = false,
+  startPanel,
   voiceSdk,
 }: {
   id: string;
   initial: { doc: ResumeDocument; lastSeq: number };
   signedIn: boolean;
   startInTalk?: boolean;
+  /** Open a panel on load (e.g. ?panel=tailor from /score). */
+  startPanel?: "tailor";
   /** Tests and QA only: a scripted agent in place of ElevenLabs. */
   voiceSdk?: VoiceSdk;
 }) {
@@ -150,7 +155,7 @@ export function EditorShell({
   const [previewDirty, setPreviewDirty] = React.useState(false);
   const [onCall, setOnCall] = React.useState(false);
   const [callSlot, setCallSlot] = React.useState<HTMLDivElement | null>(null);
-  const [panel, setPanel] = React.useState<Panel>("edit");
+  const [panel, setPanel] = React.useState<Panel>(startPanel ?? "edit");
   const [mobilePane, setMobilePane] = React.useState<MobilePane>("edit");
   const [openSections, setOpenSections] = React.useState<Set<SectionId>>(new Set(["profile", "experience"]));
   const [fit, setFit] = React.useState<FitState | null>(null);
@@ -255,6 +260,7 @@ export function EditorShell({
     { id: "type", label: "Edit by typing", group: "Mode", icon: <PenLine />, run: () => setMode("type") },
     { id: "chat", label: "Edit by chatting", group: "Mode", icon: <MessageSquare />, run: () => setMode("chat") },
     { id: "talk", label: "Edit by talking", group: "Mode", icon: <Mic />, run: () => setMode("talk") },
+    { id: "tailor", label: "Tailor to a job", group: "Tailor", icon: <Target />, run: () => togglePanel("tailor") },
     { id: "design", label: "Change design", group: "Design", icon: <Palette />, run: () => togglePanel("design") },
     { id: "multi", label: doc.design.pageMode === "one" ? "Allow multiple pages" : "Fit to one page", group: "Design", icon: <Palette />, run: () => apply("set_design", doc.design.pageMode === "one" ? { pageMode: "multi" } : { pageMode: "one", autoFit: true }) },
     { id: "versions", label: "Version history", group: "Versions", icon: <History />, run: () => togglePanel("versions") },
@@ -271,6 +277,7 @@ export function EditorShell({
     <div className="flex h-full min-h-0 flex-col bg-surface">
       {panel === "design" && <DesignPanel doc={doc} apply={apply} onClose={closePanel} />}
       {panel === "versions" && <VersionsPanel api={versions} onClose={closePanel} />}
+      {panel === "tailor" && <TailorPanel cvId={id} doc={doc} signedIn={signedIn} settle={settle} adoptServer={adoptServer} onClose={closePanel} />}
       <div className={cn("flex min-h-0 flex-1 flex-col", panel !== "edit" && "hidden")}>
         <div className="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-hairline px-3">
           <Segmented
@@ -295,7 +302,7 @@ export function EditorShell({
           />
           <CompletenessButton doc={doc} onJump={jumpTo} />
         </div>
-        <div className={cn("min-h-0 flex-1", mode === "type" ? "overflow-y-auto" : "hidden")}>
+        <div className={cn("min-h-0 flex-1", mode === "type" ? "relative overflow-y-auto" : "hidden")}>
           <SectionEditor content={doc.content} apply={apply} openSections={openSections} setOpenSections={setOpenSections} />
         </div>
         {/* Kept mounted while hidden so a streaming reply survives a mode or panel switch. */}
@@ -343,7 +350,7 @@ export function EditorShell({
           </Button>
         </div>
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-10 md:py-10">
+      <div className="min-h-0 flex-1 relative overflow-y-auto px-4 py-6 md:px-10 md:py-10">
         {/* The live CV stays mounted while a version is shown: it is the export root. */}
         <div className={cn("relative", viewing && "hidden")}>
           {pulse > 0 && <span key={pulse} aria-hidden className="pointer-events-none absolute inset-0 z-10 mx-auto max-w-[860px] rounded-[2px] animate-voice-pulse" />}
@@ -380,11 +387,11 @@ export function EditorShell({
   );
 
   return (
-    <div className="flex h-dvh flex-col bg-canvas">
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-canvas">
       <CommandPalette actions={actions} />
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-hairline bg-surface px-2 md:px-3">
         <Tooltip content="All CVs">
-          <Link href="/cv" aria-label="All CVs" className="grid size-9 place-items-center rounded-control text-ink-2 hover:bg-surface-2 hover:text-ink">
+          <Link href="/cv" aria-label="All CVs" className="grid size-9 place-items-center rounded-control text-ink-2 hover:bg-surface-2 hover:text-ink touch:size-11">
             <ArrowLeft className="size-[18px]" />
           </Link>
         </Tooltip>
@@ -404,6 +411,9 @@ export function EditorShell({
               <Kbd>⌘K</Kbd>
             </button>
           </Tooltip>
+          <Button size="sm" variant="ghost" aria-label="Tailor to a job" aria-pressed={panel === "tailor"} className={cn(panel === "tailor" && "bg-surface-2 text-ink")} onClick={() => togglePanel("tailor")}>
+            <Target /> <span className="hidden md:inline">Tailor</span>
+          </Button>
           <IconButton label="Version history" active={panel === "versions"} onClick={() => togglePanel("versions")}>
             <History />
           </IconButton>
@@ -446,7 +456,11 @@ export function EditorShell({
             if (p === "preview") setPreviewDirty(false);
           }}
           options={[
-            { value: "edit", label: panel === "design" ? "Design" : panel === "versions" ? "Versions" : "Edit", icon: panel === "design" ? <Palette /> : panel === "versions" ? <History /> : <PenLine /> },
+            {
+              value: "edit",
+              label: panel === "design" ? "Design" : panel === "versions" ? "Versions" : panel === "tailor" ? "Tailor" : "Edit",
+              icon: panel === "design" ? <Palette /> : panel === "versions" ? <History /> : panel === "tailor" ? <Target /> : <PenLine />,
+            },
             {
               value: "preview",
               label: "Preview",

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 // Hired v2 "Precision studio" theme. Loaded only by styles/v2/app.css via
 // `@config`, so legacy pages keep tailwind.config.ts and the two never mix.
@@ -98,7 +99,11 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // `touch:` = a finger, not a mouse. Every control grows to a 44px target
+    // there (HARD RULE: tap targets >= 44px) without inflating the desktop UI.
+    plugin(({ addVariant }) => addVariant("touch", "@media (pointer: coarse)")),
+  ],
 };
 
 export default config;

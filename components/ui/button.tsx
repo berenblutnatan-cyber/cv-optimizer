@@ -18,8 +18,8 @@ export const buttonVariants = cva(
         link: "h-auto px-0 text-accent-ink underline-offset-4 hover:underline",
       },
       size: {
-        sm: "h-8 px-3 text-dense",
-        md: "h-9 px-3.5 text-body",
+        sm: "h-8 px-3 text-dense touch:h-11",
+        md: "h-9 px-3.5 text-body touch:h-11",
         lg: "h-11 px-5 text-emph",
       },
     },

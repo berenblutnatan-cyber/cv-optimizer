@@ -23,7 +23,7 @@ export function DesignPanel({ doc, apply, onClose }: { doc: ResumeDocument; appl
   return (
     <div className="flex h-full min-h-0 flex-col">
       <PanelHeader title="Design" onClose={onClose} />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 relative overflow-y-auto">
         <section className="border-b border-hairline px-4 py-4" aria-labelledby="design-accent">
           <h3 id="design-accent" className="mb-3 text-dense font-medium text-ink-2">
             Accent

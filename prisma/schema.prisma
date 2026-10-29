@@ -51,6 +51,7 @@ model User {
   jobApplications   JobApplication[]
 
   @@index([createdAt])
+  tailorings        Tailoring[]
 }
 
 // A saved chat-builder conversation. Unlike the voice session (metadata only),
@@ -249,6 +250,7 @@ model Resume {
   @@index([userId, updatedAt])
   @@index([anonKeyHash])
   voiceSessions VoiceSession[]
+  tailorings    Tailoring[]
 }
 
 // Immutable snapshots: the user's "save point", the base a tailoring branches
@@ -366,6 +368,7 @@ model JobApplication {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, updatedAt])
+  tailorings Tailoring[]
 }
 
 // Every change to User.credits, append-only. Written only by lib/billing/ledger
@@ -396,4 +399,36 @@ model PolarWebhookEvent {
   receivedAt  DateTime  @default(now())
   processedAt DateTime?
   payload     Json
+}
+
+// One "tailor this CV to this job" run: the full analysis (coverage matrix,
+// grounded suggestions) and which suggestions the user applied. baseHash is
+// the CV content the suggestions' patches were computed against; applying is
+// refused once the CV has moved on (patches are index-addressed).
+model Tailoring {
+  id                   String   @id @default(cuid())
+  userId               String
+  resumeId             String
+  jobApplicationId     String?
+  jobTitle             String   @default("")
+  company              String   @default("")
+  jdText               String   @db.Text
+  jdHash               String
+  analysis             Json
+  scoreOriginal        Int
+  scoreOptimized       Int
+  baseHash             String
+  appliedHash          String?
+  appliedSuggestionIds String[] @default([])
+  resultVersionId      String?
+  creditsCharged       Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume         Resume          @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobApplication JobApplication? @relation(fields: [jobApplicationId], references: [id], onDelete: SetNull)
+
+  @@index([resumeId, createdAt])
+  @@index([userId, createdAt])
 }

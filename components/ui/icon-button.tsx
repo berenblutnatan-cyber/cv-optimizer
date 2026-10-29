@@ -23,7 +23,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         aria-pressed={active}
         className={cn(
           "inline-grid shrink-0 place-items-center rounded-control text-ink-2 transition-colors duration-micro hover:bg-surface-2 hover:text-ink disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-[18px]",
-          size === "md" ? "size-9" : "size-11",
+          size === "md" ? "size-9 touch:size-11" : "size-11",
           active && "bg-surface-2 text-ink",
           className,
         )}

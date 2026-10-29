@@ -33,3 +33,4 @@ tsconfig.tsbuildinfo
 
 # Playwright MCP session logs
 .playwright-mcp/
+.impeccable/

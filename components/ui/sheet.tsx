@@ -43,7 +43,7 @@ export function Sheet({
             <Drawer.Title className="text-h3 font-semibold text-ink">{title}</Drawer.Title>
             <Drawer.Description className="sr-only">{title}</Drawer.Description>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-[max(20px,env(safe-area-inset-bottom))]">{children}</div>
+          <div className="min-h-0 flex-1 relative overflow-y-auto px-5 pb-[max(20px,env(safe-area-inset-bottom))]">{children}</div>
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>

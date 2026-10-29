@@ -37,7 +37,7 @@ export function Segmented<T extends string>({
           aria-label={o.ariaLabel}
           className={cn(
             "inline-flex items-center justify-center gap-1.5 rounded-[5px] font-medium text-ink-2 transition-[background-color,color,box-shadow] duration-micro hover:text-ink data-[state=on]:bg-surface data-[state=on]:text-ink data-[state=on]:shadow-card [&_svg]:size-4",
-            size === "md" ? "h-8 px-3 text-body" : "h-7 px-2.5 text-dense",
+            size === "md" ? "h-8 px-3 text-body touch:h-11" : "h-7 px-2.5 text-dense touch:h-11",
           )}
         >
           {o.icon}

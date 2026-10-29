@@ -73,13 +73,21 @@ function Tile({
   );
 }
 
-export function StartFlow() {
+/**
+ * "start": every way to begin (upload, talk, blank). "score": the free check
+ * (/score, where ad traffic lands): upload or paste, optionally the job, then
+ * straight into the editor's score + tailor panel.
+ */
+export function StartFlow({ variant = "start" }: { variant?: "start" | "score" }) {
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const [phase, setPhase] = React.useState<Phase>({ kind: "choose" });
   const [dragging, setDragging] = React.useState(false);
   const [creatingBlank, setCreatingBlank] = React.useState<false | "blank" | "talk">(false);
   const [pasted, setPasted] = React.useState("");
+  const [jobText, setJobText] = React.useState("");
+  const jobRef = React.useRef("");
+  jobRef.current = jobText;
   const inputRef = React.useRef<HTMLInputElement>(null);
   const abortRef = React.useRef<AbortController | null>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
@@ -107,7 +115,13 @@ export function StartFlow() {
         } else if (e.type === "done") {
           finished = true;
           setPhase({ kind: "opening", label, content: latest });
-          router.push(`/cv/${e.id}`);
+          if (variant === "score") {
+            // The job pasted here rides along to the tailor panel (it opens on this CV).
+            try {
+              if (jobRef.current.trim()) sessionStorage.setItem(`hired:tailor-jd:${e.id}`, jobRef.current.trim());
+            } catch {}
+            router.push(`/cv/${e.id}?panel=tailor`);
+          } else router.push(`/cv/${e.id}`);
         } else if (e.type === "error") {
           finished = true;
           setPhase({ kind: "error", message: e.error, canPaste: e.code === "NO_CV" });
@@ -234,7 +248,7 @@ export function StartFlow() {
 
   return (
     <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-10 md:px-8 md:py-16" {...dropProps}>
-      <h1 className="text-h1 font-semibold text-ink">Start your CV</h1>
+      <h1 className="text-h1 font-semibold text-ink">{variant === "score" ? "Score your CV" : "Start your CV"}</h1>
 
       {phase.kind === "error" && (
         <ErrorState
@@ -273,18 +287,39 @@ export function StartFlow() {
         </form>
       ) : (
         <>
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Tile
-              icon={<FileUp />}
-              title={dragging ? "Drop to upload" : "Upload a CV"}
-              meta="PDF or Word"
-              highlighted={dragging}
-              onClick={() => inputRef.current?.click()}
-              busy={!!creatingBlank}
-            />
-            <Tile icon={<Mic />} title="Talk it through" meta="About 5 minutes" onClick={() => void startBlank("talk")} busy={!!creatingBlank} aria-busy={creatingBlank === "talk"} />
-            <Tile icon={<PenLine />} title="Start blank" meta="Type or chat" onClick={() => void startBlank()} busy={!!creatingBlank} aria-busy={creatingBlank === "blank"} />
-          </div>
+          {variant === "score" ? (
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Tile
+                icon={<FileUp />}
+                title={dragging ? "Drop to upload" : "Upload a CV"}
+                meta="PDF or Word"
+                highlighted={dragging}
+                onClick={() => inputRef.current?.click()}
+              />
+              <Tile icon={<ClipboardPaste />} title="Paste it" meta="Any text" onClick={() => setPhase({ kind: "paste" })} />
+            </div>
+          ) : (
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Tile
+                icon={<FileUp />}
+                title={dragging ? "Drop to upload" : "Upload a CV"}
+                meta="PDF or Word"
+                highlighted={dragging}
+                onClick={() => inputRef.current?.click()}
+                busy={!!creatingBlank}
+              />
+              <Tile icon={<Mic />} title="Talk it through" meta="About 5 minutes" onClick={() => void startBlank("talk")} busy={!!creatingBlank} aria-busy={creatingBlank === "talk"} />
+              <Tile icon={<PenLine />} title="Start blank" meta="Type or chat" onClick={() => void startBlank()} busy={!!creatingBlank} aria-busy={creatingBlank === "blank"} />
+            </div>
+          )}
+          {variant === "score" && (
+            <div className="mt-6 flex flex-col gap-1.5">
+              <label htmlFor="score-job" className="flex items-center gap-2 text-dense font-medium text-ink">
+                Job description <span className="font-normal text-ink-3">optional</span>
+              </label>
+              <Textarea id="score-job" rows={5} value={jobText} onChange={(e) => setJobText(e.target.value)} maxLength={30_000} />
+            </div>
+          )}
           <input
             ref={inputRef}
             type="file"
@@ -298,9 +333,11 @@ export function StartFlow() {
               if (file) importFile(file);
             }}
           />
-          <Button variant="ghost" className="mt-4 w-fit" onClick={() => setPhase({ kind: "paste" })}>
-            <ClipboardPaste /> Paste text instead
-          </Button>
+          {variant === "start" && (
+            <Button variant="ghost" className="mt-4 w-fit" onClick={() => setPhase({ kind: "paste" })}>
+              <ClipboardPaste /> Paste text instead
+            </Button>
+          )}
         </>
       )}
     </div>

@@ -135,7 +135,7 @@ export function ChatPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-5" aria-live="polite">
+      <div ref={scrollRef} className="min-h-0 flex-1 relative overflow-y-auto px-5 py-5" aria-live="polite">
         <ol className="flex flex-col gap-5">
           {messages.map((m, i) => (
             <li key={i} className={cn("flex flex-col gap-2", m.role === "user" && "items-end")}>

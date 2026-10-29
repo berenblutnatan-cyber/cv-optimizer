@@ -677,7 +677,7 @@ export function VoicePanel({
       <span className="sr-only" role="status">
         {lastEdit?.text ?? ""}
       </span>
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-6">
+      <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 relative overflow-y-auto px-4 pb-6">
         {lines.map((l) =>
           l.kind === "edit" ? (
             <div key={l.id} className="flex items-center gap-2 text-dense font-medium text-success animate-fade-in">

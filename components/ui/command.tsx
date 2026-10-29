@@ -55,7 +55,7 @@ export function CommandPalette({ actions }: { actions: CommandAction[] }) {
               <C.Input autoFocus placeholder="Search or jump to…" className="h-full flex-1 bg-transparent text-emph text-ink outline-none placeholder:text-ink-3" />
               <Kbd>esc</Kbd>
             </div>
-            <C.List className="max-h-[50vh] overflow-y-auto p-1.5">
+            <C.List className="max-h-[50vh] relative overflow-y-auto p-1.5">
               <C.Empty className="px-3 py-8 text-center text-body text-ink-2">No matches</C.Empty>
               {groups.map(([group, items]) => (
                 <C.Group

@@ -247,7 +247,7 @@ export function VersionsPanel({ api, onClose }: { api: VersionsApi; onClose: () 
         }}
         action={api.versions && api.versions.length > 0 ? saveButton : undefined}
       />
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      <div className="min-h-0 flex-1 relative overflow-y-auto p-2">
         {api.error ? (
           <ErrorState className="m-2" title="Couldn't load versions" action={<Button size="sm" onClick={() => void load()}>Retry</Button>} />
         ) : api.versions === null ? (

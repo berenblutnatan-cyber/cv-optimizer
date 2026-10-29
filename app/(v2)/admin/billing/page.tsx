@@ -89,7 +89,7 @@ export default async function AdminBillingPage() {
           </Card>
           <Card className="overflow-hidden">
             <CardHeader title="Recent activity" />
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full min-w-[560px] text-body">
                 <tbody>
                   {o.recent.map((r) => (
