@@ -16,10 +16,13 @@ export function DialogContent({
   footer,
   className,
   size = "md",
+  showDescription = false,
 }: {
   title: string;
-  /** Screen-reader description only; nothing visible restates the title. */
+  /** Screen-reader description; nothing visible restates the title. */
   description?: string;
+  /** Show the description as the dialog's one line of body text (a confirm). */
+  showDescription?: boolean;
   children?: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
@@ -43,8 +46,12 @@ export function DialogContent({
             <X className="size-[18px]" />
           </D.Close>
         </div>
-        {description ? <D.Description className="sr-only">{description}</D.Description> : <D.Description className="sr-only">{title}</D.Description>}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">{children}</div>
+        {description && showDescription ? (
+          <D.Description className="px-5 pb-5 text-body text-ink-2">{description}</D.Description>
+        ) : (
+          <D.Description className="sr-only">{description || title}</D.Description>
+        )}
+        {children && <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">{children}</div>}
         {footer && <div className="flex justify-end gap-2 border-t border-hairline px-5 py-3">{footer}</div>}
       </D.Content>
     </D.Portal>

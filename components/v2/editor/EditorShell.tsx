@@ -6,23 +6,21 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
-  ChevronDown,
   Download,
   Eye,
   FileText,
   FileType,
+  History,
   Loader2,
   MessageSquare,
   Palette,
   PenLine,
+  RotateCcw,
   RotateCw,
+  Save,
 } from "lucide-react";
-import { THEME_COLOR_VALUES, type ThemeColor } from "@/context/BuilderContext";
-import { TEMPLATE_LIST } from "@/lib/templates/registry";
-import { DESIGN_COLORS } from "@/lib/chat/cvTools";
-import { completeness, documentTitle, type DesignTemplate, type ResumeDocument } from "@/lib/resume/document";
-import { toTemplateData } from "@/lib/resume/view";
-import { toPlainText } from "@/lib/resume/plainText";
+import { completeness, documentTitle, type ResumeDocument } from "@/lib/resume/document";
+import { cvFileBase } from "@/lib/export/filename";
 import {
   Button,
   cn,
@@ -46,9 +44,12 @@ import { useCvDocument, type SaveState } from "./useCvDocument";
 import { CvPreview, type FitState } from "./CvPreview";
 import { SectionEditor, type SectionId } from "./SectionEditor";
 import { ChatPanel } from "./ChatPanel";
+import { DesignPanel } from "./DesignPanel";
+import { useVersions, versionTitle, VersionsPanel } from "./VersionsPanel";
 
 type Mode = "type" | "chat";
 type MobilePane = "edit" | "preview";
+type Panel = "edit" | "design" | "versions";
 
 const MODE_KEY = "hired:editor-mode";
 
@@ -112,79 +113,6 @@ function CompletenessButton({ doc, onJump }: { doc: ResumeDocument; onJump: (s: 
   );
 }
 
-function DesignPopover({ doc, apply }: { doc: ResumeDocument; apply: (n: string, i: Record<string, unknown>, k?: string) => boolean }) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button size="sm" variant="ghost">
-          <Palette /> <span className="hidden md:inline">Design</span> <ChevronDown className="hidden md:block" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="w-[340px] p-0"
-        tabIndex={-1}
-        onOpenAutoFocus={(e) => {
-          // Focus the panel itself: auto-focusing the first swatch would pop
-          // its tooltip open. Keyboard users Tab in from here.
-          e.preventDefault();
-          (e.currentTarget as HTMLElement | null)?.focus();
-        }}
-      >
-        <div className="border-b border-hairline p-4">
-          <p className="mb-2.5 text-dense font-medium text-ink-2">Accent</p>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Accent colour">
-            {DESIGN_COLORS.map((c) => (
-              <Tooltip key={c} content={c[0].toUpperCase() + c.slice(1)}>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={doc.design.accentColor === c}
-                  aria-label={c}
-                  onClick={() => apply("set_design", { accentColor: c })}
-                  className={cn("size-8 rounded-full ring-offset-2 ring-offset-surface transition-shadow", doc.design.accentColor === c ? "ring-2 ring-ink" : "hover:ring-2 hover:ring-hairline-strong")}
-                  style={{ background: THEME_COLOR_VALUES[c as ThemeColor].primary }}
-                />
-              </Tooltip>
-            ))}
-          </div>
-        </div>
-        <div className="border-b border-hairline p-4">
-          <p className="mb-2.5 text-dense font-medium text-ink-2">Length</p>
-          <Segmented
-            aria-label="Page length"
-            size="sm"
-            value={doc.design.pageMode}
-            onChange={(v) => apply("set_design", { pageMode: v, ...(v === "one" ? { autoFit: true } : {}) })}
-            options={[
-              { value: "one", label: "One page" },
-              { value: "multi", label: "Multi-page" },
-            ]}
-          />
-        </div>
-        <div className="max-h-[42vh] overflow-y-auto p-2" role="radiogroup" aria-label="Template">
-          <p className="px-2 pb-1.5 pt-2 text-dense font-medium text-ink-2">Template</p>
-          {TEMPLATE_LIST.map((t) => (
-            <Tooltip key={t.id} content={t.description} side="left">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={doc.design.template === t.id}
-                onClick={() => apply("set_design", { template: t.id as DesignTemplate })}
-                className={cn("flex h-10 w-full items-center gap-3 rounded-control px-2.5 text-start text-body", doc.design.template === t.id ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink")}
-              >
-                <span aria-hidden className="h-6 w-5 shrink-0 rounded-[3px] border border-hairline" style={{ background: t.preview }} />
-                <span className="flex-1 truncate">{t.name}</span>
-                {doc.design.template === t.id && <Check className="size-4 text-ink" />}
-              </button>
-            </Tooltip>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -197,14 +125,18 @@ function download(blob: Blob, name: string) {
 }
 
 export function EditorShell({ id, initial }: { id: string; initial: { doc: ResumeDocument; lastSeq: number } }) {
-  const { doc, saveState, apply, applyRemote, adoptServer, flush, retry } = useCvDocument(id, initial);
+  const { doc, saveState, apply, applyRemote, adoptServer, settle, retry } = useCvDocument(id, initial);
   const docRef = React.useRef<HTMLDivElement>(null);
+  const viewRef = React.useRef<HTMLDivElement>(null);
   const hasContent = React.useMemo(() => completeness(initial.doc.content).some((i) => i.done), [initial.doc.content]);
   const [mode, setModeState] = React.useState<Mode>(hasContent ? "type" : "chat");
+  const [panel, setPanel] = React.useState<Panel>("edit");
   const [mobilePane, setMobilePane] = React.useState<MobilePane>("edit");
   const [openSections, setOpenSections] = React.useState<Set<SectionId>>(new Set(["profile", "experience"]));
   const [fit, setFit] = React.useState<FitState | null>(null);
-  const [exporting, setExporting] = React.useState(false);
+  const [exporting, setExporting] = React.useState<null | "pdf" | "docx" | "txt">(null);
+  const versions = useVersions({ cvId: id, settle, adoptServer });
+  const { viewing } = versions;
 
   React.useEffect(() => {
     try {
@@ -214,46 +146,60 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
   }, [hasContent]);
   const setMode = (m: Mode) => {
     setModeState(m);
+    setPanel("edit");
     try {
       localStorage.setItem(MODE_KEY, m);
     } catch {}
   };
+  const togglePanel = (p: Exclude<Panel, "edit">) => {
+    setMobilePane("edit");
+    setPanel((cur) => {
+      if (cur === "versions" && p !== "versions") void versions.view(null);
+      return cur === p ? "edit" : p;
+    });
+  };
+  const closePanel = React.useCallback(() => setPanel("edit"), []);
 
   const title = documentTitle(doc);
   React.useEffect(() => {
     document.title = `${title} · Hired`;
   }, [title]);
 
-  const fileBase = (doc.content.personalInfo.name || "CV").replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "CV";
+  const fileBase = cvFileBase(doc.content.personalInfo.name);
 
   const exportPdf = React.useCallback(async () => {
     if (!docRef.current || exporting) return;
-    setExporting(true);
+    setExporting("pdf");
     try {
-      await flush();
+      void settle();
       const { exportToPdf } = await import("@/utils/exportToPdf");
-      await exportToPdf(docRef.current, `${fileBase} CV`, { mode: "print" });
+      await exportToPdf(docRef.current, fileBase, { mode: "print" });
     } catch (err) {
       console.error(err);
       toast.error("Couldn't open the print dialog. Try Word instead.");
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
-  }, [exporting, fileBase, flush]);
+  }, [exporting, fileBase, settle]);
 
-  const exportWord = React.useCallback(async () => {
-    try {
-      const { exportToWord } = await import("@/utils/exportToWord");
-      await exportToWord(toTemplateData(doc.content), `${fileBase} CV`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Word export failed. Try PDF.");
-    }
-  }, [doc.content, fileBase]);
-
-  const exportText = React.useCallback(() => {
-    download(new Blob([toPlainText(doc.content)], { type: "text/plain;charset=utf-8" }), `${fileBase} CV.txt`);
-  }, [doc.content, fileBase]);
+  // Word and text come from the server copy, so everything typed is saved first.
+  const exportFile = React.useCallback(
+    async (format: "docx" | "txt") => {
+      if (exporting) return;
+      setExporting(format);
+      try {
+        if (!(await settle())) throw new Error("Your latest edits aren't saved yet. Try again.");
+        const res = await fetch(`/api/cv/${id}/export?format=${format}`);
+        if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Export failed. Try PDF.");
+        download(await res.blob(), `${fileBase}.${format}`);
+      } catch (err) {
+        toast.error((err as Error).message);
+      } finally {
+        setExporting(null);
+      }
+    },
+    [exporting, fileBase, id, settle],
+  );
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -276,51 +222,76 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
   const actions: CommandAction[] = [
     { id: "type", label: "Edit by typing", group: "Mode", icon: <PenLine />, run: () => setMode("type") },
     { id: "chat", label: "Edit by chatting", group: "Mode", icon: <MessageSquare />, run: () => setMode("chat") },
-    { id: "pdf", label: "Export PDF", group: "Export", icon: <Download />, shortcut: "⌘E", run: () => void exportPdf() },
-    { id: "docx", label: "Export Word", group: "Export", icon: <FileType />, run: () => void exportWord() },
-    { id: "txt", label: "Export plain text", group: "Export", icon: <FileText />, run: exportText },
+    { id: "design", label: "Change design", group: "Design", icon: <Palette />, run: () => togglePanel("design") },
     { id: "multi", label: doc.design.pageMode === "one" ? "Allow multiple pages" : "Fit to one page", group: "Design", icon: <Palette />, run: () => apply("set_design", doc.design.pageMode === "one" ? { pageMode: "multi" } : { pageMode: "one", autoFit: true }) },
+    { id: "versions", label: "Version history", group: "Versions", icon: <History />, run: () => togglePanel("versions") },
+    { id: "save-version", label: "Save a version", group: "Versions", icon: <Save />, run: () => void versions.save().then((v) => v && toast(`Saved ${versionTitle(v)}`)) },
+    { id: "pdf", label: "Export PDF", group: "Export", icon: <Download />, shortcut: "⌘E", run: () => void exportPdf() },
+    { id: "docx", label: "Export Word", group: "Export", icon: <FileType />, run: () => void exportFile("docx") },
+    { id: "txt", label: "Export plain text", group: "Export", icon: <FileText />, run: () => void exportFile("txt") },
   ];
 
   const overflowing = doc.design.pageMode === "one" && fit && !fit.fits;
 
   const left = (
     <div className="flex h-full min-h-0 flex-col bg-surface">
-      <div className="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-hairline px-3">
-        <Segmented
-          aria-label="Editing mode"
-          size="sm"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "type", label: "Type", icon: <PenLine /> },
-            { value: "chat", label: "Chat", icon: <MessageSquare /> },
-          ]}
-        />
-        <CompletenessButton doc={doc} onJump={jumpTo} />
-      </div>
-      <div className={cn("min-h-0 flex-1", mode === "type" ? "overflow-y-auto" : "hidden")}>
-        <SectionEditor content={doc.content} apply={apply} openSections={openSections} setOpenSections={setOpenSections} />
-      </div>
-      {/* Kept mounted while hidden so a streaming reply survives a mode switch. */}
-      <div className={cn("min-h-0 flex-1", mode === "chat" ? "flex flex-col" : "hidden")}>
-        <ChatPanel cvId={id} hasContent={hasContent} fit={fit} flush={flush} applyRemote={applyRemote} adoptServer={adoptServer} />
+      {panel === "design" && <DesignPanel doc={doc} apply={apply} onClose={closePanel} />}
+      {panel === "versions" && <VersionsPanel api={versions} onClose={closePanel} />}
+      <div className={cn("flex min-h-0 flex-1 flex-col", panel !== "edit" && "hidden")}>
+        <div className="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-hairline px-3">
+          <Segmented
+            aria-label="Editing mode"
+            size="sm"
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "type", label: "Type", icon: <PenLine /> },
+              { value: "chat", label: "Chat", icon: <MessageSquare /> },
+            ]}
+          />
+          <CompletenessButton doc={doc} onJump={jumpTo} />
+        </div>
+        <div className={cn("min-h-0 flex-1", mode === "type" ? "overflow-y-auto" : "hidden")}>
+          <SectionEditor content={doc.content} apply={apply} openSections={openSections} setOpenSections={setOpenSections} />
+        </div>
+        {/* Kept mounted while hidden so a streaming reply survives a mode or panel switch. */}
+        <div className={cn("min-h-0 flex-1", mode === "chat" ? "flex flex-col" : "hidden")}>
+          <ChatPanel cvId={id} hasContent={hasContent} fit={fit} flush={settle} applyRemote={applyRemote} adoptServer={adoptServer} />
+        </div>
       </div>
     </div>
   );
 
   const preview = (
     <div className="flex h-full min-h-0 flex-col bg-surface-2">
+      {viewing && (
+        <div role="status" className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-hairline bg-surface px-4 py-2">
+          <span className="min-w-0 flex-1 truncate text-body">
+            <span className="font-medium text-ink">v{viewing.version.number}</span>
+            <span className="text-ink-2"> · {versionTitle(viewing.version)}</span>
+          </span>
+          <Button size="sm" variant="ghost" onClick={() => void versions.view(null)}>
+            Back to current
+          </Button>
+          <Button size="sm" variant="primary" loading={versions.busy === `restore:${viewing.version.id}`} onClick={() => void versions.restore(viewing.version)}>
+            <RotateCcw /> Restore
+          </Button>
+        </div>
+      )}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-10 md:py-10">
-        <CvPreview
-          doc={doc}
-          docRef={docRef}
-          onFit={setFit}
-          onAutoFit={(levels) => apply("set_design", { ...levels, fromAutoFit: true }, "autofit")}
-          className="mx-auto max-w-[860px]"
-        />
+        {/* The live CV stays mounted while a version is shown: it is the export root. */}
+        <div className={cn(viewing && "hidden")}>
+          <CvPreview
+            doc={doc}
+            docRef={docRef}
+            onFit={setFit}
+            onAutoFit={(levels) => apply("set_design", { ...levels, fromAutoFit: true }, "autofit")}
+            className="mx-auto max-w-[860px]"
+          />
+        </div>
+        {viewing && <CvPreview key={viewing.version.id} doc={viewing.doc} docRef={viewRef} className="mx-auto max-w-[860px] animate-fade-in" />}
       </div>
-      {(overflowing || doc.design.pageMode === "multi") && (
+      {!viewing && (overflowing || doc.design.pageMode === "multi") && (
         <div className="flex h-12 shrink-0 items-center justify-center gap-3 border-t border-hairline bg-surface px-4 text-body">
           {overflowing ? (
             <>
@@ -367,21 +338,26 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
               <Kbd>⌘K</Kbd>
             </button>
           </Tooltip>
-          <DesignPopover doc={doc} apply={apply} />
+          <IconButton label="Version history" active={panel === "versions"} onClick={() => togglePanel("versions")}>
+            <History />
+          </IconButton>
+          <Button size="sm" variant="ghost" aria-label="Design" aria-pressed={panel === "design"} className={cn(panel === "design" && "bg-surface-2 text-ink")} onClick={() => togglePanel("design")}>
+            <Palette /> <span className="hidden md:inline">Design</span>
+          </Button>
           <Menu>
             <MenuTrigger asChild>
-              <Button variant="primary" size="sm" loading={exporting}>
-                <Download /> Export
+              <Button variant="primary" size="sm" aria-label="Export" loading={exporting !== null}>
+                <Download /> <span className="hidden sm:inline">Export</span>
               </Button>
             </MenuTrigger>
-            <MenuContent>
+            <MenuContent align="end">
               <MenuItem icon={<Download />} shortcut="⌘E" onSelect={() => void exportPdf()}>
                 PDF
               </MenuItem>
-              <MenuItem icon={<FileType />} onSelect={() => void exportWord()}>
+              <MenuItem icon={<FileType />} onSelect={() => void exportFile("docx")}>
                 Word
               </MenuItem>
-              <MenuItem icon={<FileText />} onSelect={exportText}>
+              <MenuItem icon={<FileText />} onSelect={() => void exportFile("txt")}>
                 Plain text
               </MenuItem>
             </MenuContent>
@@ -397,13 +373,13 @@ export function EditorShell({ id, initial }: { id: string; initial: { doc: Resum
           value={mobilePane}
           onChange={setMobilePane}
           options={[
-            { value: "edit", label: "Edit", icon: <PenLine /> },
+            { value: "edit", label: panel === "design" ? "Design" : panel === "versions" ? "Versions" : "Edit", icon: panel === "design" ? <Palette /> : panel === "versions" ? <History /> : <PenLine /> },
             { value: "preview", label: "Preview", icon: <Eye /> },
           ]}
         />
       </div>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(420px,480px)_1fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(420px,480px)_minmax(0,1fr)]">
         <div className={cn("min-h-0 border-hairline lg:block lg:border-e", mobilePane === "edit" ? "block" : "hidden")}>{left}</div>
         {/* The preview stays mounted on phones too: it is the export root. */}
         <div className={cn("min-h-0 lg:block", mobilePane === "preview" ? "block" : "invisible absolute -z-10 h-0 w-0 overflow-hidden lg:visible lg:static lg:z-auto lg:h-auto lg:w-auto lg:overflow-visible")}>

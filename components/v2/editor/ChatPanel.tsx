@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ArrowUp, Check, Loader2, Square } from "lucide-react";
 import { pendingToolLabel } from "@/lib/chat/cvTools";
+import { readSse } from "@/lib/http/readSse";
 import type { ResumeDocument } from "@/lib/resume/document";
 import { Button, cn, IconButton } from "@/components/ui";
 import type { FitState } from "./CvPreview";
@@ -28,28 +29,6 @@ function greeting(hasContent: boolean): string {
     : "Tell me about your work and I'll write your CV as we talk. What's your name, and what role are you going after?";
 }
 
-async function readEvents(body: ReadableStream<Uint8Array>, onEvent: (e: ServerEvent) => void) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const frames = buf.split("\n\n");
-    buf = frames.pop() ?? "";
-    for (const f of frames) {
-      const line = f.trim();
-      if (!line.startsWith("data: ")) continue;
-      try {
-        onEvent(JSON.parse(line.slice(6)) as ServerEvent);
-      } catch {
-        // skip a malformed frame
-      }
-    }
-  }
-}
-
 export function ChatPanel({
   cvId,
   hasContent,
@@ -61,7 +40,7 @@ export function ChatPanel({
   cvId: string;
   hasContent: boolean;
   fit: FitState | null;
-  flush: () => Promise<void>;
+  flush: () => Promise<unknown>;
   applyRemote: (name: string, input: Record<string, unknown>) => void;
   adoptServer: (s: { doc: ResumeDocument; lastSeq: number }) => void;
 }) {
@@ -123,7 +102,7 @@ export function ChatPanel({
         patchLast((m) => ({ ...m, content: err?.error ?? "Couldn't reach the assistant. Try again.", error: true }));
         return;
       }
-      await readEvents(res.body, (e) => {
+      await readSse<ServerEvent>(res.body, (e) => {
         if (e.type === "text") patchLast((m) => ({ ...m, content: m.content + e.text }));
         else if (e.type === "tool_start") patchLast((m) => ({ ...m, chips: [...(m.chips ?? []), { label: pendingToolLabel(e.name), done: false }] }));
         else if (e.type === "tool" || e.type === "tool_noop") {

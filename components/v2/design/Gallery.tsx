@@ -90,7 +90,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-3 py-3 md:grid-cols-[160px_1fr] md:items-center">
+    <div className="grid grid-cols-1 gap-3 py-3 md:grid-cols-[160px_1fr] md:items-center">
       <span className="text-dense text-ink-3">{label}</span>
       <div className="flex flex-wrap items-center gap-3">{children}</div>
     </div>
@@ -132,7 +132,7 @@ function TypeScale() {
   return (
     <div className="divide-y divide-hairline rounded-card border border-hairline bg-surface">
       {rows.map(([name, cls, sample]) => (
-        <div key={name} className="grid items-baseline gap-2 px-5 py-4 md:grid-cols-[120px_1fr]">
+        <div key={name} className="grid grid-cols-1 items-baseline gap-2 px-5 py-4 md:grid-cols-[120px_1fr]">
           <span className="font-mono text-dense text-ink-3">{name}</span>
           <span className={`${cls} truncate font-semibold text-ink ${name === "body" || name === "dense" ? "font-normal" : ""}`}>{sample}</span>
         </div>
@@ -158,7 +158,7 @@ function VoiceDemo() {
   }, [state]);
   const states: VoiceState[] = ["idle", "connecting", "listening", "speaking", "muted", "error"];
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr]">
       <Card className="flex flex-col items-center justify-center gap-6 py-10">
         <VoiceOrb state={state} level={level} onClick={() => setState(state === "listening" ? "muted" : "listening")} />
         <Waveform data={state === "listening" || state === "speaking" ? data : undefined} />
@@ -228,7 +228,7 @@ export function Gallery() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-shell gap-10 px-4 md:grid-cols-[180px_1fr] md:px-8">
+      <div className="mx-auto grid grid-cols-1 max-w-shell gap-10 px-4 md:grid-cols-[180px_1fr] md:px-8">
         <nav aria-label="Sections" className="sticky top-14 hidden h-[calc(100vh-56px)] flex-col gap-0.5 py-12 md:flex">
           {SECTIONS.map(([id, label]) => (
             <a key={id} href={`#${id}`} className="rounded-control px-2.5 py-1.5 text-body text-ink-2 hover:bg-surface-2 hover:text-ink">
@@ -291,7 +291,7 @@ export function Gallery() {
           </Section>
 
           <Section id="inputs" title="Inputs">
-            <div className="grid max-w-2xl gap-5 md:grid-cols-2">
+            <div className="grid grid-cols-1 max-w-2xl gap-5 md:grid-cols-2">
               <Field label="Job title">
                 <Input placeholder="Product Designer" />
               </Field>
@@ -445,7 +445,7 @@ export function Gallery() {
           </Section>
 
           <Section id="feedback" title="States">
-            <div className="grid gap-5 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
               <Card>
                 <CardHeader title="Loading" />
                 <CardBody className="flex flex-col gap-3">
@@ -480,7 +480,7 @@ export function Gallery() {
           </Section>
 
           <Section id="score" title="Score">
-            <div className="grid gap-5 xl:grid-cols-[auto_minmax(320px,1fr)]">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[auto_minmax(320px,1fr)]">
               <Card className="flex flex-wrap items-center gap-8 p-6">
                 <ScoreGauge value={78} />
                 <ScoreGauge value={52} size={88} />
@@ -496,7 +496,7 @@ export function Gallery() {
           </Section>
 
           <Section id="evidence" title="Evidence">
-            <div className="grid max-w-3xl gap-4">
+            <div className="grid max-w-3xl grid-cols-1 gap-4">
               <DiffLine
                 grounded
                 applied={applied}

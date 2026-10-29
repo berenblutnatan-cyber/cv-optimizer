@@ -21,5 +21,6 @@ export default async function CvEditorPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const cv = await load(id);
   if (!cv) notFound();
-  return <EditorShell id={cv.id} initial={{ doc: cv.doc, lastSeq: cv.lastSeq }} />;
+  // Keyed by id: a different CV is a fresh editor with its own save queue.
+  return <EditorShell key={cv.id} id={cv.id} initial={{ doc: cv.doc, lastSeq: cv.lastSeq }} />;
 }

@@ -90,7 +90,7 @@ export function SectionEditor({
   return (
     <div className="flex flex-col">
       <Section id="profile" title="Profile" open={openSections.has("profile")} onToggle={() => toggle("profile")}>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <TextField label="Full name" value={pi.name} onChange={setPi("name")} placeholder="Dana Levi" autoComplete="name" />
           <TextField label="Headline" value={pi.title} onChange={setPi("title")} placeholder="Senior Product Manager" autoComplete="organization-title" />
           <TextField label="Email" type="email" value={pi.email} onChange={setPi("email")} placeholder="dana@email.com" autoComplete="email" />
@@ -127,7 +127,7 @@ export function SectionEditor({
             onMoveDown={i < content.experience.length - 1 ? () => move("experience", e.id, "down") : undefined}
             onDelete={() => del("experience", "remove_experience", e, i, "Role")}
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <TextField label="Role" value={e.role} onChange={(v) => apply("update_experience", { id: e.id, role: v }, `exp:${e.id}:role`)} placeholder="Product Manager" />
               <TextField label="Company" value={e.company} onChange={(v) => apply("update_experience", { id: e.id, company: v }, `exp:${e.id}:company`)} placeholder="Acme" />
               <TextField label="Start" value={e.startDate} onChange={(v) => apply("update_experience", { id: e.id, startDate: v }, `exp:${e.id}:start`)} placeholder="Mar 2022" />
@@ -171,7 +171,7 @@ export function SectionEditor({
             onMoveDown={i < content.education.length - 1 ? () => move("education", e.id, "down") : undefined}
             onDelete={() => del("education", "remove_education", e, i, "Education")}
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <TextField label="School" value={e.institution} onChange={(v) => apply("update_education", { id: e.id, institution: v }, `edu:${e.id}:inst`)} placeholder="Tel Aviv University" className="sm:col-span-2" />
               <TextField label="Degree" value={e.degree} onChange={(v) => apply("update_education", { id: e.id, degree: v }, `edu:${e.id}:deg`)} placeholder="B.Sc." />
               <TextField label="Field" value={e.field} onChange={(v) => apply("update_education", { id: e.id, field: v }, `edu:${e.id}:field`)} placeholder="Computer Science" />
@@ -208,7 +208,7 @@ export function SectionEditor({
             onMoveDown={i < content.projects.length - 1 ? () => move("projects", p.id, "down") : undefined}
             onDelete={() => del("projects", "remove_project", p, i, "Project")}
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <TextField label="Name" value={p.name} onChange={(v) => apply("update_project", { id: p.id, name: v }, `prj:${p.id}:name`)} />
               <TextField label="Link" value={p.link ?? ""} onChange={(v) => apply("update_project", { id: p.id, link: v }, `prj:${p.id}:link`)} placeholder="github.com/…" />
               <TextField label="One-line description" value={p.description} onChange={(v) => apply("update_project", { id: p.id, description: v }, `prj:${p.id}:desc`)} className="sm:col-span-2" />
@@ -233,7 +233,7 @@ export function SectionEditor({
             onMoveDown={i < content.certifications.length - 1 ? () => move("certifications", c.id, "down") : undefined}
             onDelete={() => del("certifications", "remove_certification", c, i, "Certification")}
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <TextField label="Name" value={c.name} onChange={(v) => apply("update_certification", { id: c.id, name: v }, `cert:${c.id}:name`)} className="sm:col-span-2" />
               <TextField label="Issuer" value={c.issuer} onChange={(v) => apply("update_certification", { id: c.id, issuer: v }, `cert:${c.id}:issuer`)} />
               <TextField label="Date" value={c.date} onChange={(v) => apply("update_certification", { id: c.id, date: v }, `cert:${c.id}:date`)} placeholder="2024" />

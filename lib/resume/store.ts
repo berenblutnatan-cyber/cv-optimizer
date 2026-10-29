@@ -9,6 +9,7 @@ import { DRAFT_TTL_DAYS, type Owner } from "./owner-types";
 // edits, chat and voice serialize into one order no matter how they race.
 
 export type Actor = "user" | "chat" | "intake_agent" | "tailor";
+export type VersionAuthor = "user" | "chat" | "intake_agent" | "tailor" | "migration" | "import";
 export type OpInput = { clientOpId: string; name: string; input: Record<string, unknown> };
 
 export const MAX_OPS_PER_BATCH = 50;
@@ -69,6 +70,19 @@ export async function listResumes(owner: Owner): Promise<ResumeSummary[]> {
     take: 100,
     select: { id: true, title: true, template: true, updatedAt: true, source: true },
   });
+}
+
+export type ResumeCard = ResumeSummary & { doc: ResumeDocument };
+
+/** The CV list with each document, for real thumbnails. */
+export async function listResumeCards(owner: Owner): Promise<ResumeCard[]> {
+  const rows = await prisma.resume.findMany({
+    where: ownerWhere(owner),
+    orderBy: { updatedAt: "desc" },
+    take: 60,
+    select: { id: true, title: true, template: true, themeColor: true, updatedAt: true, source: true, data: true },
+  });
+  return rows.map(({ data, themeColor, ...r }) => ({ ...r, doc: toDocument(data, { template: r.template, themeColor }) }));
 }
 
 export async function loadResume(id: string, owner: Owner): Promise<{ id: string; doc: ResumeDocument; lastSeq: number; updatedAt: Date } | null> {
@@ -178,7 +192,7 @@ export async function appendOps(
 export async function createVersion(
   id: string,
   owner: Owner,
-  opts: { label?: string; createdBy: "user" | "chat" | "intake_agent" | "tailor" | "migration" },
+  opts: { label?: string; createdBy: VersionAuthor },
 ): Promise<{ id: string; number: number; label: string | null; createdAt: Date }> {
   const current = await loadResume(id, owner);
   if (!current) throw new StoreError("NOT_FOUND", "CV not found");
@@ -204,34 +218,95 @@ export async function createVersion(
   throw new StoreError("CONFLICT", "Could not save the version, try again");
 }
 
-export async function listVersions(id: string, owner: Owner) {
+const VERSION_FIELDS = { id: true, number: true, label: true, createdBy: true, createdAt: true } as const;
+export type VersionSummary = { id: string; number: number; label: string | null; createdBy: string; createdAt: Date };
+
+async function assertOwned(id: string, owner: Owner) {
   const owned = await prisma.resume.findFirst({ where: { id, ...ownerWhere(owner) }, select: { id: true } });
   if (!owned) throw new StoreError("NOT_FOUND", "CV not found");
-  return prisma.resumeVersion.findMany({
-    where: { resumeId: id },
-    orderBy: { number: "desc" },
-    take: 100,
-    select: { id: true, number: true, label: true, createdBy: true, createdAt: true },
-  });
 }
 
-/** Restore a version: the current state is saved first, so a restore is itself undoable. */
-export async function restoreVersion(id: string, owner: Owner, versionId: string): Promise<{ doc: ResumeDocument; lastSeq: number }> {
+export async function listVersions(id: string, owner: Owner): Promise<VersionSummary[]> {
+  await assertOwned(id, owner);
+  return prisma.resumeVersion.findMany({ where: { resumeId: id }, orderBy: { number: "desc" }, take: 100, select: VERSION_FIELDS });
+}
+
+/** One version with its full document (for previewing before a restore). */
+export async function getVersion(id: string, owner: Owner, versionId: string): Promise<VersionSummary & { doc: ResumeDocument }> {
+  const v = await prisma.resumeVersion.findFirst({
+    where: { id: versionId, resumeId: id, resume: ownerWhere(owner) },
+    select: { ...VERSION_FIELDS, data: true },
+  });
+  if (!v) throw new StoreError("NOT_FOUND", "Version not found");
+  const { data, ...meta } = v;
+  return { ...meta, doc: toDocument(data) };
+}
+
+export async function renameVersion(id: string, owner: Owner, versionId: string, label: string): Promise<VersionSummary> {
+  const clean = label.trim().slice(0, 80);
+  const res = await prisma.resumeVersion.updateMany({
+    where: { id: versionId, resumeId: id, resume: ownerWhere(owner) },
+    data: { label: clean || null },
+  });
+  if (res.count === 0) throw new StoreError("NOT_FOUND", "Version not found");
+  return prisma.resumeVersion.findUniqueOrThrow({ where: { id: versionId }, select: VERSION_FIELDS });
+}
+
+/**
+ * Restore a version. The current state is saved first ("Before restoring vN"),
+ * so a restore is itself undoable by restoring that snapshot. The swap is
+ * logged as an op under the same row lock appendOps uses, so it serializes
+ * with concurrent edits instead of racing them.
+ */
+export async function restoreVersion(
+  id: string,
+  owner: Owner,
+  versionId: string,
+  opts: { undoOf?: string } = {},
+): Promise<{ doc: ResumeDocument; lastSeq: number; restored: number; backup: VersionSummary | null }> {
   const version = await prisma.resumeVersion.findFirst({
     where: { id: versionId, resumeId: id, resume: ownerWhere(owner) },
-    select: { data: true, number: true },
+    select: { id: true, data: true, number: true },
   });
   if (!version) throw new StoreError("NOT_FOUND", "Version not found");
-  await createVersion(id, owner, { label: `Before restoring v${version.number}`, createdBy: "user" });
   const doc = toDocument(version.data);
+
+  // Undo of a restore: `versionId` is the backup that restore made and
+  // `undoOf` the version it restored. If nothing changed since (the CV still
+  // equals that version) and the backup is still the newest version, put the
+  // backup back and drop it, so undo leaves the history as it was. Otherwise
+  // it is an ordinary restore, with its own backup, and nothing is lost.
+  if (opts.undoOf) {
+    const reverted = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<{ data: unknown; lastSeq: number }[]>`SELECT "data", "lastSeq" FROM "Resume" WHERE "id" = ${id} FOR UPDATE`;
+      if (!locked[0]) throw new StoreError("NOT_FOUND", "CV not found");
+      const [newest, restored] = await Promise.all([
+        tx.resumeVersion.findFirst({ where: { resumeId: id }, orderBy: { number: "desc" }, select: { id: true } }),
+        tx.resumeVersion.findFirst({ where: { id: opts.undoOf, resumeId: id }, select: { data: true } }),
+      ]);
+      const unchanged = restored && JSON.stringify(toDocument(locked[0].data)) === JSON.stringify(toDocument(restored.data));
+      if (newest?.id !== version.id || !unchanged) return null;
+      const seq = locked[0].lastSeq + 1;
+      await tx.resumeOp.create({
+        data: { resumeId: id, seq, actor: "user", toolName: "restore_version", input: { versionId, undo: true }, clientOpId: `restore:${versionId}:${Date.now()}` },
+      });
+      await tx.resume.update({ where: { id }, data: { ...rowColumns(doc), lastSeq: seq } });
+      await tx.resumeVersion.delete({ where: { id: version.id } });
+      return { doc, lastSeq: seq, restored: version.number, backup: null };
+    });
+    if (reverted) return reverted;
+  }
+
+  const backup = await createVersion(id, owner, { label: `Before restoring v${version.number}`, createdBy: "user" });
   return prisma.$transaction(async (tx) => {
-    const row = await tx.resume.findUniqueOrThrow({ where: { id }, select: { lastSeq: true } });
-    const seq = row.lastSeq + 1;
+    const locked = await tx.$queryRaw<{ lastSeq: number }[]>`SELECT "lastSeq" FROM "Resume" WHERE "id" = ${id} FOR UPDATE`;
+    if (!locked[0]) throw new StoreError("NOT_FOUND", "CV not found");
+    const seq = locked[0].lastSeq + 1;
     await tx.resumeOp.create({
       data: { resumeId: id, seq, actor: "user", toolName: "restore_version", input: { versionId }, clientOpId: `restore:${versionId}:${Date.now()}` },
     });
     await tx.resume.update({ where: { id }, data: { ...rowColumns(doc), lastSeq: seq } });
-    return { doc, lastSeq: seq };
+    return { doc, lastSeq: seq, restored: version.number, backup: { ...backup, createdBy: "user" } };
   });
 }
 

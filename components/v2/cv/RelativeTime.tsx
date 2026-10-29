@@ -19,7 +19,12 @@ export function RelativeTime({ iso }: { iso: string }) {
   const date = React.useMemo(() => new Date(iso), [iso]);
   // Render the absolute date on the server; relative after mount (no hydration mismatch).
   const [text, setText] = React.useState(() => date.toLocaleDateString("en", { month: "short", day: "numeric" }));
-  React.useEffect(() => setText(label(date)), [date]);
+  React.useEffect(() => {
+    setText(label(date));
+    // Keep "3 minutes ago" true while the page stays open.
+    const t = setInterval(() => setText(label(date)), 60_000);
+    return () => clearInterval(t);
+  }, [date]);
   return (
     <time dateTime={iso} title={date.toLocaleString()}>
       {text}

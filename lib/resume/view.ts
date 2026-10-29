@@ -6,6 +6,8 @@
 import type { ResumeData } from "@/types/resume";
 import type { ResumeData as TemplateData } from "@/components/cv-templates/templates/TemplateProps";
 
+export type { TemplateData };
+
 export type ViewFormatters = { name?: (s: string) => string; jobTitle?: (s: string) => string };
 
 const keep = (s: string) => s;

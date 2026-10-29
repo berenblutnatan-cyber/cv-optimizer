@@ -2,7 +2,7 @@ import { localDbUrl } from "@/test/local-db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { appendOps, claimDrafts, createResume, createVersion, listResumes, listVersions, loadResume, restoreVersion, StoreError } from "./store";
+import { appendOps, claimDrafts, createResume, createVersion, getVersion, listResumeCards, listResumes, listVersions, loadResume, renameVersion, restoreVersion, StoreError } from "./store";
 import type { Owner } from "./owner-types";
 
 const run = localDbUrl() ? describe : describe.skip;
@@ -101,6 +101,91 @@ run("resume store (local Postgres)", () => {
     expect(restored.doc.content.summary).toBe("First version of the summary, long enough.");
     const versions = await listVersions(id, me);
     expect(versions.map((v) => v.label)).toEqual(["Before restoring v1", "Base"]);
+  });
+
+  it("reads, renames and restores a version, and only for its owner", async () => {
+    const me = anon();
+    const { id } = await createResume(me);
+    await appendOps(id, me, [op("update_personal_info", { name: "Dana" })], "user");
+    const v1 = await createVersion(id, me, { createdBy: "import", label: "Imported from cv.pdf" });
+    await appendOps(id, me, [op("update_personal_info", { name: "Dana Levi" })], "user");
+
+    const got = await getVersion(id, me, v1.id);
+    expect(got.doc.content.personalInfo.name).toBe("Dana");
+    expect(got.createdBy).toBe("import");
+    await expect(getVersion(id, anon(), v1.id)).rejects.toBeInstanceOf(StoreError);
+
+    const renamed = await renameVersion(id, me, v1.id, "  Original upload  ");
+    expect(renamed.label).toBe("Original upload");
+    await expect(renameVersion(id, anon(), v1.id, "hijack")).rejects.toBeInstanceOf(StoreError);
+    expect((await renameVersion(id, me, v1.id, "")).label).toBeNull();
+
+    const before = (await loadResume(id, me))!.lastSeq;
+    const out = await restoreVersion(id, me, v1.id);
+    expect(out.restored).toBe(1);
+    expect(out.lastSeq).toBe(before + 1);
+    expect(out.doc.content.personalInfo.name).toBe("Dana");
+    // The backup holds what was there before the restore, so the restore can be undone.
+    const backup = await getVersion(id, me, out.backup!.id);
+    expect(backup.doc.content.personalInfo.name).toBe("Dana Levi");
+    const undone = await restoreVersion(id, me, out.backup!.id);
+    expect(undone.doc.content.personalInfo.name).toBe("Dana Levi");
+    await expect(restoreVersion(id, anon(), v1.id)).rejects.toBeInstanceOf(StoreError);
+  });
+
+  it("undoing a restore puts the CV back and leaves the history as it was", async () => {
+    const me = anon();
+    const { id } = await createResume(me);
+    await appendOps(id, me, [op("update_personal_info", { name: "Original" })], "user");
+    const v1 = await createVersion(id, me, { createdBy: "user" });
+    await appendOps(id, me, [op("update_personal_info", { name: "Edited" })], "user");
+
+    const restored = await restoreVersion(id, me, v1.id);
+    expect(restored.doc.content.personalInfo.name).toBe("Original");
+    expect((await listVersions(id, me)).map((v) => v.number)).toEqual([2, 1]);
+
+    const undone = await restoreVersion(id, me, restored.backup!.id, { undoOf: v1.id });
+    expect(undone.doc.content.personalInfo.name).toBe("Edited");
+    expect(undone.backup).toBeNull();
+    expect((await listVersions(id, me)).map((v) => v.number)).toEqual([1]);
+    expect((await loadResume(id, me))!.doc.content.personalInfo.name).toBe("Edited");
+  });
+
+  it("an undo after new edits is an ordinary restore, so the edits are kept as a version", async () => {
+    const me = anon();
+    const { id } = await createResume(me);
+    await appendOps(id, me, [op("update_personal_info", { name: "Original" })], "user");
+    const v1 = await createVersion(id, me, { createdBy: "user" });
+    await appendOps(id, me, [op("update_personal_info", { name: "Edited" })], "user");
+    const restored = await restoreVersion(id, me, v1.id);
+    await appendOps(id, me, [op("update_summary", { summary: "Typed after the restore, must not be lost." })], "user");
+
+    const undone = await restoreVersion(id, me, restored.backup!.id, { undoOf: v1.id });
+    expect(undone.doc.content.personalInfo.name).toBe("Edited");
+    expect(undone.backup).not.toBeNull();
+    const kept = await getVersion(id, me, undone.backup!.id);
+    expect(kept.doc.content.summary).toBe("Typed after the restore, must not be lost.");
+  });
+
+  // PGlite (prisma dev) is a single-connection wasm Postgres: it cannot run
+  // two transactions at once, so this only means something on real Postgres (CI).
+  it.skipIf(process.env.REAL_POSTGRES !== "1")("a restore and a concurrent edit both land, in one order (real Postgres only)", async () => {
+    const me = anon();
+    const { id } = await createResume(me);
+    const v1 = await createVersion(id, me, { createdBy: "user" });
+    await Promise.all([restoreVersion(id, me, v1.id), appendOps(id, me, [op("set_skills", { skills: ["SQL"] })], "user")]);
+    const log = await prisma.resumeOp.findMany({ where: { resumeId: id }, orderBy: { seq: "asc" }, select: { seq: true } });
+    expect(log.map((l) => l.seq)).toEqual(log.map((_, i) => i + 1)); // no gaps, no duplicate seq
+  });
+
+  it("lists CV cards with their documents", async () => {
+    const me = anon();
+    const { id } = await createResume(me);
+    await appendOps(id, me, [op("update_personal_info", { name: "Card Test" }), op("set_design", { template: "executive" })], "user");
+    const cards = await listResumeCards(me);
+    expect(cards).toHaveLength(1);
+    expect(cards[0].doc.content.personalInfo.name).toBe("Card Test");
+    expect(cards[0].doc.design.template).toBe("executive");
   });
 
   it("claims a signed-out draft into the account on sign-in", async () => {
