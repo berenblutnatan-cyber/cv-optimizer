@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Lato, Merriweather, Montserrat } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
+import { UserSyncProvider } from "@/components/UserSyncProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toast";
 import { themeBootScript } from "@/components/ui/theme-toggle";
@@ -40,8 +42,9 @@ export default function V2RootLayout({ children }: { children: React.ReactNode }
           <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         </head>
         <body className={`${sans.variable} ${mono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable}`}>
+          <AnalyticsScripts />
           <TooltipProvider>
-            {children}
+            <UserSyncProvider>{children}</UserSyncProvider>
             <Toaster />
             <ClaimDrafts />
           </TooltipProvider>

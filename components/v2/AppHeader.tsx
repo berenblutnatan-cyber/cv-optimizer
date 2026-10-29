@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui";
+import { AccountNav } from "./AccountNav";
 
 /** Top bar for the v2 pages outside the editor (CV list, Start). */
 export function AppHeader({ children }: { children?: React.ReactNode }) {
@@ -12,7 +13,10 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-1">
           {children}
-          <ThemeToggle />
+          <AccountNav />
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>

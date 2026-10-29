@@ -1,144 +1,53 @@
-import { Webhooks } from "@polar-sh/nextjs";
-import { prisma } from "@/lib/prisma";
-import { findPlanByProductId, findPlanKeyByProductId } from "@/lib/polar";
-import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
+import { Webhook, WebhookVerificationError } from "standardwebhooks";
+import { camelizeKeys, processPolarEvent } from "@/lib/billing/polar-events";
 import { sendPurchaseNotification } from "@/lib/email";
 
-// Polar subscription payloads vary slightly by event; read defensively.
-type AnySub = {
-  id?: string;
-  status?: string;
-  productId?: string | null;
-  currentPeriodEnd?: string | Date | null;
-  externalCustomerId?: string | null;
-  customer?: { externalId?: string | null; email?: string | null } | null;
-};
+export const dynamic = "force-dynamic";
 
-// Upsert the user's Unlimited-subscription state. `statusOverride` lets the
-// cancel/revoke handlers force the terminal status.
-async function applySubscription(sub: AnySub, statusOverride?: string) {
-  const userId = sub.customer?.externalId ?? sub.externalCustomerId ?? null;
-  if (!userId) {
-    console.error("[polar webhook] subscription missing externalCustomerId", sub.id);
-    return;
+// Polar webhook. The signature is checked with Standard Webhooks directly
+// (Polar's scheme: the secret string, base64-encoded). The body is then read
+// as plain JSON, NOT through the SDK's strict payload schemas: a field Polar
+// adds tomorrow must never make us drop a paid order. Processing (record →
+// de-duplicate → apply in one transaction) lives in lib/billing/polar-events.
+// Any processing failure answers 500 so Polar retries; retries are safe.
+export async function POST(request: Request) {
+  const secret = process.env.POLAR_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("[polar webhook] POLAR_WEBHOOK_SECRET is not set");
+    return Response.json({ received: false }, { status: 500 });
   }
-  const status = statusOverride ?? sub.status ?? "active";
-  const planKey = sub.productId ? findPlanKeyByProductId(sub.productId) : null;
-  const periodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
-  const email = sub.customer?.email ?? `${userId}@pending.local`;
 
-  const fields = {
-    subscriptionStatus: status,
-    subscriptionPlan: planKey ?? null,
-    subscriptionCurrentPeriodEnd: periodEnd,
-    polarSubscriptionId: sub.id ?? null,
+  const body = await request.text();
+  const headers = {
+    "webhook-id": request.headers.get("webhook-id") ?? "",
+    "webhook-timestamp": request.headers.get("webhook-timestamp") ?? "",
+    "webhook-signature": request.headers.get("webhook-signature") ?? "",
   };
-  await prisma.user.upsert({
-    where: { id: userId },
-    update: fields,
-    create: { id: userId, email, credits: FREE_CREDITS_FOR_NEW_USER, ...fields },
-  });
-  console.log(`[polar webhook] subscription ${status} for ${userId} (${planKey ?? "?"})`);
+
+  let event: { type?: unknown; timestamp?: unknown; data?: unknown };
+  try {
+    event = new Webhook(Buffer.from(secret, "utf-8").toString("base64")).verify(body, headers) as typeof event;
+  } catch (err) {
+    if (err instanceof WebhookVerificationError) return Response.json({ received: false }, { status: 403 });
+    throw err;
+  }
+  const id = headers["webhook-id"];
+  if (typeof event.type !== "string") return Response.json({ received: true, ignored: true });
+
+  try {
+    const result = await processPolarEvent({
+      id,
+      type: event.type,
+      timestamp: typeof event.timestamp === "string" ? event.timestamp : null,
+      data: (camelizeKeys(event.data ?? {}) ?? {}) as Record<string, unknown>,
+    });
+    console.log(`[polar webhook] ${id} ${event.type}: ${result.status}${"effect" in result ? ` ${result.effect}` : ""}${"reason" in result ? ` (${result.reason})` : ""}`);
+    if (result.status === "processed" && result.notify) {
+      void sendPurchaseNotification({ userEmail: result.notify.email, ...result.notify }).catch((err) => console.error("[polar webhook] notification failed", err));
+    }
+    return Response.json({ received: true, status: result.status });
+  } catch (err) {
+    console.error("[polar webhook] processing failed", id, event.type, err);
+    return Response.json({ received: false }, { status: 500 });
+  }
 }
-
-export const POST = Webhooks({
-  webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
-
-  // One-time credit packs (and the first invoice of a subscription, which also
-  // arrives as an order — harmless: subscription plans grant 0 credits and the
-  // subscription handlers below own entitlement).
-  onOrderPaid: async (payload) => {
-    const order = payload.data;
-    const orderId = order.id;
-    const userId =
-      (order as unknown as { externalCustomerId?: string | null })
-        .externalCustomerId ?? order.customer?.externalId ?? null;
-    const productId = order.productId ?? null;
-    const amount = (order.netAmount ?? 0) / 100;
-
-    if (!userId) {
-      console.error("[polar webhook] missing externalCustomerId for order", orderId);
-      return;
-    }
-    if (!productId) {
-      console.error("[polar webhook] missing productId for order", orderId);
-      return;
-    }
-
-    const plan = findPlanByProductId(productId);
-    if (!plan) {
-      console.error("[polar webhook] unknown product", productId, "order", orderId);
-      return;
-    }
-
-    const existing = await prisma.purchase.findFirst({
-      where: { polarOrderId: orderId },
-      select: { id: true },
-    });
-    if (existing) {
-      console.log("[polar webhook] order already processed", orderId);
-      return;
-    }
-
-    const email = order.customer?.email ?? `${userId}@pending.local`;
-
-    // Pull the Google Ads click ID we threaded through checkout metadata.
-    const gclid =
-      (order as unknown as { metadata?: Record<string, string> | null }).metadata?.gclid ?? null;
-
-    // The Job Search Pass is a one-time order that grants time-boxed Unlimited
-    // instead of credits — set the subscription window here.
-    const unlimitedDays = plan.grantsUnlimitedDays ?? 0;
-    const subFields =
-      unlimitedDays > 0
-        ? {
-            subscriptionStatus: "active",
-            subscriptionPlan: findPlanKeyByProductId(productId),
-            subscriptionCurrentPeriodEnd: new Date(Date.now() + unlimitedDays * 86_400_000),
-          }
-        : {};
-
-    await prisma.user.upsert({
-      where: { id: userId },
-      update: { credits: { increment: plan.credits }, ...subFields },
-      create: { id: userId, email, credits: FREE_CREDITS_FOR_NEW_USER + plan.credits, ...subFields },
-    });
-
-    await prisma.purchase.create({
-      data: {
-        userId,
-        amount,
-        plan: plan.name,
-        polarOrderId: orderId,
-        status: "completed",
-        gclid,
-      },
-    });
-
-    console.log(
-      `[polar webhook] order ${orderId}: ${plan.name} (+${plan.credits} credits) for ${userId}`
-    );
-
-    // Credit-pack purchases get the "+N credits" email; subscriptions get their
-    // own lifecycle via the subscription handlers.
-    if (plan.kind !== "subscription") {
-      void sendPurchaseNotification({
-        userEmail: email,
-        userId,
-        planName: plan.name,
-        amount,
-        currency: order.currency?.toUpperCase() ?? "USD",
-        credits: plan.credits,
-        orderId,
-      }).catch((err) => console.error("[polar webhook] purchase notification failed:", err));
-    }
-  },
-
-  // Subscription lifecycle → User.subscription* (drives unlimited entitlement).
-  onSubscriptionCreated: async (p) => applySubscription(p.data as unknown as AnySub),
-  onSubscriptionActive: async (p) => applySubscription(p.data as unknown as AnySub),
-  onSubscriptionUpdated: async (p) => applySubscription(p.data as unknown as AnySub),
-  onSubscriptionCanceled: async (p) => applySubscription(p.data as unknown as AnySub, "canceled"),
-  onSubscriptionRevoked: async (p) =>
-    applySubscription({ ...(p.data as unknown as AnySub), currentPeriodEnd: null }, "revoked"),
-});

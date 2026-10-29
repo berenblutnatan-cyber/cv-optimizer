@@ -7,6 +7,7 @@ import { buildFinalizePrompt } from "@/lib/voice/finalizePrompt";
 import { normalizeFinalizeOutput } from "@/lib/voice/schema";
 import { extractBalancedJson } from "@/lib/extractJson";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { charge, isInsufficient } from "@/lib/billing/ledger";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -90,23 +91,16 @@ export async function POST(request: Request) {
   // never leaves a user double-billed or unpaid.
   try {
     await prisma.$transaction(async (tx) => {
-      if (!unlimited) {
-        const updated = await tx.user.update({
-          where: { id: userId },
-          data: { credits: { decrement: 1 } },
-        });
-        if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
-      }
-      await tx.voiceSession.create({
-        data: {
-          userId,
-          durationSec,
-          turns: turns.length,
-          finalized: true,
-        },
+      const session = await tx.voiceSession.create({
+        data: { userId, durationSec, turns: turns.length, finalized: true },
+        select: { id: true },
       });
+      await charge(tx, { userId, reason: "voice_finalize", key: `voice-finalize:${session.id}`, refType: "voice_session", refId: session.id });
     });
   } catch (err) {
+    if (isInsufficient(err)) {
+      return NextResponse.json({ error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" }, { status: 402 });
+    }
     console.error("[voice/finalize] persistence failed:", err);
     return NextResponse.json({ error: "Failed to save session" }, { status: 500 });
   }

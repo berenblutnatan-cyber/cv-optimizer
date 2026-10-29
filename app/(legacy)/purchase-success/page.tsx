@@ -8,9 +8,7 @@ import { Check, ArrowRight, Sparkles, FileText } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { PurchaseConfetti } from "@/components/PurchaseConfetti";
 import { POLAR_PLANS, planGrantsUnlimited, type PolarPlan, type PolarPlanKey } from "@/lib/polar";
-import { trackConversion } from "@/lib/gtag";
-import { trackMetaEvent } from "@/lib/fbq";
-import { track, setUserProps } from "@/lib/analytics";
+import { firePurchaseConversion } from "@/lib/purchaseTracking";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 function PurchaseSuccessContent() {
@@ -41,44 +39,7 @@ function PurchaseSuccessContent() {
   useEffect(() => {
     if (hasFired.current || !planConfig) return;
     hasFired.current = true;
-    // Tracking must never take down the success page — the user already
-    // paid. Anything thrown here (pixel scripts hijacked by extensions,
-    // partial Clerk user objects, ...) is swallowed.
-    try {
-      trackConversion("purchase", {
-        value: planConfig.amount,
-        currency: "USD",
-        transaction_id: checkoutId,
-        user_email: user?.emailAddresses?.[0]?.emailAddress,
-      });
-      trackMetaEvent("Purchase", {
-        value: planConfig.amount,
-        currency: "USD",
-        content_name: planConfig.name,
-        content_ids: [plan ?? "unknown"],
-        num_items: 1,
-      });
-      track("purchase_completed", {
-        plan: plan ?? "unknown",
-        amount: planConfig.amount,
-        credits: planConfig.credits,
-        checkout_id: checkoutId ?? null,
-      });
-      setUserProps(
-        {
-          is_paid: true,
-          last_paid_plan: plan ?? "unknown",
-          last_paid_amount: planConfig.amount,
-          last_paid_at: new Date().toISOString(),
-        },
-        {
-          first_paid_at: new Date().toISOString(),
-          first_paid_plan: plan ?? "unknown",
-        },
-      );
-    } catch (error) {
-      console.error("purchase tracking failed:", error);
-    }
+    firePurchaseConversion(plan, checkoutId, user?.emailAddresses?.[0]?.emailAddress);
   }, [planConfig, plan, checkoutId, user]);
 
   return (

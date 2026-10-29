@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
   if (!userId) {
     // Preserve checkout intent across sign-in so users land back here, not on /pricing.
     const signInUrl = new URL("/sign-in", baseUrl);
-    if (plan) signInUrl.searchParams.set("redirect_url", `/api/checkout/polar?plan=${plan}`);
+    if (plan) {
+      const back = req.nextUrl.searchParams.get("return") === "account" ? "&return=account" : "";
+      signInUrl.searchParams.set("redirect_url", `/api/checkout/polar?plan=${plan}${back}`);
+    }
     return NextResponse.redirect(signInUrl);
   }
 
@@ -30,11 +33,17 @@ export async function GET(req: NextRequest) {
 
   const handler = Checkout({
     accessToken: process.env.POLAR_ACCESS_TOKEN!,
-    successUrl: `${baseUrl}/purchase-success?checkout_id={CHECKOUT_ID}&plan=${plan}`,
+    // v2 pages pass return=account and land back on /account (which fires
+    // the same conversion); everything else keeps the legacy success page.
+    successUrl:
+      req.nextUrl.searchParams.get("return") === "account"
+        ? `${baseUrl}/account?checkout_id={CHECKOUT_ID}&plan=${plan}`
+        : `${baseUrl}/purchase-success?checkout_id={CHECKOUT_ID}&plan=${plan}`,
     server: POLAR_SERVER,
   });
 
   const url = new URL(req.url);
+  url.searchParams.delete("return");
   url.searchParams.set("products", planConfig.productId);
   url.searchParams.set("customerExternalId", userId);
   if (email) url.searchParams.set("customerEmail", email);

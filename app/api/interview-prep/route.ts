@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
-import { isUnlimited } from "@/lib/subscription";
+import { isInsufficient, withCharge } from "@/lib/billing/ledger";
 import { awardXp } from "@/lib/gamification";
 import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 import { extractBalancedJson } from "@/lib/extractJson";
@@ -111,27 +110,18 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Sign in to unlock full prep", code: "AUTH_REQUIRED" }, { status: 401 });
     }
-    const unlimited = await isUnlimited(userId);
+    // Reserve-then-work: charged before the model call, refunded if it fails.
+    let result: Awaited<ReturnType<typeof generate>> = null;
     try {
-      await prisma.$transaction(async (tx) => {
-        if (!unlimited) {
-          const user = await tx.user.findUnique({ where: { id: userId }, select: { credits: true } });
-          if (!user || user.credits <= 0) throw new Error("INSUFFICIENT_CREDITS");
-          await tx.user.update({ where: { id: userId }, data: { credits: { decrement: 1 } } });
-        }
-      });
+      ({ result } = await withCharge({ userId, reason: "interview_prep", key: `interview-prep:${crypto.randomUUID()}` }, () => generate({ cvText, role, jobText, full: true })));
     } catch (err) {
-      if (err instanceof Error && err.message === "INSUFFICIENT_CREDITS") {
+      if (isInsufficient(err)) {
         return NextResponse.json({ error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" }, { status: 402 });
       }
-      console.error("[interview-prep] credit tx failed:", err);
-      return NextResponse.json({ error: "Failed to unlock" }, { status: 500 });
+      console.error("[interview-prep] unlock failed:", err);
+      return NextResponse.json({ error: "Couldn't generate — your credit was not charged. Try again." }, { status: 502 });
     }
-
-    const result = await generate({ cvText, role, jobText, full: true });
     if (!result) {
-      // The credit was spent but generation failed — refund it.
-      await prisma.user.update({ where: { id: userId }, data: { credits: { increment: 1 } } }).catch(() => null);
       return NextResponse.json({ error: "Couldn't generate — your credit was not charged. Try again." }, { status: 502 });
     }
     await awardXp(userId, "unlock").catch(() => null);

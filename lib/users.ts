@@ -11,9 +11,12 @@ import { sendSignupNotification } from "@/lib/email";
  * A user without an email address gets a per-user placeholder: User.email is
  * unique, and the old shared "no-email" value made the second such user fail.
  */
+/** User.email is unique: a user with no address gets their own placeholder. */
+export const placeholderEmail = (userId: string) => `no-email+${userId}@users.hiredcv.invalid`;
+
 export async function ensureUser(userId: string): Promise<{ id: string; email: string; credits: number; isNewUser: boolean }> {
   const clerkUser = await currentUser().catch(() => null);
-  const email = clerkUser?.emailAddresses[0]?.emailAddress || `no-email+${userId}@users.hiredcv.invalid`;
+  const email = clerkUser?.emailAddresses[0]?.emailAddress || placeholderEmail(userId);
 
   const existing = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   const user = await prisma.user.upsert({

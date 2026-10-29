@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { grant } from "@/lib/billing/ledger";
+import { placeholderEmail } from "@/lib/users";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
 export async function POST(request: Request) {
@@ -68,30 +70,19 @@ export async function POST(request: Request) {
 
     // Get user info from Clerk for email
     const user = await currentUser();
-    const userEmail = user?.emailAddresses[0]?.emailAddress || "no-email";
+    const userEmail = user?.emailAddresses[0]?.emailAddress || "";
 
     // Use transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
-      // Upsert user to ensure they exist in database
-      const dbUser = await tx.user.upsert({
+      await tx.user.upsert({
         where: { id: userId },
-        update: { email: userEmail },
-          create: {
-            id: userId,
-            email: userEmail,
-            credits: FREE_CREDITS_FOR_NEW_USER,
-          },
+        update: userEmail ? { email: userEmail } : {},
+        create: { id: userId, email: userEmail || placeholderEmail(userId), credits: FREE_CREDITS_FOR_NEW_USER },
       });
 
-      // Increment user credits
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
-        data: {
-          credits: {
-            increment: coupon.credits,
-          },
-        },
-      });
+      // One redemption per user per coupon (ledger key + the unique index below).
+      const granted = await grant(tx, { userId, amount: coupon.credits, reason: "coupon", key: `coupon:${coupon.id}:${userId}`, refType: "coupon", refId: coupon.id });
+      const updatedUser = { credits: granted.balance };
 
       // Record the redemption
       await tx.couponRedemption.create({
