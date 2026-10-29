@@ -195,6 +195,16 @@ model VoiceConversation {
 }
 
 // Raw ElevenLabs webhook deliveries; the payload is cleared once processed.
+// Rate-limit counters when no KV store is configured (lib/limits.ts): one
+// fixed window per limit and caller, reset in place by an atomic upsert.
+model RateLimitBucket {
+  key         String   @id
+  windowStart DateTime @default(now())
+  count       Int      @default(0)
+
+  @@index([windowStart])
+}
+
 model ElevenLabsWebhookEvent {
   id             String    @id
   type           String

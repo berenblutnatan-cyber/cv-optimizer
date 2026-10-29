@@ -1,5 +1,6 @@
 import { anthropic, transcriptFetcher } from "@/lib/interview/http";
 import { drainInterviews } from "@/lib/interview/store";
+import { pruneRateLimits } from "@/lib/limits";
 import { fetchConversation, voiceConfig } from "@/lib/voice/elevenlabs";
 import { parseConversation } from "@/lib/voice/protocol";
 import { drainVoice } from "@/lib/voice/sessions";
@@ -20,5 +21,9 @@ export async function GET(request: Request) {
   console.log("[voice drain]", JSON.stringify(out));
   const interviews = await drainInterviews(anthropic, transcriptFetcher());
   console.log("[interview drain]", JSON.stringify(interviews));
-  return Response.json({ ...out, interviews });
+  const pruned = await pruneRateLimits().catch((err) => {
+    console.error("[rate limits] prune failed", err);
+    return 0;
+  });
+  return Response.json({ ...out, interviews, prunedRateLimits: pruned });
 }

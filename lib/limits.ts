@@ -1,11 +1,11 @@
 // Rate limits for v2 routes.
 //
-// Fixed-window counter in Vercel KV / Upstash. The legacy lib/rateLimit.ts
-// fails OPEN when KV is missing, and prod has no KV provisioned, so today no
-// limit is enforced anywhere. This one fails CLOSED in production: a missing
-// or broken KV store blocks the AI routes (and logs loudly) instead of turning
-// them into a free Claude proxy. Outside production it falls back to an
-// in-process counter so local dev and tests behave like the real thing.
+// Fixed-window counter. Vercel KV / Upstash when configured; otherwise
+// Postgres (one atomic upsert per request), which production always has. The
+// legacy lib/rateLimit.ts fails OPEN when KV is missing; this one never does:
+// in production, if neither store answers, the AI routes are blocked (and it
+// logs loudly) instead of turning into a free Claude proxy. Outside
+// production without KV, an in-process counter keeps dev and tests honest.
 
 type Result = { ok: true } | { ok: false; reason: "limited" | "kv_missing" };
 
@@ -27,8 +27,13 @@ export async function limit(opts: { name: string; id: string; cap: number; windo
 
   if (!kvConfigured()) {
     if (prod) {
-      console.error(`[limits] KV not configured in production — blocking ${opts.name} (fail closed)`);
-      return { ok: false, reason: "kv_missing" };
+      try {
+        const used = await postgresIncr(key, opts.windowSec);
+        return used > opts.cap ? { ok: false, reason: "limited" } : { ok: true };
+      } catch (err) {
+        console.error(`[limits] Postgres counter failed on ${opts.name} — blocking (fail closed):`, err);
+        return { ok: false, reason: "kv_missing" };
+      }
     }
     const now = Date.now();
     const slot = memory.get(key);
@@ -51,6 +56,28 @@ export async function limit(opts: { name: string; id: string; cap: number; windo
     console.error(`[limits] KV error on ${opts.name}:`, err);
     return prod ? { ok: false, reason: "kv_missing" } : { ok: true };
   }
+}
+
+/**
+ * Count one request in Postgres and return the count in the current window.
+ * Atomic: the row is locked by the upsert, so two requests can't both see
+ * "cap - 1". An expired window restarts at 1 in the same statement.
+ */
+export async function postgresIncr(key: string, windowSec: number): Promise<number> {
+  const { prisma } = await import("@/lib/prisma");
+  const rows = await prisma.$queryRaw<{ count: number }[]>`
+    INSERT INTO "RateLimitBucket" ("key", "windowStart", "count") VALUES (${key}, NOW(), 1)
+    ON CONFLICT ("key") DO UPDATE SET
+      "count" = CASE WHEN "RateLimitBucket"."windowStart" <= NOW() - make_interval(secs => ${windowSec}::double precision) THEN 1 ELSE "RateLimitBucket"."count" + 1 END,
+      "windowStart" = CASE WHEN "RateLimitBucket"."windowStart" <= NOW() - make_interval(secs => ${windowSec}::double precision) THEN NOW() ELSE "RateLimitBucket"."windowStart" END
+    RETURNING "count"`;
+  return Number(rows[0]?.count ?? Number.POSITIVE_INFINITY);
+}
+
+/** Drop buckets whose window ended over a day ago (daily cron). */
+export async function pruneRateLimits(): Promise<number> {
+  const { prisma } = await import("@/lib/prisma");
+  return prisma.$executeRaw`DELETE FROM "RateLimitBucket" WHERE "windowStart" < NOW() - INTERVAL '1 day'`;
 }
 
 /** Test-only: clear the in-process counters. */
