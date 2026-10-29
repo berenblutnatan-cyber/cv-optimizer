@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { CV_TOOLS } from "@/lib/chat/cvTools";
 import { buildChatSystemPrompt, type FitContext } from "@/lib/chat/prompts";
 import { normalizeTurnHistory, runChatTurn, type TurnEvent } from "@/lib/chat/runTurn";
-import { clientIp, limit, limitResponse } from "@/lib/limits";
+import { clientIp, limit, limitResponse, limitSignedOut } from "@/lib/limits";
 import { applyDocumentOp, pinTarget, type ResumeDocument } from "@/lib/resume/document";
 import { currentOwner, ownerKey } from "@/lib/resume/owner";
 import { appendOps, loadResume, type OpInput } from "@/lib/resume/store";
@@ -46,6 +46,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     windowSec: 3600,
   });
   if (!rl.ok) return limitResponse(rl);
+  const anon = await limitSignedOut(request, !!owner.userId, { name: "cv-chat", perIpHour: 60, globalDay: 2000 });
+  if (anon) return anon;
 
   const body = await readJson(request);
   const messages = normalizeTurnHistory(body?.messages, { maxMessages: 60, maxChars: 24_000 });

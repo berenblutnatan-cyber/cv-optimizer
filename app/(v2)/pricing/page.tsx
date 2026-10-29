@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Infinity as InfinityIcon, Info } from "lucide-react";
 import { POLAR_PLANS, type PolarPlanKey } from "@/lib/polar";
+import { voiceConfig } from "@/lib/voice/elevenlabs";
 import { VOICE } from "@/lib/voice/protocol";
 import { Badge, Card, cn, Tooltip } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
@@ -15,8 +16,14 @@ export const dynamic = "force-dynamic";
 
 const PACKS: { key: PolarPlanKey; best?: boolean }[] = [{ key: "mini" }, { key: "pro", best: true }, { key: "ultimate" }];
 
-const FREE = ["Build and edit by typing or chat", "Your first 5-minute voice call", "Import a PDF or Word CV", "All 18 templates", "PDF, Word and text downloads", "Version history"];
-const ONE_CREDIT = ["CV analysis against a job", "An 8-minute voice call", "Cover letter", "Interview prep with answers", "A CV tailored to one job"];
+// What each tier includes. Voice lines only appear when voice is set up, so
+// the page never sells a call the app can't make.
+function freeItems(voice: boolean): string[] {
+  return ["Build and edit by typing or chat", ...(voice ? [`Your first ${Math.round(VOICE.freeSeconds / 60)}-minute voice call`] : []), "Import a PDF or Word CV", "All 18 templates", "PDF, Word and text downloads", "Version history", "Job tracker"];
+}
+function oneCreditItems(voice: boolean): string[] {
+  return ["A CV tailored to one job", "Cover letter", voice ? "Mock interview, by voice or typing" : "Mock interview with feedback", ...(voice ? [`A ${Math.round(VOICE.paidSeconds / 60)}-minute voice call`] : [])];
+}
 
 const money = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
 
@@ -43,6 +50,7 @@ function List({ items }: { items: string[] }) {
 }
 
 export default function PricingPage() {
+  const voice = !!voiceConfig();
   const available = (k: PolarPlanKey) => Boolean(POLAR_PLANS[k].productId);
   const unl = POLAR_PLANS.unlimited_monthly;
   const pass = POLAR_PLANS.unlimited_quarter;
@@ -133,11 +141,11 @@ export default function PricingPage() {
         <section aria-label="What's included" className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2">
           <Card className="p-6">
             <h2 className="mb-4 text-h3 font-semibold text-ink">Always free</h2>
-            <List items={FREE} />
+            <List items={freeItems(voice)} />
           </Card>
           <Card className="p-6">
             <h2 className="mb-4 text-h3 font-semibold text-ink">One credit</h2>
-            <List items={ONE_CREDIT} />
+            <List items={oneCreditItems(voice)} />
           </Card>
         </section>
 

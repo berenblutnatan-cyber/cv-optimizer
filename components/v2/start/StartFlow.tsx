@@ -6,7 +6,10 @@ import { useAuth } from "@clerk/nextjs";
 import { Check, ClipboardPaste, FileUp, Mic, PenLine } from "lucide-react";
 import { DEFAULT_DESIGN, emptyDocument, type ResumeDocument } from "@/lib/resume/document";
 import { IMPORT_ACCEPT, MAX_IMPORT_BYTES, type ImportEvent } from "@/lib/resume/import-types";
+import posthog from "posthog-js";
 import { readSse } from "@/lib/http/readSse";
+import { trackConversion } from "@/lib/gtag";
+import { computeLocalScore } from "@/lib/optimizer/localChecks";
 import type { ResumeData } from "@/types/resume";
 import { Button, cn, ErrorState, Textarea } from "@/components/ui";
 import { CvPreview } from "@/components/v2/editor/CvPreview";
@@ -78,7 +81,7 @@ function Tile({
  * (/score, where ad traffic lands): upload or paste, optionally the job, then
  * straight into the editor's score + tailor panel.
  */
-export function StartFlow({ variant = "start" }: { variant?: "start" | "score" }) {
+export function StartFlow({ variant = "start", voice = true }: { variant?: "start" | "score"; /** Voice is set up (the Talk tile shows). */ voice?: boolean }) {
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const [phase, setPhase] = React.useState<Phase>({ kind: "choose" });
@@ -116,6 +119,13 @@ export function StartFlow({ variant = "start" }: { variant?: "start" | "score" }
           finished = true;
           setPhase({ kind: "opening", label, content: latest });
           if (variant === "score") {
+            // The free score is ready (it renders from this content on the next screen):
+            // the Google Ads goal ad traffic on /score is bid against.
+            trackConversion("score_generated");
+            if (latest) {
+              const score = computeLocalScore(latest).overall;
+              posthog.capture?.("score_generated", { score, band: score < 65 ? "low" : score < 80 ? "mid" : "high", source: "v2" });
+            }
             // The job pasted here rides along to the tailor panel (it opens on this CV).
             try {
               if (jobRef.current.trim()) sessionStorage.setItem(`hired:tailor-jd:${e.id}`, jobRef.current.trim());
@@ -299,7 +309,7 @@ export function StartFlow({ variant = "start" }: { variant?: "start" | "score" }
               <Tile icon={<ClipboardPaste />} title="Paste it" meta="Any text" onClick={() => setPhase({ kind: "paste" })} />
             </div>
           ) : (
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className={cn("mt-8 grid grid-cols-1 gap-4", voice ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
               <Tile
                 icon={<FileUp />}
                 title={dragging ? "Drop to upload" : "Upload a CV"}
@@ -308,7 +318,7 @@ export function StartFlow({ variant = "start" }: { variant?: "start" | "score" }
                 onClick={() => inputRef.current?.click()}
                 busy={!!creatingBlank}
               />
-              <Tile icon={<Mic />} title="Talk it through" meta="About 5 minutes" onClick={() => void startBlank("talk")} busy={!!creatingBlank} aria-busy={creatingBlank === "talk"} />
+              {voice && <Tile icon={<Mic />} title="Talk it through" meta="About 5 minutes" onClick={() => void startBlank("talk")} busy={!!creatingBlank} aria-busy={creatingBlank === "talk"} />}
               <Tile icon={<PenLine />} title="Start blank" meta="Type or chat" onClick={() => void startBlank()} busy={!!creatingBlank} aria-busy={creatingBlank === "blank"} />
             </div>
           )}

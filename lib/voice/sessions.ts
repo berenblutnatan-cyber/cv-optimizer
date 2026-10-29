@@ -59,7 +59,8 @@ export async function voiceOffer(userId: string): Promise<{ free: boolean; credi
 export async function unlimitedSecondsUsed(db: Prisma.TransactionClient | typeof prisma, userId: string): Promise<number> {
   const since = new Date(Date.now() - 30 * 86_400_000);
   const [intake, interview] = await Promise.all([
-    db.voiceSession.aggregate({ where: { userId, free: false, creditsCharged: 0, refunded: false, createdAt: { gt: since } }, _sum: { durationSec: true } }),
+    // startedAt is set only by v2 connections: pre-v2 (OpenAI) sessions don't count.
+    db.voiceSession.aggregate({ where: { userId, free: false, creditsCharged: 0, refunded: false, startedAt: { not: null }, createdAt: { gt: since } }, _sum: { durationSec: true } }),
     db.interviewSession.aggregate({ where: { userId, mode: "voice", creditsCharged: 0, refunded: false, createdAt: { gt: since } }, _sum: { durationSec: true } }),
   ]);
   return (intake._sum.durationSec ?? 0) + (interview._sum.durationSec ?? 0);
@@ -362,7 +363,8 @@ export async function drainVoice(fetchRecord: ((conversationId: string) => Promi
   });
   out.errors += lost.count;
 
-  const ended = await prisma.voiceSession.findMany({ where: { status: "ended" }, select: { id: true }, take: 200 });
+  // Only v2 calls (attempts > 0): pre-v2 rows are history, never settled here.
+  const ended = await prisma.voiceSession.findMany({ where: { status: "ended", attempts: { gt: 0 } }, select: { id: true }, orderBy: { createdAt: "asc" }, take: 200 });
   for (const s of ended) if (await settleSession(s.id)) out.settled++;
 
   await prisma.elevenLabsWebhookEvent.updateMany({

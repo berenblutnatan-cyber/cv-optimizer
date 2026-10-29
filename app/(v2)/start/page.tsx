@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { StartFlow } from "@/components/v2/start/StartFlow";
+import { voiceConfig } from "@/lib/voice/elevenlabs";
 
 export const metadata: Metadata = { title: "Start your CV", robots: { index: false } };
+export const dynamic = "force-dynamic";
 
 export default function StartPage() {
   return (
@@ -14,7 +16,7 @@ export default function StartPage() {
         </Link>
       </AppHeader>
       <main className="flex flex-1 flex-col">
-        <StartFlow />
+        <StartFlow voice={!!voiceConfig()} />
       </main>
     </div>
   );

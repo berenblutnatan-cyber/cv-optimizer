@@ -95,6 +95,25 @@ export function limitResponse(r: Exclude<Result, { ok: true }>): Response {
   );
 }
 
+/**
+ * Extra limits for signed-out AI use. A draft cookie is free to reset, so the
+ * per-draft limit alone doesn't bound spend: this adds one per IP and one
+ * global daily ceiling across all signed-out callers. Signed-in calls pass.
+ * Returns the Response to send when a limit is hit, or null.
+ */
+export async function limitSignedOut(request: Request, signedIn: boolean, opts: { name: string; perIpHour: number; globalDay: number }): Promise<Response | null> {
+  if (signedIn) return null;
+  const ip = await limit({ name: `${opts.name}-anon-ip`, id: clientIp(request), cap: opts.perIpHour, windowSec: 3600 });
+  if (!ip.ok) return limitResponse(ip);
+  const global = await limit({ name: `${opts.name}-anon-all`, id: "global", cap: opts.globalDay, windowSec: 86_400 });
+  if (!global.ok) {
+    return global.reason === "limited"
+      ? Response.json({ error: "Sign in to keep going.", code: "SIGN_IN" }, { status: 429 })
+      : limitResponse(global);
+  }
+  return null;
+}
+
 export function clientIp(request: Request): string {
   const fwd = request.headers.get("x-forwarded-for");
   const first = fwd?.split(",")[0]?.trim();

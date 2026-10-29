@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { extractCvFileText } from "@/lib/cvFileText";
 import { parseCvTextStreaming } from "@/lib/optimizer/parseCv";
-import { clientIp, limit, limitResponse } from "@/lib/limits";
+import { clientIp, limit, limitResponse, limitSignedOut } from "@/lib/limits";
 import { emptyDocument, normalizeContent } from "@/lib/resume/document";
 import { ensureOwner, ownerKey } from "@/lib/resume/owner";
 import { createResume, createVersion } from "@/lib/resume/store";
@@ -73,6 +73,8 @@ export async function POST(request: Request) {
 
   const rl = await limit({ name: "cv-import", id: who, cap: owner.userId ? 20 : 8, windowSec: 3600 });
   if (!rl.ok) return limitResponse(rl);
+  const anon = await limitSignedOut(request, !!owner.userId, { name: "cv-import", perIpHour: 10, globalDay: 600 });
+  if (anon) return anon;
   if (source.text.length > MAX_TEXT) source.text = source.text.slice(0, MAX_TEXT);
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });

@@ -1,7 +1,8 @@
 -- Hired v2, M4: ElevenLabs voice intake.
 -- Apply after 2026-11-01-v2-credit-ledger.sql. Idempotent (safe to re-run).
 -- Extends the legacy VoiceSession table in place: existing rows (OpenAI
--- Realtime sessions, metadata only) keep their data and read as "ended".
+-- Realtime sessions, metadata only) keep their data and are closed as
+-- "reconciled" (step 4), so the cron never mistakes them for v2 calls.
 
 -- 1. VoiceSession: one paid (or free) talk, possibly over several connections.
 ALTER TABLE "VoiceSession" ALTER COLUMN "durationSec" SET DEFAULT 0;
@@ -69,3 +70,13 @@ CREATE TABLE IF NOT EXISTS "ElevenLabsWebhookEvent" (
   "payload"        JSONB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS "ElevenLabsWebhookEvent_conversationId_idx" ON "ElevenLabsWebhookEvent"("conversationId");
+
+-- 4. Legacy rows (never connected through v2: attempts = 0, no conversation)
+-- are finished history, not calls waiting to be settled. Left as "ended" they
+-- would fill the cron's settle batch forever. Idempotent: v2 sessions always
+-- have attempts >= 1 once started.
+UPDATE "VoiceSession" s
+SET "status" = 'reconciled', "reconciledAt" = COALESCE(s."reconciledAt", s."createdAt")
+WHERE s."status" = 'ended'
+  AND s."attempts" = 0
+  AND NOT EXISTS (SELECT 1 FROM "VoiceConversation" c WHERE c."sessionId" = s."id");

@@ -1,7 +1,7 @@
 import { localDbUrl } from "@/test/local-db";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { randomBytes } from "node:crypto";
-import { __resetMemoryLimits, limit, postgresIncr, pruneRateLimits } from "./limits";
+import { __resetMemoryLimits, limit, limitSignedOut, postgresIncr, pruneRateLimits } from "./limits";
 
 const id = () => `t_${randomBytes(5).toString("hex")}`;
 const env = process.env as Record<string, string | undefined>;
@@ -23,6 +23,21 @@ describe("limit (no KV, outside production)", () => {
     for (let i = 0; i < 3; i++) expect(await limit({ name: "mem", id: who, cap: 3, windowSec: 60 })).toEqual({ ok: true });
     expect(await limit({ name: "mem", id: who, cap: 3, windowSec: 60 })).toEqual({ ok: false, reason: "limited" });
     expect(await limit({ name: "mem", id: id(), cap: 3, windowSec: 60 })).toEqual({ ok: true });
+  });
+});
+
+describe("limitSignedOut", () => {
+  const req = (ip: string) => new Request("http://test/x", { headers: { "x-forwarded-for": ip } });
+  it("signed-in callers pass; signed-out ones hit a per-IP cap, then a global one", async () => {
+    const name = `anon_${id()}`;
+    expect(await limitSignedOut(req("1.1.1.1"), true, { name, perIpHour: 1, globalDay: 1 })).toBeNull();
+    expect(await limitSignedOut(req("1.1.1.1"), false, { name, perIpHour: 1, globalDay: 2 })).toBeNull();
+    expect((await limitSignedOut(req("1.1.1.1"), false, { name, perIpHour: 1, globalDay: 2 }))?.status).toBe(429);
+    // New IPs (or a cleared cookie) still meet the global ceiling.
+    expect(await limitSignedOut(req("2.2.2.2"), false, { name, perIpHour: 1, globalDay: 2 })).toBeNull();
+    const capped = await limitSignedOut(req("3.3.3.3"), false, { name, perIpHour: 1, globalDay: 2 });
+    expect(capped?.status).toBe(429);
+    expect(await capped!.json()).toMatchObject({ code: "SIGN_IN" });
   });
 });
 
