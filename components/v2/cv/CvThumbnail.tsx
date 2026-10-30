@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { TemplateRenderer } from "@/components/cv-templates/TemplateRenderer";
 import type { ThemeColor } from "@/lib/design/accents";
 import { densityTokenVars } from "@/lib/builder/density";
@@ -43,7 +44,9 @@ export function CvThumbnail({
   eager?: boolean;
 }) {
   const frameRef = React.useRef<HTMLDivElement>(null);
-  const docRef = React.useRef<HTMLDivElement>(null);
+  // Templates contain links and every caller wraps the thumbnail in a link or
+  // button; a portal keeps that nesting out of React's tree.
+  const [doc, setDoc] = React.useState<HTMLDivElement | null>(null);
   const [scale, setScale] = React.useState(0);
   const [visible, setVisible] = React.useState(eager);
   const solving = design.autoFit && design.pageMode === "one";
@@ -89,10 +92,9 @@ export function CvThumbnail({
   // during the first commit can be a few px off, enough to flip "fits".
   // Re-solve whenever the rendered content changes size afterwards.
   React.useEffect(() => {
-    if (!rendered) return;
-    const varsEl = docRef.current;
+    const varsEl = doc;
     const page = varsEl?.querySelector<HTMLElement>(".a4-wrapper");
-    if (!varsEl || !page) return;
+    if (!rendered || !varsEl || !page) return;
     let cancelled = false;
     let frame = 0;
     const solve = () => {
@@ -120,7 +122,7 @@ export function CvThumbnail({
       cancelAnimationFrame(frame);
       ro?.disconnect();
     };
-  }, [rendered, solving, data, design.template, design.fontLevel, design.spacingLevel]);
+  }, [rendered, doc, solving, data, design.template, design.fontLevel, design.spacingLevel]);
 
   const lv = levels ?? { fontLevel: DEFAULT_DESIGN.fontLevel, spacingLevel: DEFAULT_DESIGN.spacingLevel };
 
@@ -137,8 +139,8 @@ export function CvThumbnail({
           // The template contains links; a thumbnail must never take focus.
           ref={(el) => el?.setAttribute("inert", "")}
         >
-          <div ref={docRef} className="cv-doc" data-page-mode="one" style={densityTokenVars(lv.fontLevel, lv.spacingLevel)}>
-            <TemplateRenderer templateId={design.template as TemplateRegistryId} data={data} themeColor={design.accentColor as ThemeColor} />
+          <div ref={setDoc} className="cv-doc" data-page-mode="one" style={densityTokenVars(lv.fontLevel, lv.spacingLevel)}>
+            {doc && createPortal(<TemplateRenderer templateId={design.template as TemplateRegistryId} data={data} themeColor={design.accentColor as ThemeColor} />, doc)}
           </div>
         </div>
       )}
