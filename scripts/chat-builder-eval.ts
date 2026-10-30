@@ -1,11 +1,20 @@
-// Local live test for the chat builder agent loop. Mirrors app/api/chat/build
-// exactly (minus Clerk/KV): same system prompt, same tools, same text-only
-// history reconstruction the client sends. Run: ANTHROPIC_API_KEY=sk-... npx tsx scripts/chat-builder-eval.ts
+// Live eval for the chat builder agent. Runs the SAME loop the routes ship
+// (lib/chat/runTurn.ts, shared by /api/chat/build and /api/cv/[id]/chat) over
+// a scripted 8-turn conversation and asserts on the resulting CV.
+// Exit codes: 0 pass, 1 assertion failure, 2 config error.
+// Run: npm run eval:chat   (needs ANTHROPIC_API_KEY)
 import Anthropic from "@anthropic-ai/sdk";
-import { CV_TOOLS, applyCvToolCall, describeToolCall, snapshotForPrompt } from "@/lib/chat/cvTools";
+import { config } from "dotenv";
+import { CV_TOOLS, applyCvToolCall, snapshotForPrompt, describeToolCall } from "@/lib/chat/cvTools";
 import { buildChatSystemPrompt, chatGreeting } from "@/lib/chat/prompts";
+import { normalizeTurnHistory, runChatTurn } from "@/lib/chat/runTurn";
 import { initialResumeState, type ResumeData } from "@/types/resume";
 
+config({ path: ".env.local" });
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error("ANTHROPIC_API_KEY missing");
+  process.exit(2);
+}
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const USER_TURNS = [
@@ -21,47 +30,33 @@ const USER_TURNS = [
 
 async function runTurn(
   history: { role: "user" | "assistant"; content: string }[],
-  resume: ResumeData
-): Promise<{ text: string; resume: ResumeData; toolLabels: string[]; rounds: number }> {
-  const system = buildChatSystemPrompt(resume);
-  const messages: Anthropic.MessageParam[] = history.map((m) => ({ role: m.role, content: m.content }));
+  resume: ResumeData,
+): Promise<{ text: string; resume: ResumeData; toolLabels: string[] }> {
   let text = "";
   const toolLabels: string[] = [];
-  let rounds = 0;
-
-  for (let round = 0; round < 6; round++) {
-    rounds++;
-    const resp = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2000,
-      system,
-      messages,
-      tools: CV_TOOLS as Anthropic.Tool[],
-      temperature: 0.6,
-    });
-    for (const block of resp.content) {
-      if (block.type === "text") text += block.text;
-      else if (block.type === "tool_use") {
-        const next = applyCvToolCall(resume, block.name, block.input as Record<string, unknown>);
-        if (next !== resume) toolLabels.push(describeToolCall(block.name, block.input as Record<string, unknown>));
-        else toolLabels.push(`NO-OP! ${block.name} ${JSON.stringify(block.input).slice(0, 120)}`);
-        resume = next;
+  const messages = normalizeTurnHistory(history, { maxMessages: 60, maxChars: 24_000 });
+  if (!messages) throw new Error("bad history");
+  await runChatTurn({
+    client: anthropic,
+    system: buildChatSystemPrompt(resume),
+    tools: CV_TOOLS as Anthropic.Tool[],
+    messages,
+    emit: (e) => {
+      if (e.type === "text") text += e.text;
+    },
+    onTool: (name, input) => {
+      if (name === "set_design") return true;
+      const next = applyCvToolCall(resume, name, input);
+      if (next === resume) {
+        toolLabels.push(`NO-OP! ${name} ${JSON.stringify(input).slice(0, 120)}`);
+        return false;
       }
-    }
-    if (resp.stop_reason !== "tool_use") break;
-    messages.push({ role: "assistant", content: resp.content });
-    messages.push({
-      role: "user",
-      content: resp.content
-        .filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use")
-        .map((b) => ({
-          type: "tool_result" as const,
-          tool_use_id: b.id,
-          content: "Applied. The user can see the change in the live preview.",
-        })),
-    });
-  }
-  return { text, resume, toolLabels, rounds };
+      toolLabels.push(describeToolCall(name, input));
+      resume = next;
+      return true;
+    },
+  });
+  return { text, resume, toolLabels };
 }
 
 async function main() {
@@ -77,11 +72,11 @@ async function main() {
     const history = transcript.slice();
     while (history.length && history[0].role === "assistant") history.shift();
     const t0 = Date.now();
-    const { text, resume: next, toolLabels, rounds } = await runTurn(history, resume);
+    const { text, resume: next, toolLabels } = await runTurn(history, resume);
     resume = next;
     console.log(`\n👤 ${turn}`);
     toolLabels.forEach((l) => console.log(`   ✦ ${l}`));
-    console.log(`🤖 ${text.trim()}  [${rounds} round(s), ${((Date.now() - t0) / 1000).toFixed(1)}s]`);
+    console.log(`🤖 ${text.trim()}  [${((Date.now() - t0) / 1000).toFixed(1)}s]`);
     transcript.push({ role: "assistant", content: text.trim() || "(no text)" });
   }
 
@@ -98,6 +93,7 @@ async function main() {
   if (!resume.personalInfo.email.includes("dana")) fails.push("email");
   if (/\b(10|15|20)\+? (people|engineers)\b/.test(JSON.stringify(resume)) && !JSON.stringify(resume).includes("8 engineer")) fails.push("possible invented numbers");
   console.log(fails.length ? `\n❌ FAILS: ${fails.join(", ")}` : "\n✅ ALL ASSERTIONS PASS");
+  process.exit(fails.length ? 1 : 0);
 }
 
 main().catch((e) => {

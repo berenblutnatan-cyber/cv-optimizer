@@ -1,80 +1,31 @@
 import { NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
-import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { auth } from "@clerk/nextjs/server";
+import { chargeNow, isInsufficient } from "@/lib/billing/ledger";
+import { ensureUser } from "@/lib/users";
 
+// Legacy builder only: the client asks for a charge before an AI action. It
+// now goes through the ledger (atomic, can't go negative, logged), but it is
+// still client-initiated; v2 charges server-side inside each paid route and
+// never calls this. Removed with the legacy builder (M8).
+// Optional `Idempotency-Key` header: a retried request is charged once.
 export async function POST(request: Request) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    // Get authenticated user
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Get user from database
-    const user = await currentUser();
-    const userEmail = user?.emailAddresses[0]?.emailAddress || "no-email";
-
-    // Ensure user exists in database
-    const dbUser = await prisma.user.upsert({
-      where: { id: userId },
-      update: { email: userEmail },
-        create: {
-          id: userId,
-          email: userEmail,
-          credits: FREE_CREDITS_FOR_NEW_USER,
-        },
-    });
-
-    // Unlimited subscribers never spend credits.
-    if (hasActiveSubscription(dbUser)) {
-      return NextResponse.json({
-        success: true,
-        remaining: dbUser.credits,
-        unlimited: true,
-        message: "Unlimited plan — no credit used",
-      });
-    }
-
-    // Check if user has credits
-    if (dbUser.credits <= 0) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "Insufficient credits",
-          remaining: 0,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Decrement credits by 1
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        credits: {
-          decrement: 1,
-        },
-      },
-    });
-
-    console.log(`✅ Used 1 credit for user ${userId}. Remaining: ${updatedUser.credits}`);
-
+    await ensureUser(userId);
+    const raw = request.headers.get("idempotency-key");
+    const key = raw && /^[A-Za-z0-9:_.-]{8,120}$/.test(raw) ? `use-credit:${userId}:${raw}` : `use-credit:${crypto.randomUUID()}`;
+    const c = await chargeNow({ userId, reason: "use_credit", key });
     return NextResponse.json({
       success: true,
-      remaining: updatedUser.credits,
-      message: "Credit used successfully",
+      remaining: c.balance,
+      ...(c.unlimited ? { unlimited: true, message: "Unlimited plan — no credit used" } : { message: "Credit used successfully" }),
     });
-  } catch (error) {
-    console.error("Use credit error:", error);
-    return NextResponse.json(
-      { error: "Failed to use credit" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isInsufficient(err)) {
+      return NextResponse.json({ success: false, error: "Insufficient credits", remaining: 0 }, { status: 400 });
+    }
+    console.error("[use-credit] failed:", err);
+    return NextResponse.json({ error: "Failed to use credit" }, { status: 500 });
   }
 }

@@ -19,7 +19,13 @@ const nextConfig = {
       { source: "/ingest/decide", destination: "https://us.i.posthog.com/decide" },
     ];
   },
+  // The OpenAI voice builder was replaced by Talk mode in the v2 editor (M4).
+  async redirects() {
+    return [{ source: "/build/voice", destination: "/start", permanent: false }];
+  },
   skipTrailingSlashRedirect: true,
+  // Dev-only badge. Bottom-left covered the v2 editor's chat box.
+  devIndicators: { position: "bottom-right" },
 };
 
 module.exports = nextConfig;

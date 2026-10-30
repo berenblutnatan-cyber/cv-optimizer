@@ -30,3 +30,7 @@ skills-lock.json
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
 .vercel
+
+# Playwright MCP session logs
+.playwright-mcp/
+.impeccable/

@@ -1,4 +1,4 @@
-// Cheap KV counter with a TTL window, same approach as /api/voice/session.
+// Cheap KV counter with a TTL window, used by the legacy routes.
 // Fail-open: if KV is down or unconfigured (local dev), the request proceeds —
 // rate limiting protects spend, it isn't a correctness gate.
 //

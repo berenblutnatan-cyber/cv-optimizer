@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { grant } from "@/lib/billing/ledger";
+import { placeholderEmail } from "@/lib/users";
 import { currentUser } from "@clerk/nextjs/server";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 
@@ -33,19 +35,20 @@ export async function POST(req: Request) {
       // Grant +1 credit for the user's FIRST review (once each, abuse-safe),
       // then save the feedback — atomically, so a crash can't double-grant.
       const result = await prisma.$transaction(async (tx) => {
+        const email = user.emailAddresses[0]?.emailAddress;
         await tx.user.upsert({
           where: { id: user.id },
-          update: { email: user.emailAddresses[0]?.emailAddress || "" },
-          create: {
-            id: user.id,
-            email: user.emailAddresses[0]?.emailAddress || "no-email",
-            credits: FREE_CREDITS_FOR_NEW_USER,
-          },
+          update: email ? { email } : {},
+          create: { id: user.id, email: email || placeholderEmail(user.id), credits: FREE_CREDITS_FOR_NEW_USER },
         });
-        const creditAwarded = (await tx.feedback.count({ where: { userId: user.id } })) === 0;
-        if (creditAwarded) {
-          await tx.user.update({ where: { id: user.id }, data: { credits: { increment: 1 } } });
-        }
+        // One reward per user, ever: only for the first review (users who
+        // reviewed before the ledger existed have no key yet), and the ledger
+        // key holds even if two reviews land at the same moment.
+        const firstReview = (await tx.feedback.count({ where: { userId: user.id } })) === 0;
+        const reward = firstReview
+          ? await grant(tx, { userId: user.id, amount: 1, reason: "feedback_reward", key: `feedback-reward:${user.id}` })
+          : null;
+        const creditAwarded = !!reward && !reward.duplicate;
         const feedback = await tx.feedback.create({
           data: {
             rating: Number(rating),

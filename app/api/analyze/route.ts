@@ -8,6 +8,7 @@ import { getPostHogClient } from "@/lib/posthog-server";
 import { prisma } from "@/lib/prisma";
 import { FREE_CREDITS_FOR_NEW_USER } from "@/lib/credits";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { charge, isInsufficient } from "@/lib/billing/ledger";
 // The 3-pass deep-analysis pipeline (lib/optimizer/pipeline.ts) is exercised
 // by the eval harness (npm run eval:optimizer) — the route and the eval run
 // the EXACT same code.
@@ -232,14 +233,7 @@ export async function POST(request: NextRequest) {
           let analysisId: string;
           try {
             const created = await prisma.$transaction(async (tx) => {
-              if (!unlimited) {
-                const updated = await tx.user.update({
-                  where: { id: userId },
-                  data: { credits: { decrement: 1 } },
-                });
-                if (updated.credits < 0) throw new Error("INSUFFICIENT_CREDITS");
-              }
-              return tx.analysis.create({
+              const row = await tx.analysis.create({
                 data: {
                   userId,
                   cvText: cvText.slice(0, 60_000),
@@ -263,10 +257,14 @@ export async function POST(request: NextRequest) {
                 },
                 select: { id: true },
               });
+              // Charged in the same transaction that saves the result: no
+              // result without payment, no payment without a result.
+              await charge(tx, { userId, reason: "analyze", key: `analyze:${row.id}`, refType: "analysis", refId: row.id });
+              return row;
             });
             analysisId = created.id;
           } catch (persistErr) {
-            if (persistErr instanceof Error && persistErr.message === "INSUFFICIENT_CREDITS") {
+            if (isInsufficient(persistErr)) {
               send({ type: "error", error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" });
               controller.close();
               return;

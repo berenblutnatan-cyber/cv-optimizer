@@ -31,9 +31,12 @@ export type CvToolName =
   | "update_project"
   | "remove_project"
   | "add_certification"
+  | "update_certification"
   | "remove_certification"
   | "add_custom_section"
+  | "update_custom_section"
   | "remove_custom_section"
+  | "move_entry"
   | "set_design";
 
 // Design targets the agent can set via set_design. Derived from the canonical
@@ -291,6 +294,15 @@ export const CV_TOOLS = [
     },
   },
   {
+    name: "update_certification",
+    description: "Update a certification or award by index. Only include fields to change.",
+    input_schema: {
+      type: "object" as const,
+      properties: { index: { type: "integer" as const }, name: str, issuer: str, date: str, link: str },
+      required: ["index"],
+    },
+  },
+  {
     name: "remove_certification",
     description: "Remove a certification by index. Only when the user asks.",
     input_schema: {
@@ -307,6 +319,15 @@ export const CV_TOOLS = [
       type: "object" as const,
       properties: { title: str, items: strArr },
       required: ["title", "items"],
+    },
+  },
+  {
+    name: "update_custom_section",
+    description: "Update a custom section by index. `items` replaces all its items.",
+    input_schema: {
+      type: "object" as const,
+      properties: { index: { type: "integer" as const }, title: str, items: strArr },
+      required: ["index"],
     },
   },
   {
@@ -375,11 +396,23 @@ function pick<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return out as Partial<T>;
 }
 
-function atIndex(input: Record<string, unknown>, length: number): number {
+/**
+ * Resolve the target entry. A string `id` wins (the editor addresses entries by
+ * id, so a concurrent add/remove from chat or voice can never shift its target);
+ * otherwise the zero-based `index` the model reads from the prompt snapshot.
+ * Returns -1 when neither resolves.
+ */
+function atIndex(input: Record<string, unknown>, list: readonly { id: string }[]): number {
+  if (typeof input.id === "string" && input.id) {
+    return list.findIndex((e) => e.id === input.id);
+  }
   const i = Number(input.index);
-  if (!Number.isInteger(i) || i < 0 || i >= length) return -1;
+  if (!Number.isInteger(i) || i < 0 || i >= list.length) return -1;
   return i;
 }
+
+const MOVABLE = ["experience", "education", "projects", "certifications", "customSections"] as const;
+type MovableSection = (typeof MOVABLE)[number];
 
 /**
  * Pure reducer: apply one tool call to a ResumeData value.
@@ -428,7 +461,7 @@ export function applyCvToolCall(
     }
 
     case "update_experience": {
-      const i = atIndex(input, data.experience.length);
+      const i = atIndex(input, data.experience);
       if (i === -1) return data;
       const patch = pick({
         company: s(input.company),
@@ -439,6 +472,7 @@ export function applyCvToolCall(
         current: typeof input.current === "boolean" ? input.current : undefined,
         description: sa(input.description),
       });
+      if (Object.keys(patch).length === 0) return data;
       return {
         ...data,
         experience: data.experience.map((e, idx) => (idx === i ? { ...e, ...patch } : e)),
@@ -449,7 +483,7 @@ export function applyCvToolCall(
       // Surgical single-bullet rewrite (used by the optimizer's appliable
       // suggestions). Replaces one bullet in place, so applying several
       // suggestions in any order can never shift indices.
-      const i = atIndex(input, data.experience.length);
+      const i = atIndex(input, data.experience);
       if (i === -1) return data;
       const b = Number(input.bulletIndex);
       const text = s(input.text);
@@ -466,7 +500,7 @@ export function applyCvToolCall(
     }
 
     case "remove_experience": {
-      const i = atIndex(input, data.experience.length);
+      const i = atIndex(input, data.experience);
       if (i === -1) return data;
       return { ...data, experience: data.experience.filter((_, idx) => idx !== i) };
     }
@@ -488,7 +522,7 @@ export function applyCvToolCall(
     }
 
     case "update_education": {
-      const i = atIndex(input, data.education.length);
+      const i = atIndex(input, data.education);
       if (i === -1) return data;
       const patch = pick({
         institution: s(input.institution),
@@ -500,6 +534,7 @@ export function applyCvToolCall(
         gpa: s(input.gpa),
         achievements: sa(input.achievements),
       });
+      if (Object.keys(patch).length === 0) return data;
       return {
         ...data,
         education: data.education.map((e, idx) => (idx === i ? { ...e, ...patch } : e)),
@@ -507,7 +542,7 @@ export function applyCvToolCall(
     }
 
     case "remove_education": {
-      const i = atIndex(input, data.education.length);
+      const i = atIndex(input, data.education);
       if (i === -1) return data;
       return { ...data, education: data.education.filter((_, idx) => idx !== i) };
     }
@@ -538,7 +573,7 @@ export function applyCvToolCall(
     }
 
     case "update_project": {
-      const i = atIndex(input, data.projects.length);
+      const i = atIndex(input, data.projects);
       if (i === -1) return data;
       const patch = pick({
         name: s(input.name),
@@ -547,6 +582,7 @@ export function applyCvToolCall(
         link: s(input.link),
         bullets: sa(input.bullets),
       });
+      if (Object.keys(patch).length === 0) return data;
       return {
         ...data,
         projects: data.projects.map((p, idx) => (idx === i ? { ...p, ...patch } : p)),
@@ -554,7 +590,7 @@ export function applyCvToolCall(
     }
 
     case "remove_project": {
-      const i = atIndex(input, data.projects.length);
+      const i = atIndex(input, data.projects);
       if (i === -1) return data;
       return { ...data, projects: data.projects.filter((_, idx) => idx !== i) };
     }
@@ -578,7 +614,7 @@ export function applyCvToolCall(
     }
 
     case "remove_certification": {
-      const i = atIndex(input, data.certifications.length);
+      const i = atIndex(input, data.certifications);
       if (i === -1) return data;
       return { ...data, certifications: data.certifications.filter((_, idx) => idx !== i) };
     }
@@ -601,9 +637,58 @@ export function applyCvToolCall(
     }
 
     case "remove_custom_section": {
-      const i = atIndex(input, data.customSections.length);
+      const i = atIndex(input, data.customSections);
       if (i === -1) return data;
       return { ...data, customSections: data.customSections.filter((_, idx) => idx !== i) };
+    }
+
+    case "update_certification": {
+      const i = atIndex(input, data.certifications);
+      if (i === -1) return data;
+      const patch = pick({ name: s(input.name), issuer: s(input.issuer), date: s(input.date), link: s(input.link) });
+      if (Object.keys(patch).length === 0) return data;
+      return {
+        ...data,
+        certifications: data.certifications.map((c, idx) => (idx === i ? { ...c, ...patch } : c)),
+      };
+    }
+
+    case "update_custom_section": {
+      const i = atIndex(input, data.customSections);
+      if (i === -1) return data;
+      const title = s(input.title);
+      const items = sa(input.items);
+      if (title === undefined && items === undefined) return data;
+      return {
+        ...data,
+        customSections: data.customSections.map((c, idx) => {
+          if (idx !== i) return c;
+          return {
+            ...c,
+            ...(title !== undefined ? { title } : {}),
+            // Keep item ids stable for unchanged positions so React keys and
+            // evidence links don't churn on every keystroke.
+            ...(items !== undefined
+              ? { items: items.map((text, k) => ({ id: c.items[k]?.id ?? generateId(), text })) }
+              : {}),
+          };
+        }),
+      };
+    }
+
+    case "move_entry": {
+      // Editor-only reorder (not exposed to the model): move one entry up/down
+      // within its section, addressed by id.
+      const section = s(input.section) as MovableSection | undefined;
+      if (!section || !(MOVABLE as readonly string[]).includes(section)) return data;
+      const list = data[section] as { id: string }[];
+      const from = atIndex(input, list);
+      const to = from + (input.direction === "up" ? -1 : input.direction === "down" ? 1 : 0);
+      if (from === -1 || to === from || to < 0 || to >= list.length) return data;
+      const next = list.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return { ...data, [section]: next } as ResumeData;
     }
 
     default:
@@ -678,14 +763,20 @@ export function describeToolCall(
       const cert = s(input.name);
       return cert ? t("Added {cert}", { cert }) : t("Added a certification");
     }
+    case "update_certification":
+      return t("Updated a certification");
     case "remove_certification":
       return t("Removed a certification");
     case "add_custom_section": {
       const title = s(input.title);
       return title ? t("Added “{title}”", { title }) : t("Added a section");
     }
+    case "update_custom_section":
+      return t("Updated a section");
     case "remove_custom_section":
       return t("Removed a section");
+    case "move_entry":
+      return t("Reordered");
     case "set_design":
       return t("Styled your CV");
     default:
@@ -775,10 +866,14 @@ export function pendingToolLabel(name: string, t: ChatLabelTranslate = englishT)
       return t("Removing a project…");
     case "add_certification":
       return t("Adding a certification…");
+    case "update_certification":
+      return t("Updating a certification…");
     case "remove_certification":
       return t("Removing a certification…");
     case "add_custom_section":
       return t("Adding a section…");
+    case "update_custom_section":
+      return t("Updating a section…");
     case "remove_custom_section":
       return t("Removing a section…");
     case "set_design":

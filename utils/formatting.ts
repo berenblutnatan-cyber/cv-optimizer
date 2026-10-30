@@ -24,11 +24,23 @@ const UPPERCASE_WORDS = new Set([
 ]);
 
 /**
+ * True when the user clearly chose the casing themselves: the text mixes
+ * upper- and lowercase letters ("B.Sc.", "iOS Engineer", "DeShawn McDonald").
+ * Only text with no deliberate casing (all lower, or ALL CAPS) is tidied —
+ * rewriting what someone typed on purpose would put a wrong word on their CV.
+ */
+export function isDeliberatelyCased(str: string): boolean {
+  return /\p{Lu}/u.test(str) && /\p{Ll}/u.test(str);
+}
+
+/**
  * Convert string to Title Case
- * Handles special cases like abbreviations and small words
+ * Handles special cases like abbreviations and small words.
+ * Leaves deliberately-cased text untouched.
  */
 export function toTitleCase(str: string): string {
   if (!str || typeof str !== 'string') return str || '';
+  if (isDeliberatelyCased(str)) return str;
   
   return str
     .toLowerCase()
@@ -56,6 +68,7 @@ export function toTitleCase(str: string): string {
  */
 export function formatName(name: string): string {
   if (!name || typeof name !== 'string') return name || '';
+  if (isDeliberatelyCased(name)) return name;
   
   return name
     .split(' ')
@@ -108,10 +121,11 @@ export function formatBulletPoint(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) return '';
   
-  // Capitalize first letter
-  let formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-  
-  return formatted;
+  // Capitalize the first letter, unless the first word carries its own
+  // casing ("iOS", "eBay", "macOS") — capitalizing that would misspell it.
+  const firstWord = trimmed.split(/\s/, 1)[0];
+  if (/\p{Lu}/u.test(firstWord.slice(1))) return trimmed;
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
 /**

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { neonConfig } from "@neondatabase/serverless";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -20,24 +21,27 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+/** Neon's serverless driver only speaks to Neon. Any other Postgres (local
+ *  dev, CI) goes through node-postgres. */
+export function isNeonUrl(url: string): boolean {
+  try {
+    return new URL(url).hostname.endsWith(".neon.tech");
+  } catch {
+    return false;
+  }
+}
+
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
-  
-  console.log("🔧 Prisma init - CWD:", process.cwd());
-  console.log("🔧 Prisma init - DATABASE_URL exists:", !!connectionString);
-  console.log("🔧 Prisma init - URL preview:", connectionString?.substring(0, 30) + "...");
-  
   if (!connectionString) {
     console.error("❌ DATABASE_URL not found");
     return new PrismaClient();
   }
 
   try {
-    // Create Neon adapter with explicit connection string
-    const adapter = new PrismaNeon({ connectionString });
-    
-    console.log("✅ Prisma + Neon adapter initialized");
-    
+    const adapter = isNeonUrl(connectionString)
+      ? new PrismaNeon({ connectionString })
+      : new PrismaPg({ connectionString });
     return new PrismaClient({
       adapter,
       log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],

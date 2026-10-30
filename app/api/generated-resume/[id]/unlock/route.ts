@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { awardXp } from "@/lib/gamification";
-import { isUnlimited } from "@/lib/subscription";
+import { charge, isInsufficient } from "@/lib/billing/ledger";
 
 export const dynamic = "force-dynamic";
 
@@ -28,35 +28,17 @@ export async function POST(
     return NextResponse.json({ ok: true, alreadyUnlocked: true });
   }
 
-  const unlimited = await isUnlimited(userId);
   try {
     const result = await prisma.$transaction(async (tx) => {
-      let creditsRemaining = 0;
-      if (unlimited) {
-        const user = await tx.user.findUnique({ where: { id: userId }, select: { credits: true } });
-        creditsRemaining = user?.credits ?? 0;
-      } else {
-        const user = await tx.user.findUnique({
-          where: { id: userId },
-          select: { credits: true },
-        });
-        if (!user || user.credits <= 0) throw new Error("INSUFFICIENT_CREDITS");
-        const updatedUser = await tx.user.update({
-          where: { id: userId },
-          data: { credits: { decrement: 1 } },
-        });
-        creditsRemaining = updatedUser.credits;
-      }
-      await tx.generatedResume.update({
-        where: { id },
-        data: { unlocked: true },
-      });
-      return { creditsRemaining };
+      // Keyed by the card: unlocking the same card twice charges once.
+      const c = await charge(tx, { userId, reason: "unlock", key: `unlock:${id}`, refType: "generated_resume", refId: id });
+      await tx.generatedResume.update({ where: { id }, data: { unlocked: true } });
+      return { creditsRemaining: c.balance };
     });
     const xp = await awardXp(userId, "unlock").catch(() => null);
     return NextResponse.json({ ok: true, creditsRemaining: result.creditsRemaining, xp });
   } catch (err) {
-    if (err instanceof Error && err.message === "INSUFFICIENT_CREDITS") {
+    if (isInsufficient(err)) {
       return NextResponse.json(
         { error: "Insufficient credits", code: "INSUFFICIENT_CREDITS" },
         { status: 402 }

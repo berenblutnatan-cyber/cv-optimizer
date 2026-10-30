@@ -31,13 +31,19 @@ function sanitize(raw: unknown): ResumeData {
   };
 }
 
-// GET /api/resume — the signed-in user's saved CV (latest), or null.
+// This route serves the LEGACY builder: it reads and writes only legacy-shape
+// rows (dataVersion 1, bare ResumeData). v2 documents (dataVersion 2) belong
+// to lib/resume/store and are never seen or overwritten here; otherwise the
+// legacy autosave would replace a v2 CV with an old local draft.
+const LEGACY = { dataVersion: 1 } as const;
+
+// GET /api/resume — the signed-in user's saved legacy CV (latest), or null.
 export async function GET() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const row = await prisma.resume.findFirst({
-      where: { userId },
+      where: { userId, ...LEGACY },
       orderBy: { updatedAt: "desc" },
       select: { data: true, template: true, themeColor: true, updatedAt: true },
     });
@@ -83,7 +89,7 @@ export async function PUT(request: NextRequest) {
     // The Resume table predates this route and has no unique on userId, so
     // emulate upsert-latest: update the newest row or create the first one.
     const existing = await prisma.resume.findFirst({
-      where: { userId },
+      where: { userId, ...LEGACY },
       orderBy: { updatedAt: "desc" },
       select: { id: true },
     });
@@ -96,14 +102,21 @@ export async function PUT(request: NextRequest) {
         create: { id: userId, email: "no-email", credits: 2 },
       });
     }
-    const row = existing
-      ? await prisma.resume.update({
-          where: { id: existing.id },
+    // Re-checked in the write itself: if v2 upgraded this row a moment ago,
+    // nothing is overwritten and the draft is saved as a legacy row of its own.
+    const updated = existing
+      ? await prisma.resume.updateMany({
+          where: { id: existing.id, ...LEGACY },
           data: { data: data as object, title, template, themeColor },
         })
-      : await prisma.resume.create({
-          data: { userId, data: data as object, title, template, themeColor },
-        });
+      : { count: 0 };
+    const row =
+      updated.count > 0
+        ? await prisma.resume.findUniqueOrThrow({ where: { id: existing!.id }, select: { updatedAt: true } })
+        : await prisma.resume.create({
+            data: { userId, data: data as object, title, template, themeColor, ...LEGACY },
+            select: { updatedAt: true },
+          });
     return NextResponse.json({ ok: true, updatedAt: row.updatedAt });
   } catch (err) {
     console.error("[resume] PUT failed:", err);

@@ -1,0 +1,74 @@
+name: CI
+
+# The gate for every PR and every push to main: types, the full test suite
+# (including the database tests, against a real Postgres), the local-score
+# eval, design tokens, and a production build. Nothing here spends money or
+# calls an external API: model calls in tests are stubbed.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hired_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      # localhost on purpose: test/local-db.ts only lets DB tests run against a local host.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hired_ci
+      # A syntactically valid test key so Clerk can initialise during the build.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+
+      # The schema from schema.prisma, then the hand-written v2 migrations on top
+      # (CHECK constraints, triggers and backfills Prisma doesn't model). They are
+      # idempotent, so running them over a pushed schema is safe.
+      - name: Database schema
+        run: |
+          npx prisma db push --accept-data-loss
+          for f in $(ls prisma/manual-migrations/2026-1*.sql | sort); do
+            echo "::group::$f"
+            npx prisma db execute --file "$f"
+            echo "::endgroup::"
+          done
+          # Proof the schema and the migrations agree: no drift left.
+          npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+      - name: Types
+        run: npx tsc --noEmit -p .
+      - name: Tests
+        run: npx vitest run
+      - name: Local score eval
+        run: npm run eval:localchecks
+      - name: Design tokens in sync
+        run: npm run tokens:check
+      - name: Production build
+        run: npm run build

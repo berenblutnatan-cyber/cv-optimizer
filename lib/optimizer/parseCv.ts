@@ -109,8 +109,9 @@ const s = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 const sa = (v: unknown): string[] =>
   Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : [];
 
-/** Coerce the tool output into a well-formed ResumeData with generated ids. */
-function toResumeData(input: Record<string, unknown>): ResumeData {
+/** Coerce the tool output into a well-formed ResumeData with generated ids.
+ *  Also safe on a PARTIAL tool input (a streaming snapshot). */
+export function toResumeData(input: Record<string, unknown>): ResumeData {
   const pi = (input.personalInfo ?? {}) as Record<string, unknown>;
   return {
     personalInfo: {
@@ -186,21 +187,22 @@ export type ParseCvResult = {
   degraded: boolean;
 };
 
-export async function parseCvText(anthropic: Anthropic, cvText: string): Promise<ParseCvResult> {
-  const response = await anthropic.messages.create({
+function parseRequest(cvText: string) {
+  return {
     model: PARSE_MODEL,
     max_tokens: 16000,
     system: PARSE_SYSTEM_PROMPT,
     tools: [EMIT_RESUME_TOOL],
-    tool_choice: { type: "tool", name: "emit_resume" },
-    messages: [{ role: "user", content: `Parse this CV:\n\n${cvText.slice(0, 30000)}` }],
-  });
+    tool_choice: { type: "tool" as const, name: "emit_resume" },
+    messages: [{ role: "user" as const, content: `Parse this CV:\n\n${cvText.slice(0, 30000)}` }],
+  };
+}
 
+function finish(response: Anthropic.Message): ParseCvResult {
   const toolUse = response.content.find((c) => c.type === "tool_use");
   if (!toolUse || toolUse.type !== "tool_use" || response.stop_reason === "max_tokens") {
     return { resumeData: toResumeData({}), degraded: true };
   }
-
   const resumeData = toResumeData(toolUse.input as Record<string, unknown>);
   const degraded =
     resumeData.experience.length === 0 &&
@@ -208,4 +210,31 @@ export async function parseCvText(anthropic: Anthropic, cvText: string): Promise
     resumeData.skills.length === 0 &&
     resumeData.education.length === 0;
   return { resumeData, degraded };
+}
+
+export async function parseCvText(anthropic: Anthropic, cvText: string): Promise<ParseCvResult> {
+  return finish(await anthropic.messages.create(parseRequest(cvText)));
+}
+
+/**
+ * Same parse, streamed: `onPartial` receives the CV as far as the model has
+ * written it (a coerced snapshot of the partial tool input), so a caller can
+ * render sections as they arrive. The final result is identical to parseCvText.
+ */
+export async function parseCvTextStreaming(
+  anthropic: Anthropic,
+  cvText: string,
+  onPartial: (partial: ResumeData) => void,
+  opts: { signal?: AbortSignal; intervalMs?: number } = {},
+): Promise<ParseCvResult> {
+  const stream = anthropic.messages.stream(parseRequest(cvText), { signal: opts.signal });
+  const interval = opts.intervalMs ?? 250;
+  let last = 0;
+  stream.on("inputJson", (_delta, snapshot) => {
+    const now = Date.now();
+    if (now - last < interval || !snapshot || typeof snapshot !== "object") return;
+    last = now;
+    onPartial(toResumeData(snapshot as Record<string, unknown>));
+  });
+  return finish(await stream.finalMessage());
 }

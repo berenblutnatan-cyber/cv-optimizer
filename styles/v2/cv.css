@@ -1,0 +1,40 @@
+@config "../../tailwind.cv.config.ts";
+
+@tailwind utilities;
+
+/* A rendered CV is a standalone document: its layout and reading direction
+   follow the CV, not the app UI around it. */
+.cv-doc .a4-wrapper {
+  direction: ltr;
+  width: 210mm;
+  height: 297mm;
+  min-height: 297mm;
+  max-height: 297mm;
+  background: white;
+  color: #111;
+  margin: 0;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+.cv-doc .a4-wrapper * { box-sizing: border-box; }
+.cv-doc .a4-grid { display: grid; height: 100%; box-sizing: border-box; }
+.cv-doc .a4-safe-area { box-sizing: border-box; display: flex; flex-direction: column; }
+.cv-doc .cv-text { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.cv-doc .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* A4PageWrapper sets size, margin, shadow and clipping inline (for the legacy
+   builder); v2 owns the page chrome, so these win over the inline values. */
+.cv-doc .a4-wrapper { margin: 0 !important; box-shadow: none !important; }
+
+/* Multi-page mode: the page grows in whole A4 steps instead of clipping. */
+.cv-doc[data-page-mode="multi"] .a4-wrapper {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+@media print {
+  @page { size: A4; margin: 0; }
+  .cv-doc .a4-wrapper { box-shadow: none !important; }
+}
