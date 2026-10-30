@@ -26,6 +26,7 @@ apply() {
 }
 
 EARLY=(
+  2026-10-29-v2-prod-catchup.sql
   2026-10-30-v2-resume-document.sql
   2026-10-31-v2-import-versions.sql
   2026-11-02-v2-voice-sessions.sql
@@ -43,7 +44,9 @@ case "$step" in
     echo "Negative balances:      $(q 'SELECT count(*) FROM "User" WHERE credits < 0')  (2026-11-01 sets these to 0)"
     echo "CVs:                    $(q 'SELECT count(*) FROM "Resume"')"
     echo "Longest voice session:  $(q 'SELECT coalesce(max("durationSec"), 0) FROM "VoiceSession"')s  (must be ≤ 3600)"
-    echo "Jobs with odd status:   $(q "SELECT count(*) FROM \"JobApplication\" WHERE status NOT IN ('BOOKMARKED','APPLIED','INTERVIEWING','OFFER','REJECTED')")  (kept; new rows are checked)"
+    if [ "$(q "SELECT to_regclass('public.\"JobApplication\"') IS NOT NULL")" = "t" ]; then
+      echo "Jobs with odd status:   $(q "SELECT count(*) FROM \"JobApplication\" WHERE status NOT IN ('BOOKMARKED','APPLIED','INTERVIEWING','OFFER','REJECTED')")  (kept; new rows are checked)"
+    fi
     for t in ResumeVersion CreditLedger PolarWebhookEvent VoiceConversation Tailoring InterviewSession RateLimitBucket CoverLetter; do
       echo "Table $t: $(q "SELECT CASE WHEN to_regclass('public.\"$t\"') IS NULL THEN 'missing' ELSE 'present' END")"
     done
