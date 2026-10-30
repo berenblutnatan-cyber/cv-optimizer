@@ -72,3 +72,9 @@ jobs:
         run: npm run tokens:check
       - name: Production build
         run: npm run build
+      # Both themes must reach the output: a stylesheet on the wrong config
+      # still builds, with its design missing.
+      - name: Both stylesheets compiled
+        run: |
+          grep -rlq "bg-brand-navy" .next/static --include=*.css
+          grep -rlq "text-ink" .next/static --include=*.css
