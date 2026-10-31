@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
-const item = "inline-flex h-9 items-center rounded-control px-3 text-body font-medium text-ink-2 hover:bg-surface-2 hover:text-ink";
+const item = "inline-flex h-9 touch:h-11 items-center rounded-control px-3 text-body font-medium text-ink-2 hover:bg-surface-2 hover:text-ink";
 
 /** Account link + avatar when signed in, Sign in when not. */
 export function AccountNav() {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { bandFor, BAND_LABEL, type ScoreBand } from "@/lib/score/bands";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { cn } from "./cn";
 import { Tooltip } from "./tooltip";
 
@@ -40,6 +41,7 @@ export function ScoreGauge({
   const circ = 2 * Math.PI * r;
   const v = value == null ? 0 : Math.max(0, Math.min(100, Math.round(value)));
   const band = bandFor(v);
+  const { t } = useT();
   return (
     <Tooltip content={tip}>
       <div
@@ -48,7 +50,7 @@ export function ScoreGauge({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={value ?? undefined}
-        aria-valuetext={value == null ? "Not scored yet" : `${v} of 100, ${BAND_LABEL[band]}`}
+        aria-valuetext={value == null ? t("Not scored") : `${v} / 100, ${t(BAND_LABEL[band])}`}
         tabIndex={0}
         className={cn("inline-flex shrink-0 flex-col items-center gap-2 rounded-card", className)}
       >
@@ -80,7 +82,7 @@ export function ScoreGauge({
         {loading ? (
           <div className="skeleton h-5 w-16" />
         ) : (
-          <span className="whitespace-nowrap text-dense font-medium text-ink-2">{value == null ? "Not scored" : BAND_LABEL[band]}</span>
+          <span className="whitespace-nowrap text-dense font-medium text-ink-2">{value == null ? t("Not scored") : t(BAND_LABEL[band])}</span>
         )}
       </div>
     </Tooltip>
