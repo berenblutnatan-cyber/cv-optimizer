@@ -17,7 +17,7 @@ import { getTemplateEntry, TEMPLATE_IDS, type TemplateRegistryId } from "@/lib/t
 import { voiceConfig } from "@/lib/voice/elevenlabs";
 
 export const metadata: Metadata = {
-  title: { absolute: "Hired: AI CV builder. A stronger CV, every word still yours." },
+  title: { absolute: "Hired: AI CV builder. CVs that get you hired." },
   description: "Tell us what you did. Hired sharpens your CV for each job and never invents a thing. Free to build and download.",
   alternates: { canonical: "/" },
 };
@@ -62,7 +62,7 @@ function Hero({ t }: { t: T }) {
     <section className="overflow-hidden border-b border-hairline bg-surface">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 pt-14 md:px-8 lg:grid-cols-2 lg:gap-14 lg:pt-20">
         <div className="lg:pb-20">
-          <h1 className="text-balance text-display font-semibold text-ink md:text-hero">{t("A stronger CV. Every word still yours.")}</h1>
+          <h1 className="text-balance text-display font-semibold text-ink md:text-hero">{t("CVs that get you hired.")}</h1>
           <p className="mt-5 max-w-md text-pretty text-h3 font-normal text-ink-2">{t("Tell us what you did. Hired sharpens it for each job and never invents a thing.")}</p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <PrimaryCta t={t} />
