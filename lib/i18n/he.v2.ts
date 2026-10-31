@@ -137,7 +137,7 @@ export const heV2: Record<string, string> = {
   "Case study": "קייס סטאדי",
 
   // ── Landing ───────────────────────────────────────────────────────────────
-  "A stronger CV. Every word still yours.": "קורות חיים חזקים יותר. כל מילה עדיין שלכם.",
+  "CVs that get you hired.": "קורות חיים שמביאים לכם את העבודה.",
   "Tell us what you did. Hired sharpens it for each job and never invents a thing.": "ספרו מה עשיתם. Hired מחדד את זה לכל משרה ולא ממציא כלום.",
   "Build my CV": "לבנות קורות חיים",
   "My CVs": "קורות החיים שלי",
