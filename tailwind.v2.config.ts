@@ -50,6 +50,8 @@ const config: Config = {
       h1: ["28px", { lineHeight: "34px", letterSpacing: "-0.02em" }],
       display: ["40px", { lineHeight: "44px", letterSpacing: "-0.03em" }],
       hero: ["56px", { lineHeight: "60px", letterSpacing: "-0.035em" }],
+      // The landing headline only: fluid, so a short line fills its column.
+      mega: ["clamp(3rem, 1.6rem + 4.6vw, 5.25rem)", { lineHeight: "1", letterSpacing: "-0.04em" }],
     },
     fontFamily: {
       sans: ["var(--font-sans)", "system-ui", "sans-serif"],
