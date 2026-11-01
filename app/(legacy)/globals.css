@@ -144,7 +144,7 @@ body {
 /* When the UI is Hebrew, swap the body font to Rubik (Latin + Hebrew glyphs)
    so Hebrew text renders cleanly while Latin runs (names, brands) stay sharp. */
 html[dir="rtl"] body {
-  font-family: var(--font-hebrew), var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+  font-family: var(--font-hebrew), var(--font-hebrew-latin), var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
