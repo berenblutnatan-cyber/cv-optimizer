@@ -60,10 +60,10 @@ function PrimaryCta({ t, size = "lg" }: { t: T; size?: "md" | "lg" }) {
 function Hero({ t }: { t: T }) {
   return (
     <section className="overflow-hidden border-b border-hairline bg-surface">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 pt-14 md:px-8 lg:grid-cols-2 lg:gap-14 lg:pt-20">
-        <div className="lg:pb-20">
-          <h1 className="text-balance text-display font-semibold text-ink md:text-hero">{t("CVs that get you hired.")}</h1>
-          <p className="mt-5 max-w-md text-pretty text-h3 font-normal text-ink-2">{t("Tell us what you did. Hired sharpens it for each job and never invents a thing.")}</p>
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 pt-14 md:px-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14 lg:pt-16">
+        <div className="lg:self-center lg:pb-16">
+          <h1 className="text-balance text-mega font-semibold text-ink rtl:tracking-[-0.01em]">{t("CVs that get you hired.")}</h1>
+          <p className="mt-6 max-w-md text-pretty text-h3 font-normal text-ink-2">{t("Tell us what you did. Hired sharpens it for each job and never invents a thing.")}</p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <PrimaryCta t={t} />
             <Button asChild size="lg">
@@ -80,6 +80,7 @@ function Hero({ t }: { t: T }) {
           <div className="absolute inset-x-0 bottom-6 rounded-card shadow-pop lg:-start-6 lg:end-auto lg:bottom-10 lg:w-[400px]">
             <DiffLine
               grounded
+              animated
               before={t("Worked on onboarding for new users")}
               after={t("Launched self-serve onboarding that lifted activation 34%")}
               evidence={t("activation up 34% after the launch")}
@@ -106,13 +107,6 @@ function Sources({ t }: { t: T }) {
             before={t("Responsible for a team")}
             after={t("Led a 12-person squad across engineering, design and data")}
             evidence={t("12 people: eng, design and data")}
-          />
-          <DiffLine
-            grounded
-            requirement={t("Product-led growth")}
-            before={t("Worked on onboarding for new users")}
-            after={t("Launched self-serve onboarding that lifted activation 34%")}
-            evidence={t("activation up 34% after the launch")}
           />
           <DiffLine grounded={false} requirement={t("Customer growth")} after={t("How many customers used the referral program? Add the number if you know it.")} />
           <p className="text-dense text-ink-2">{t("Example")}</p>
@@ -155,8 +149,8 @@ function Templates({ t }: { t: T }) {
       <div className="mx-auto max-w-6xl px-4 md:px-8">
         <h2 className="text-balance text-h1 font-semibold text-ink md:text-display">{t("{n} templates. All free.", { n: TEMPLATE_IDS.length })}</h2>
         <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {SHOWCASE.map(({ template, accent }) => (
-            <li key={template}>
+          {SHOWCASE.map(({ template, accent }, i) => (
+            <li key={template} className={i >= 4 ? "hidden sm:block" : undefined}>
               <Link href="/start" className="group block rounded-control">
                 <span dir="ltr" className="block overflow-hidden rounded-control border border-hairline shadow-card transition-[border-color,transform] duration-micro group-hover:-translate-y-0.5 group-hover:border-hairline-strong">
                   <CvThumbnail data={SAMPLE} design={design(template, accent)} />

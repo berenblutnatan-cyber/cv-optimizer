@@ -37,6 +37,9 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;
     }
+    .diff-strike, .diff-rewrite {
+      animation-delay: 0ms !important;
+    }
     /* A colour fade, not movement: it is the only sign a voice edit landed, so it stays. */
     .animate-voice-pulse {
       animation-duration: 900ms !important;
@@ -45,6 +48,23 @@
 }
 
 @layer utilities {
+  /* The landing's one moment: the weak line is struck out, the strong one lands.
+     Both start readable, so a paused animation never hides the text. */
+  .diff-strike {
+    background: linear-gradient(rgb(var(--c-danger) / 0.6), rgb(var(--c-danger) / 0.6)) no-repeat left 55% / 0% 1.5px;
+    animation: diff-strike 520ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
+  }
+  [dir="rtl"] .diff-strike { background-position-x: right; }
+  .diff-rewrite {
+    animation: diff-rewrite 520ms cubic-bezier(0.16, 1, 0.3, 1) 1050ms both;
+  }
+  @keyframes diff-strike {
+    to { background-size: 100% 1.5px; }
+  }
+  @keyframes diff-rewrite {
+    from { transform: translateY(6px); }
+    to { transform: none; }
+  }
   .tabular { font-variant-numeric: tabular-nums; }
   .skeleton {
     background: linear-gradient(90deg, rgb(var(--c-surface2)) 25%, rgb(var(--c-hairline)) 50%, rgb(var(--c-surface2)) 75%);

@@ -18,6 +18,7 @@ export function DiffLine({
   grounded,
   actions,
   applied,
+  animated,
 }: {
   before?: string;
   after: string;
@@ -26,6 +27,8 @@ export function DiffLine({
   grounded: boolean;
   actions?: React.ReactNode;
   applied?: boolean;
+  /** Plays the rewrite once: strike the old line, land the new one. */
+  animated?: boolean;
 }) {
   const { t } = useT();
   return (
@@ -47,12 +50,12 @@ export function DiffLine({
         {requirement && <span className="truncate text-dense text-ink-2">{requirement}</span>}
       </div>
       {before && (
-        <p className="mb-1.5 border-s-2 border-danger/40 ps-3 text-body text-ink-3 line-through decoration-danger/40">
+        <p className={cn("mb-1.5 border-s-2 border-danger/40 ps-3 text-body text-ink-3", !animated && "line-through decoration-danger/40")}>
           <span className="sr-only">{t("Before:")} </span>
-          {before}
+          {animated ? <span className="diff-strike">{before}</span> : before}
         </p>
       )}
-      <p className="border-s-2 border-success ps-3 text-body text-ink">
+      <p className={cn("border-s-2 border-success ps-3 text-body text-ink", animated && "diff-rewrite")}>
         <span className="sr-only">{t("After:")} </span>
         {after}
       </p>
