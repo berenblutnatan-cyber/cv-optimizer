@@ -18,6 +18,10 @@
   box-sizing: border-box;
 }
 .cv-doc .a4-wrapper * { box-sizing: border-box; }
+/* The app's reset strips list markers. A CV keeps them; templates that draw their
+   own marker set list-style: none inline, which still wins.
+   Not scoped to .cv-doc: the PDF export clones the page out of it. */
+.a4-wrapper ul { list-style: disc; }
 .cv-doc .a4-grid { display: grid; height: 100%; box-sizing: border-box; }
 .cv-doc .a4-safe-area { box-sizing: border-box; display: flex; flex-direction: column; }
 .cv-doc .cv-text { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
