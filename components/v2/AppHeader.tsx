@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getServerT } from "@/lib/i18n/server";
+import { HiredMark } from "@/components/brand/HiredMark";
 import { ThemeToggle } from "@/components/ui";
 import { AccountNav } from "./AccountNav";
 import { AppNav } from "./AppNav";
@@ -13,7 +14,7 @@ export async function AppHeader({ children, nav = true, logoHref = "/cv" }: { ch
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-8">
         <div className="flex items-center gap-3 md:gap-6">
           <Link href={logoHref} className="flex touch:h-11 items-center gap-2.5 rounded-control">
-            <span className="grid size-7 place-items-center rounded-control bg-ink text-dense font-semibold text-canvas">H</span>
+            <HiredMark className="size-7 shrink-0" />
             <span className="text-emph font-semibold text-ink">Hired</span>
           </Link>
           {nav && <AppNav />}

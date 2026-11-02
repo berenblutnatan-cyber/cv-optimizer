@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
+    "brand:icons": "tsx scripts/brand-icons.ts",
     "eval:optimizer": "tsx scripts/optimizer-eval.ts",
     "eval:chat": "tsx scripts/chat-builder-eval.ts",
     "eval:localchecks": "tsx scripts/local-checks-eval.ts",
