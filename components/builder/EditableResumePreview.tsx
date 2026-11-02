@@ -293,6 +293,11 @@ export function EditableResumePreview({
     case "double-column":
     case "compact":
     case "photo-left":
+    case "israeli":
+    case "opal":
+    case "tinted":
+    case "cards":
+    case "bands":
       return <ResumePreview data={data} templateId={templateId} themeColor={themeColor} />;
     default:
       return (

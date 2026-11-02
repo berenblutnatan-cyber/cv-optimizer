@@ -70,6 +70,11 @@ export function seniorityFromExperience(bucket: string | null | undefined): Seni
 /** Career-pivot overlay: true only when BOTH the current role and the target
  *  resolve to confident (non-general) tracks that differ. Conservative by
  *  design — a false negative just means no translation guidance. */
+/** Hebrew text or a clear Israeli service marker. */
+export function detectIsraeli(...texts: Array<string | null | undefined>): boolean {
+  return /[\u0590-\u05FF]|\bIDF\b|Israel Defense Forces|Israeli Air Force|Intelligence Corps|Golani/i.test(texts.filter(Boolean).join("\n"));
+}
+
 export function detectCareerChange(currentRole: string, targetTrack: Track): boolean {
   if (!currentRole || targetTrack === "general") return false;
   const currentTrack = detectTrack(currentRole);

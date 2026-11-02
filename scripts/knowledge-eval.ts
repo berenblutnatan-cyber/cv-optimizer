@@ -107,6 +107,7 @@ for (const [score, expected] of VERDICT_TABLE) {
 
 // ── 4. Composition: every cell composes, within budget, no banned stats ─────
 const SURFACES: Surface[] = [
+  "anonymize",
   "audit", "rewrite", "coverLetter", "interviewPrep", "coldEmail",
   "linkedin", "applicationAnswers", "references", "salaryPrep",
   "offerCompare", "caseStudy",
@@ -119,7 +120,7 @@ const GOALS: Array<Goal | null> = ["ats", "recruiter", "both", null];
 const CHAR_CAPS: Record<Surface, number> = {
   audit: 3400, rewrite: 3800, coverLetter: 3200, interviewPrep: 2200,
   coldEmail: 2400, linkedin: 2600, applicationAnswers: 2200, references: 2200,
-  salaryPrep: 2400, offerCompare: 2400, caseStudy: 2800,
+  salaryPrep: 2400, offerCompare: 2400, caseStudy: 2800, anonymize: 2600,
 };
 // Unsourced marketing stats from the source skills — must never reach a prompt.
 const BANNED = /75% of resumes|21x more views|84% of employers|30% more attention/i;
@@ -135,6 +136,7 @@ for (const surface of SURFACES) {
           let out = "";
           try {
             out = knowledgeFor({ surface, track, seniority, goal, careerChange });
+            if (BANNED.test(knowledgeFor({ surface, track, seniority, goal, careerChange, israeli: true }))) bannedHits++;
           } catch {
             compositionFailures++;
             continue;
@@ -163,6 +165,9 @@ check("general track adds no track formula to rewrite", !/TECH FORMULA|EXECUTIVE
 check("executive rewrite includes the executive formula", /EXECUTIVE FORMULA/.test(knowledgeFor({ surface: "rewrite", track: "executive" })));
 check("careerChange overlay appears only when flagged", !/CAREER-CHANGE/.test(nullRewrite) && /CAREER-CHANGE/.test(knowledgeFor({ surface: "rewrite", track: "tech", careerChange: true })));
 check("recruiter goal drops the ATS lens from audit", !/ATS CHECKS/.test(knowledgeFor({ surface: "audit", track: "general", goal: "recruiter" })) && /ATS CHECKS/.test(knowledgeFor({ surface: "audit", track: "general", goal: "ats" })));
+
+check("israeli overlay appears only when flagged", !/ISRAELI CV/.test(nullRewrite) && /ISRAELI CV/.test(knowledgeFor({ surface: "rewrite", track: "general", israeli: true })));
+check("anonymize keeps numbers and invents nothing", /KEEP WORD FOR WORD/.test(knowledgeFor({ surface: "anonymize", track: "general" })) && /NEVER invent/.test(knowledgeFor({ surface: "anonymize", track: "general" })));
 
 console.log("");
 if (failures > 0) {

@@ -46,7 +46,12 @@ export type BuilderTemplateId =
   | "timeline"         // 15. Vertical timeline rail
   | "double-column"    // 16. Full header + two light columns
   | "compact"          // 17. Dense, ATS-friendly single column
-  | "photo-left";      // 18. Photo rail + content column
+  | "photo-left"       // 18. Photo rail + content column
+  | "israeli"          // 19. Local plain format with a years column
+  | "opal"             // 20. Centered, quiet, ATS-safe
+  | "tinted"           // 21. Tinted side column under a colour block
+  | "cards"            // 22. Outlined cards with cut-in titles
+  | "bands";           // 23. Colour bands over two columns
 
 export interface BuilderContextState {
   // Active field tracking

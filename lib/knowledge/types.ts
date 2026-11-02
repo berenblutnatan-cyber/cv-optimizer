@@ -23,7 +23,8 @@ export type Surface =
   | "references"
   | "salaryPrep"
   | "offerCompare"
-  | "caseStudy";
+  | "caseStudy"
+  | "anonymize";
 
 export type KnowledgeContext = {
   surface: Surface;
@@ -31,6 +32,8 @@ export type KnowledgeContext = {
   /** Overlay, not a track: current role's track and target track confidently
    *  differ (career pivot). Adds translation guidance to writing surfaces. */
   careerChange?: boolean;
+  /** Overlay: an Israeli or Hebrew CV. Adds local format and military translation. */
+  israeli?: boolean;
   seniority?: Seniority | null;
   goal?: Goal | null;
 };

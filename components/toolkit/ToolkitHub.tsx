@@ -17,8 +17,7 @@ import {
   MessageSquare,
   MicVocal,
   Scale,
-  Users,
-} from "lucide-react";
+  Users, ShieldCheck } from "lucide-react";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { track } from "@/lib/analytics";
 import { TOOLS, TOOL_IDS, isToolId, type ToolId, type ToolSpec } from "@/lib/toolkit/tools";
@@ -33,7 +32,7 @@ const ICONS: Record<ToolSpec["icon"], typeof Mail> = {
   Users,
   HandCoins,
   Scale,
-  BookOpen,
+  BookOpen, ShieldCheck
 };
 
 export function ToolkitHub() {

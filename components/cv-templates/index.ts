@@ -28,6 +28,11 @@ import {
   DoubleColumnTemplate,
   CompactTemplate,
   PhotoLeftTemplate,
+  IsraeliTemplate,
+  OpalTemplate,
+  TintedTemplate,
+  CardsTemplate,
+  BandsTemplate,
 } from "./templates";
 
 // ==========================================
@@ -175,6 +180,11 @@ export const TEMPLATE_COMPONENTS_BY_ID: Record<
   "double-column": DoubleColumnTemplate,
   compact: CompactTemplate,
   "photo-left": PhotoLeftTemplate,
+  israeli: IsraeliTemplate,
+  opal: OpalTemplate,
+  tinted: TintedTemplate,
+  cards: CardsTemplate,
+  bands: BandsTemplate,
 };
 
 // ==========================================

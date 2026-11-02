@@ -13,7 +13,7 @@ import { PanelHeader } from "./PanelHeader";
 
 type Apply = (name: string, input: Record<string, unknown>, key?: string) => boolean;
 
-/** Accent, page length and all 18 templates, each drawn with this CV's content. */
+/** Accent, page length and every template, each drawn with this CV's content. */
 export function DesignPanel({ doc, apply, onClose }: { doc: ResumeDocument; apply: Apply; onClose: () => void }) {
   const data = React.useMemo(() => toTemplateData(doc.content), [doc.content]);
   const [fits, setFits] = React.useState<Record<string, ThumbFit>>({});
