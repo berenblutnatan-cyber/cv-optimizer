@@ -71,6 +71,11 @@ const COLOR_ORDER: ThemeColor[] = [
 // can never silently miss the gallery.
 const FEATURED_ORDER: BuilderTemplateId[] = [
   // New layouts (this release) lead the gallery.
+  "israeli",
+  "opal",
+  "tinted",
+  "cards",
+  "bands",
   "double-column",
   "timeline",
   "photo-left",

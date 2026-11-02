@@ -5,7 +5,7 @@ import "server-only";
 // (app/api/toolkit/[tool]) is a thin shell over this.
 
 import type Anthropic from "@anthropic-ai/sdk";
-import { detectTrack, knowledgeFor, type Surface } from "@/lib/knowledge";
+import { detectIsraeli, detectTrack, knowledgeFor, type Surface } from "@/lib/knowledge";
 import type { ToolId } from "./tools";
 
 const str = { type: "string" as const };
@@ -315,6 +315,30 @@ Where a number is missing, leave a [bracketed placeholder] the candidate fills i
       return caseStudy ? { caseStudy } : null;
     },
   },
+
+  anonymize: {
+    id: "anonymize",
+    hourlyCap: 10,
+    maxTokens: 4000,
+    surface: "anonymize",
+    validate: (i) => (s(i.cvText).length < 50 ? "Add your CV." : null),
+    buildPrompt: (i, knowledge) => ({
+      system: "You are a professional CV editor. Change only what the standards require and invent nothing. Keep the CV's language.",
+      user: `Prepare the anonymous version of this CV.${cvBlock(i)}
+
+STANDARDS:
+${knowledge}`,
+    }),
+    emitTool: {
+      name: "emit_anonymous_cv",
+      description: "Return the full anonymous CV.",
+      input_schema: { type: "object", properties: { cv: str }, required: ["cv"] },
+    },
+    normalize: (input) => {
+      const cv = s(input.cv);
+      return cv ? { cv } : null;
+    },
+  },
 };
 
 /** Compose the knowledge block for a tool call. */
@@ -322,5 +346,6 @@ export function toolKnowledge(tool: ServerTool, inputs: ToolInputs): string {
   return knowledgeFor({
     surface: tool.surface,
     track: detectTrack(inputs.jobTitle || inputs.targetRole || inputs.role || "", inputs.jobDescription),
+    israeli: detectIsraeli(inputs.cvText, inputs.jobDescription),
   });
 }

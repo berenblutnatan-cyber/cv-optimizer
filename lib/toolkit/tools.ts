@@ -11,6 +11,7 @@ export const TOOL_IDS = [
   "salary-prep",
   "offer-comparison",
   "case-study",
+  "anonymize",
 ] as const;
 
 export type ToolId = (typeof TOOL_IDS)[number];
@@ -35,7 +36,7 @@ export type ToolOutputField = {
 export type ToolSpec = {
   id: ToolId;
   /** lucide icon name, resolved by ToolCard. */
-  icon: "Mail" | "MessageSquare" | "Linkedin" | "Users" | "HandCoins" | "Scale" | "BookOpen";
+  icon: "Mail" | "MessageSquare" | "Linkedin" | "Users" | "HandCoins" | "Scale" | "BookOpen" | "ShieldCheck";
   title: string; // i18n key
   tagline: string; // i18n key, one line
   fields: ToolField[];
@@ -189,6 +190,14 @@ export const TOOLS: Record<ToolId, ToolSpec> = {
       { name: "cvText", type: "cv", label: "Your CV" },
     ],
     output: [{ key: "caseStudy", label: "Case study", kind: "text" }],
+  },
+  anonymize: {
+    id: "anonymize",
+    icon: "ShieldCheck",
+    title: "Anonymous CV",
+    tagline: "Hide your military role, keep its weight",
+    fields: [{ name: "cvText", type: "cv", label: "Your CV", required: true }],
+    output: [{ key: "cv", label: "Anonymous CV", kind: "text" }],
   },
 };
 

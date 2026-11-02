@@ -13,6 +13,7 @@ import { sectionStandards } from "./blocks/sections";
 import { CAREER_CHANGE_OVERLAY, trackAuditLens, trackWriteFormula } from "./blocks/tracks";
 import { COVER_LETTER_HOOKS, coverLetterToneLine } from "./blocks/coverLetter";
 import { INTERVIEW_STANDARDS } from "./blocks/interview";
+import { ANONYMIZE_STANDARDS, ISRAELI_OVERLAY } from "./blocks/israel";
 import { COLD_EMAIL_STANDARDS, LINKEDIN_STANDARDS } from "./blocks/outreach";
 import {
   APPLICATION_ANSWER_STANDARDS,
@@ -23,7 +24,7 @@ import {
 } from "./blocks/career";
 
 export type { KnowledgeContext, Track, Seniority, Goal, Surface } from "./types";
-export { detectTrack, seniorityFromExperience, detectCareerChange } from "./track";
+export { detectTrack, seniorityFromExperience, detectCareerChange, detectIsraeli } from "./track";
 export { applyVerdict, type ApplyVerdict } from "./verdict";
 
 function join(parts: Array<string | null | undefined>): string {
@@ -31,7 +32,7 @@ function join(parts: Array<string | null | undefined>): string {
 }
 
 export function knowledgeFor(ctx: KnowledgeContext): string {
-  const { surface, track, seniority = null, goal = null, careerChange = false } = ctx;
+  const { surface, track, seniority = null, goal = null, careerChange = false, israeli = false } = ctx;
 
   switch (surface) {
     case "audit":
@@ -41,6 +42,7 @@ export function knowledgeFor(ctx: KnowledgeContext): string {
         // ATS checks always matter; they matter MOST when that's the stated goal.
         goal === "recruiter" ? null : ATS_AUDIT_LENS,
         trackAuditLens(track),
+        israeli ? ISRAELI_OVERLAY : null,
       ]);
 
     case "rewrite":
@@ -49,6 +51,7 @@ export function knowledgeFor(ctx: KnowledgeContext): string {
         TRUTH_BOUNDARY,
         trackWriteFormula(track),
         careerChange ? CAREER_CHANGE_OVERLAY : null,
+        israeli ? ISRAELI_OVERLAY : null,
       ]);
 
     case "coverLetter":
@@ -81,5 +84,8 @@ export function knowledgeFor(ctx: KnowledgeContext): string {
 
     case "caseStudy":
       return join([CASE_STUDY_STANDARDS, trackWriteFormula(track)]);
+
+    case "anonymize":
+      return ANONYMIZE_STANDARDS;
   }
 }

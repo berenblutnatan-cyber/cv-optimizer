@@ -24,7 +24,7 @@ import {
 import { parseCvText } from "./parseCv";
 import {
   applyVerdict,
-  detectCareerChange,
+  detectCareerChange, detectIsraeli,
   detectTrack,
   knowledgeFor,
   type Goal,
@@ -346,6 +346,7 @@ export async function runAuditPass(
       track,
       seniority: input.seniority ?? null,
       goal: input.goal ?? null,
+      israeli: detectIsraeli(input.cvText, input.jobDescription),
     }),
   });
   const raw = await forcedToolCall(anthropic, "auditing", {
@@ -415,6 +416,7 @@ export async function runOptimizerPipeline(
         seniority: input.seniority ?? null,
         goal: input.goal ?? null,
         careerChange: detectCareerChange(resumeData.experience[0]?.role ?? "", resolvedTrack),
+        israeli: detectIsraeli(input.cvText, input.jobDescription),
       }),
     }),
   });

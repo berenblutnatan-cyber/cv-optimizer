@@ -1,3 +1,4 @@
+import { TEMPLATE_IDS } from "@/lib/templates/registry";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Infinity as InfinityIcon, Info } from "lucide-react";
@@ -25,7 +26,7 @@ function freeItems(voice: boolean, t: T): string[] {
     t("Build and edit by typing or chat"),
     ...(voice ? [t("Your first {n}-minute voice call", { n: Math.round(VOICE.freeSeconds / 60) })] : []),
     t("Import a PDF or Word CV"),
-    t("All 18 templates"),
+    t("All {n} templates", { n: TEMPLATE_IDS.length }),
     t("PDF, Word and text downloads"),
     t("Version history"),
     t("Job tracker"),

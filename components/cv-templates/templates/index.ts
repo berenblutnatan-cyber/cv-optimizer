@@ -26,3 +26,8 @@ export { TimelineTemplate } from "./TimelineTemplate";
 export { DoubleColumnTemplate } from "./DoubleColumnTemplate";
 export { CompactTemplate } from "./CompactTemplate";
 export { PhotoLeftTemplate } from "./PhotoLeftTemplate";
+export { IsraeliTemplate } from "./IsraeliTemplate";
+export { OpalTemplate } from "./OpalTemplate";
+export { TintedTemplate } from "./TintedTemplate";
+export { CardsTemplate } from "./CardsTemplate";
+export { BandsTemplate } from "./BandsTemplate";

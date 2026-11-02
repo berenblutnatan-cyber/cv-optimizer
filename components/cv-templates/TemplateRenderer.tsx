@@ -22,6 +22,11 @@ import {
   DoubleColumnTemplate,
   CompactTemplate,
   PhotoLeftTemplate,
+  IsraeliTemplate,
+  OpalTemplate,
+  TintedTemplate,
+  CardsTemplate,
+  BandsTemplate,
 } from "./templates";
 
 // Exhaustive by type: adding an id to lib/templates/registry.ts without a
@@ -45,6 +50,11 @@ export const TEMPLATE_COMPONENTS: Record<TemplateRegistryId, ComponentType<Templ
   "double-column": DoubleColumnTemplate,
   compact: CompactTemplate,
   "photo-left": PhotoLeftTemplate,
+  israeli: IsraeliTemplate,
+  opal: OpalTemplate,
+  tinted: TintedTemplate,
+  cards: CardsTemplate,
+  bands: BandsTemplate,
 };
 
 export function TemplateRenderer({ templateId, ...props }: TemplateProps & { templateId: string }) {
