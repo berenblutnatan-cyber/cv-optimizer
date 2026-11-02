@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { HiredMark } from "@/components/brand/HiredMark";
 import {
   ArrowRight,
   Briefcase,
@@ -216,7 +217,7 @@ export function Gallery() {
       <header className="sticky top-0 z-40 border-b border-hairline bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-shell items-center justify-between gap-4 px-4 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-7 shrink-0 place-items-center rounded-control bg-ink text-dense font-semibold text-canvas">H</span>
+            <HiredMark className="size-7 shrink-0" />
             <span className="truncate whitespace-nowrap text-emph font-semibold text-ink">Design system</span>
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
