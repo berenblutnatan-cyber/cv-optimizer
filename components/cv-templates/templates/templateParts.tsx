@@ -16,7 +16,7 @@ export function Bullets({ item, marker }: { item: ResumeSectionItem; marker?: st
   const bullets = (item.bullets ?? []).filter(hasContent);
   if (bullets.length === 0) return null;
   return (
-    <ul style={{ marginTop: spaced(3), paddingInlineStart: marker ? 0 : spaced(14), listStyle: marker ? "none" : "disc" }}>
+    <ul style={{ marginTop: spaced(3), paddingInlineStart: marker ? 0 : spaced(14), listStyle: marker ? "none" : undefined }}>
       {bullets.map((b, i) => (
         <li key={i} style={{ display: marker ? "flex" : undefined, gap: spaced(6), fontSize: scaled(10), color: "#374151", lineHeight: leading(1.45), marginBottom: spaced(2) }}>
           {marker && <span aria-hidden="true">{marker}</span>}
