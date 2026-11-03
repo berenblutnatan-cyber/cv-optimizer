@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
@@ -22,7 +23,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       <main className="mx-auto max-w-6xl px-4 py-10 md:px-8">
         {!userId ? (
           <>
-            <h1 className="mb-8 text-h1 font-semibold text-ink">Jobs</h1>
+            <PageTitle className="mb-8">Jobs</PageTitle>
             <div className="rounded-panel border border-hairline bg-surface">
               <EmptyState
                 icon={<Briefcase />}

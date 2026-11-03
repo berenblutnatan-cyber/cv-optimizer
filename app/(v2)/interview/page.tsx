@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
@@ -36,7 +37,7 @@ export default async function InterviewListPage() {
       <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-10 md:px-8">
         <div className="mb-8 flex items-center justify-between gap-4">
-          <h1 className="text-h1 font-semibold text-ink">Interview practice</h1>
+          <PageTitle>Interview practice</PageTitle>
           {items.length > 0 && <NewLink />}
         </div>
 

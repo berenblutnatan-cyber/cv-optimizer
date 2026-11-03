@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Check, ClipboardPaste, Copy, CreditCard, LogIn, Sparkles } from "lucide-react";
+import { ClipboardPaste, CreditCard, LogIn, Sparkles } from "lucide-react";
 import type { ToolField, ToolOutputField, ToolSpec } from "@/lib/toolkit/tools";
 import { useT } from "@/lib/i18n/LanguageProvider";
-import { Badge, Button, cn, ErrorState, Field, Input, Select, Skeleton, Textarea, toast } from "@/components/ui";
+import { Badge, Button, cn, CopyButton, ErrorState, Field, Input, Select, Skeleton, Textarea } from "@/components/ui";
 
 // One career tool: the form on the left, the result on the right (stacked on
 // a phone). The CV field picks one of your CVs, or takes pasted text. The
@@ -15,27 +15,9 @@ type Cv = { id: string; title: string; text: string };
 type Matrix = { factor: string; weight: number; a: number; b: number; edge: "A" | "B" | "tie" }[];
 type Result = Record<string, string | string[] | Matrix>;
 
-function CopyButton({ text, label }: { text: string; label: string }) {
+function CopyOutput({ text, label }: { text: string; label: string }) {
   const { t } = useT();
-  const [done, setDone] = React.useState(false);
-  return (
-    <Button
-      size="sm"
-      variant="ghost"
-      aria-label={t("Copy {what}", { what: label })}
-      onClick={() =>
-        void navigator.clipboard
-          ?.writeText(text)
-          .then(() => {
-            setDone(true);
-            setTimeout(() => setDone(false), 1500);
-          })
-          .catch(() => toast.error(t("Couldn't copy")))
-      }
-    >
-      {done ? <Check /> : <Copy />} {done ? t("Copied") : t("Copy")}
-    </Button>
-  );
+  return <CopyButton text={text} label={t("Copy")} copiedLabel={t("Copied")} failedLabel={t("Couldn't copy")} ariaLabel={t("Copy {what}", { what: label })} />;
 }
 
 function MatrixTable({ rows }: { rows: Matrix }) {
@@ -95,7 +77,7 @@ function Output({ spec, result }: { spec: ToolSpec; result: Result }) {
           <section key={o.key} aria-label={t(o.label)} className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-body font-medium text-ink-2">{t(o.label)}</h3>
-              {o.kind !== "matrix" && <CopyButton text={asText} label={t(o.label)} />}
+              {o.kind !== "matrix" && <CopyOutput text={asText} label={t(o.label)} />}
             </div>
             {o.kind === "matrix" ? (
               <MatrixTable rows={v as Matrix} />

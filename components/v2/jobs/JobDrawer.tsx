@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, Copy, Download, ExternalLink, FileText, MessagesSquare, MoreHorizontal, PenLine, RotateCw, Target, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, Download, ExternalLink, FileText, MessagesSquare, MoreHorizontal, PenLine, RotateCw, Target, Trash2 } from "lucide-react";
 import { JOB_STAGES, STAGE_LABEL, type JobDetail, type JobPatch, type JobSummary } from "@/lib/jobs/types";
 import {
   Badge,
@@ -30,6 +30,8 @@ import {
   Textarea,
   toast,
   Tooltip,
+  HoldButton,
+  CopyButton,
 } from "@/components/ui";
 import { RelativeTime } from "@/components/v2/cv/RelativeTime";
 
@@ -233,17 +235,7 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
         className="font-[inherit] leading-relaxed"
       />
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="primary"
-          onClick={() =>
-            void navigator.clipboard
-              ?.writeText(text)
-              .then(() => toast.success("Copied"))
-              .catch(() => toast.error("Couldn't copy"))
-          }
-        >
-          <Copy /> Copy
-        </Button>
+        <CopyButton text={text} variant="primary" size="md" />
         <Button
           variant="secondary"
           onClick={async () => {
@@ -407,12 +399,16 @@ export function JobDrawer({
   );
 
   const remove = async () => {
-    if (!job) return;
+    if (!job) return false;
     const r = await send(`/api/jobs/${job.id}`, "DELETE");
-    if (!r.ok) return toast.error("Couldn't delete. Try again.");
+    if (!r.ok) {
+      toast.error("Couldn't delete. Try again.");
+      return false;
+    }
     setConfirm(false);
     onDeleted(job.id);
     onClose();
+    return true;
   };
 
   return (
@@ -492,9 +488,9 @@ export function JobDrawer({
               <DialogClose asChild>
                 <Button variant="ghost">Cancel</Button>
               </DialogClose>
-              <Button variant="danger" onClick={() => void remove()}>
-                Delete
-              </Button>
+              <HoldButton hint="Hold to delete" done="Deleting…" onConfirm={remove}>
+                <Trash2 /> Delete
+              </HoldButton>
             </>
           }
         />

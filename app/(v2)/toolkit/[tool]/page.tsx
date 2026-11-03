@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -43,12 +44,12 @@ export default async function ToolPage({ params }: { params: Promise<{ tool: str
             <ArrowLeft className="rtl:rotate-180" /> {t("Toolkit")}
           </Link>
         </Button>
-        <h1 className="mb-6 flex items-center gap-3 text-h1 font-semibold text-ink">
+        <PageTitle className="mb-6 flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-card bg-surface-2 text-ink-2 [&_svg]:size-5">
             <Icon />
           </span>
           {t(spec.title)}
-        </h1>
+        </PageTitle>
         <ToolRunner spec={spec} cvs={cvs} signedIn={!!userId} freeToday={free.length === 1} />
       </main>
     </div>

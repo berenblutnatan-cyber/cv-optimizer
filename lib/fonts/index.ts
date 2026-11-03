@@ -15,6 +15,16 @@ export const inter = localFont({
   display: "swap",
 });
 
+// Page titles and the landing headline: the brand's voice, above the fold.
+export const instrumentSerif = localFont({
+  src: [
+    { path: "./instrument-serif-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./instrument-serif-latin-400-italic.woff2", weight: "400", style: "italic" },
+  ],
+  variable: "--font-serif",
+  display: "swap",
+});
+
 // v2 paints no mono above the fold.
 export const jetbrainsMono = localFont({
   src: "./jetbrains-mono-latin-wght-normal.woff2",
@@ -22,6 +32,19 @@ export const jetbrainsMono = localFont({
   variable: "--font-mono",
   display: "swap",
   preload: false,
+});
+
+// Hebrew UI text. It sits first in the stack, but its unicode-range covers only
+// Hebrew, so Latin still renders in Inter and only Hebrew pages download it.
+// No metric fallback: Arial has Hebrew too and would win before Inter.
+export const rubikHebrew = localFont({
+  src: "./rubik-hebrew-wght-normal.woff2",
+  weight: "300 900",
+  variable: "--font-hebrew",
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  declarations: [{ prop: "unicode-range", value: "U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F" }],
 });
 
 // CV template fonts: only the CV preview uses them, so they never block first paint.

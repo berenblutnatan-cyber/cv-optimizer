@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
@@ -31,7 +32,7 @@ export default async function CvListPage() {
       <AppHeader />
       <main className="mx-auto max-w-6xl px-4 py-10 md:px-8">
         <div className="mb-8 flex items-center justify-between gap-4">
-          <h1 className="text-h1 font-semibold text-ink">Your CVs</h1>
+          <PageTitle>Your CVs</PageTitle>
           {resumes.length > 0 && <NewCvLink />}
         </div>
 

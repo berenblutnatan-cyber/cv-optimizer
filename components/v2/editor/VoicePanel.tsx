@@ -3,11 +3,11 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Check, Copy, CreditCard, Eye, Info, LogIn, MessageSquare, Mic, MicOff, PhoneOff, RotateCw } from "lucide-react";
+import { Check, CreditCard, Eye, Info, LogIn, MessageSquare, Mic, MicOff, PhoneOff, RotateCw } from "lucide-react";
 import type { ResumeDocument } from "@/lib/resume/document";
 import { VoiceToolBridge } from "@/lib/voice/bridge";
 import { readVoiceSupport } from "@/lib/voice/support";
-import { Badge, Button, cn, EmptyState, IconButton, Skeleton, toast, Tooltip, VoiceOrb, type VoiceState } from "@/components/ui";
+import { Badge, Button, cn, CopyButton, EmptyState, IconButton, Skeleton, toast, Tooltip, VoiceOrb, type VoiceState } from "@/components/ui";
 import { askMic as requestMic, Connection, ELEVENLABS, fmt, LiveOrb, micHelp, postJson, type CallControls, type VoiceSdk } from "@/components/v2/voice/call";
 
 export type { VoiceSdk } from "@/components/v2/voice/call";
@@ -366,14 +366,7 @@ export function VoicePanel({
         icon: <MicOff />,
         title: "Open in Safari or Chrome",
         action: (
-          <Button
-            variant="primary"
-            onClick={() => {
-              void navigator.clipboard?.writeText(window.location.href).then(() => toast("Link copied"));
-            }}
-          >
-            <Copy /> Copy link
-          </Button>
+          <CopyButton text={() => window.location.href} label="Copy link" variant="primary" size="md" />
         ),
         hint: "In-app browsers block the microphone.",
       },

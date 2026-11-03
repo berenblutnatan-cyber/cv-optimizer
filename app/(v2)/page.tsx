@@ -48,14 +48,14 @@ function PrimaryCta({ t, size = "lg" }: { t: T; size?: "md" | "lg" }) {
       <SignedOut>
         <Button asChild variant="primary" size={size}>
           <Link href="/start">
-            {t("Build my CV")} <ArrowRight className="rtl:-scale-x-100" aria-hidden />
+            {t("Build my CV")} <ArrowRight data-nudge aria-hidden />
           </Link>
         </Button>
       </SignedOut>
       <SignedIn>
         <Button asChild variant="primary" size={size}>
           <Link href="/cv">
-            {t("My CVs")} <ArrowRight className="rtl:-scale-x-100" aria-hidden />
+            {t("My CVs")} <ArrowRight data-nudge aria-hidden />
           </Link>
         </Button>
       </SignedIn>

@@ -44,6 +44,116 @@
     .animate-voice-pulse {
       animation-duration: 900ms !important;
     }
+    /* The fill is the countdown itself, not decoration. */
+    .hold-fill {
+      transition-duration: var(--hold-ms, 1200ms) !important;
+    }
+    .hold-fill[data-state="idle"] {
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@property --beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@layer components {
+  /* Primary buttons: a light sweep on hover, from the reading side. Mouse only. */
+  .btn-sheen {
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .btn-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.28) 50%, transparent 70%);
+    transform: translateX(-110%);
+    pointer-events: none;
+  }
+  [dir="rtl"] .btn-sheen::after { transform: translateX(110%); }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-sheen:hover::after {
+      transform: translateX(110%);
+      transition: transform 700ms var(--ease-strong);
+    }
+    [dir="rtl"] .btn-sheen:hover::after { transform: translateX(-110%); }
+    /* A trailing arrow leans toward where the button goes. */
+    .btn-sheen:hover [data-nudge] { transform: translateX(3px); }
+    [dir="rtl"] .btn-sheen:hover [data-nudge] { transform: translateX(-3px) scaleX(-1); }
+  }
+  [dir="rtl"] [data-nudge] { transform: scaleX(-1); }
+  [data-nudge] { transition: transform 200ms var(--ease-strong); }
+
+  /* Marker: a highlighter pass behind a word, drawn once when it comes into view. */
+  .marker {
+    background: linear-gradient(rgb(var(--c-marker)), rgb(var(--c-marker))) no-repeat 0 88% / 0% 46%;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-size 700ms var(--ease-strong);
+  }
+  [dir="rtl"] .marker { background-position-x: 100%; }
+  .marker[data-on] { background-size: 100% 46%; }
+
+  /* The one card that matters on a screen: a beam runs around its edge. */
+  .beam {
+    position: relative;
+    isolation: isolate;
+  }
+  .beam::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--beam-angle), rgb(var(--c-accent) / 0.15) 0deg, rgb(var(--c-accent)) 60deg, rgb(var(--c-accent) / 0.15) 120deg 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: beam-spin 4s linear infinite;
+  }
+  @keyframes beam-spin { to { --beam-angle: 360deg; } }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-sheen::after { display: none; }
+    .beam::before { background: rgb(var(--c-accent)); }
+  }
+
+  /* A rare win: the stamp lands, a handful of brand-coloured bits fly. */
+  .stamp {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .stamp[data-on] { animation: stamp-slam 450ms ease-out forwards; }
+  @keyframes stamp-slam {
+    0% { opacity: 0; transform: rotate(-12deg) scale(2.4); }
+    55% { opacity: 1; transform: rotate(-12deg) scale(0.94); }
+    80% { transform: rotate(-12deg) scale(1.03); }
+    100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+  }
+  .bit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  [data-on] > .bit { animation: bit-fly 1.4s cubic-bezier(0.1, 0.7, 0.3, 1) 120ms forwards; }
+  @keyframes bit-fly {
+    0% { opacity: 1; transform: none; }
+    75% { opacity: 1; transform: translate(var(--x), var(--y)) rotate(300deg); }
+    100% { opacity: 0; transform: translate(var(--x), calc(var(--y) + 60px)) rotate(400deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stamp[data-on] { animation: none; opacity: 1; transform: rotate(-12deg); }
+    [data-on] > .bit { display: none; }
   }
 }
 

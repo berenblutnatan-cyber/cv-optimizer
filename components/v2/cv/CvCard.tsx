@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import type { DesignState } from "@/lib/resume/document";
 import type { TemplateData } from "@/lib/resume/view";
-import { Button, Dialog, DialogContent, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, toast } from "@/components/ui";
+import { Button, Dialog, DialogContent, HoldButton, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, toast } from "@/components/ui";
 import { CvThumbnail } from "./CvThumbnail";
 import { RelativeTime } from "./RelativeTime";
 
@@ -29,21 +29,19 @@ export function CvCard({
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = React.useState(false);
-  const [deleting, setDeleting] = React.useState(false);
   const [gone, setGone] = React.useState(false);
 
   const remove = async () => {
-    setDeleting(true);
     try {
       const res = await fetch(`/api/cv/${id}`, { method: "DELETE" });
       if (!res.ok && res.status !== 404) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't delete it. Try again.");
       setGone(true);
       setConfirming(false);
       router.refresh();
+      return true;
     } catch (err) {
       toast.error((err as Error).message);
-    } finally {
-      setDeleting(false);
+      return false;
     }
   };
 
@@ -93,9 +91,9 @@ export function CvCard({
               <Button variant="ghost" onClick={() => setConfirming(false)}>
                 Cancel
               </Button>
-              <Button variant="danger" loading={deleting} onClick={() => void remove()}>
-                Delete
-              </Button>
+              <HoldButton hint="Hold to delete" done="Deleting…" onConfirm={remove}>
+                <Trash2 /> Delete
+              </HoldButton>
             </>
           }
         />

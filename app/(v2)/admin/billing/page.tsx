@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAdminUser } from "@/lib/admin";
@@ -29,7 +30,7 @@ export default async function AdminBillingPage() {
     <div className="min-h-dvh bg-canvas">
       <AppHeader />
       <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 md:px-8">
-        <h1 className="text-h1 font-semibold text-ink">Billing</h1>
+        <PageTitle>Billing</PageTitle>
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <Stat label="Revenue, 30 days" value={`$${o.revenue30.toFixed(2)}`} />

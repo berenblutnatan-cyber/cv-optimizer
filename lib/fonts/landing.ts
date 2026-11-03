@@ -1,15 +1,8 @@
 import localFont from "next/font/local";
 
-// The landing's two voices. Here, not in ./index, so the app never preloads them.
-
-export const instrumentSerif = localFont({
-  src: [
-    { path: "./instrument-serif-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "./instrument-serif-latin-400-italic.woff2", weight: "400", style: "italic" },
-  ],
-  variable: "--font-serif",
-  display: "swap",
-});
+// The landing's pen. Here, not in ./index, so the app never preloads it.
+// The serif moved to ./index when page titles took it up.
+export { instrumentSerif } from "./index";
 
 export const caveat = localFont({
   src: "./caveat-latin-700-normal.woff2",
