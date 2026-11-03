@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Copy, Info, Mic, MicOff, PhoneOff, RotateCw, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Info, Mic, MicOff, PhoneOff, RotateCw, Send } from "lucide-react";
 import type { PublicInterview } from "@/lib/interview/store";
 import { BEGIN_QUESTION_TOOL, INTERVIEW } from "@/lib/interview/types";
 import { readVoiceSupport } from "@/lib/voice/support";
-import { Badge, Button, cn, EmptyState, IconButton, Progress, Skeleton, Textarea, toast, Tooltip, VoiceOrb, type VoiceState } from "@/components/ui";
+import { Badge, Button, cn, CopyButton, EmptyState, IconButton, Progress, Skeleton, Textarea, toast, Tooltip, VoiceOrb, type VoiceState } from "@/components/ui";
 import { askMic, Connection, ELEVENLABS, fmt, LiveOrb, micHelp, postJson, type CallControls, type CallConn, type VoiceSdk } from "@/components/v2/voice/call";
 import { Debrief } from "./Debrief";
 
@@ -149,7 +149,7 @@ function TextPractice({ iv, onSubmitted }: { iv: PublicInterview; onSubmitted: (
           </Tooltip>
         ) : (
           <Button type="submit" variant={value.trim() ? "primary" : "secondary"} size="lg">
-            {value.trim() ? "Next" : "Skip"} <ArrowRight />
+            {value.trim() ? "Next" : "Skip"} <ArrowRight data-nudge />
           </Button>
         )}
       </div>
@@ -487,9 +487,7 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
         title: "Open in Safari or Chrome",
         hint: "In-app browsers block the microphone.",
         action: (
-          <Button variant="primary" size="lg" onClick={() => void navigator.clipboard?.writeText(window.location.href).then(() => toast("Link copied"))}>
-            <Copy /> Copy link
-          </Button>
+          <CopyButton text={() => window.location.href} label="Copy link" variant="primary" size="lg" />
         ),
       },
       unavailable: { title: phase.message ?? "Voice isn't available right now", action: null },

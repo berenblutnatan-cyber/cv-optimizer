@@ -38,6 +38,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   Segmented,
+  Stamp,
   ThemeToggle,
   toast,
   Tooltip,
@@ -161,6 +162,8 @@ export function EditorShell({
   const [openSections, setOpenSections] = React.useState<Set<SectionId>>(new Set(["profile", "experience"]));
   const [fit, setFit] = React.useState<FitState | null>(null);
   const [exporting, setExporting] = React.useState<null | "pdf" | "docx" | "txt">(null);
+  // Only a CV with a name on it earns the stamp; an empty one is just a file.
+  const [win, celebrate] = useFirstExport(!!doc.content.personalInfo.name?.trim());
   const versions = useVersions({ cvId: id, settle, adoptServer });
   const { viewing } = versions;
 
@@ -212,13 +215,14 @@ export function EditorShell({
       void settle();
       const { exportToPdf } = await import("@/utils/exportToPdf");
       await exportToPdf(docRef.current, fileBase, { mode: "print" });
+      celebrate();
     } catch (err) {
       console.error(err);
       toast.error("Couldn't open the print dialog. Try Word instead.");
     } finally {
       setExporting(null);
     }
-  }, [exporting, fileBase, settle]);
+  }, [exporting, fileBase, settle, celebrate]);
 
   // Word and text come from the server copy, so everything typed is saved first.
   const exportFile = React.useCallback(
@@ -230,13 +234,14 @@ export function EditorShell({
         const res = await fetch(`/api/cv/${id}/export?format=${format}`);
         if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Export failed. Try PDF.");
         download(await res.blob(), `${fileBase}.${format}`);
+        celebrate();
       } catch (err) {
         toast.error((err as Error).message);
       } finally {
         setExporting(null);
       }
     },
-    [exporting, fileBase, id, settle],
+    [exporting, fileBase, id, settle, celebrate],
   );
 
   React.useEffect(() => {
@@ -484,6 +489,37 @@ export function EditorShell({
           {preview}
         </div>
       </div>
+      {win > 0 && (
+        <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center">
+          <Stamp play={win}>READY</Stamp>
+          <span role="status" className="sr-only">
+            Your first CV is ready.
+          </span>
+        </div>
+      )}
     </div>
   );
+}
+
+const FIRST_EXPORT = "hired:first-export";
+
+/** The first export ever on this device gets the stamp; every later one is just a download. */
+function useFirstExport(worthIt: boolean) {
+  const [win, setWin] = React.useState(0);
+  React.useEffect(() => {
+    if (!win) return;
+    const t = setTimeout(() => setWin(0), 2200);
+    return () => clearTimeout(t);
+  }, [win]);
+  const celebrate = React.useCallback(() => {
+    if (!worthIt) return;
+    try {
+      if (localStorage.getItem(FIRST_EXPORT)) return;
+      localStorage.setItem(FIRST_EXPORT, "1");
+    } catch {
+      return;
+    }
+    setWin((n) => n + 1);
+  }, [worthIt]);
+  return [win, celebrate] as const;
 }

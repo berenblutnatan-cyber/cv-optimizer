@@ -4,6 +4,7 @@ import * as React from "react";
 import { bandFor, BAND_LABEL, type ScoreBand } from "@/lib/score/bands";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { cn } from "./cn";
+import { NumberRoll } from "./number-roll";
 import { Tooltip } from "./tooltip";
 
 // One sequential ramp, never traffic lights for the overall number: low scores
@@ -75,7 +76,12 @@ export function ScoreGauge({
             {loading ? (
               <div className="skeleton h-7 w-10" />
             ) : (
-              <span className={cn("tabular font-semibold text-ink", size >= 100 ? "text-h1" : "text-h2")}>{value == null ? "–" : v}</span>
+              value == null ? (
+                <span className={cn("font-semibold text-ink", size >= 100 ? "text-h1" : "text-h2")}>–</span>
+              ) : (
+                // Rolls to each new score, so an applied fix is felt, not just read.
+                <NumberRoll value={v} className={cn("font-display text-ink", size >= 100 ? "text-[40px] leading-none" : "text-[34px] leading-none")} />
+              )
             )}
           </div>
         </div>
@@ -98,7 +104,7 @@ export function ScoreBar({ label, value, why }: { label: string; value: number |
       <div className="h-1.5 overflow-hidden rounded-full bg-surface-2" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value ?? undefined}>
         <div className="h-full rounded-full bg-ink transition-[width] duration-700 ease-out" style={{ width: `${v}%` }} />
       </div>
-      <span className="tabular text-end text-body font-medium text-ink">{value == null ? "–" : v}</span>
+      <span className="text-end text-body font-medium text-ink">{value == null ? "–" : <NumberRoll value={v} />}</span>
     </div>
   );
   return why ? <Tooltip content={why}>{row}</Tooltip> : row;

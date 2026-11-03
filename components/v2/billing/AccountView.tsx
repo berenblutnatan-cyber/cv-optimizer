@@ -8,7 +8,7 @@ import { Check, ExternalLink, Gift, Infinity as InfinityIcon, Loader2, Plus, Rec
 import { ledgerLabel } from "@/lib/billing/labels";
 import { firePurchaseConversion } from "@/lib/purchaseTracking";
 import { POLAR_PLANS, planGrantsUnlimited, type PolarPlanKey } from "@/lib/polar";
-import { Badge, Button, Card, cn, EmptyState, ErrorState, Input, toast } from "@/components/ui";
+import { Badge, Button, Card, cn, EmptyState, ErrorState, Input, toast, NumberRoll } from "@/components/ui";
 
 export type AccountData = {
   balance: { credits: number; unlimited: boolean; plan: string | null; periodEnd: string | null; status: string | null };
@@ -183,7 +183,9 @@ export function AccountView({ initial, portalUnavailable }: { initial: AccountDa
             </>
           ) : (
             <>
-              <p className="text-display font-semibold tabular leading-none text-ink">{balance.credits}</p>
+              <p className="font-display text-[56px] leading-none text-ink">
+                <NumberRoll value={balance.credits} />
+              </p>
               <p className="mt-2 text-body text-ink-2">{balance.credits === 1 ? "credit" : "credits"}</p>
             </>
           )}

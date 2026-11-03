@@ -37,6 +37,7 @@ const config: Config = {
       "warn-wash": c("warn-wash"),
       danger: c("danger"),
       "danger-wash": c("danger-wash"),
+      marker: c("marker"),
       black: "#000",
       white: "#fff",
     },
@@ -48,13 +49,19 @@ const config: Config = {
       h3: ["18px", { lineHeight: "26px" }],
       h2: ["22px", { lineHeight: "28px", letterSpacing: "-0.01em" }],
       h1: ["28px", { lineHeight: "34px", letterSpacing: "-0.02em" }],
+      // Page titles in the serif: it reads smaller than the sans at the same size.
+      title: ["34px", { lineHeight: "40px", letterSpacing: "-0.015em" }],
       display: ["40px", { lineHeight: "44px", letterSpacing: "-0.03em" }],
       hero: ["56px", { lineHeight: "60px", letterSpacing: "-0.035em" }],
       // The landing headline only: fluid, so a short line fills its column.
       mega: ["clamp(3rem, 1.6rem + 4.6vw, 5.25rem)", { lineHeight: "1", letterSpacing: "-0.04em" }],
     },
     fontFamily: {
-      sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+      // Rubik first, limited to Hebrew by its unicode-range (lib/fonts); Inter takes the rest.
+      sans: ["var(--font-hebrew)", "var(--font-sans)", "system-ui", "sans-serif"],
+      // Instrument Serif has no Hebrew, so Hebrew titles fall through to Rubik.
+      display: ["var(--font-serif)", "var(--font-hebrew)", "Georgia", "serif"],
+      pen: ["var(--font-pen)", "cursive"],
       mono: ["var(--font-mono)", "ui-monospace", "monospace"],
     },
     borderRadius: {
@@ -70,7 +77,7 @@ const config: Config = {
       pop: "var(--shadow-pop)",
     },
     extend: {
-      transitionTimingFunction: { DEFAULT: "var(--ease)", out: "var(--ease)" },
+      transitionTimingFunction: { DEFAULT: "var(--ease)", out: "var(--ease)", strong: "var(--ease-strong)" },
       transitionDuration: { DEFAULT: "150ms", micro: "150ms", panel: "220ms" },
       spacing: { 13: "52px", 14: "56px", 15: "60px", 18: "72px", 60: "240px", 110: "440px" },
       maxWidth: { shell: "1440px", prose: "64ch" },

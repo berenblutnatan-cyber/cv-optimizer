@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -28,7 +29,7 @@ export default async function ToolkitPage({ searchParams }: { searchParams: Prom
     <div className="min-h-dvh bg-canvas">
       <AppHeader />
       <main dir={dir} className="mx-auto max-w-6xl px-4 py-10 md:px-8">
-        <h1 className="mb-8 text-h1 font-semibold text-ink">{t("Toolkit")}</h1>
+        <PageTitle className="mb-8">{t("Toolkit")}</PageTitle>
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {TOOL_IDS.map((id) => {
             const spec = TOOLS[id];

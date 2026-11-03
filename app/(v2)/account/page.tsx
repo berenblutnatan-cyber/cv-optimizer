@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
@@ -57,7 +58,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     <div className="min-h-dvh bg-canvas">
       <AppHeader>{nav}</AppHeader>
       <main className="mx-auto max-w-3xl px-4 py-10 md:px-8">
-        <h1 className="mb-6 text-h1 font-semibold text-ink">Account</h1>
+        <PageTitle className="mb-6">Account</PageTitle>
         <AccountView initial={initial} portalUnavailable={portal === "unavailable"} />
       </main>
     </div>

@@ -29,6 +29,7 @@ ${block("light")}
   --shadow-card: ${tokens.shadow.card};
   --shadow-pop: ${tokens.shadow.pop};
   --ease: ${tokens.motion.ease};
+  --ease-strong: ${tokens.motion.easeStrong};
   --dur-micro: ${tokens.motion.micro};
   --dur-panel: ${tokens.motion.panel};
 }

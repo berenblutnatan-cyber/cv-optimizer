@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTitle } from "@/components/ui/page-title";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
@@ -260,7 +261,7 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
 
   return (
     <div dir={dir} className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-10 md:px-8 md:py-16" {...dropProps}>
-      <h1 className="text-h1 font-semibold text-ink">{variant === "score" ? t("Score your CV") : t("Start your CV")}</h1>
+      <PageTitle>{variant === "score" ? t("Score your CV") : t("Start your CV")}</PageTitle>
 
       {phase.kind === "error" && (
         <ErrorState

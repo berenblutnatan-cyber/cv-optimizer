@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import { TEMPLATE_IDS } from "@/lib/templates/registry";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -76,7 +77,7 @@ export default async function PricingPage() {
     <div className="min-h-dvh bg-canvas">
       <AppHeader />
       <main dir={dir} className="mx-auto max-w-5xl px-4 py-12 md:px-8 md:py-16">
-        <h1 className="text-h1 font-semibold tracking-tight text-ink md:text-display">{t("Pricing")}</h1>
+        <PageTitle>{t("Pricing")}</PageTitle>
         <p className="mt-3 max-w-xl text-emph text-ink-2">{t("Your CV is free to build, edit and download. You pay only for AI work.")}</p>
 
         <section aria-labelledby="credits" className="mt-12">

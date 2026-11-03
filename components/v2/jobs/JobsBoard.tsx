@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTitle } from "@/components/ui/page-title";
 import * as React from "react";
 import { Briefcase, LayoutGrid, MoreHorizontal, Plus, Rows3 } from "lucide-react";
 import { isDue, JOB_STAGES, STAGE_LABEL, type JobStage, type JobSummary } from "@/lib/jobs/types";
@@ -373,7 +374,7 @@ export function JobsBoard({ initialJobs, cvs, openId }: { initialJobs: JobSummar
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-h1 font-semibold text-ink">Jobs</h1>
+        <PageTitle>Jobs</PageTitle>
         {jobs.length > 0 && (
           <div className="flex items-center gap-2">
             <Segmented

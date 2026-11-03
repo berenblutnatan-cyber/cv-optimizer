@@ -7,11 +7,12 @@ import { Loader2 } from "lucide-react";
 import { cn } from "./cn";
 
 export const buttonVariants = cva(
-  "relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-micro active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  // Press: a small squeeze that answers before the click lands. Mouse and finger alike.
+  "relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-micro ease-strong active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "bg-accent text-on-accent hover:bg-accent-hover shadow-card",
+        primary: "btn-sheen bg-accent text-on-accent hover:bg-accent-hover shadow-card",
         secondary: "border border-hairline-strong bg-surface text-ink hover:bg-surface-2 shadow-card",
         ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink",
         danger: "bg-danger text-white hover:bg-danger/90",
