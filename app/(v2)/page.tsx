@@ -13,7 +13,9 @@ import { SiteFooter } from "@/components/v2/SiteFooter";
 import { CvThumbnail } from "@/components/v2/cv/CvThumbnail";
 import { SAMPLE_RESUME_DATA } from "@/lib/builder/sampleResume";
 import type { ThemeColor } from "@/lib/design/accents";
-import { caveat, instrumentSerif } from "@/lib/fonts/landing";
+import { amaticHebrew, caveat, instrumentSerif } from "@/lib/fonts/landing";
+import { PEN_SAMPLE } from "@/lib/landing/penSample";
+import type { Lang } from "@/lib/i18n/config";
 import { getServerT } from "@/lib/i18n/server";
 import { POLAR_PLANS } from "@/lib/polar";
 import { DEFAULT_DESIGN, type DesignState } from "@/lib/resume/document";
@@ -82,10 +84,12 @@ function Headline({ text }: { text: string }) {
   );
 }
 
-function Hero({ t }: { t: T }) {
+function Hero({ t, lang, dir }: { t: T; lang: Lang; dir: "ltr" | "rtl" }) {
   return (
     <PenHero
       exampleLabel={t("Example CV")}
+      sample={PEN_SAMPLE[lang]}
+      dir={dir}
       copy={
         <>
           <Headline text={t("CVs that get you hired.")} />
@@ -261,9 +265,9 @@ function FinalCta({ t }: { t: T }) {
 }
 
 export default async function LandingPage() {
-  const { t, dir } = await getServerT();
+  const { t, dir, lang } = await getServerT();
   return (
-    <div className={`cp min-h-dvh ${instrumentSerif.variable} ${caveat.variable}`}>
+    <div className={`cp min-h-dvh ${instrumentSerif.variable} ${caveat.variable} ${amaticHebrew.variable}`}>
       <ScrollDepthTracker page="landing" />
       <div className="sticky top-0 z-40">
         <AppHeader nav={false} logoHref="/">
@@ -273,7 +277,7 @@ export default async function LandingPage() {
         </AppHeader>
       </div>
       <main dir={dir}>
-        <Hero t={t} />
+        <Hero t={t} lang={lang} dir={dir} />
         <Match t={t} />
         <Sources t={t} />
         <Score t={t} />

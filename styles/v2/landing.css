@@ -69,7 +69,7 @@
 .cp-head { margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--cp-ink); font-size: 14px; font-weight: 600; }
 .cp-old { margin: 0 0 6px; font-size: 17px; line-height: 1.5; color: #626368; }
 .cp-old > span { position: relative; display: inline-block; }
-.cp-old svg { position: absolute; left: -1%; top: 40%; width: 102%; height: 10px; overflow: visible; color: #4650c8; }
+.cp-old svg { position: absolute; inset-inline-start: -1%; top: 40%; width: 102%; height: 10px; overflow: visible; color: #4650c8; }
 .cp-old path { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; }
 .cp-gap { margin-top: 12px; }
 .cp-blk { position: relative; }
@@ -81,11 +81,11 @@
 .cp-tags em { display: inline-flex; align-items: center; height: 30px; padding: 0 10px; box-sizing: border-box; border-radius: 6px; background: #e8e9fa; font-size: 14px; font-style: normal; font-weight: 600; opacity: 0; transform: translateY(-5px) scale(0.95); transition: opacity 180ms, transform 180ms; }
 .cp-tags em.on { opacity: 1; transform: none; }
 .cp-tags .cp-tag-y { background: #f6e7ad; }
-.cp-ring { position: absolute; right: 30px; top: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 92px; height: 92px; border: 3px solid #4650c8; border-radius: 50%; color: #4650c8; transform: rotate(7deg); }
+.cp-ring { position: absolute; inset-inline-end: 30px; top: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 92px; height: 92px; border: 3px solid #4650c8; border-radius: 50%; color: #4650c8; transform: rotate(7deg); }
 .cp-ring b { font-family: var(--font-serif), Georgia, serif; font-size: 40px; font-weight: 400; line-height: 1; font-variant-numeric: tabular-nums; }
 .cp-ring span { font-size: 14px; font-weight: 600; }
-.cp-example { position: absolute; left: 44px; bottom: 14px; font-size: 14px; color: #626368; }
-.cp-stamp { position: absolute; right: 26px; bottom: 30px; padding: 6px 18px; border: 6px solid var(--cp-green); border-radius: 10px; background: #ffffffd9; color: var(--cp-green); font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: 0.04em; opacity: 0; pointer-events: none; }
+.cp-example { position: absolute; inset-inline-start: 44px; bottom: 14px; font-size: 14px; color: #626368; }
+.cp-stamp { position: absolute; inset-inline-end: 26px; bottom: 30px; padding: 6px 18px; border: 6px solid var(--cp-green); border-radius: 10px; background: #ffffffd9; color: var(--cp-green); font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: 0.04em; opacity: 0; pointer-events: none; }
 .won .cp-stamp { animation: cp-slam 450ms ease-out forwards; }
 @keyframes cp-slam {
   0% { opacity: 0; transform: rotate(-13deg) scale(2.6); }
@@ -111,13 +111,22 @@
 
 /* Pen notes on the CV's edge. Each floats on its own clock. */
 .cp-float { position: absolute; z-index: 2; display: none; }
-.cp-f1 { left: -54px; top: 34%; }
-.cp-f2 { right: -26px; bottom: 34%; }
+.cp-f1 { inset-inline-start: -54px; top: 34%; }
+.cp-f2 { inset-inline-end: -26px; bottom: 34%; }
 .cp-swap { display: flex; flex-direction: column; gap: 2px; padding: 12px 18px; border-radius: 8px; background: #fff; box-shadow: 0 12px 28px #2224281f; color: #4650c8; rotate: -4deg; animation: cp-drift 5s ease-in-out infinite alternate; }
 .cp-f2 .cp-swap { rotate: 5deg; animation-delay: -3s; }
 @keyframes cp-drift { from { translate: 0 -6px; } to { translate: 0 8px; } }
 .cp-swap s { font-size: 15px; color: #626368; text-decoration-color: #4650c8; text-decoration-thickness: 2px; }
 .cp-swap b { font-family: var(--font-pen), cursive; font-size: 28px; line-height: 1.05; }
+
+/* The example CV in Hebrew: the pen writes from the right, strikes run right to
+   left, and Hebrew gets its own hand (Caveat has no Hebrew letters). */
+[dir="rtl"] .cp-fix { clip-path: inset(0 0 0 100%); font-family: var(--font-pen-he), var(--font-pen), cursive; font-size: 32px; line-height: 1.05; }
+[dir="rtl"] .cp-swap b { font-family: var(--font-pen-he), var(--font-pen), cursive; font-size: 34px; }
+[dir="rtl"] .cp-old svg { transform: scaleX(-1); }
+[dir="rtl"] .cp-name { font-family: var(--font-sans), system-ui, sans-serif; font-weight: 600; font-size: 36px; letter-spacing: 0; }
+[dir="rtl"] .cp-stamp { letter-spacing: 0; }
+[dir="rtl"] .cp-tilt { transform: perspective(1400px) rotate(1.2deg); }
 
 /* Pinned: requirements wired to the lines that prove them. */
 .cp-match { height: 300vh; height: 300svh; background: var(--cp-butter); }
@@ -158,12 +167,13 @@
 }
 @media (max-width: 640px) {
   .cp-paper { padding: 24px 20px 44px; }
-  .cp-example { left: 20px; }
+  .cp-example { inset-inline-start: 20px; }
   .cp-old { font-size: 15px; white-space: nowrap; }
   .cp-fix { font-size: 22px; }
-  .cp-ring { right: 12px; top: 12px; width: 74px; height: 74px; }
+  [dir="rtl"] .cp-fix { font-size: 28px; }
+  .cp-ring { inset-inline-end: 12px; top: 12px; width: 74px; height: 74px; }
   .cp-ring b { font-size: 30px; }
-  .cp-stamp { right: 12px; bottom: 14px; padding: 5px 12px; border-width: 5px; font-size: 28px; }
+  .cp-stamp { inset-inline-end: 12px; bottom: 14px; padding: 5px 12px; border-width: 5px; font-size: 28px; }
   .cp-sheet { inset: 18px 14px 8px; }
   .cp-match-in { padding: 0 16px; }
   .cp-match-top { margin-bottom: 24px; }
