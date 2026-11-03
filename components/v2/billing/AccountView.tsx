@@ -9,6 +9,8 @@ import { ledgerLabel } from "@/lib/billing/labels";
 import { firePurchaseConversion } from "@/lib/purchaseTracking";
 import { POLAR_PLANS, planGrantsUnlimited, type PolarPlanKey } from "@/lib/polar";
 import { Badge, Button, Card, cn, EmptyState, ErrorState, Input, toast, NumberRoll } from "@/components/ui";
+import { useT } from "@/lib/i18n/LanguageProvider";
+import type { Lang } from "@/lib/i18n/config";
 
 export type AccountData = {
   balance: { credits: number; unlimited: boolean; plan: string | null; periodEnd: string | null; status: string | null };
@@ -16,8 +18,9 @@ export type AccountData = {
   purchases: { id: string; plan: string; amount: number; status: string; createdAt: string; polarOrderId: string | null }[];
 };
 
-const day = (iso: string) => new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" });
-const dateTime = (iso: string) => new Date(iso).toLocaleString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const locale = (lang: Lang) => (lang === "he" ? "he-IL" : "en");
+const day = (iso: string, lang: Lang) => new Date(iso).toLocaleDateString(locale(lang), { month: "short", day: "numeric", year: "numeric" });
+const dateTime = (iso: string, lang: Lang) => new Date(iso).toLocaleString(locale(lang), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 async function fetchAccount(): Promise<AccountData | null> {
   const r = await fetch("/api/billing/me", { cache: "no-store" });
@@ -72,6 +75,7 @@ function useCheckoutReturn(initial: AccountData, setData: (d: AccountData) => vo
 }
 
 function Redeem({ onDone }: { onDone: () => void }) {
+  const { t } = useT();
   const [open, setOpen] = React.useState(false);
   const [code, setCode] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -79,7 +83,7 @@ function Redeem({ onDone }: { onDone: () => void }) {
   if (!open) {
     return (
       <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        <Gift /> Redeem a code
+        <Gift /> {t("Redeem a code")}
       </Button>
     );
   }
@@ -93,8 +97,8 @@ function Redeem({ onDone }: { onDone: () => void }) {
         try {
           const r = await fetch("/api/redeem-coupon", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: code.trim() }) });
           const body = await r.json().catch(() => null);
-          if (!r.ok) throw new Error(body?.error ?? "That code didn't work");
-          toast.success(`Added ${body?.creditsAdded ?? ""} credits`.replace("  ", " "));
+          if (!r.ok) throw new Error(body?.error ?? t("That code didn't work"));
+          toast.success(typeof body?.creditsAdded === "number" ? t("Added {n} credits", { n: body.creditsAdded }) : t("Credits added"));
           setOpen(false);
           setCode("");
           onDone();
@@ -107,14 +111,14 @@ function Redeem({ onDone }: { onDone: () => void }) {
     >
       <div className="flex items-center gap-2">
         <label htmlFor="coupon" className="sr-only">
-          Code
+          {t("Code")}
         </label>
-        <Input id="coupon" autoFocus value={code} onChange={(e) => setCode(e.target.value)} placeholder="Code" className="w-44" aria-invalid={!!error} maxLength={40} />
+        <Input id="coupon" autoFocus value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("Code")} className="w-44" aria-invalid={!!error} maxLength={40} />
         <Button type="submit" size="sm" loading={busy} disabled={!code.trim()}>
-          Redeem
+          {t("Redeem")}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-          Cancel
+          {t("Cancel")}
         </Button>
       </div>
       {error && (
@@ -127,6 +131,7 @@ function Redeem({ onDone }: { onDone: () => void }) {
 }
 
 export function AccountView({ initial, portalUnavailable }: { initial: AccountData; portalUnavailable?: boolean }) {
+  const { t, lang } = useT();
   const [data, setData] = React.useState(initial);
   const refresh = React.useCallback(async () => {
     const d = await fetchAccount().catch(() => null);
@@ -152,33 +157,35 @@ export function AccountView({ initial, portalUnavailable }: { initial: AccountDa
           <span className="font-medium">
             {checkout.state === "done"
               ? checkout.plan && planGrantsUnlimited(checkout.plan)
-                ? "Unlimited is on"
-                : `Added ${checkout.plan?.credits ?? ""} credits`.replace("  ", " ")
+                ? t("Unlimited is on")
+                : checkout.plan?.credits
+                  ? t("Added {n} credits", { n: checkout.plan.credits })
+                  : t("Credits added")
               : checkout.state === "slow"
-                ? "Payment received. Your credits can take a minute to appear."
-                : "Payment received. Adding it to your account…"}
+                ? t("Payment received. Your credits can take a minute to appear.")
+                : t("Payment received. Adding it to your account…")}
           </span>
           {checkout.state === "slow" && (
             <Button size="sm" variant="ghost" className="ms-auto" onClick={() => void refresh()}>
-              Refresh
+              {t("Refresh")}
             </Button>
           )}
         </div>
       )}
 
-      {portalUnavailable && <ErrorState title="Billing management isn't available right now." />}
+      {portalUnavailable && <ErrorState title={t("Billing management isn't available right now.")} />}
 
       <Card className="flex flex-col gap-5 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
         <div className="min-w-0">
           {balance.unlimited ? (
             <>
               <p className="flex items-center gap-2 text-h1 font-semibold text-ink">
-                <InfinityIcon className="size-7 text-accent" aria-hidden /> Unlimited
+                <InfinityIcon className="size-7 text-accent" aria-hidden /> {t("Unlimited")}
               </p>
               <p className="mt-1 text-body text-ink-2">
-                {unlimitedPlan?.kind === "subscription" ? "Monthly" : unlimitedPlan?.name ?? "Active"}
-                {balance.periodEnd && ` · ${renews ? "renews" : "until"} ${day(balance.periodEnd)}`}
-                {balance.credits > 0 && ` · ${balance.credits} credits kept for later`}
+                {unlimitedPlan?.kind === "subscription" ? t("Monthly") : unlimitedPlan?.name ?? t("Active")}
+                {balance.periodEnd && ` · ${renews ? t("Renews {date}", { date: day(balance.periodEnd, lang) }) : t("Until {date}", { date: day(balance.periodEnd, lang) })}`}
+                {balance.credits > 0 && ` · ${balance.credits === 1 ? t("1 credit kept for later") : t("{n} credits kept for later", { n: balance.credits })}`}
               </p>
             </>
           ) : (
@@ -186,7 +193,7 @@ export function AccountView({ initial, portalUnavailable }: { initial: AccountDa
               <p className="font-display text-[56px] leading-none text-ink">
                 <NumberRoll value={balance.credits} />
               </p>
-              <p className="mt-2 text-body text-ink-2">{balance.credits === 1 ? "credit" : "credits"}</p>
+              <p className="mt-2 text-body text-ink-2">{balance.credits === 1 ? t("credit") : t("credits")}</p>
             </>
           )}
         </div>
@@ -195,14 +202,14 @@ export function AccountView({ initial, portalUnavailable }: { initial: AccountDa
           {(balance.unlimited || purchases.length > 0) && (
             <Button asChild variant="secondary" size="sm">
               <a href="/api/billing/portal">
-                <Receipt /> Billing <ExternalLink className="!size-3.5 text-ink-3" />
+                <Receipt /> {t("Billing")} <ExternalLink className="!size-3.5 text-ink-3" />
               </a>
             </Button>
           )}
           {!balance.unlimited && (
             <Button asChild variant="primary">
               <Link href="/pricing">
-                <Plus /> Add credits
+                <Plus /> {t("Add credits")}
               </Link>
             </Button>
           )}
@@ -211,34 +218,34 @@ export function AccountView({ initial, portalUnavailable }: { initial: AccountDa
 
       <section aria-labelledby="activity">
         <h2 id="activity" className="mb-3 text-h3 font-semibold text-ink">
-          Activity
+          {t("Activity")}
         </h2>
         {ledger.length === 0 ? (
           <Card>
-            <EmptyState icon={<Receipt />} title="No activity yet" />
+            <EmptyState icon={<Receipt />} title={t("No activity yet")} />
           </Card>
         ) : (
           <Card className="overflow-hidden">
             <table className="w-full text-body">
               <thead className="sr-only">
                 <tr>
-                  <th>What</th>
-                  <th>When</th>
-                  <th>Change</th>
-                  <th>Balance</th>
+                  <th>{t("What")}</th>
+                  <th>{t("When")}</th>
+                  <th>{t("Change")}</th>
+                  <th>{t("Balance")}</th>
                 </tr>
               </thead>
               <tbody>
                 {ledger.map((row) => (
                   <tr key={row.id} className="border-b border-hairline last:border-0">
                     <td className="py-3 ps-4 sm:ps-5">
-                      <span className="block font-medium text-ink">{ledgerLabel(row.reason, planName(row.refId))}</span>
-                      <span className="block text-dense text-ink-2 sm:hidden">{dateTime(row.createdAt)}</span>
+                      <span className="block font-medium text-ink">{ledgerLabel(row.reason, planName(row.refId), t)}</span>
+                      <span className="block text-dense text-ink-2 sm:hidden">{dateTime(row.createdAt, lang)}</span>
                     </td>
-                    <td className="hidden py-3 text-ink-2 sm:table-cell">{dateTime(row.createdAt)}</td>
+                    <td className="hidden py-3 text-ink-2 sm:table-cell">{dateTime(row.createdAt, lang)}</td>
                     <td className="py-3 text-end tabular">
                       {row.delta === 0 ? (
-                        <Badge tone="accent">Unlimited</Badge>
+                        <Badge tone="accent">{t("Unlimited")}</Badge>
                       ) : (
                         <span className={row.delta > 0 ? "font-medium text-success" : "text-ink"}>
                           {row.delta > 0 ? `+${row.delta}` : `−${Math.abs(row.delta)}`}

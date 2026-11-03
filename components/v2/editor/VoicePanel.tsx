@@ -4,6 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Check, CreditCard, Eye, Info, LogIn, MessageSquare, Mic, MicOff, PhoneOff, RotateCw } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ResumeDocument } from "@/lib/resume/document";
 import { VoiceToolBridge } from "@/lib/voice/bridge";
 import { readVoiceSupport } from "@/lib/voice/support";
@@ -41,12 +42,27 @@ const HIDDEN_END_MS = 60_000;
 
 
 
-function priceLabel(o: Offer): { label: string; tip: string } {
-  const minutes = Math.round(o.seconds / 60);
-  const refund = "An AI interviewer asks the questions. Audio isn't recorded. Under 20 seconds is free.";
-  if (o.free) return { label: `Free · ${minutes} min`, tip: `Your first call is free. ${refund}` };
-  if (o.unlimited) return { label: `Unlimited · ${minutes} min`, tip: `Included in Unlimited. ${refund}` };
-  return { label: `1 credit · ${minutes} min`, tip: `You have ${o.balance} ${o.balance === 1 ? "credit" : "credits"}. ${refund}` };
+type T = ReturnType<typeof useT>["t"];
+
+function priceLabel(o: Offer, t: T): { label: string; tip: string } {
+  const n = Math.round(o.seconds / 60);
+  if (o.free)
+    return {
+      label: t("Free · {n} min", { n }),
+      tip: t("Your first call is free. An AI interviewer asks the questions. Audio isn't recorded. Under 20 seconds is free."),
+    };
+  if (o.unlimited)
+    return {
+      label: t("Unlimited · {n} min", { n }),
+      tip: t("Included in Unlimited. An AI interviewer asks the questions. Audio isn't recorded. Under 20 seconds is free."),
+    };
+  return {
+    label: t("1 credit · {n} min", { n }),
+    tip:
+      o.balance === 1
+        ? t("You have 1 credit. An AI interviewer asks the questions. Audio isn't recorded. Under 20 seconds is free.")
+        : t("You have {n} credits. An AI interviewer asks the questions. Audio isn't recorded. Under 20 seconds is free.", { n: o.balance }),
+  };
 }
 
 
@@ -84,6 +100,7 @@ export function VoicePanel({
   callBarSlot: HTMLElement | null;
   sdk?: VoiceSdk;
 }) {
+  const { t, dir } = useT();
   const [phase, setPhaseState] = React.useState<Phase>(signedIn ? { name: "idle" } : { name: "blocked", reason: "signed_out" });
   const [offer, setOffer] = React.useState<Offer | null>(null);
   const [conn, setConn] = React.useState<Conn | null>(null);
@@ -141,14 +158,15 @@ export function VoicePanel({
   // One bridge per connection, for its whole life: its numbering must never
   // restart mid-call. It reaches the editor through a ref, so a re-render
   // (every edit causes one) can't replace it or the connection under it.
-  const editor = React.useRef({ applyVoice, getDoc, onEdit, addLine });
-  editor.current = { applyVoice, getDoc, onEdit, addLine };
+  const editor = React.useRef({ applyVoice, getDoc, onEdit, addLine, t });
+  editor.current = { applyVoice, getDoc, onEdit, addLine, t };
   const bridge = React.useMemo(
     () =>
       conn
         ? new VoiceToolBridge(conn.sessionId, conn.attempt, {
             applyVoice: (...args) => editor.current.applyVoice(...args),
             getDoc: () => editor.current.getDoc(),
+            translate: (source, vars) => editor.current.t(source, vars),
             onEdit: (label) => {
               editor.current.addLine("edit", label);
               editor.current.onEdit();
@@ -174,12 +192,12 @@ export function VoicePanel({
       const saved = await settle();
       // A failed end call loses nothing: the edits are saved, and the cron closes the session.
       const r = await postJson(`/api/voice/sessions/${sessionId}/end`).catch(() => null);
-      if (!saved) toast.error("Some edits aren't saved yet. They'll retry.");
+      if (!saved) toast.error(t("Some edits aren't saved yet. They'll retry."));
       const edits = Number(r?.json?.edits ?? 0);
       setPhase({ name: "done", edits: r ? edits : 1, cost: cost.current });
       void loadOffer();
     },
-    [settle, loadOffer, setPhase],
+    [settle, loadOffer, setPhase, t],
   );
 
   const sessionRef = React.useRef<string | null>(null);
@@ -303,7 +321,7 @@ export function VoicePanel({
   );
 
   const orbState: VoiceState = !connected ? "connecting" : muted ? "muted" : speaking ? "speaking" : "listening";
-  const price = offer ? priceLabel(offer) : null;
+  const price = offer ? priceLabel(offer, t) : null;
   const signInHref = `/sign-in?redirect_url=${encodeURIComponent(`/cv/${cvId}?talk=1`)}`;
   const inCall = phase.name === "live" || phase.name === "reconnecting" || phase.name === "ending";
   const sid = sessionRef.current;
@@ -320,72 +338,72 @@ export function VoicePanel({
   }, [phase.name]);
 
   // Spoken time warnings for screen readers (the timer itself only changes colour).
-  const timeNotice = left === null ? "" : left <= 30 ? "30 seconds left" : left <= 60 ? "1 minute left" : "";
+  const timeNotice = left === null ? "" : left <= 30 ? t("30 seconds left") : left <= 60 ? t("1 minute left") : "";
 
   if (phase.name === "blocked") {
     const retry = (
       <Button size="lg" variant="secondary" onClick={() => setPhase({ name: "idle" })}>
-        <RotateCw /> Try again
+        <RotateCw /> {t("Try again")}
       </Button>
     );
     const useChat = (variant: "secondary" | "ghost") => (
       <Button size="lg" variant={variant} onClick={onUseChat}>
-        <MessageSquare /> Use chat
+        <MessageSquare /> {t("Use chat")}
       </Button>
     );
     const view: Record<typeof phase.reason, { icon: React.ReactNode; title: string; action: React.ReactNode; hint?: string; tip?: string }> = {
       signed_out: {
         icon: <Mic />,
-        title: "Sign in to talk",
+        title: t("Sign in to talk"),
         action: (
           <Button size="lg" asChild variant="primary">
             <a href={signInHref}>
-              <LogIn /> Sign in
+              <LogIn /> {t("Sign in")}
             </a>
           </Button>
         ),
-        tip: "Your first call is free.",
+        tip: t("Your first call is free."),
       },
       no_credits: {
         icon: <CreditCard />,
-        title: "Out of credits",
+        title: t("Out of credits"),
         action: (
           <>
             <Button size="lg" asChild variant="primary">
-              <Link href="/pricing">Add credits</Link>
+              <Link href="/pricing">{t("Add credits")}</Link>
             </Button>
             {useChat("ghost")}
           </>
         ),
       },
-      unavailable: { icon: <MicOff />, title: phase.message ?? "Voice isn't available right now", action: useChat("secondary") },
+      unavailable: { icon: <MicOff />, title: phase.message ? t(phase.message) : t("Voice isn't available right now"), action: useChat("secondary") },
       // Recovery steps are shown, not tooltipped: they must work on a phone.
-      mic_denied: { icon: <MicOff />, title: "Microphone blocked", action: retry, hint: micHelp() },
-      unsupported: { icon: <MicOff />, title: "This browser can't use the mic", action: useChat("secondary"), hint: "Try Chrome, Edge or Safari." },
+      mic_denied: { icon: <MicOff />, title: t("Microphone blocked"), action: retry, hint: t(micHelp()) },
+      unsupported: { icon: <MicOff />, title: t("This browser can't use the mic"), action: useChat("secondary"), hint: t("Try Chrome, Edge or Safari.") },
       in_app: {
         icon: <MicOff />,
-        title: "Open in Safari or Chrome",
+        title: t("Open in Safari or Chrome"),
         action: (
-          <CopyButton text={() => window.location.href} label="Copy link" variant="primary" size="md" />
+          <CopyButton text={() => window.location.href} label={t("Copy link")} variant="primary" size="md" />
         ),
-        hint: "In-app browsers block the microphone.",
+        hint: t("In-app browsers block the microphone."),
       },
       busy: {
         icon: <Mic />,
-        title: "You're already in a call",
+        title: t("You're already in a call"),
         action: phase.activeSessionId ? (
           <Button size="lg" variant="primary" onClick={() => void endOtherAndStart(phase.activeSessionId!)}>
-            <PhoneOff /> End it and start here
+            <PhoneOff /> {t("End it and start here")}
           </Button>
         ) : (
           retry
         ),
       },
-      error: { icon: <MicOff />, title: phase.message ?? "Couldn't start the call", action: retry },
+      error: { icon: <MicOff />, title: phase.message ? t(phase.message) : t("Couldn't start the call"), action: retry },
     };
     const v = view[phase.reason];
     return (
-      <div className="flex h-full items-center justify-center">
+      <div dir={dir} className="flex h-full items-center justify-center">
         <EmptyState
           icon={v.icon}
           title={v.title}
@@ -411,10 +429,10 @@ export function VoicePanel({
 
   if (phase.name === "idle" || phase.name === "starting") {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-5 px-6">
+      <div dir={dir} className="flex h-full flex-col items-center justify-center gap-5 px-6">
         <VoiceOrb
           state={phase.name === "starting" ? "connecting" : "idle"}
-          label={phase.name === "starting" ? "Connecting" : "Start talking"}
+          label={phase.name === "starting" ? t("Connecting") : t("Start talking")}
           onClick={phase.name === "starting" ? undefined : () => void start()}
           size={96}
         />
@@ -436,28 +454,28 @@ export function VoicePanel({
   if (phase.name === "done") {
     const saved = phase.edits > 0;
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-5 px-6 text-center animate-fade-in">
+      <div dir={dir} className="flex h-full flex-col items-center justify-center gap-5 px-6 text-center animate-fade-in">
         <span className={cn("grid size-12 place-items-center rounded-full", saved ? "bg-success-wash text-success" : "bg-surface-2 text-ink-3")}>
           {saved ? <Check className="size-6" /> : <PhoneOff className="size-5" />}
         </span>
         <div className="flex flex-col items-center gap-2">
-          <p className="text-h3 font-semibold text-ink">{saved ? `${phase.edits} ${phase.edits === 1 ? "change" : "changes"} saved` : "Call ended"}</p>
-          <Tooltip content={phase.cost === "credit" ? "Calls under 20 seconds are refunded." : "Nothing was charged."}>
+          <p className="text-h3 font-semibold text-ink">{saved ? (phase.edits === 1 ? t("1 change saved") : t("{n} changes saved", { n: phase.edits })) : t("Call ended")}</p>
+          <Tooltip content={phase.cost === "credit" ? t("Calls under 20 seconds are refunded.") : t("Nothing was charged.")}>
             <span tabIndex={0}>
-              <Badge tone="neutral">{phase.cost === "credit" ? "1 credit" : "Free"}</Badge>
+              <Badge tone="neutral">{phase.cost === "credit" ? t("1 credit") : t("Free")}</Badge>
             </span>
           </Tooltip>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
           {/* On a phone the CV isn't on screen: the next step is to see it. */}
           <Button size="lg" ref={doneRef} variant="primary" className="lg:hidden" onClick={onShowPreview}>
-            <Eye /> See CV
+            <Eye /> {t("See CV")}
           </Button>
           <Button size="lg" variant="primary" className="hidden lg:inline-flex" onClick={onKeepEditing}>
-            Keep editing
+            {t("Keep editing")}
           </Button>
           <Button size="lg" variant="ghost" onClick={() => setPhase({ name: "idle" })}>
-            <Mic /> Talk again
+            <Mic /> {t("Talk again")}
           </Button>
         </div>
       </div>
@@ -466,13 +484,13 @@ export function VoicePanel({
 
   // live | reconnecting | ending
   const low = left !== null && left <= 60;
-  const status = phase.name === "reconnecting" ? "Reconnecting" : phase.name === "ending" ? "Saving" : null;
+  const status = phase.name === "reconnecting" ? t("Reconnecting") : phase.name === "ending" ? t("Saving") : null;
   const bar = (
-    <div className="flex h-14 shrink-0 items-center gap-2 border-b border-hairline bg-surface px-2 md:px-3 animate-fade-in">
+    <div dir={dir} className="flex h-14 shrink-0 items-center gap-2 border-b border-hairline bg-surface px-2 md:px-3 animate-fade-in">
       <button
         type="button"
         onClick={onShowCall}
-        aria-label={left === null ? "Show call" : `Show call, ${fmt(left)} left`}
+        aria-label={left === null ? t("Show call") : t("Show call, {time} left", { time: fmt(left) })}
         className="flex min-h-11 items-center gap-2.5 rounded-control px-2 hover:bg-surface-2"
       >
         <span aria-hidden className="relative grid size-2.5 place-items-center">
@@ -488,18 +506,18 @@ export function VoicePanel({
         {timeNotice}
       </span>
       <div className="ms-auto flex items-center gap-2">
-        <IconButton size="lg" label={muted ? "Unmute" : "Mute"} active={muted} disabled={phase.name !== "live"} onClick={() => setMuted((m) => !m)}>
+        <IconButton size="lg" label={muted ? t("Unmute") : t("Mute")} active={muted} disabled={phase.name !== "live"} onClick={() => setMuted((m) => !m)}>
           {muted ? <MicOff /> : <Mic />}
         </IconButton>
         <Button ref={endRef} size="lg" variant="danger" loading={phase.name === "ending"} disabled={!sid} onClick={() => sid && void finish(sid)}>
-          <PhoneOff /> End
+          <PhoneOff /> {t("End")}
         </Button>
       </div>
     </div>
   );
   const lastEdit = [...lines].reverse().find((l) => l.kind === "edit");
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div dir={dir} className="flex h-full min-h-0 flex-col">
       {conn && bridge && (
         <sdk.Provider key={`${conn.sessionId}:${conn.attempt}`}>
           <Connection
@@ -520,12 +538,12 @@ export function VoicePanel({
         {phase.name === "live" ? (
           <LiveOrb state={orbState} controlsRef={controlsRef} onToggleMute={() => setMuted((m) => !m)} muted={muted} />
         ) : (
-          <VoiceOrb state="connecting" label={status ?? "Connecting"} size={88} />
+          <VoiceOrb state="connecting" label={status ?? t("Connecting")} size={88} />
         )}
       </div>
       {/* The agent is speaking these lines aloud: the transcript isn't re-announced. Edits are. */}
       <span className="sr-only" role="status">
-        {lastEdit?.text ?? ""}
+        {lastEdit ? lastEdit.text : ""}
       </span>
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 relative overflow-y-auto px-4 pb-6">
         {lines.map((l) =>
@@ -534,12 +552,12 @@ export function VoicePanel({
               <Check className="size-4 shrink-0" /> {l.text}
             </div>
           ) : l.kind === "user" ? (
-            <p key={l.id} className="ms-auto w-fit max-w-[85%] rounded-card bg-surface-2 px-3 py-2 text-body text-ink animate-fade-in">
-              <span className="sr-only">You: </span>
+            <p key={l.id} dir="auto" className="ms-auto w-fit max-w-[85%] rounded-card bg-surface-2 px-3 py-2 text-body text-ink animate-fade-in">
+              <span className="sr-only">{t("You:")} </span>
               {l.text}
             </p>
           ) : (
-            <p key={l.id} className="max-w-[92%] text-body text-ink-2 animate-fade-in">
+            <p key={l.id} dir="auto" className="max-w-[92%] text-body text-ink-2 animate-fade-in">
               <span className="sr-only">Hired: </span>
               {l.text}
             </p>

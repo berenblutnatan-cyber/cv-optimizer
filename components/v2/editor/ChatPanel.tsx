@@ -2,14 +2,19 @@
 
 import * as React from "react";
 import { ArrowUp, Check, Loader2, Square } from "lucide-react";
-import { pendingToolLabel } from "@/lib/chat/cvTools";
+import { describeToolCall, pendingToolLabel } from "@/lib/chat/cvTools";
 import { readSse } from "@/lib/http/readSse";
+import { msg } from "@/lib/i18n/config";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ResumeDocument } from "@/lib/resume/document";
 import { Button, cn, IconButton } from "@/components/ui";
 import type { FitState } from "./CvPreview";
 
-type Chip = { label: string; done: boolean };
-type Msg = { role: "user" | "assistant"; content: string; chips?: Chip[]; error?: boolean };
+// Chips and the greeting are labelled at render time, in the current language:
+// the thread is kept in sessionStorage and must not freeze the language it was written in.
+// (`label` is a thread saved before chips kept their tool call.)
+type Chip = { name?: string; input?: Record<string, unknown>; label?: string; done: boolean };
+type Msg = { role: "user" | "assistant"; content: string; chips?: Chip[]; error?: boolean; greeting?: boolean };
 
 type ServerEvent =
   | { type: "text"; text: string }
@@ -20,13 +25,15 @@ type ServerEvent =
   | { type: "done" }
   | { type: "error"; error: string };
 
-const STARTERS = ["Interview me", "Review it", "Make my summary sharper"];
+const STARTERS = [msg("Interview me"), msg("Review it"), msg("Make my summary sharper")];
+
+type T = ReturnType<typeof useT>["t"];
 
 // v2's own opener: promise only what this screen does (no upload, no voice yet).
-function greeting(hasContent: boolean): string {
+function greeting(hasContent: boolean, t: T): string {
   return hasContent
-    ? "Your CV is in the preview. Tell me what changed — a new role, a project you shipped — or ask me to review it."
-    : "Tell me about your work and I'll write your CV as we talk. What's your name, and what role are you going after?";
+    ? t("Your CV is in the preview. Tell me what changed — a new role, a project you shipped — or ask me to review it.")
+    : t("Tell me about your work and I'll write your CV as we talk. What's your name, and what role are you going after?");
 }
 
 export function ChatPanel({
@@ -44,8 +51,9 @@ export function ChatPanel({
   applyRemote: (name: string, input: Record<string, unknown>) => void;
   adoptServer: (s: { doc: ResumeDocument; lastSeq: number }) => void;
 }) {
+  const { t, dir } = useT();
   const storageKey = `hired:chat:${cvId}`;
-  const [messages, setMessages] = React.useState<Msg[]>(() => [{ role: "assistant", content: greeting(hasContent) }]);
+  const [messages, setMessages] = React.useState<Msg[]>(() => [{ role: "assistant", content: greeting(hasContent, t), greeting: true }]);
   const [draft, setDraft] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
@@ -56,7 +64,9 @@ export function ChatPanel({
   React.useEffect(() => {
     try {
       const saved = sessionStorage.getItem(storageKey);
-      if (saved) setMessages(JSON.parse(saved));
+      const thread: Msg[] | null = saved ? JSON.parse(saved) : null;
+      // A thread with no turn of the user's is just the greeting: show today's.
+      if (thread?.some((m) => m.role === "user")) setMessages(thread);
     } catch {}
   }, [storageKey]);
   React.useEffect(() => {
@@ -99,19 +109,19 @@ export function ChatPanel({
       });
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => null);
-        patchLast((m) => ({ ...m, content: err?.error ?? "Couldn't reach the assistant. Try again.", error: true }));
+        patchLast((m) => ({ ...m, content: err?.error ?? t("Couldn't reach the assistant. Try again."), error: true }));
         return;
       }
       await readSse<ServerEvent>(res.body, (e) => {
         if (e.type === "text") patchLast((m) => ({ ...m, content: m.content + e.text }));
-        else if (e.type === "tool_start") patchLast((m) => ({ ...m, chips: [...(m.chips ?? []), { label: pendingToolLabel(e.name), done: false }] }));
+        else if (e.type === "tool_start") patchLast((m) => ({ ...m, chips: [...(m.chips ?? []), { name: e.name, done: false }] }));
         else if (e.type === "tool" || e.type === "tool_noop") {
           if (e.type === "tool") applyRemote(e.name, e.input);
           patchLast((m) => {
             const chips = (m.chips ?? []).slice();
             const i = chips.findIndex((c) => !c.done);
             if (i === -1) return m;
-            if (e.type === "tool") chips[i] = { label: e.label, done: true };
+            if (e.type === "tool") chips[i] = { name: e.name, input: e.input, done: true };
             else chips.splice(i, 1);
             return { ...m, chips };
           });
@@ -120,7 +130,7 @@ export function ChatPanel({
       });
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
-        patchLast((m) => ({ ...m, content: m.content || "Connection dropped. Everything shown is saved.", error: !m.content }));
+        patchLast((m) => ({ ...m, content: m.content || t("Connection dropped. Everything shown is saved."), error: !m.content }));
       }
     } finally {
       // Drop chips that never resolved (stream cut mid-call).
@@ -134,13 +144,13 @@ export function ChatPanel({
   const userTurns = messages.filter((m) => m.role === "user").length;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div dir={dir} className="flex h-full min-h-0 flex-col">
       <div ref={scrollRef} className="min-h-0 flex-1 relative overflow-y-auto px-5 py-5" aria-live="polite">
         <ol className="flex flex-col gap-5">
           {messages.map((m, i) => (
             <li key={i} className={cn("flex flex-col gap-2", m.role === "user" && "items-end")}>
               {m.role === "user" ? (
-                <p className="max-w-[85%] whitespace-pre-wrap rounded-card bg-surface-2 px-3.5 py-2.5 text-body text-ink">{m.content}</p>
+                <p dir="auto" className="max-w-[85%] whitespace-pre-wrap rounded-card bg-surface-2 px-3.5 py-2.5 text-body text-ink">{m.content}</p>
               ) : (
                 <>
                   {m.chips && m.chips.length > 0 && (
@@ -148,15 +158,15 @@ export function ChatPanel({
                       {m.chips.map((c, k) => (
                         <li key={k} className={cn("inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-dense font-medium", c.done ? "bg-accent-wash text-accent-ink" : "bg-surface-2 text-ink-2")}>
                           {c.done ? <Check className="size-3.5" aria-hidden /> : <Loader2 className="size-3.5 animate-spin" aria-hidden />}
-                          {c.label}
+                          {c.name ? (c.done ? describeToolCall(c.name, c.input ?? {}, t) : pendingToolLabel(c.name, t)) : c.label}
                         </li>
                       ))}
                     </ul>
                   )}
                   {m.content ? (
-                    <p className={cn("whitespace-pre-wrap text-body leading-relaxed", m.error ? "text-danger" : "text-ink")}>{m.content}</p>
+                    <p dir="auto" className={cn("whitespace-pre-wrap text-body leading-relaxed", m.error ? "text-danger" : "text-ink")}>{m.greeting ? greeting(hasContent, t) : m.content}</p>
                   ) : busy && i === messages.length - 1 && !(m.chips && m.chips.length) ? (
-                    <div className="flex gap-1.5 py-2" aria-label="Thinking">
+                    <div className="flex gap-1.5 py-2" aria-label={t("Thinking")}>
                       {[0, 1, 2].map((d) => (
                         <span key={d} className="size-1.5 animate-pulse rounded-full bg-ink-3" style={{ animationDelay: `${d * 160}ms` }} />
                       ))}
@@ -170,8 +180,8 @@ export function ChatPanel({
         {userTurns === 0 && (
           <div className="mt-5 flex flex-wrap gap-2">
             {(hasContent ? STARTERS : STARTERS.slice(0, 1)).map((s) => (
-              <Button key={s} size="sm" onClick={() => void send(s)}>
-                {s}
+              <Button key={s} size="sm" onClick={() => void send(t(s))}>
+                {t(s)}
               </Button>
             ))}
           </div>
@@ -187,12 +197,13 @@ export function ChatPanel({
       >
         <div className="flex items-end gap-2 rounded-card border border-hairline-strong bg-surface p-1.5 transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent/20">
           <label htmlFor="chat-input" className="sr-only">
-            Message
+            {t("Message")}
           </label>
           <textarea
             id="chat-input"
             ref={inputRef}
             rows={1}
+            dir="auto"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -201,15 +212,15 @@ export function ChatPanel({
                 void send(draft);
               }
             }}
-            placeholder={hasContent ? "Ask for a change" : "Tell me about your last role"}
+            placeholder={hasContent ? t("Ask for a change") : t("Tell me about your last role")}
             className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-2 py-1.5 text-body text-ink outline-none placeholder:text-ink-3"
           />
           {busy ? (
-            <IconButton label="Stop" onClick={() => abortRef.current?.abort()} className="bg-surface-2 text-ink">
+            <IconButton label={t("Stop")} onClick={() => abortRef.current?.abort()} className="bg-surface-2 text-ink">
               <Square className="!size-3.5 fill-current" />
             </IconButton>
           ) : (
-            <IconButton label="Send" type="submit" disabled={!draft.trim()} className="bg-accent text-on-accent hover:bg-accent-hover hover:text-on-accent disabled:bg-surface-2 disabled:text-ink-3">
+            <IconButton label={t("Send")} type="submit" disabled={!draft.trim()} className="bg-accent text-on-accent hover:bg-accent-hover hover:text-on-accent disabled:bg-surface-2 disabled:text-ink-3">
               <ArrowUp />
             </IconButton>
           )}

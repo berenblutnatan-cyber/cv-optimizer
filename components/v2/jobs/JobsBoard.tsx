@@ -3,6 +3,7 @@
 import { PageTitle } from "@/components/ui/page-title";
 import * as React from "react";
 import { Briefcase, LayoutGrid, MoreHorizontal, Plus, Rows3 } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { isDue, JOB_STAGES, STAGE_LABEL, type JobStage, type JobSummary } from "@/lib/jobs/types";
 import {
   Badge,
@@ -35,6 +36,8 @@ import { JobDrawer } from "./JobDrawer";
 
 type View = "table" | "board";
 type Cv = { id: string; title: string };
+/** A URL prefix reads the same in every language. */
+const URL_HINT = "https://";
 
 const TONE: Record<JobStage, "neutral" | "accent" | "success" | "outline"> = {
   BOOKMARKED: "neutral",
@@ -57,19 +60,21 @@ function useDesktop() {
 }
 
 function NextStep({ job }: { job: JobSummary }) {
+  const { t, lang } = useT();
   if (!job.nextStep && !job.nextStepAt) return <span className="text-ink-3">–</span>;
   const due = isDue(job.nextStepAt);
   return (
     <span className={cn("flex min-w-0 max-w-full items-center gap-1.5", due ? "text-warn" : "text-ink-2")}>
       {due && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-warn" />}
-      <span className="truncate">{job.nextStep || "Next step"}</span>
-      {job.nextStepAt && <span className="shrink-0 tabular">· {new Date(job.nextStepAt).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>}
-      {due && <span className="sr-only">(due)</span>}
+      <span className="truncate">{job.nextStep || t("Next step")}</span>
+      {job.nextStepAt && <span className="shrink-0 tabular">· {new Date(job.nextStepAt).toLocaleDateString(lang === "he" ? "he-IL" : "en", { month: "short", day: "numeric" })}</span>}
+      {due && <span className="sr-only">{t("(due)")}</span>}
     </span>
   );
 }
 
 function AddJobDialog({ open, onOpenChange, cvs, onAdded }: { open: boolean; onOpenChange: (o: boolean) => void; cvs: Cv[]; onAdded: (j: JobSummary) => void }) {
+  const { t, dir } = useT();
   const [title, setTitle] = React.useState("");
   const [company, setCompany] = React.useState("");
   const [url, setUrl] = React.useState("");
@@ -100,7 +105,7 @@ function AddJobDialog({ open, onOpenChange, cvs, onAdded }: { open: boolean; onO
     }).catch(() => null);
     const j = res ? await res.json().catch(() => null) : null;
     setBusy(false);
-    if (!res?.ok) return setError(typeof j?.error === "string" ? j.error : "Couldn't add it. Try again.");
+    if (!res?.ok) return setError(typeof j?.error === "string" ? j.error : t("Couldn't add it. Try again."));
     onAdded(j.job as JobSummary);
     onOpenChange(false);
   };
@@ -109,20 +114,21 @@ function AddJobDialog({ open, onOpenChange, cvs, onAdded }: { open: boolean; onO
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title="Add job"
+        title={t("Add job")}
         footer={
           <>
             <DialogClose asChild>
-              <Button variant="ghost">Cancel</Button>
+              <Button variant="ghost">{t("Cancel")}</Button>
             </DialogClose>
             <Button variant="primary" type="submit" form="add-job" loading={busy} disabled={!ready}>
-              Add
+              {t("Add")}
             </Button>
           </>
         }
       >
         <form
           id="add-job"
+          dir={dir}
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
@@ -130,20 +136,20 @@ function AddJobDialog({ open, onOpenChange, cvs, onAdded }: { open: boolean; onO
           }}
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Role">
+            <Field label={t("Role")}>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} autoFocus />
             </Field>
-            <Field label="Company">
+            <Field label={t("Company")}>
               <Input value={company} onChange={(e) => setCompany(e.target.value)} maxLength={200} />
             </Field>
           </div>
-          <Field label="Link" optional>
-            <Input type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} maxLength={2000} placeholder="https://" />
+          <Field label={t("Link")} optional>
+            <Input type="url" inputMode="url" dir="ltr" value={url} onChange={(e) => setUrl(e.target.value)} maxLength={2000} placeholder={URL_HINT} />
           </Field>
           {cvs.length > 0 && (
-            <Field label="CV">
+            <Field label={t("CV")}>
               <Select value={resumeId} onChange={(e) => setResumeId(e.target.value)}>
-                <option value="">None</option>
+                <option value="">{t("None")}</option>
                 {cvs.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.title}
@@ -153,12 +159,12 @@ function AddJobDialog({ open, onOpenChange, cvs, onAdded }: { open: boolean; onO
             </Field>
           )}
           {showJd ? (
-            <Field label="Job description" optional>
-              <Textarea rows={6} value={jd} onChange={(e) => setJd(e.target.value)} maxLength={20000} placeholder="Paste the job post" autoFocus />
+            <Field label={t("Job description")} optional>
+              <Textarea rows={6} value={jd} onChange={(e) => setJd(e.target.value)} maxLength={20000} placeholder={t("Paste the job post")} autoFocus />
             </Field>
           ) : (
             <Button type="button" variant="ghost" className="-ms-2 w-fit" onClick={() => setShowJd(true)}>
-              <Plus /> Job description
+              <Plus /> {t("Job description")}
             </Button>
           )}
           {error && <ErrorState title={error} />}
@@ -169,17 +175,18 @@ function AddJobDialog({ open, onOpenChange, cvs, onAdded }: { open: boolean; onO
 }
 
 function MoveMenu({ job, onMove }: { job: JobSummary; onMove: (stage: JobStage) => void }) {
+  const { t, dir } = useT();
   return (
-    <Menu>
+    <Menu dir={dir}>
       <MenuTrigger asChild>
-        <IconButton label={`Move ${job.title}`} size="md" onClick={(e) => e.stopPropagation()}>
+        <IconButton label={t("Move {title}", { title: job.title || t("Untitled job") })} size="md" onClick={(e) => e.stopPropagation()}>
           <MoreHorizontal />
         </IconButton>
       </MenuTrigger>
       <MenuContent>
         {JOB_STAGES.filter((s) => s !== job.stage).map((s) => (
           <MenuItem key={s} onSelect={() => onMove(s)}>
-            Move to {STAGE_LABEL[s]}
+            {t("Move to {stage}", { stage: t(STAGE_LABEL[s]) })}
           </MenuItem>
         ))}
       </MenuContent>
@@ -188,6 +195,7 @@ function MoveMenu({ job, onMove }: { job: JobSummary; onMove: (stage: JobStage) 
 }
 
 function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: string) => void; onMove: (id: string, stage: JobStage) => void }) {
+  const { t } = useT();
   const [over, setOver] = React.useState<JobStage | null>(null);
   return (
     <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto relative px-4 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
@@ -196,7 +204,7 @@ function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: stri
         return (
           <section
             key={stage}
-            aria-label={STAGE_LABEL[stage]}
+            aria-label={t(STAGE_LABEL[stage])}
             onDragOver={(e) => {
               e.preventDefault();
               setOver(stage);
@@ -214,7 +222,7 @@ function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: stri
             )}
           >
             <h2 className="flex items-center justify-between px-2 pb-1 pt-1.5 text-body font-medium text-ink">
-              {STAGE_LABEL[stage]}
+              {t(STAGE_LABEL[stage])}
               <span className="tabular text-ink-3">{col.length}</span>
             </h2>
             {col.map((j) => (
@@ -228,7 +236,7 @@ function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: stri
                 className="group relative flex cursor-grab flex-col gap-1.5 rounded-card border border-hairline bg-surface p-3 shadow-card transition-shadow duration-micro hover:shadow-pop active:cursor-grabbing"
               >
                 <button type="button" onClick={() => onOpen(j.id)} className="flex flex-col gap-0.5 pe-9 text-start after:absolute after:inset-0 after:rounded-card">
-                  <span className="line-clamp-2 text-body font-medium text-ink">{j.title}</span>
+                  <span className="line-clamp-2 text-body font-medium text-ink">{j.title || t("Untitled job")}</span>
                   <span className="truncate text-body text-ink-2">{j.company}</span>
                 </button>
                 {(j.nextStep || j.nextStepAt) && (
@@ -249,6 +257,7 @@ function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: stri
 }
 
 function Table({ jobs, onOpen }: { jobs: JobSummary[]; onOpen: (id: string) => void }) {
+  const { t } = useT();
   return (
     <>
       {/* Phone: a list. The table needs more width than a phone has. */}
@@ -257,8 +266,8 @@ function Table({ jobs, onOpen }: { jobs: JobSummary[]; onOpen: (id: string) => v
           <li key={j.id} className="border-b border-hairline last:border-b-0">
             <button type="button" onClick={() => onOpen(j.id)} className="flex w-full flex-col gap-1 px-4 py-3 text-start hover:bg-surface-2/60">
               <span className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">{j.title}</span>
-                <Badge tone={TONE[j.stage]}>{STAGE_LABEL[j.stage]}</Badge>
+                <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">{j.title || t("Untitled job")}</span>
+                <Badge tone={TONE[j.stage]}>{t(STAGE_LABEL[j.stage])}</Badge>
               </span>
               <span className="truncate text-body text-ink-2">{j.company}</span>
               {(j.nextStep || j.nextStepAt) && (
@@ -276,24 +285,24 @@ function Table({ jobs, onOpen }: { jobs: JobSummary[]; onOpen: (id: string) => v
           <thead>
             <tr className="border-b border-hairline text-start text-ink-2">
               <th scope="col" className="w-[30%] px-4 py-3 text-start font-medium">
-                Role
+                {t("Role")}
               </th>
               <th scope="col" className="w-[14%] px-3 py-3 text-start font-medium">
-                Stage
+                {t("Stage")}
               </th>
               <th scope="col" className="w-[16%] px-3 py-3 text-start font-medium">
-                CV
+                {t("CV")}
               </th>
               <th scope="col" className="w-[8%] px-3 py-3 text-start font-medium">
-                <Tooltip content="Fit at the last tailoring check for this job.">
-                  <span tabIndex={0}>Fit</span>
+                <Tooltip content={t("Fit at the last tailoring check for this job.")}>
+                  <span tabIndex={0}>{t("Fit")}</span>
                 </Tooltip>
               </th>
               <th scope="col" className="w-[20%] px-3 py-3 text-start font-medium">
-                Next step
+                {t("Next step")}
               </th>
               <th scope="col" className="w-[12%] px-4 py-3 text-end font-medium">
-                Updated
+                {t("Updated")}
               </th>
             </tr>
           </thead>
@@ -303,14 +312,14 @@ function Table({ jobs, onOpen }: { jobs: JobSummary[]; onOpen: (id: string) => v
                 <td className="px-4 py-3">
                   {/* The row's real control: keyboard and screen readers open the job here. */}
                   <button type="button" onClick={(e) => (e.stopPropagation(), onOpen(j.id))} className="block w-full min-w-0 text-start">
-                    <span className="block truncate font-medium text-ink">{j.title}</span>
+                    <span className="block truncate font-medium text-ink">{j.title || t("Untitled job")}</span>
                     <span className="block truncate text-ink-2">{j.company}</span>
                   </button>
                 </td>
                 <td className="px-3 py-3">
-                  <Badge tone={TONE[j.stage]}>{STAGE_LABEL[j.stage]}</Badge>
+                  <Badge tone={TONE[j.stage]}>{t(STAGE_LABEL[j.stage])}</Badge>
                 </td>
-                <td className="truncate px-3 py-3 text-ink-2">{j.resumeTitle ?? <span className="text-ink-3">–</span>}</td>
+                <td className="truncate px-3 py-3 text-ink-2">{j.resumeTitle === null ? <span className="text-ink-3">–</span> : j.resumeTitle || t("Untitled CV")}</td>
                 <td className="tabular px-3 py-3 font-medium text-ink">{j.score ?? <span className="font-normal text-ink-3">–</span>}</td>
                 <td className="px-3 py-3">
                   <NextStep job={j} />
@@ -333,6 +342,7 @@ export function JobsBoard({ initialJobs, cvs, openId }: { initialJobs: JobSummar
   const [open, setOpenState] = React.useState<string | null>(openId);
   const [adding, setAdding] = React.useState(false);
   const desktop = useDesktop();
+  const { t } = useT();
 
   React.useEffect(() => {
     try {
@@ -366,7 +376,7 @@ export function JobsBoard({ initialJobs, cvs, openId }: { initialJobs: JobSummar
     const res = await fetch(`/api/jobs/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ stage }) }).catch(() => null);
     if (!res?.ok) {
       setJobs(before);
-      return toast.error("Couldn't move it. Try again.");
+      return toast.error(t("Couldn't move it. Try again."));
     }
     upsert((await res.json()).job as JobSummary);
   };
@@ -374,20 +384,20 @@ export function JobsBoard({ initialJobs, cvs, openId }: { initialJobs: JobSummar
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <PageTitle>Jobs</PageTitle>
+        <PageTitle>{t("Jobs")}</PageTitle>
         {jobs.length > 0 && (
           <div className="flex items-center gap-2">
             <Segmented
-              aria-label="View"
+              aria-label={t("View")}
               value={view}
               onChange={setView}
               options={[
-                { value: "table", label: "Table", icon: <Rows3 /> },
-                { value: "board", label: "Board", icon: <LayoutGrid /> },
+                { value: "table", label: t("Table"), icon: <Rows3 /> },
+                { value: "board", label: t("Board"), icon: <LayoutGrid /> },
               ]}
             />
             <Button variant="primary" onClick={() => setAdding(true)}>
-              <Plus /> Add job
+              <Plus /> {t("Add job")}
             </Button>
           </div>
         )}
@@ -397,10 +407,10 @@ export function JobsBoard({ initialJobs, cvs, openId }: { initialJobs: JobSummar
         <div className="rounded-panel border border-hairline bg-surface">
           <EmptyState
             icon={<Briefcase />}
-            title="No jobs yet"
+            title={t("No jobs yet")}
             action={
               <Button variant="primary" size="lg" onClick={() => setAdding(true)}>
-                <Plus /> Add job
+                <Plus /> {t("Add job")}
               </Button>
             }
           />

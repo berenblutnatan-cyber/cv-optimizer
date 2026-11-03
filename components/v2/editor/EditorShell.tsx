@@ -44,6 +44,7 @@ import {
   Tooltip,
   type CommandAction,
 } from "@/components/ui";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { useCvDocument, type SaveState } from "./useCvDocument";
 import { CvPreview, type FitState } from "./CvPreview";
 import { SectionEditor, type SectionId } from "./SectionEditor";
@@ -58,36 +59,50 @@ type MobilePane = "edit" | "preview";
 type Panel = "edit" | "design" | "versions" | "tailor";
 
 const MODE_KEY = "hired:editor-mode";
+/** A keyboard shortcut reads the same in every language. */
+const SEARCH_SHORTCUT = "⌘K";
 
 function SaveIndicator({ state, onRetry }: { state: SaveState; onRetry: () => void }) {
+  const { t } = useT();
   if (state === "error") {
     return (
       <Button size="sm" variant="ghost" onClick={onRetry} className="text-danger hover:text-danger">
-        <AlertCircle /> Not saved <RotateCw />
+        <AlertCircle /> {t("Not saved")} <RotateCw />
       </Button>
     );
   }
   const busy = state === "saving" || state === "retrying";
   return (
-    <Tooltip content={state === "retrying" ? "Reconnecting…" : busy ? "Saving…" : "Saved"}>
-      <span role="status" aria-label={busy ? "Saving" : "Saved"} tabIndex={0} className="grid size-8 place-items-center text-ink-3">
+    <Tooltip content={state === "retrying" ? t("Reconnecting…") : busy ? t("Saving…") : t("All changes saved")}>
+      <span role="status" aria-label={busy ? t("Saving") : t("All changes saved")} tabIndex={0} className="grid size-8 place-items-center text-ink-3">
         {busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
       </span>
     </Tooltip>
   );
 }
 
+// Which editor section each completeness item opens.
+const COMPLETENESS_TARGET = new Map<string, SectionId>([
+  ["name", "profile"],
+  ["contact", "profile"],
+  ["experience", "experience"],
+  ["bullets", "experience"],
+  ["education", "education"],
+  ["skills", "skills"],
+  ["summary", "summary"],
+]);
+
 function CompletenessButton({ doc, onJump }: { doc: ResumeDocument; onJump: (s: SectionId) => void }) {
+  const { t, dir } = useT();
   const items = completeness(doc.content);
   const done = items.filter((i) => i.done).length;
   const pct = done / items.length;
   const r = 9;
   const c = 2 * Math.PI * r;
-  const target: Record<string, SectionId> = { name: "profile", contact: "profile", experience: "experience", bullets: "experience", education: "education", skills: "skills", summary: "summary" };
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="inline-flex h-8 items-center gap-2 rounded-control px-2 text-dense font-medium text-ink-2 hover:bg-surface-2 hover:text-ink touch:h-11" aria-label={`Completeness ${done} of ${items.length}`}>
+        <button type="button" className="inline-flex h-8 items-center gap-2 rounded-control px-2 text-dense font-medium text-ink-2 hover:bg-surface-2 hover:text-ink touch:h-11" aria-label={t("Completeness {done} of {total}", { done, total: items.length })}>
           <svg width="22" height="22" className="-rotate-90" aria-hidden>
             <circle cx="11" cy="11" r={r} fill="none" strokeWidth="3" className="stroke-hairline-strong" />
             <circle cx="11" cy="11" r={r} fill="none" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} className="stroke-accent transition-[stroke-dashoffset] duration-500" />
@@ -97,19 +112,22 @@ function CompletenessButton({ doc, onJump }: { doc: ResumeDocument; onJump: (s: 
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-2">
+      <PopoverContent dir={dir} align="start" className="w-72 p-2">
         <ul>
           {items.map((it) => (
             <li key={it.key}>
               <button
                 type="button"
-                onClick={() => onJump(target[it.key])}
+                onClick={() => {
+                  const s = COMPLETENESS_TARGET.get(it.key);
+                  if (s) onJump(s);
+                }}
                 className="flex h-10 w-full items-center gap-3 rounded-control px-2.5 text-start text-body hover:bg-surface-2"
               >
                 <span className={cn("grid size-5 shrink-0 place-items-center rounded-full", it.done ? "bg-accent text-on-accent" : "border border-hairline-strong")}>
                   {it.done && <Check className="size-3.5" />}
                 </span>
-                <span className={it.done ? "text-ink-2 line-through decoration-ink-3" : "text-ink"}>{it.label}</span>
+                <span className={it.done ? "text-ink-2 line-through decoration-ink-3" : "text-ink"}>{t(it.label)}</span>
               </button>
             </li>
           ))}
@@ -147,6 +165,7 @@ export function EditorShell({
   /** Tests and QA only: a scripted agent in place of ElevenLabs. */
   voiceSdk?: VoiceSdk;
 }) {
+  const { t, dir } = useT();
   const { doc, saveState, apply, applyRemote, applyVoice, adoptServer, settle, retry, getDoc } = useCvDocument(id, initial);
   const docRef = React.useRef<HTMLDivElement>(null);
   const viewRef = React.useRef<HTMLDivElement>(null);
@@ -201,7 +220,8 @@ export function EditorShell({
   };
   const closePanel = React.useCallback(() => setPanel("edit"), []);
 
-  const title = documentTitle(doc);
+  // documentTitle falls back to English "Untitled CV" when there is no name or headline.
+  const title = doc.content.personalInfo.name || doc.content.personalInfo.title ? documentTitle(doc) : t("Untitled CV");
   React.useEffect(() => {
     document.title = `${title} · Hired`;
   }, [title]);
@@ -218,11 +238,11 @@ export function EditorShell({
       celebrate();
     } catch (err) {
       console.error(err);
-      toast.error("Couldn't open the print dialog. Try Word instead.");
+      toast.error(t("Couldn't open the print dialog. Try Word instead."));
     } finally {
       setExporting(null);
     }
-  }, [exporting, fileBase, settle, celebrate]);
+  }, [exporting, fileBase, settle, celebrate, t]);
 
   // Word and text come from the server copy, so everything typed is saved first.
   const exportFile = React.useCallback(
@@ -230,9 +250,9 @@ export function EditorShell({
       if (exporting) return;
       setExporting(format);
       try {
-        if (!(await settle())) throw new Error("Your latest edits aren't saved yet. Try again.");
+        if (!(await settle())) throw new Error(t("Your latest edits aren't saved yet. Try again."));
         const res = await fetch(`/api/cv/${id}/export?format=${format}`);
-        if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Export failed. Try PDF.");
+        if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? t("Export failed. Try PDF."));
         download(await res.blob(), `${fileBase}.${format}`);
         celebrate();
       } catch (err) {
@@ -241,7 +261,7 @@ export function EditorShell({
         setExporting(null);
       }
     },
-    [exporting, fileBase, id, settle, celebrate],
+    [exporting, fileBase, id, settle, celebrate, t],
   );
 
   React.useEffect(() => {
@@ -263,18 +283,18 @@ export function EditorShell({
   };
 
   const actions: CommandAction[] = [
-    { id: "type", label: "Edit by typing", group: "Mode", icon: <PenLine />, run: () => setMode("type") },
-    { id: "chat", label: "Edit by chatting", group: "Mode", icon: <MessageSquare />, run: () => setMode("chat") },
-    { id: "talk", label: "Edit by talking", group: "Mode", icon: <Mic />, run: () => setMode("talk") },
-    { id: "tailor", label: "Tailor to a job", group: "Tailor", icon: <Target />, run: () => togglePanel("tailor") },
-    { id: "interview", label: "Practice an interview", group: "Tailor", icon: <MessagesSquare />, run: () => void settle().then(() => window.location.assign(`/interview/new?cv=${id}`)) },
-    { id: "design", label: "Change design", group: "Design", icon: <Palette />, run: () => togglePanel("design") },
-    { id: "multi", label: doc.design.pageMode === "one" ? "Allow multiple pages" : "Fit to one page", group: "Design", icon: <Palette />, run: () => apply("set_design", doc.design.pageMode === "one" ? { pageMode: "multi" } : { pageMode: "one", autoFit: true }) },
-    { id: "versions", label: "Version history", group: "Versions", icon: <History />, run: () => togglePanel("versions") },
-    { id: "save-version", label: "Save a version", group: "Versions", icon: <Save />, run: () => void versions.save().then((v) => v && toast(`Saved ${versionTitle(v)}`)) },
-    { id: "pdf", label: "Export PDF", group: "Export", icon: <Download />, shortcut: "⌘E", run: () => void exportPdf() },
-    { id: "docx", label: "Export Word", group: "Export", icon: <FileType />, run: () => void exportFile("docx") },
-    { id: "txt", label: "Export plain text", group: "Export", icon: <FileText />, run: () => void exportFile("txt") },
+    { id: "type", label: t("Edit by typing"), group: t("Mode"), icon: <PenLine />, run: () => setMode("type") },
+    { id: "chat", label: t("Edit by chatting"), group: t("Mode"), icon: <MessageSquare />, run: () => setMode("chat") },
+    { id: "talk", label: t("Edit by talking"), group: t("Mode"), icon: <Mic />, run: () => setMode("talk") },
+    { id: "tailor", label: t("Tailor to a job"), group: t("Tailor"), icon: <Target />, run: () => togglePanel("tailor") },
+    { id: "interview", label: t("Practice an interview"), group: t("Tailor"), icon: <MessagesSquare />, run: () => void settle().then(() => window.location.assign(`/interview/new?cv=${id}`)) },
+    { id: "design", label: t("Change design"), group: t("Design"), icon: <Palette />, run: () => togglePanel("design") },
+    { id: "multi", label: doc.design.pageMode === "one" ? t("Allow multiple pages") : t("Fit to one page"), group: t("Design"), icon: <Palette />, run: () => apply("set_design", doc.design.pageMode === "one" ? { pageMode: "multi" } : { pageMode: "one", autoFit: true }) },
+    { id: "versions", label: t("Version history"), group: t("Versions"), icon: <History />, run: () => togglePanel("versions") },
+    { id: "save-version", label: t("Save a version"), group: t("Versions"), icon: <Save />, run: () => void versions.save().then((v) => v && toast(t("Saved {title}", { title: versionTitle(v, t) }))) },
+    { id: "pdf", label: t("Export PDF"), group: t("Export"), icon: <Download />, shortcut: "⌘E", run: () => void exportPdf() },
+    { id: "docx", label: t("Export Word"), group: t("Export"), icon: <FileType />, run: () => void exportFile("docx") },
+    { id: "txt", label: t("Export plain text"), group: t("Export"), icon: <FileText />, run: () => void exportFile("txt") },
   ];
 
   const overflowing = doc.design.pageMode === "one" && fit && !fit.fits;
@@ -288,20 +308,20 @@ export function EditorShell({
       <div className={cn("flex min-h-0 flex-1 flex-col", panel !== "edit" && "hidden")}>
         <div className="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-hairline px-3">
           <Segmented
-            aria-label="Editing mode"
+            aria-label={t("Editing mode")}
             size="sm"
             value={mode}
             onChange={setMode}
             options={[
-              { value: "type", label: "Type", icon: <PenLine /> },
-              { value: "chat", label: "Chat", icon: <MessageSquare /> },
+              { value: "type", label: t("Type"), icon: <PenLine /> },
+              { value: "chat", label: t("Chat"), icon: <MessageSquare /> },
               {
                 value: "talk",
-                label: "Talk",
+                label: t("Talk"),
                 icon: (
                   <span className="relative">
                     <Mic />
-                    {onCall && mode !== "talk" && <span aria-label="On a call" className="absolute -end-1 -top-1 size-2 rounded-full bg-danger" />}
+                    {onCall && mode !== "talk" && <span aria-label={t("On a call")} className="absolute -end-1 -top-1 size-2 rounded-full bg-danger" />}
                   </span>
                 ),
               },
@@ -346,14 +366,14 @@ export function EditorShell({
       {viewing && (
         <div role="status" className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-hairline bg-surface px-4 py-2">
           <span className="min-w-0 flex-1 truncate text-body">
-            <span className="font-medium text-ink">v{viewing.version.number}</span>
-            <span className="text-ink-2"> · {versionTitle(viewing.version)}</span>
+            <span className="font-medium text-ink">{t("v{n}", { n: viewing.version.number })}</span>
+            <span className="text-ink-2"> · {versionTitle(viewing.version, t)}</span>
           </span>
           <Button size="sm" variant="ghost" onClick={() => void versions.view(null)}>
-            Back to current
+            {t("Back to current")}
           </Button>
           <Button size="sm" variant="primary" loading={versions.busy === `restore:${viewing.version.id}`} onClick={() => void versions.restore(viewing.version)}>
-            <RotateCcw /> Restore
+            <RotateCcw /> {t("Restore")}
           </Button>
         </div>
       )}
@@ -375,16 +395,16 @@ export function EditorShell({
         <div className="flex h-12 shrink-0 items-center justify-center gap-3 border-t border-hairline bg-surface px-4 text-body">
           {overflowing ? (
             <>
-              <span className="text-warn">Over one page</span>
+              <span className="text-warn">{t("Over one page")}</span>
               <Button size="sm" onClick={() => apply("set_design", { pageMode: "multi" })}>
-                Allow 2 pages
+                {t("Allow 2 pages")}
               </Button>
             </>
           ) : (
             <>
-              <span className="text-ink-2">Multi-page</span>
+              <span className="text-ink-2">{t("Multi-page")}</span>
               <Button size="sm" variant="ghost" onClick={() => apply("set_design", { pageMode: "one", autoFit: true })}>
-                Fit to one page
+                {t("Fit to one page")}
               </Button>
             </>
           )}
@@ -394,12 +414,12 @@ export function EditorShell({
   );
 
   return (
-    <div className="relative flex h-dvh flex-col overflow-hidden bg-canvas">
+    <div dir={dir} className="relative flex h-dvh flex-col overflow-hidden bg-canvas">
       <CommandPalette actions={actions} />
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-hairline bg-surface px-2 md:px-3">
-        <Tooltip content="All CVs">
-          <Link href="/cv" aria-label="All CVs" className="grid size-9 place-items-center rounded-control text-ink-2 hover:bg-surface-2 hover:text-ink touch:size-11">
-            <ArrowLeft className="size-[18px]" />
+        <Tooltip content={t("All CVs")}>
+          <Link href="/cv" aria-label={t("All CVs")} className="grid size-9 place-items-center rounded-control text-ink-2 hover:bg-surface-2 hover:text-ink touch:size-11">
+            <ArrowLeft className="size-[18px] rtl:-scale-x-100" />
           </Link>
         </Tooltip>
         <h1 className="min-w-0 truncate text-emph font-semibold text-ink">{title}</h1>
@@ -408,30 +428,30 @@ export function EditorShell({
           <div className="hidden lg:block">
             <ThemeToggle />
           </div>
-          <Tooltip content="Search" shortcut="⌘K">
+          <Tooltip content={t("Search")} shortcut={SEARCH_SHORTCUT}>
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event("hired:command"))}
               className="hidden h-8 items-center gap-1.5 rounded-control px-2 text-ink-3 hover:bg-surface-2 hover:text-ink md:inline-flex"
-              aria-label="Search actions"
+              aria-label={t("Search actions")}
             >
-              <Kbd>⌘K</Kbd>
+              <Kbd>{SEARCH_SHORTCUT}</Kbd>
             </button>
           </Tooltip>
-          <Button size="sm" variant="ghost" aria-label="Tailor to a job" aria-pressed={panel === "tailor"} className={cn(panel === "tailor" && "bg-surface-2 text-ink")} onClick={() => togglePanel("tailor")}>
-            <Target /> <span className="hidden md:inline">Tailor</span>
+          <Button size="sm" variant="ghost" aria-label={t("Tailor to a job")} aria-pressed={panel === "tailor"} className={cn(panel === "tailor" && "bg-surface-2 text-ink")} onClick={() => togglePanel("tailor")}>
+            <Target /> <span className="hidden md:inline">{t("Tailor")}</span>
           </Button>
-          <IconButton label="Version history" active={panel === "versions"} onClick={() => togglePanel("versions")}>
+          <IconButton label={t("Version history")} active={panel === "versions"} onClick={() => togglePanel("versions")}>
             <History />
           </IconButton>
-          <Button size="sm" variant="ghost" aria-label="Design" aria-pressed={panel === "design"} className={cn(panel === "design" && "bg-surface-2 text-ink")} onClick={() => togglePanel("design")}>
-            <Palette /> <span className="hidden md:inline">Design</span>
+          <Button size="sm" variant="ghost" aria-label={t("Design")} aria-pressed={panel === "design"} className={cn(panel === "design" && "bg-surface-2 text-ink")} onClick={() => togglePanel("design")}>
+            <Palette /> <span className="hidden md:inline">{t("Design")}</span>
           </Button>
           <Menu>
             <MenuTrigger asChild>
               {/* Primary once there is something to export; on a blank CV the next step (type, chat, talk) leads. */}
-              <Button variant={hasAnyContent ? "primary" : "secondary"} size="sm" aria-label="Export" loading={exporting !== null}>
-                <Download /> <span className="hidden sm:inline">Export</span>
+              <Button variant={hasAnyContent ? "primary" : "secondary"} size="sm" aria-label={t("Export")} loading={exporting !== null}>
+                <Download /> <span className="hidden sm:inline">{t("Export")}</span>
               </Button>
             </MenuTrigger>
             <MenuContent align="end">
@@ -442,7 +462,7 @@ export function EditorShell({
                 Word
               </MenuItem>
               <MenuItem icon={<FileText />} onSelect={() => void exportFile("txt")}>
-                Plain text
+                {t("Plain text")}
               </MenuItem>
             </MenuContent>
           </Menu>
@@ -455,7 +475,7 @@ export function EditorShell({
       {/* Phone: one pane at a time. */}
       <div className="flex h-12 shrink-0 items-center justify-center border-b border-hairline bg-surface lg:hidden">
         <Segmented
-          aria-label="View"
+          aria-label={t("View")}
           size="sm"
           value={mobilePane}
           onChange={(p) => {
@@ -465,16 +485,16 @@ export function EditorShell({
           options={[
             {
               value: "edit",
-              label: panel === "design" ? "Design" : panel === "versions" ? "Versions" : panel === "tailor" ? "Tailor" : "Edit",
+              label: panel === "design" ? t("Design") : panel === "versions" ? t("Versions") : panel === "tailor" ? t("Tailor") : t("Edit"),
               icon: panel === "design" ? <Palette /> : panel === "versions" ? <History /> : panel === "tailor" ? <Target /> : <PenLine />,
             },
             {
               value: "preview",
-              label: "Preview",
+              label: t("Preview"),
               icon: (
                 <span className="relative">
                   <Eye />
-                  {previewDirty && mobilePane !== "preview" && <span aria-label="Updated" className="absolute -end-1 -top-1 size-2 rounded-full bg-accent" />}
+                  {previewDirty && mobilePane !== "preview" && <span aria-label={t("Updated")} className="absolute -end-1 -top-1 size-2 rounded-full bg-accent" />}
                 </span>
               ),
             },
@@ -491,9 +511,9 @@ export function EditorShell({
       </div>
       {win > 0 && (
         <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center">
-          <Stamp play={win}>READY</Stamp>
+          <Stamp play={win}>{t("READY")}</Stamp>
           <span role="status" className="sr-only">
-            Your first CV is ready.
+            {t("Your first CV is ready.")}
           </span>
         </div>
       )}

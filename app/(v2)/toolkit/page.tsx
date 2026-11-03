@@ -12,7 +12,10 @@ import { Badge } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { TOOL_ICONS } from "@/components/v2/toolkit/icons";
 
-export const metadata: Metadata = { title: "Toolkit" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerT();
+  return { title: t("Toolkit") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function ToolkitPage({ searchParams }: { searchParams: Promise<{ tool?: string }> }) {

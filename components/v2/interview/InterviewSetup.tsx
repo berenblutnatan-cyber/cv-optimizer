@@ -7,6 +7,7 @@ import { ClipboardPaste, CreditCard, Keyboard, Mic, Play, Target } from "lucide-
 import { INTERVIEW } from "@/lib/interview/types";
 import { Button, cn, ErrorState, Field, Input, Segmented, Select, Textarea, Tooltip } from "@/components/ui";
 import { postJson } from "@/components/v2/voice/call";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export type SetupCv = { id: string; title: string };
 export type SetupJob = { id: string; cvId: string; jobTitle: string; company: string };
@@ -36,6 +37,7 @@ export function InterviewSetup({
   voiceOverFairUse: boolean;
 }) {
   const router = useRouter();
+  const { t, dir } = useT();
   const [cvId, setCvId] = React.useState(initial.cvId);
   const cvJobs = jobs.filter((j) => j.cvId === cvId);
   const [jobId, setJobId] = React.useState<string | "paste">(initial.tailoringId && cvJobs.some((j) => j.id === initial.tailoringId) ? initial.tailoringId : cvJobs[0] && !initial.jd ? cvJobs[0].id : "paste");
@@ -47,6 +49,7 @@ export function InterviewSetup({
   const [mode, setMode] = React.useState<"voice" | "text">(voiceAvailable ? "voice" : "text");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [noCredits, setNoCredits] = React.useState(false);
 
   // A different CV has different tailored jobs.
   const pickCv = (id: string) => {
@@ -59,17 +62,25 @@ export function InterviewSetup({
   const ready = paste ? jd.trim().length >= MIN_JD : !!jobId;
   const covered = unlimited && !(mode === "voice" && voiceOverFairUse);
   const canPay = covered || balance >= INTERVIEW.credits;
-  const price = covered ? "Included in Unlimited" : `${INTERVIEW.credits} credit · ${balance} left`;
+  const price = covered
+    ? t("Included in Unlimited")
+    : INTERVIEW.credits === 1
+      ? t("1 credit · {balance} left", { balance })
+      : t("{n} credits · {balance} left", { n: INTERVIEW.credits, balance });
 
   const start = async () => {
     setBusy(true);
     setError(null);
+    setNoCredits(false);
     const body = paste ? { cvId, mode, jd, jobTitle, company } : { cvId, mode, tailoringId: jobId };
     const r = await postJson("/api/interview", body).catch(() => null);
     if (!r?.ok) {
       setBusy(false);
-      if (r?.status === 402) return setError("Out of credits");
-      return setError(typeof r?.json?.error === "string" ? r.json.error : "Couldn't write the questions. Try again.");
+      if (r?.status === 402) {
+        setNoCredits(true);
+        return setError(t("Out of credits"));
+      }
+      return setError(typeof r?.json?.error === "string" ? r.json.error : t("Couldn't write the questions. Try again."));
     }
     const id = (r.json?.interview as { id: string }).id;
     router.push(`/interview/${id}`);
@@ -77,6 +88,7 @@ export function InterviewSetup({
 
   return (
     <form
+      dir={dir}
       className="flex flex-col gap-6 rounded-panel border border-hairline bg-surface p-5 md:p-8"
       onSubmit={(e) => {
         e.preventDefault();
@@ -84,7 +96,7 @@ export function InterviewSetup({
       }}
     >
       {cvs.length > 1 && (
-        <Field label="CV">
+        <Field label={t("CV")}>
           <Select value={cvId} onChange={(e) => pickCv(e.target.value)}>
             {cvs.map((c) => (
               <option key={c.id} value={c.id}>
@@ -96,25 +108,25 @@ export function InterviewSetup({
       )}
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-body font-medium text-ink">Job</legend>
+        <legend className="mb-2 text-body font-medium text-ink">{t("Job")}</legend>
         <div className="flex flex-col gap-2">
           {cvJobs.map((j) => (
-            <JobOption key={j.id} value={j.id} checked={jobId === j.id} onSelect={() => setJobId(j.id)} icon={<Target />} title={j.jobTitle || j.company || "Tailored job"} meta={j.jobTitle ? j.company : ""} />
+            <JobOption key={j.id} value={j.id} checked={jobId === j.id} onSelect={() => setJobId(j.id)} icon={<Target />} title={j.jobTitle || j.company || t("Tailored job")} meta={j.jobTitle ? j.company : ""} />
           ))}
-          <JobOption value="paste" checked={paste} onSelect={() => setJobId("paste")} icon={<ClipboardPaste />} title="Paste a job" />
+          <JobOption value="paste" checked={paste} onSelect={() => setJobId("paste")} icon={<ClipboardPaste />} title={t("Paste a job")} />
         </div>
       </fieldset>
 
       {paste && (
         <div className="flex flex-col gap-4 animate-fade-in">
-          <Field label="Job description" error={jdLeft && jd.trim().length > 0 && jd.trim().length < MIN_JD ? "Paste the full description." : undefined}>
-            <Textarea rows={7} value={jd} onChange={(e) => setJd(e.target.value)} onBlur={() => setJdLeft(true)} maxLength={30_000} placeholder="Paste the job post" />
+          <Field label={t("Job description")} error={jdLeft && jd.trim().length > 0 && jd.trim().length < MIN_JD ? t("Paste the full description.") : undefined}>
+            <Textarea rows={7} value={jd} onChange={(e) => setJd(e.target.value)} onBlur={() => setJdLeft(true)} maxLength={30_000} placeholder={t("Paste the job post")} />
           </Field>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Role" optional>
+            <Field label={t("Role")} optional>
               <Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} maxLength={200} />
             </Field>
-            <Field label="Company" optional>
+            <Field label={t("Company")} optional>
               <Input value={company} onChange={(e) => setCompany(e.target.value)} maxLength={200} />
             </Field>
           </div>
@@ -123,15 +135,15 @@ export function InterviewSetup({
 
       {voiceAvailable && (
         <div className="flex flex-col gap-2">
-          <span className="text-body font-medium text-ink">Answer by</span>
+          <span className="text-body font-medium text-ink">{t("Answer by")}</span>
           <Segmented
-            aria-label="Answer by"
+            aria-label={t("Answer by")}
             value={mode}
             onChange={setMode}
             className="w-fit"
             options={[
-              { value: "voice", label: "Voice", icon: <Mic /> },
-              { value: "text", label: "Typing", icon: <Keyboard /> },
+              { value: "voice", label: t("Voice"), icon: <Mic /> },
+              { value: "text", label: t("Typing"), icon: <Keyboard /> },
             ]}
           />
         </div>
@@ -141,9 +153,9 @@ export function InterviewSetup({
         <ErrorState
           title={error}
           action={
-            error === "Out of credits" ? (
+            noCredits ? (
               <Button asChild size="sm" variant="secondary">
-                <Link href="/pricing">Add credits</Link>
+                <Link href="/pricing">{t("Add credits")}</Link>
               </Button>
             ) : undefined
           }
@@ -153,17 +165,17 @@ export function InterviewSetup({
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
         <span className="text-body text-ink-2">{price}</span>
         {canPay ? (
-          <Tooltip content={`${INTERVIEW.questions} questions written for this job. Nothing is charged if they can't be written.`}>
+          <Tooltip content={t("{n} questions written for this job. Nothing is charged if they can't be written.", { n: INTERVIEW.questions })}>
             <span>
               <Button type="submit" variant="primary" size="lg" loading={busy} disabled={!ready}>
-                <Play /> {busy ? "Writing questions" : "Start"}
+                <Play /> {busy ? t("Writing questions") : t("Start")}
               </Button>
             </span>
           </Tooltip>
         ) : (
           <Button asChild variant="primary" size="lg">
             <Link href="/pricing">
-              <CreditCard /> Add credits
+              <CreditCard /> {t("Add credits")}
             </Link>
           </Button>
         )}

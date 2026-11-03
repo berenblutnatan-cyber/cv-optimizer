@@ -1,12 +1,16 @@
 "use client";
 
 import { Toaster as Sonner, toast } from "sonner";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /** Toasts only for results that land off-screen (house rules). */
 export function Toaster() {
+  const { t, dir } = useT();
   return (
     <Sonner
-      position="bottom-right"
+      dir={dir}
+      containerAriaLabel={t("Notifications")}
+      position={dir === "rtl" ? "bottom-left" : "bottom-right"}
       gap={8}
       // Phones: above the bottom tab bar when the page has one.
       mobileOffset={{ bottom: "calc(var(--bottom-nav, 0px) + 16px)", left: 16, right: 16 }}

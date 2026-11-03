@@ -13,6 +13,7 @@ import { trackConversion } from "@/lib/gtag";
 import { computeLocalScore } from "@/lib/optimizer/localChecks";
 import type { ResumeData } from "@/types/resume";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { msg } from "@/lib/i18n/config";
 import { Button, cn, ErrorState, Textarea } from "@/components/ui";
 import { CvPreview } from "@/components/v2/editor/CvPreview";
 
@@ -27,17 +28,17 @@ type Phase =
 function checkFile(file: File): string | null {
   const name = file.name.toLowerCase();
   if (name.endsWith(".doc")) return "Old .doc files can't be read. Save it as PDF or .docx and try again.";
-  if (!/\.(pdf|docx|txt)$/.test(name) && !["application/pdf", "text/plain"].includes(file.type)) return "Upload a PDF, Word (.docx) or text file.";
-  if (file.size > MAX_IMPORT_BYTES) return "That file is over 5 MB.";
-  if (file.size === 0) return "That file is empty.";
+  if (!/\.(pdf|docx|txt)$/.test(name) && !["application/pdf", "text/plain"].includes(file.type)) return msg("Upload a PDF, Word (.docx) or text file.");
+  if (file.size > MAX_IMPORT_BYTES) return msg("That file is over 5 MB.");
+  if (file.size === 0) return msg("That file is empty.");
   return null;
 }
 
 const SECTIONS: { key: string; label: string; done: (c: ResumeData) => boolean }[] = [
-  { key: "profile", label: "Profile", done: (c) => !!c.personalInfo.name },
-  { key: "experience", label: "Experience", done: (c) => c.experience.length > 0 },
-  { key: "education", label: "Education", done: (c) => c.education.length > 0 },
-  { key: "skills", label: "Skills", done: (c) => c.skills.length > 0 },
+  { key: "profile", label: msg("Profile"), done: (c) => !!c.personalInfo.name },
+  { key: "experience", label: msg("Experience"), done: (c) => c.experience.length > 0 },
+  { key: "education", label: msg("Education"), done: (c) => c.education.length > 0 },
+  { key: "skills", label: msg("Skills"), done: (c) => c.skills.length > 0 },
 ];
 
 function Tile({
@@ -110,7 +111,7 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
       const res = await fetch("/api/cv/import", { method: "POST", body, headers, signal: ctrl.signal });
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => null);
-        setPhase({ kind: "error", message: err?.error ?? "Import failed. Try again.", canPaste: err?.code === "UNREADABLE" || err?.code === "TOO_SHORT" });
+        setPhase({ kind: "error", message: err?.error ?? msg("Import failed. Try again."), canPaste: err?.code === "UNREADABLE" || err?.code === "TOO_SHORT" });
         return;
       }
       let finished = false;
@@ -140,10 +141,10 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
           setPhase({ kind: "error", message: e.error, canPaste: e.code === "NO_CV" });
         }
       });
-      if (!finished) setPhase({ kind: "error", message: "The connection dropped. Try again.", canPaste: false });
+      if (!finished) setPhase({ kind: "error", message: msg("The connection dropped. Try again."), canPaste: false });
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
-      setPhase({ kind: "error", message: "Couldn't reach the server. Check your connection and try again.", canPaste: false });
+      setPhase({ kind: "error", message: msg("Couldn't reach the server. Check your connection and try again."), canPaste: false });
     }
   };
 

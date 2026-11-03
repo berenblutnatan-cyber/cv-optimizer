@@ -4,6 +4,7 @@ import * as React from "react";
 import * as D from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "./cn";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export const Dialog = D.Root;
 export const DialogTrigger = D.Trigger;
@@ -28,10 +29,12 @@ export function DialogContent({
   className?: string;
   size?: "sm" | "md" | "lg";
 }) {
+  const { t, dir } = useT();
   return (
     <D.Portal>
       <D.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] data-[state=open]:animate-fade-in" />
       <D.Content
+        dir={dir}
         className={cn(
           "fixed inset-x-0 top-[12vh] z-50 mx-auto flex max-h-[76vh] w-[calc(100vw-32px)] flex-col rounded-panel border border-hairline bg-surface shadow-pop focus-visible:outline-none data-[state=open]:animate-pop-in",
           size === "sm" && "max-w-sm",
@@ -42,7 +45,7 @@ export function DialogContent({
       >
         <div className="flex items-center justify-between gap-4 px-5 pb-2 pt-5">
           <D.Title className="text-h3 font-semibold text-ink">{title}</D.Title>
-          <D.Close aria-label="Close" className="grid size-9 place-items-center rounded-control text-ink-3 hover:bg-surface-2 hover:text-ink">
+          <D.Close aria-label={t("Close")} className="grid size-9 place-items-center rounded-control text-ink-3 hover:bg-surface-2 hover:text-ink">
             <X className="size-[18px]" />
           </D.Close>
         </div>

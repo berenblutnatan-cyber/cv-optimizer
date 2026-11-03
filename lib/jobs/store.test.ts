@@ -89,6 +89,19 @@ run("jobs tracker (local Postgres)", () => {
     expect(detail.tailorings.map((x) => x.id)).toEqual([tl.id]);
   });
 
+  it("a tailoring run without a company or role stores no English placeholder", async () => {
+    const t = await setup();
+    const tl = await prisma.tailoring.create({
+      data: { userId: t.userId, resumeId: t.cvId, jobTitle: "", company: "", jdText: JD, jdHash: "h2", analysis: {}, scoreOriginal: 60, scoreOptimized: 70, baseHash: "b" },
+    });
+    const job = await createJob(t.userId, { fromTailoringId: tl.id });
+    expect(job).toMatchObject({ company: "", title: "" });
+    expect(await prisma.jobApplication.findUniqueOrThrow({ where: { id: job.id } })).toMatchObject({ company: "", title: "" });
+    // Rows saved before the fix read as missing too.
+    await prisma.jobApplication.update({ where: { id: job.id }, data: { company: "Company", title: "Role" } });
+    expect(await getJob(t.userId, job.id)).toMatchObject({ company: "", title: "" });
+  });
+
   it("writes a cover letter for one credit, keeping only CV-backed numbers", async () => {
     const t = await setup(1);
     const job = await createJob(t.userId, { company: "Globex", title: "Senior PM", resumeId: t.cvId, jdText: JD });

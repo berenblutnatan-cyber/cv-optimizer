@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { AlertTriangle, Check, Download, ExternalLink, FileText, MessagesSquare, MoreHorizontal, PenLine, RotateCw, Target, Trash2 } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { JOB_STAGES, STAGE_LABEL, type JobDetail, type JobPatch, type JobSummary } from "@/lib/jobs/types";
 import {
   Badge,
@@ -40,6 +41,8 @@ import { RelativeTime } from "@/components/v2/cv/RelativeTime";
 // the letter saves as you type (debounced). One tab on screen at a time.
 
 const MIN_JD = 80;
+/** A URL prefix reads the same in every language. */
+const URL_HINT = "https://";
 
 async function send(url: string, method: string, body?: unknown) {
   const res = await fetch(url, { method, headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) }).catch(() => null);
@@ -62,21 +65,22 @@ function SavedInput({ value, onSave, multiline, ...props }: { value: string; onS
 const toLocalDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-CA") : "");
 
 function DetailsTab({ job, cvs, patch }: { job: JobDetail; cvs: { id: string; title: string }[]; patch: (p: JobPatch) => void }) {
+  const { t } = useT();
   return (
     <div className="flex flex-col gap-5 pt-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Stage">
+        <Field label={t("Stage")}>
           <Select value={job.stage} onChange={(e) => patch({ stage: e.target.value as JobDetail["stage"] })}>
             {JOB_STAGES.map((s) => (
               <option key={s} value={s}>
-                {STAGE_LABEL[s]}
+                {t(STAGE_LABEL[s])}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="CV">
+        <Field label={t("CV")}>
           <Select value={job.resumeId ?? ""} onChange={(e) => patch({ resumeId: e.target.value || null })}>
-            <option value="">None</option>
+            <option value="">{t("None")}</option>
             {cvs.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
@@ -86,43 +90,49 @@ function DetailsTab({ job, cvs, patch }: { job: JobDetail; cvs: { id: string; ti
         </Field>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
-        <Field label="Next step" optional>
-          <SavedInput value={job.nextStep ?? ""} onSave={(v) => patch({ nextStep: v || null })} maxLength={200} placeholder="Follow up with the recruiter" />
+        <Field label={t("Next step")} optional>
+          <SavedInput value={job.nextStep ?? ""} onSave={(v) => patch({ nextStep: v || null })} maxLength={200} placeholder={t("Follow up with the recruiter")} />
         </Field>
-        <Field label="Due" optional>
+        <Field label={t("Due")} optional>
           <Input type="date" value={toLocalDate(job.nextStepAt)} onChange={(e) => patch({ nextStepAt: e.target.value ? new Date(`${e.target.value}T09:00:00`).toISOString() : null })} className="sm:w-44" />
         </Field>
       </div>
-      <Field label="Link" optional>
-        <SavedInput value={job.url ?? ""} onSave={(v) => patch({ url: v || null })} type="url" inputMode="url" maxLength={2000} placeholder="https://" />
+      <Field label={t("Link")} optional>
+        <SavedInput value={job.url ?? ""} onSave={(v) => patch({ url: v || null })} type="url" inputMode="url" dir="ltr" maxLength={2000} placeholder={URL_HINT} />
       </Field>
-      <Field label="Notes" optional>
+      <Field label={t("Notes")} optional>
         <SavedInput value={job.notes ?? ""} onSave={(v) => patch({ notes: v || null })} multiline={4} maxLength={4000} />
       </Field>
-      <Field label="Job description" optional>
-        <SavedInput value={job.jdText ?? ""} onSave={(v) => patch({ jdText: v || null })} multiline={8} maxLength={20000} placeholder="Paste the job post" />
+      <Field label={t("Job description")} optional>
+        <SavedInput value={job.jdText ?? ""} onSave={(v) => patch({ jdText: v || null })} multiline={8} maxLength={20000} placeholder={t("Paste the job post")} />
       </Field>
     </div>
   );
 }
 
 function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l: JobDetail["letter"]) => void; goDetails: () => void }) {
+  const { t } = useT();
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [outOfCredits, setOutOfCredits] = React.useState(false);
   const [text, setText] = React.useState(job.letter?.body ?? "");
   const [saveState, setSaveState] = React.useState<"saved" | "saving" | "error">("saved");
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const letterId = job.letter?.id;
   React.useEffect(() => setText(job.letter?.body ?? ""), [job.letter?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const missing = !job.resumeId ? "Pick the CV for this job" : (job.jdText ?? "").trim().length < MIN_JD ? "Add the job description" : null;
+  const missing = !job.resumeId ? t("Pick the CV for this job") : (job.jdText ?? "").trim().length < MIN_JD ? t("Add the job description") : null;
 
   const write = async () => {
     setBusy(true);
     setError(null);
+    setOutOfCredits(false);
     const r = await send(`/api/jobs/${job.id}/letter`, "POST");
     setBusy(false);
-    if (!r.ok) return setError(r.status === 402 ? "Out of credits" : typeof r.json?.error === "string" ? r.json.error : "Couldn't write the letter. Try again.");
+    if (!r.ok) {
+      setOutOfCredits(r.status === 402);
+      return setError(r.status === 402 ? t("Out of credits") : typeof r.json?.error === "string" ? r.json.error : t("Couldn't write the letter. Try again."));
+    }
     const l = r.json?.letter as NonNullable<JobDetail["letter"]>;
     setText(l.body);
     onLetter(l);
@@ -150,7 +160,7 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
       <div className="flex flex-col gap-3 pt-4" aria-busy>
         <p role="status" className="flex items-center gap-2 text-body font-medium text-ink">
           <span className="size-2 animate-pulse rounded-full bg-accent" aria-hidden />
-          Writing from your CV and the job post
+          {t("Writing from your CV and the job post")}
         </p>
         <div className="flex flex-col gap-2.5 rounded-card border border-hairline p-4">
           <Skeleton className="h-4 w-40" />
@@ -171,7 +181,7 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
       <div className="pt-4">
         <EmptyState
           icon={<FileText />}
-          title={missing ?? "No cover letter yet"}
+          title={missing ?? t("No cover letter yet")}
           action={
             <div className="flex flex-col items-center gap-3">
               {missing ? (
@@ -179,10 +189,10 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
                   <PenLine /> {missing}
                 </Button>
               ) : (
-                <Tooltip content="Written from your CV and this job post only. Nothing is charged if it fails.">
+                <Tooltip content={t("Written from your CV and this job post only. Nothing is charged if it fails.")}>
                   <span>
                     <Button variant="primary" size="lg" loading={busy} onClick={() => void write()}>
-                      <PenLine /> Write letter · 1 credit
+                      <PenLine /> {t("Write letter · 1 credit")}
                     </Button>
                   </span>
                 </Tooltip>
@@ -191,9 +201,9 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
                 <ErrorState
                   title={error}
                   action={
-                    error === "Out of credits" ? (
+                    outOfCredits ? (
                       <Button asChild size="sm" variant="secondary">
-                        <Link href="/pricing">Add credits</Link>
+                        <Link href="/pricing">{t("Add credits")}</Link>
                       </Button>
                     ) : undefined
                   }
@@ -206,13 +216,13 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
     );
   }
 
-  const fileName = `Cover letter - ${job.company}`.replace(/[\\/:*?"<>|]+/g, "").slice(0, 80);
+  const fileName = t("Cover letter - {company}", { company: job.company }).replace(/[\\/:*?"<>|]+/g, "").slice(0, 80);
   return (
     <div className="flex flex-col gap-3 pt-4">
       {job.letter.flags.length > 0 && (
         <div role="status" className="flex flex-wrap items-center gap-2 rounded-card border border-warn/30 bg-warn-wash px-3 py-2.5">
           <AlertTriangle className="size-4 shrink-0 text-warn" aria-hidden />
-          <span className="text-body text-ink">Not on your CV:</span>
+          <span className="text-body text-ink">{t("Not on your CV:")}</span>
           {job.letter.flags.map((f) => (
             <Badge key={f} tone="warn">
               {f}
@@ -221,7 +231,7 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
         </div>
       )}
       <label htmlFor="letter-body" className="sr-only">
-        Cover letter
+        {t("Cover letter")}
       </label>
       <Textarea
         id="letter-body"
@@ -248,15 +258,15 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
         >
           <Download /> Word
         </Button>
-        <Tooltip content="A new letter for 1 credit. This one is replaced.">
+        <Tooltip content={t("A new letter for 1 credit. This one is replaced.")}>
           <span>
             <Button variant="ghost" loading={busy} onClick={() => void write()}>
-              <RotateCw /> Rewrite
+              <RotateCw /> {t("Rewrite")}
             </Button>
           </span>
         </Tooltip>
         <span className="ms-auto text-body text-ink-3" aria-live="polite">
-          {saveState === "saving" ? "Saving…" : saveState === "error" ? <span className="text-danger">Not saved</span> : null}
+          {saveState === "saving" ? t("Saving…") : saveState === "error" ? <span className="text-danger">{t("Not saved")}</span> : null}
         </span>
       </div>
       {error && <ErrorState title={error} />}
@@ -265,6 +275,7 @@ function LetterTab({ job, onLetter, goDetails }: { job: JobDetail; onLetter: (l:
 }
 
 function PracticeTab({ job }: { job: JobDetail }) {
+  const { t } = useT();
   const hasJd = (job.jdText ?? "").trim().length >= MIN_JD;
   const latest = job.tailorings[0];
   const tailor = () => {
@@ -278,24 +289,24 @@ function PracticeTab({ job }: { job: JobDetail }) {
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex flex-wrap gap-2">
-        <Tooltip content={!job.resumeId ? "Pick the CV for this job first." : !hasJd ? "Add the job description first." : "Fit check and grounded changes for this job."}>
+        <Tooltip content={!job.resumeId ? t("Pick the CV for this job first.") : !hasJd ? t("Add the job description first.") : t("Fit check and grounded changes for this job.")}>
           <span>
             <Button variant="primary" disabled={!job.resumeId || !hasJd} onClick={tailor}>
-              <Target /> Tailor CV
+              <Target /> {t("Tailor CV")}
             </Button>
           </span>
         </Tooltip>
-        <Tooltip content={!hasJd && !latest ? "Add the job description first." : "Mock interview for this job."}>
+        <Tooltip content={!hasJd && !latest ? t("Add the job description first.") : t("Mock interview for this job.")}>
           <span>
             {hasJd || latest ? (
               <Button asChild variant="secondary">
                 <Link href={interviewHref}>
-                  <MessagesSquare /> Practice interview
+                  <MessagesSquare /> {t("Practice interview")}
                 </Link>
               </Button>
             ) : (
               <Button variant="secondary" disabled>
-                <MessagesSquare /> Practice interview
+                <MessagesSquare /> {t("Practice interview")}
               </Button>
             )}
           </span>
@@ -305,16 +316,20 @@ function PracticeTab({ job }: { job: JobDetail }) {
       {job.tailorings.length > 0 && (
         <section aria-labelledby="job-tailorings">
           <h3 id="job-tailorings" className="mb-2 text-body font-medium text-ink-2">
-            Fit checks
+            {t("Fit checks")}
           </h3>
           <ul className="flex flex-col divide-y divide-hairline rounded-card border border-hairline">
-            {job.tailorings.map((t) => (
-              <li key={t.id}>
-                <Link href={`/cv/${t.resumeId}?panel=tailor`} className="flex min-h-12 items-center gap-3 px-3 py-2 text-body hover:bg-surface-2/60">
-                  <span className="tabular font-semibold text-ink">{t.scoreOriginal}</span>
-                  {t.scoreOptimized > t.scoreOriginal && <span className="text-ink-3">→ {t.scoreOptimized}</span>}
+            {job.tailorings.map((f) => (
+              <li key={f.id}>
+                <Link href={`/cv/${f.resumeId}?panel=tailor`} className="flex min-h-12 items-center gap-3 px-3 py-2 text-body hover:bg-surface-2/60">
+                  <span className="tabular font-semibold text-ink">{f.scoreOriginal}</span>
+                  {f.scoreOptimized > f.scoreOriginal && (
+                    <span className="text-ink-3">
+                      <span aria-hidden className="inline-block rtl:-scale-x-100">→</span> <span className="sr-only">{t("to")}</span> {f.scoreOptimized}
+                    </span>
+                  )}
                   <span className="ms-auto text-ink-2">
-                    <RelativeTime iso={t.createdAt} />
+                    <RelativeTime iso={f.createdAt} />
                   </span>
                 </Link>
               </li>
@@ -326,14 +341,14 @@ function PracticeTab({ job }: { job: JobDetail }) {
       {job.interviews.length > 0 && (
         <section aria-labelledby="job-interviews">
           <h3 id="job-interviews" className="mb-2 text-body font-medium text-ink-2">
-            Interviews
+            {t("Interviews")}
           </h3>
           <ul className="flex flex-col divide-y divide-hairline rounded-card border border-hairline">
             {job.interviews.map((i) => (
               <li key={i.id}>
                 <Link href={`/interview/${i.id}`} className="flex min-h-12 items-center gap-3 px-3 py-2 text-body hover:bg-surface-2/60">
-                  {i.overall !== null ? <span className="tabular font-semibold text-ink">{i.overall}</span> : <Badge tone="outline">{i.status === "done" ? "Done" : "Not scored"}</Badge>}
-                  <span className="text-ink-2">{i.mode === "voice" ? "Voice" : "Typed"}</span>
+                  {i.overall !== null ? <span className="tabular font-semibold text-ink">{i.overall}</span> : <Badge tone="outline">{i.status === "done" ? t("Done") : t("Not scored")}</Badge>}
+                  <span className="text-ink-2">{i.mode === "voice" ? t("Voice") : t("Typed")}</span>
                   <span className="ms-auto text-ink-2">
                     <RelativeTime iso={i.createdAt} />
                   </span>
@@ -366,6 +381,7 @@ export function JobDrawer({
   const [failed, setFailed] = React.useState(false);
   const [tab, setTab] = React.useState("details");
   const [confirm, setConfirm] = React.useState(false);
+  const { t, dir } = useT();
 
   const load = React.useCallback(async (id: string) => {
     setFailed(false);
@@ -389,7 +405,7 @@ export function JobDrawer({
       const r = await send(`/api/jobs/${job.id}`, "PATCH", p);
       if (!r.ok) {
         setJob(before);
-        return toast.error(typeof r.json?.error === "string" ? r.json.error : "Couldn't save. Try again.");
+        return toast.error(typeof r.json?.error === "string" ? r.json.error : t("Couldn't save. Try again."));
       }
       const s = r.json?.job as JobSummary;
       setJob((j) => (j ? { ...j, ...s } : j));
@@ -402,7 +418,7 @@ export function JobDrawer({
     if (!job) return false;
     const r = await send(`/api/jobs/${job.id}`, "DELETE");
     if (!r.ok) {
-      toast.error("Couldn't delete. Try again.");
+      toast.error(t("Couldn't delete. Try again."));
       return false;
     }
     setConfirm(false);
@@ -412,14 +428,15 @@ export function JobDrawer({
   };
 
   return (
-    <Sheet open={!!jobId} onOpenChange={(o) => !o && onClose()} side={side} title={job ? job.title : "Job"} className={side === "right" ? "w-[min(560px,100vw)]" : undefined}>
+    <Sheet open={!!jobId} onOpenChange={(o) => !o && onClose()} side={side} title={job ? job.title || t("Untitled job") : t("Job")} className={side === "right" ? "w-[min(560px,100vw)]" : undefined}>
+      <div dir={dir}>
       {failed ? (
         <ErrorState
           className="mt-2"
-          title="Couldn't load this job."
+          title={t("Couldn't load this job.")}
           action={
             <Button size="sm" variant="secondary" onClick={() => jobId && void load(jobId)}>
-              <RotateCw /> Retry
+              <RotateCw /> {t("Retry")}
             </Button>
           }
         />
@@ -435,34 +452,34 @@ export function JobDrawer({
           <div className="-mt-2 flex items-center gap-2 pb-2">
             <span className="min-w-0 flex-1 truncate text-body text-ink-2">{job.company}</span>
             {job.url && (
-              <Tooltip content="Open the job post">
+              <Tooltip content={t("Open the job post")}>
                 <Button asChild variant="ghost" className="size-9 px-0 touch:size-11 [&_svg]:size-[18px]">
-                  <a href={job.url} target="_blank" rel="noreferrer noopener" aria-label="Open the job post">
+                  <a href={job.url} target="_blank" rel="noreferrer noopener" aria-label={t("Open the job post")}>
                     <ExternalLink />
                   </a>
                 </Button>
               </Tooltip>
             )}
-            <Menu>
+            <Menu dir={dir}>
               <MenuTrigger asChild>
-                <IconButton label="More" size="md">
+                <IconButton label={t("More")} size="md">
                   <MoreHorizontal />
                 </IconButton>
               </MenuTrigger>
               <MenuContent>
                 <MenuItem icon={<Trash2 />} tone="danger" onSelect={() => setConfirm(true)}>
-                  Delete job
+                  {t("Delete job")}
                 </MenuItem>
               </MenuContent>
             </Menu>
           </div>
-          <Tabs value={tab} onValueChange={setTab}>
+          <Tabs value={tab} onValueChange={setTab} dir={dir}>
             <TabsList>
-              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="details">{t("Details")}</TabsTrigger>
               <TabsTrigger value="letter">
-                Letter {job.letter && <Check className="size-4 text-success" aria-label="written" />}
+                {t("Letter")} {job.letter && <Check className="size-4 text-success" aria-label={t("written")} />}
               </TabsTrigger>
-              <TabsTrigger value="practice">Practice</TabsTrigger>
+              <TabsTrigger value="practice">{t("Practice")}</TabsTrigger>
             </TabsList>
             <TabsContent value="details">
               <DetailsTab job={job} cvs={cvs} patch={patch} />
@@ -476,20 +493,21 @@ export function JobDrawer({
           </Tabs>
         </div>
       )}
+      </div>
 
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent
           size="sm"
-          title="Delete this job?"
-          description="Its notes and cover letter go with it. Your CV and fit checks stay."
+          title={t("Delete this job?")}
+          description={t("Its notes and cover letter go with it. Your CV and fit checks stay.")}
           showDescription
           footer={
             <>
               <DialogClose asChild>
-                <Button variant="ghost">Cancel</Button>
+                <Button variant="ghost">{t("Cancel")}</Button>
               </DialogClose>
-              <HoldButton hint="Hold to delete" done="Deleting…" onConfirm={remove}>
-                <Trash2 /> Delete
+              <HoldButton hint={t("Hold to delete")} done={t("Deleting…")} onConfirm={remove}>
+                <Trash2 /> {t("Delete")}
               </HoldButton>
             </>
           }

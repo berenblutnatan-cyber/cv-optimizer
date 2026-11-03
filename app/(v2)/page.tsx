@@ -22,11 +22,14 @@ import { getTemplateEntry, TEMPLATE_IDS, type TemplateRegistryId } from "@/lib/t
 import { voiceConfig } from "@/lib/voice/elevenlabs";
 import "@/styles/v2/landing.css";
 
-export const metadata: Metadata = {
-  title: { absolute: "Hired: AI CV builder. CVs that get you hired." },
-  description: "Tell us what you did. Hired sharpens your CV for each job and never invents a thing. Free to build and download.",
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerT();
+  return {
+    title: { absolute: t("Hired: AI CV builder. CVs that get you hired.") },
+    description: t("Tell us what you did. Hired sharpens your CV for each job and never invents a thing. Free to build and download."),
+    alternates: { canonical: "/" },
+  };
+}
 
 const SAMPLE = toTemplateData(SAMPLE_RESUME_DATA);
 const design = (template: TemplateRegistryId, accentColor: ThemeColor): DesignState => ({ ...DEFAULT_DESIGN, template, accentColor });
@@ -181,7 +184,7 @@ function Templates({ t }: { t: T }) {
                 <span dir="ltr" className="block overflow-hidden rounded-control border border-hairline shadow-card transition-[border-color,transform] duration-micro group-hover:-translate-y-0.5 group-hover:border-hairline-strong">
                   <CvThumbnail data={SAMPLE} design={design(template, accent)} />
                 </span>
-                <span className="mt-2.5 block text-body text-ink-2 group-hover:text-ink">{getTemplateEntry(template)?.name}</span>
+                <span className="mt-2.5 block text-body text-ink-2 group-hover:text-ink">{t(getTemplateEntry(template)?.name ?? template)}</span>
               </Link>
             </li>
           ))}

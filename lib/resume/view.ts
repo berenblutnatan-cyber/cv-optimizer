@@ -8,7 +8,12 @@ import type { ResumeData as TemplateData } from "@/components/cv-templates/templ
 
 export type { TemplateData };
 
-export type ViewFormatters = { name?: (s: string) => string; jobTitle?: (s: string) => string };
+export type ViewFormatters = {
+  name?: (s: string) => string;
+  jobTitle?: (s: string) => string;
+  /** Shown on a CV with no name yet. UI text, so callers pass it in the reader's language. */
+  placeholderName?: string;
+};
 
 const keep = (s: string) => s;
 
@@ -24,7 +29,7 @@ export function toTemplateData(c: ResumeData, fmt: ViewFormatters = {}): Templat
   const jobTitle = fmt.jobTitle ?? keep;
   const nonEmpty = (xs: string[] | undefined) => (xs ?? []).filter((x) => x && x.trim());
   return {
-    name: name(c.personalInfo.name) || "Your Name",
+    name: name(c.personalInfo.name) || (fmt.placeholderName ?? "Your Name"),
     title: jobTitle(c.personalInfo.title) || undefined,
     contact: {
       email: c.personalInfo.email || undefined,

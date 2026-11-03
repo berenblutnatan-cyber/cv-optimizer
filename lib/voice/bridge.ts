@@ -1,4 +1,4 @@
-import { describeToolCall } from "@/lib/chat/cvTools";
+import { describeToolCall, type ChatLabelTranslate } from "@/lib/chat/cvTools";
 import type { ResumeDocument } from "@/lib/resume/document";
 import { toolResultText, VOICE_TOOL_NAMES, voiceOpId } from "./protocol";
 
@@ -10,7 +10,9 @@ export type BridgeDeps = {
   /** Apply + queue for saving under this id. True when the CV changed. */
   applyVoice: (name: string, input: Record<string, unknown>, clientOpId: string, voiceSessionId: string) => boolean;
   getDoc: () => ResumeDocument;
+  /** Called with a short line describing each saved edit, in the reader's language when `translate` is given. */
   onEdit?: (label: string) => void;
+  translate?: ChatLabelTranslate;
 };
 
 export class VoiceToolBridge {
@@ -36,7 +38,7 @@ export class VoiceToolBridge {
     } catch (err) {
       console.error("[voice] tool failed", name, err);
     }
-    if (changed) this.deps.onEdit?.(describeToolCall(name, input));
+    if (changed) this.deps.onEdit?.(describeToolCall(name, input, this.deps.translate));
     return toolResultText(name, input, this.deps.getDoc().content, changed);
   }
 

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { bandFor, BAND_LABEL, type ScoreBand } from "@/lib/score/bands";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { msg } from "@/lib/i18n/config";
 import { cn } from "./cn";
 import { NumberRoll } from "./number-roll";
 import { Tooltip } from "./tooltip";
@@ -17,8 +18,9 @@ const BAND_FILL: Record<ScoreBand, string> = {
   great: "stroke-accent",
 };
 
-export const SCORE_DISCLAIMER =
-  "A rubric estimate of how a recruiter and an ATS read this CV against this job. It does not predict callbacks or know this company's system.";
+export const SCORE_DISCLAIMER = msg(
+  "A rubric estimate of how a recruiter and an ATS read this CV against this job. It does not predict callbacks or know this company's system.",
+);
 
 /** The overall score: a quiet ring with the number; the band sits underneath so it never clips. */
 export function ScoreGauge({
@@ -26,14 +28,14 @@ export function ScoreGauge({
   size = 112,
   loading,
   className,
-  label = "CV score",
-  tip = SCORE_DISCLAIMER,
+  label,
+  tip,
 }: {
   value: number | null;
   size?: number;
   loading?: boolean;
   className?: string;
-  /** Accessible name: what this number scores. */
+  /** Accessible name: what this number scores (default "CV score"). */
   label?: string;
   tip?: string;
 }) {
@@ -44,10 +46,10 @@ export function ScoreGauge({
   const band = bandFor(v);
   const { t } = useT();
   return (
-    <Tooltip content={tip}>
+    <Tooltip content={tip ?? t(SCORE_DISCLAIMER)}>
       <div
         role="meter"
-        aria-label={label}
+        aria-label={label ?? t("CV score")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={value ?? undefined}

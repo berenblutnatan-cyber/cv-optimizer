@@ -11,10 +11,13 @@ import { Badge, Card, cn, Tooltip } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { CheckoutButton } from "@/components/v2/billing/CheckoutButton";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description: "Build, edit and download your CV free. Pay only for AI work: credit packs from $3, or Unlimited.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerT();
+  return {
+    title: t("Pricing"),
+    description: t("Build, edit and download your CV free. Pay only for AI work: credit packs from $3, or Unlimited."),
+  };
+}
 export const dynamic = "force-dynamic";
 
 const PACKS: { key: PolarPlanKey; best?: boolean }[] = [{ key: "mini" }, { key: "pro", best: true }, { key: "ultimate" }];

@@ -3,6 +3,8 @@
 import * as React from "react";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { VoiceOrb, Waveform, type VoiceState } from "@/components/ui";
+import { useT } from "@/lib/i18n/LanguageProvider";
+import { msg } from "@/lib/i18n/config";
 
 // The parts of a live ElevenLabs call shared by Talk mode (CV intake) and
 // interview practice: one connection per attempt, the mic visuals, and the
@@ -19,14 +21,14 @@ export const ELEVENLABS: VoiceSdk = { Provider: ConversationProvider, useConvers
 
 export const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
-/** One line telling the user where their browser hides the microphone switch. */
+/** One line telling the user where their browser hides the microphone switch. An English key: show it with t(). */
 export function micHelp(): string {
-  if (typeof navigator === "undefined") return "Allow the microphone for this site, then try again.";
+  if (typeof navigator === "undefined") return msg("Allow the microphone for this site, then try again.");
   const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/.test(ua)) return "Settings › Apps › Safari › Microphone › Allow, then try again.";
-  if (/Firefox\//.test(ua)) return "Click the microphone icon in the address bar, allow it, then try again.";
-  if (/Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua)) return "Safari › Settings for This Website › Microphone › Allow, then try again.";
-  return "Click the icon left of the address bar › Microphone › Allow, then try again.";
+  if (/iPhone|iPad|iPod/.test(ua)) return msg("Settings › Apps › Safari › Microphone › Allow, then try again.");
+  if (/Firefox\//.test(ua)) return msg("Click the microphone icon in the address bar, allow it, then try again.");
+  if (/Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua)) return msg("Safari › Settings for This Website › Microphone › Allow, then try again.");
+  return msg("Click the icon left of the address bar › Microphone › Allow, then try again.");
 }
 
 export async function postJson(url: string, body?: unknown, init?: RequestInit) {
@@ -142,6 +144,7 @@ export function LiveOrb({
   muted: boolean;
   onToggleMute: () => void;
 }) {
+  const { t } = useT();
   const [level, setLevel] = React.useState(0);
   const [freq, setFreq] = React.useState<Uint8Array | undefined>();
   React.useEffect(() => {
@@ -164,7 +167,7 @@ export function LiveOrb({
   return (
     <div className="flex flex-col items-center gap-4">
       {/* Tapping the orb mutes: it is a control, never a push-to-talk button. Its state isn't announced every turn. */}
-      <VoiceOrb state={state} level={level} size={88} announce={false} onClick={onToggleMute} actionLabel={muted ? "Unmute" : "Mute"} />
+      <VoiceOrb state={state} level={level} size={88} announce={false} onClick={onToggleMute} actionLabel={muted ? t("Unmute") : t("Mute")} />
       <Waveform data={state === "listening" ? freq : undefined} className="w-40" />
     </div>
   );

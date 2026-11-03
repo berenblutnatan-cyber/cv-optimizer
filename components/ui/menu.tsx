@@ -4,8 +4,13 @@ import * as React from "react";
 import * as M from "@radix-ui/react-dropdown-menu";
 import { cn } from "./cn";
 import { Kbd } from "./kbd";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
-export const Menu = M.Root;
+/** The menu's direction follows the language, so its portal content does too. */
+export function Menu(props: React.ComponentPropsWithoutRef<typeof M.Root>) {
+  const { dir } = useT();
+  return <M.Root dir={dir} {...props} />;
+}
 export const MenuTrigger = M.Trigger;
 
 export function MenuContent({ children, align = "end", className }: { children: React.ReactNode; align?: "start" | "end" | "center"; className?: string }) {

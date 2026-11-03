@@ -3,11 +3,13 @@
 import * as React from "react";
 import { X } from "lucide-react";
 import { IconButton } from "@/components/ui";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /** Header for a panel that temporarily replaces the editor (Design, Versions). */
 export function PanelHeader({ title, onClose, action }: { title: string; onClose: () => void; action?: React.ReactNode }) {
   // Move focus into the panel on open (to the heading, not a control: a
   // focused icon button would pop its tooltip).
+  const { t } = useT();
   const headingRef = React.useRef<HTMLHeadingElement>(null);
   React.useEffect(() => headingRef.current?.focus({ preventScroll: true }), []);
   React.useEffect(() => {
@@ -21,7 +23,7 @@ export function PanelHeader({ title, onClose, action }: { title: string; onClose
     <div className="flex h-13 shrink-0 items-center gap-2 border-b border-hairline px-3 ps-4">
       <h2 ref={headingRef} tabIndex={-1} className="flex-1 truncate text-emph font-semibold text-ink outline-none">{title}</h2>
       {action}
-      <IconButton label="Close" shortcut="Esc" onClick={onClose}>
+      <IconButton label={t("Close")} shortcut="Esc" onClick={onClose}>
         <X />
       </IconButton>
     </div>

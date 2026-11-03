@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as T from "@radix-ui/react-tooltip";
 import { Kbd } from "./kbd";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export const TooltipProvider = ({ children }: { children: React.ReactNode }) => (
   <T.Provider delayDuration={350} skipDelayDuration={150}>
@@ -22,11 +23,13 @@ export function Tooltip({
   side?: "top" | "right" | "bottom" | "left";
   children: React.ReactElement;
 }) {
+  const { dir } = useT();
   return (
     <T.Root>
       <T.Trigger asChild>{children}</T.Trigger>
       <T.Portal>
         <T.Content
+          dir={dir}
           side={side}
           sideOffset={6}
           collisionPadding={8}

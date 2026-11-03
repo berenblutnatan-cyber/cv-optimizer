@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { msg } from "@/lib/i18n/config";
 import { usePathname } from "next/navigation";
 import { Briefcase, FileText, MessagesSquare, Wrench } from "lucide-react";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { cn } from "@/components/ui";
 
 const ITEMS = [
-  { href: "/cv", label: "CVs", icon: FileText },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/interview", label: "Interview", icon: MessagesSquare },
-  { href: "/toolkit", label: "Toolkit", icon: Wrench },
+  { href: "/cv", label: msg("CVs"), icon: FileText },
+  { href: "/jobs", label: msg("Jobs"), icon: Briefcase },
+  { href: "/interview", label: msg("Interview"), icon: MessagesSquare },
+  { href: "/toolkit", label: msg("Toolkit"), icon: Wrench },
 ];
 
 const isCurrent = (path: string, href: string) => path === href || path.startsWith(`${href}/`);

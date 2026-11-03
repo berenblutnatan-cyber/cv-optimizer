@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { InterviewReport } from "@/lib/interview/types";
+import { storedTitle } from "@/lib/resume/document";
 import { isStage, type JobDetail, type JobPatch, type JobStage, type JobSummary } from "./types";
 
 // The jobs tracker. Rows are the legacy JobApplication table (the old
@@ -41,16 +42,21 @@ const summarySelect = {
 
 type SummaryRow = Prisma.JobApplicationGetPayload<{ select: typeof summarySelect }>;
 
+// Jobs tracked from a tailoring run without a company or role used to store
+// these English placeholders; read them as missing so screens show their own words.
+const LEGACY_PLACEHOLDER = { company: "Company", title: "Role" } as const;
+const storedField = (value: string, field: keyof typeof LEGACY_PLACEHOLDER) => (value === LEGACY_PLACEHOLDER[field] ? "" : value);
+
 function toSummary(r: SummaryRow): JobSummary {
   return {
     id: r.id,
-    company: r.company,
-    title: r.title,
+    company: storedField(r.company, "company"),
+    title: storedField(r.title, "title"),
     stage: isStage(r.status) ? r.status : "BOOKMARKED",
     url: r.url,
     location: r.location,
     resumeId: r.resumeId,
-    resumeTitle: r.resumeId ? r.resume?.title || "Untitled CV" : null,
+    resumeTitle: r.resumeId ? storedTitle(r.resume?.title) : null,
     score: r.tailorings[0]?.scoreOriginal ?? null,
     nextStep: r.nextStep,
     nextStepAt: r.nextStepAt?.toISOString() ?? null,
@@ -114,7 +120,7 @@ export async function createJob(userId: string, input: Record<string, unknown>):
     }
     return prisma.$transaction(async (tx) => {
       const job = await tx.jobApplication.create({
-        data: { userId, company: t.company || "Company", title: t.jobTitle || "Role", jdText: t.jdText.slice(0, 20000), resumeId: t.resumeId, status: "BOOKMARKED" },
+        data: { userId, company: t.company ?? "", title: t.jobTitle ?? "", jdText: t.jdText.slice(0, 20000), resumeId: t.resumeId, status: "BOOKMARKED" },
       });
       // Link only if no other request linked it meanwhile.
       const linked = await tx.tailoring.updateMany({ where: { id: t.id, jobApplicationId: null }, data: { jobApplicationId: job.id } });

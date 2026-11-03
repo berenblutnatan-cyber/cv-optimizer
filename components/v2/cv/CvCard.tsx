@@ -9,6 +9,7 @@ import type { TemplateData } from "@/lib/resume/view";
 import { Button, Dialog, DialogContent, HoldButton, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, toast } from "@/components/ui";
 import { CvThumbnail } from "./CvThumbnail";
 import { RelativeTime } from "./RelativeTime";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function CvCard({
   id,
@@ -27,6 +28,7 @@ export function CvCard({
   design: DesignState;
   eager?: boolean;
 }) {
+  const { t } = useT();
   const router = useRouter();
   const [confirming, setConfirming] = React.useState(false);
   const [gone, setGone] = React.useState(false);
@@ -34,7 +36,7 @@ export function CvCard({
   const remove = async () => {
     try {
       const res = await fetch(`/api/cv/${id}`, { method: "DELETE" });
-      if (!res.ok && res.status !== 404) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't delete it. Try again.");
+      if (!res.ok && res.status !== 404) throw new Error((await res.json().catch(() => null))?.error ?? t("Couldn't delete it. Try again."));
       setGone(true);
       setConfirming(false);
       router.refresh();
@@ -67,7 +69,7 @@ export function CvCard({
       <div className="absolute bottom-3 end-2">
         <Menu>
           <MenuTrigger asChild>
-            <IconButton label="CV actions">
+            <IconButton label={t("CV actions")}>
               <MoreHorizontal />
             </IconButton>
           </MenuTrigger>
@@ -75,7 +77,7 @@ export function CvCard({
             {/* Open after the menu has closed and returned focus; opening in the
                 same tick lets the menu's focus return dismiss the dialog. */}
             <MenuItem icon={<Trash2 />} tone="danger" onSelect={() => setTimeout(() => setConfirming(true), 0)}>
-              Delete
+              {t("Delete")}
             </MenuItem>
           </MenuContent>
         </Menu>
@@ -83,16 +85,16 @@ export function CvCard({
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent
           size="sm"
-          title={`Delete “${title}”?`}
-          description="Its versions go too. This can’t be undone."
+          title={t("Delete “{title}”?", { title })}
+          description={t("Its versions go too. This can’t be undone.")}
           showDescription
           footer={
             <>
               <Button variant="ghost" onClick={() => setConfirming(false)}>
-                Cancel
+                {t("Cancel")}
               </Button>
-              <HoldButton hint="Hold to delete" done="Deleting…" onConfirm={remove}>
-                <Trash2 /> Delete
+              <HoldButton hint={t("Hold to delete")} done={t("Deleting…")} onConfirm={remove}>
+                <Trash2 /> {t("Delete")}
               </HoldButton>
             </>
           }
