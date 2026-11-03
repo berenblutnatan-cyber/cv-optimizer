@@ -1,15 +1,18 @@
 // The jobs tracker: shapes shared by server and browser. Client-safe.
 // Statuses are the legacy tracker's values (same table), shown with v2 labels.
+// Labels are dictionary keys: render them with t(STAGE_LABEL[stage]).
+
+import { msg } from "@/lib/i18n/config";
 
 export const JOB_STAGES = ["BOOKMARKED", "APPLIED", "INTERVIEWING", "OFFER", "REJECTED"] as const;
 export type JobStage = (typeof JOB_STAGES)[number];
 
 export const STAGE_LABEL: Record<JobStage, string> = {
-  BOOKMARKED: "Saved",
-  APPLIED: "Applied",
-  INTERVIEWING: "Interviewing",
-  OFFER: "Offer",
-  REJECTED: "Closed",
+  BOOKMARKED: msg("Saved"),
+  APPLIED: msg("Applied"),
+  INTERVIEWING: msg("Interviewing"),
+  OFFER: msg("Offer"),
+  REJECTED: msg("Closed"),
 };
 
 export function isStage(v: unknown): v is JobStage {

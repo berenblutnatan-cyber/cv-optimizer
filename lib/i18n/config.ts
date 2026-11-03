@@ -22,3 +22,10 @@ export function isLang(value: unknown): value is Lang {
 export function dirFor(lang: Lang): "rtl" | "ltr" {
   return lang === "he" ? "rtl" : "ltr";
 }
+
+/**
+ * Marks an English string as a dictionary key without translating it: for
+ * module-level labels (option lists) that are passed through t() at render.
+ * The i18n guard checks every msg("…") key has a Hebrew entry.
+ */
+export const msg = (source: string): string => source;

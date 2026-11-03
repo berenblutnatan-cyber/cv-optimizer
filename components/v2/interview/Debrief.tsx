@@ -6,8 +6,10 @@ import { Check, ChevronDown, FilePlus2, Minus, RotateCw } from "lucide-react";
 import type { AnswerFeedback, InterviewAnswer, InterviewQuestion, InterviewReport } from "@/lib/interview/types";
 import { Badge, Button, cn, ScoreGauge, toast, Tooltip } from "@/components/ui";
 import { postJson } from "@/components/v2/voice/call";
+import { msg } from "@/lib/i18n/config";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
-const INTERVIEW_TIP = "How these answers would land with this job's hiring manager. A coaching estimate, not a prediction.";
+const INTERVIEW_TIP = msg("How these answers would land with this job's hiring manager. A coaching estimate, not a prediction.");
 
 function scoreTone(score: number): "success" | "neutral" | "warn" {
   return score >= 8 ? "success" : score >= 5 ? "neutral" : "warn";
@@ -33,6 +35,7 @@ function AnswerRow({
   added: boolean;
   onAdd: () => Promise<void>;
 }) {
+  const { t } = useT();
   const [adding, setAdding] = React.useState(false);
   const panelId = React.useId();
   const answered = !!answer;
@@ -51,16 +54,16 @@ function AnswerRow({
           <span className={cn("min-w-0 flex-1 text-body text-ink", !open && "line-clamp-2")}>{question.text}</span>
           <span className="flex shrink-0 items-center gap-2">
             {fb.addToCv && !added && (
-              <Tooltip content="Something you said that isn't on your CV yet.">
+              <Tooltip content={t("Something you said that isn't on your CV yet.")}>
                 <span>
                   <Badge tone="accent">
-                    <FilePlus2 /> New fact
+                    <FilePlus2 /> {t("New fact")}
                   </Badge>
                 </span>
               </Tooltip>
             )}
             <Badge tone={answered ? scoreTone(fb.score) : "outline"} className="tabular">
-              {answered ? `${fb.score}/10` : "Skipped"}
+              {answered ? `${fb.score}/10` : t("Skipped")}
             </Badge>
           </span>
         </span>
@@ -77,13 +80,13 @@ function AnswerRow({
             <ul className="flex flex-col gap-2">
               {fb.worked.map((w, i) => (
                 <li key={`w${i}`} className="flex items-start gap-2.5 text-body text-ink">
-                  <Check className="mt-0.5 size-4 shrink-0 text-success" aria-label="Worked" />
+                  <Check className="mt-0.5 size-4 shrink-0 text-success" aria-label={t("Worked")} />
                   {w}
                 </li>
               ))}
               {fb.missing.map((m, i) => (
                 <li key={`m${i}`} className="flex items-start gap-2.5 text-body text-ink">
-                  <Minus className="mt-0.5 size-4 shrink-0 text-warn" aria-label="Missing" />
+                  <Minus className="mt-0.5 size-4 shrink-0 text-warn" aria-label={t("Missing")} />
                   {m}
                 </li>
               ))}
@@ -92,7 +95,7 @@ function AnswerRow({
 
           {fb.stronger && answered && (
             <div className="flex flex-col gap-2 rounded-card bg-surface-2 p-4">
-              <p className="text-body font-medium text-ink">Stronger</p>
+              <p className="text-body font-medium text-ink">{t("Stronger")}</p>
               <p className="text-body text-ink-2">{fb.stronger}</p>
             </div>
           )}
@@ -101,7 +104,7 @@ function AnswerRow({
             <div className="flex flex-col gap-3 rounded-card border border-hairline p-4 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
                 <p className="text-body text-ink">{fb.addToCv.bullet}</p>
-                <Tooltip content={`You said: “${fb.addToCv.quote}”`}>
+                <Tooltip content={t("You said: “{quote}”", { quote: fb.addToCv.quote })}>
                   <p tabIndex={0} className="mt-1 w-fit text-body text-ink-3">
                     {fb.addToCv.role} · {fb.addToCv.company}
                   </p>
@@ -109,7 +112,7 @@ function AnswerRow({
               </div>
               {added ? (
                 <span className="inline-flex min-h-11 items-center gap-1.5 text-body font-medium text-success">
-                  <Check className="size-4" /> On your CV
+                  <Check className="size-4" /> {t("On your CV")}
                 </span>
               ) : (
                 <Button
@@ -121,7 +124,7 @@ function AnswerRow({
                     setAdding(false);
                   }}
                 >
-                  <FilePlus2 /> Add to CV
+                  <FilePlus2 /> {t("Add to CV")}
                 </Button>
               )}
             </div>
@@ -149,6 +152,7 @@ export function Debrief({
   appliedAdds: number[];
   againHref: string;
 }) {
+  const { t } = useT();
   const firstOpen = report.answers.find((a) => a.addToCv)?.index ?? 0;
   const [open, setOpen] = React.useState<Set<number>>(() => new Set([firstOpen]));
   const [added, setAdded] = React.useState<Set<number>>(() => new Set(appliedAdds));
@@ -159,16 +163,16 @@ export function Debrief({
     if (!r?.ok) {
       // Already applied from another tab: show it as done, not as an error.
       if (r?.json?.error === "Already on your CV") setAdded((s) => new Set(s).add(index));
-      else toast.error(typeof r?.json?.error === "string" ? r.json.error : "Couldn't add it. Try again.");
+      else toast.error(typeof r?.json?.error === "string" ? r.json.error : t("Couldn't add it. Try again."));
       return;
     }
     setAdded((s) => new Set(s).add(index));
     toast.success(
-      "Added to your CV",
+      t("Added to your CV"),
       resumeId
         ? {
             action: {
-              label: "Open",
+              label: t("Open"),
               onClick: () => window.location.assign(`/cv/${resumeId}`),
             },
           }
@@ -179,25 +183,25 @@ export function Debrief({
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
       <section className="flex flex-col items-start gap-5 rounded-panel border border-hairline bg-surface p-5 sm:flex-row md:p-8">
-        <ScoreGauge value={report.overall} size={112} label="Interview score" tip={INTERVIEW_TIP} />
+        <ScoreGauge value={report.overall} size={112} label={t("Interview score")} tip={t(INTERVIEW_TIP)} />
         <div className="flex min-w-0 flex-1 flex-col gap-4 sm:pt-2">
           <p className="text-emph text-ink">{report.summary}</p>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant={facts > 0 ? "secondary" : "primary"} size="lg">
               <Link href={againHref}>
-                <RotateCw /> Practice again
+                <RotateCw /> {t("Practice again")}
               </Link>
             </Button>
             {resumeId && (
               <Button asChild variant="ghost" size="lg">
-                <Link href={`/cv/${resumeId}`}>Open CV</Link>
+                <Link href={`/cv/${resumeId}`}>{t("Open CV")}</Link>
               </Button>
             )}
           </div>
         </div>
       </section>
 
-      <ol aria-label="Answers" className="overflow-hidden rounded-panel border border-hairline bg-surface">
+      <ol aria-label={t("Answers")} className="overflow-hidden rounded-panel border border-hairline bg-surface">
         {questions.map((q, i) => {
           const fb = report.answers.find((a) => a.index === i) ?? {
             index: i,

@@ -1,11 +1,14 @@
-import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { getInterview, InterviewError, publicInterview } from "@/lib/interview/store";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { InterviewRoom } from "@/components/v2/interview/InterviewRoom";
+import { getServerT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Interview practice", robots: { index: false } };
+export async function generateMetadata() {
+  const { t } = await getServerT();
+  return { title: t("Interview practice"), robots: { index: false } };
+}
 export const dynamic = "force-dynamic";
 
 export default async function InterviewPage({ params }: { params: Promise<{ id: string }> }) {

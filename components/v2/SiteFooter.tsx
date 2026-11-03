@@ -1,13 +1,14 @@
 import Link from "next/link";
+import { msg } from "@/lib/i18n/config";
 import { getServerT } from "@/lib/i18n/server";
 
 const LINKS = [
-  { href: "/pricing", label: "Pricing" },
-  { href: "/resume-examples", label: "Examples" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-  { href: "/refund-policy", label: "Refunds" },
-  { href: "/contact", label: "Contact" },
+  { href: "/pricing", label: msg("Pricing") },
+  { href: "/resume-examples", label: msg("Examples") },
+  { href: "/privacy", label: msg("Privacy") },
+  { href: "/terms", label: msg("Terms") },
+  { href: "/refund-policy", label: msg("Refunds") },
+  { href: "/contact", label: msg("Contact") },
 ];
 
 /** Footer for the marketing pages. Legacy pages keep components/shared/SiteFooter. */

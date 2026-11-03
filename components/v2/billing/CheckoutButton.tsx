@@ -5,6 +5,7 @@ import posthog from "posthog-js";
 import { trackMetaEvent } from "@/lib/fbq";
 import type { PolarPlanKey } from "@/lib/polar";
 import { Button, Tooltip, type ButtonProps } from "@/components/ui";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Starts a Polar checkout. Same analytics as the legacy button (PostHog
@@ -18,6 +19,7 @@ export function CheckoutButton({
   children,
   ...props
 }: { plan: PolarPlanKey; planName: string; amount: number; available: boolean } & Omit<ButtonProps, "onClick">) {
+  const { t } = useT();
   const [loading, setLoading] = React.useState(false);
   // Back from Polar via bfcache restores the page with loading still on.
   React.useEffect(() => {
@@ -46,7 +48,7 @@ export function CheckoutButton({
   );
   if (available) return button;
   return (
-    <Tooltip content="Not on sale right now">
+    <Tooltip content={t("Not on sale right now")}>
       <span tabIndex={0} className="block w-full">
         {button}
       </span>

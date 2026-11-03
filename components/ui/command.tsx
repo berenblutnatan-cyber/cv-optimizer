@@ -5,6 +5,7 @@ import { Command as C } from "cmdk";
 import * as D from "@radix-ui/react-dialog";
 import { Search } from "lucide-react";
 import { Kbd } from "./kbd";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export type CommandAction = {
   id: string;
@@ -42,21 +43,22 @@ export function CommandPalette({ actions }: { actions: CommandAction[] }) {
     return [...m.entries()];
   }, [actions]);
 
+  const { t, dir } = useT();
   return (
     <D.Root open={open} onOpenChange={setOpen}>
       <D.Portal>
         <D.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] data-[state=open]:animate-fade-in" />
-        <D.Content className="fixed inset-x-0 top-[14vh] z-50 mx-auto w-[calc(100vw-32px)] max-w-xl overflow-hidden rounded-panel border border-hairline bg-surface shadow-pop focus-visible:outline-none data-[state=open]:animate-pop-in">
-          <D.Title className="sr-only">Command menu</D.Title>
-          <D.Description className="sr-only">Search actions and pages</D.Description>
+        <D.Content dir={dir} className="fixed inset-x-0 top-[14vh] z-50 mx-auto w-[calc(100vw-32px)] max-w-xl overflow-hidden rounded-panel border border-hairline bg-surface shadow-pop focus-visible:outline-none data-[state=open]:animate-pop-in">
+          <D.Title className="sr-only">{t("Command menu")}</D.Title>
+          <D.Description className="sr-only">{t("Search actions and pages")}</D.Description>
           <C loop className="flex flex-col">
             <div className="flex h-13 items-center gap-3 border-b border-hairline px-4">
               <Search className="size-[18px] text-ink-3" aria-hidden />
-              <C.Input autoFocus placeholder="Search or jump to…" className="h-full flex-1 bg-transparent text-emph text-ink outline-none placeholder:text-ink-3" />
-              <Kbd>esc</Kbd>
+              <C.Input autoFocus placeholder={t("Search or jump to…")} className="h-full flex-1 bg-transparent text-emph text-ink outline-none placeholder:text-ink-3" />
+              <Kbd>Esc</Kbd>
             </div>
             <C.List className="max-h-[50vh] relative overflow-y-auto p-1.5">
-              <C.Empty className="px-3 py-8 text-center text-body text-ink-2">No matches</C.Empty>
+              <C.Empty className="px-3 py-8 text-center text-body text-ink-2">{t("No matches")}</C.Empty>
               {groups.map(([group, items]) => (
                 <C.Group
                   key={group}

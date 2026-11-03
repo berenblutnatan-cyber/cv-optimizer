@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Drawer } from "vaul";
 import { cn } from "./cn";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Bottom sheet on phones, side drawer on desktop (`side="right"`).
@@ -25,12 +26,14 @@ export function Sheet({
   children: React.ReactNode;
   className?: string;
 }) {
+  const { dir } = useT();
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange} direction={side}>
       {trigger && <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-black/30" />
         <Drawer.Content
+          dir={dir}
           className={cn(
             "fixed z-50 flex flex-col border-hairline bg-surface shadow-pop focus-visible:outline-none",
             side === "bottom" && "inset-x-0 bottom-0 max-h-[92vh] rounded-t-panel border-t",

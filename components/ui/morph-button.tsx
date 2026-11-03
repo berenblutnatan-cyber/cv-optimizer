@@ -6,6 +6,7 @@ import { Button, type ButtonProps } from "./button";
 import { IconButton } from "./icon-button";
 import { cn } from "./cn";
 import { toast } from "./toast";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * A button whose label changes in place: Save → Saving → Saved. Every label sits
@@ -44,9 +45,9 @@ export function MorphButton<S extends string>({
  */
 export function CopyButton({
   text,
-  label = "Copy",
-  copiedLabel = "Copied",
-  failedLabel = "Couldn't copy",
+  label: labelProp,
+  copiedLabel: copiedProp,
+  failedLabel: failedProp,
   iconOnly,
   ariaLabel,
   variant = "ghost",
@@ -64,6 +65,10 @@ export function CopyButton({
   size?: ButtonProps["size"];
   className?: string;
 }) {
+  const { t } = useT();
+  const label = labelProp ?? t("Copy");
+  const copiedLabel = copiedProp ?? t("Copied");
+  const failedLabel = failedProp ?? t("Couldn't copy");
   const [copied, setCopied] = React.useState(false);
   const timer = React.useRef<ReturnType<typeof setTimeout>>();
   React.useEffect(() => () => clearTimeout(timer.current), []);

@@ -1,7 +1,7 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { applyDocumentOp, documentTitle, emptyDocument, toDocument, type ResumeDocument } from "./document";
+import { applyDocumentOp, documentTitle, emptyDocument, storedTitle, toDocument, type ResumeDocument } from "./document";
 import { DRAFT_TTL_DAYS, type Owner } from "./owner-types";
 
 // Server-side persistence for v2 CVs. Every content change is an op appended
@@ -65,12 +65,13 @@ export async function createResume(
 }
 
 export async function listResumes(owner: Owner): Promise<ResumeSummary[]> {
-  return prisma.resume.findMany({
+  const rows = await prisma.resume.findMany({
     where: ownerWhere(owner),
     orderBy: { updatedAt: "desc" },
     take: 100,
     select: { id: true, title: true, template: true, updatedAt: true, source: true },
   });
+  return rows.map((r) => ({ ...r, title: storedTitle(r.title) }));
 }
 
 export type ResumeCard = ResumeSummary & { doc: ResumeDocument };
@@ -83,7 +84,7 @@ export async function listResumeCards(owner: Owner): Promise<ResumeCard[]> {
     take: 60,
     select: { id: true, title: true, template: true, themeColor: true, updatedAt: true, source: true, data: true },
   });
-  return rows.map(({ data, themeColor, ...r }) => ({ ...r, doc: toDocument(data, { template: r.template, themeColor }) }));
+  return rows.map(({ data, themeColor, ...r }) => ({ ...r, title: storedTitle(r.title), doc: toDocument(data, { template: r.template, themeColor }) }));
 }
 
 export async function loadResume(id: string, owner: Owner): Promise<{ id: string; doc: ResumeDocument; lastSeq: number; updatedAt: Date } | null> {

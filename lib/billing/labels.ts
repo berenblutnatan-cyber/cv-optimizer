@@ -1,28 +1,31 @@
 // What each ledger reason means to the user (account activity). Client-safe.
 
+import { msg } from "@/lib/i18n/config";
+
 const LABELS: Record<string, string> = {
-  signup: "Welcome credit",
-  opening: "Starting balance",
-  purchase: "Credits bought",
-  purchase_refund: "Purchase refunded",
-  coupon: "Code redeemed",
-  feedback_reward: "Thanks for the feedback",
-  refund: "Refund: run didn't finish",
-  correction: "Balance correction",
-  admin: "Adjustment",
-  analyze: "CV analysis",
-  unlock: "Tailored CV",
-  interview_prep: "Interview prep",
-  cover_letter: "Cover letter",
-  voice_finalize: "CV from voice",
-  use_credit: "AI edit",
-  tailor: "Tailored to a job",
-  voice: "Voice call",
-  interview: "Interview practice",
-  toolkit: "Career tool",
+  signup: msg("Welcome credit"),
+  opening: msg("Starting balance"),
+  purchase: msg("Credits bought"),
+  purchase_refund: msg("Purchase refunded"),
+  coupon: msg("Code redeemed"),
+  feedback_reward: msg("Thanks for the feedback"),
+  refund: msg("Refund: run didn't finish"),
+  correction: msg("Balance correction"),
+  admin: msg("Adjustment"),
+  analyze: msg("CV analysis"),
+  unlock: msg("Tailored CV"),
+  interview_prep: msg("Interview prep"),
+  cover_letter: msg("Cover letter"),
+  voice_finalize: msg("CV from voice"),
+  use_credit: msg("AI edit"),
+  tailor: msg("Tailored to a job"),
+  voice: msg("Voice call"),
+  interview: msg("Interview practice"),
+  toolkit: msg("Career tool"),
 };
 
-export function ledgerLabel(reason: string, planName?: string | null): string {
+/** `t` translates the label; plan names stay as they are. */
+export function ledgerLabel(reason: string, planName?: string | null, t: (s: string) => string = (s) => s): string {
   if (reason === "purchase" && planName) return planName;
-  return LABELS[reason] ?? "Adjustment";
+  return t(LABELS[reason] ?? LABELS.admin);
 }

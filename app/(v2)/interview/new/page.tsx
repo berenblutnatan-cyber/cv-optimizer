@@ -1,5 +1,4 @@
 import { PageTitle } from "@/components/ui/page-title";
-import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { FileText, LogIn, Plus } from "lucide-react";
@@ -12,8 +11,12 @@ import { unlimitedSecondsUsed } from "@/lib/voice/sessions";
 import { Button, EmptyState } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { InterviewSetup } from "@/components/v2/interview/InterviewSetup";
+import { getServerT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "New practice", robots: { index: false } };
+export async function generateMetadata() {
+  const { t } = await getServerT();
+  return { title: t("New practice"), robots: { index: false } };
+}
 export const dynamic = "force-dynamic";
 
 type Search = { cv?: string; tailoring?: string; again?: string; job?: string };
@@ -21,6 +24,7 @@ type Search = { cv?: string; tailoring?: string; again?: string; job?: string };
 export default async function NewInterviewPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const { userId } = await auth();
+  const { t, dir } = await getServerT();
 
   const body = async () => {
     if (!userId) {
@@ -29,11 +33,11 @@ export default async function NewInterviewPage({ searchParams }: { searchParams:
         <div className="rounded-panel border border-hairline bg-surface">
           <EmptyState
             icon={<LogIn />}
-            title="Sign in to practice"
+            title={t("Sign in to practice")}
             action={
               <Button asChild variant="primary" size="lg">
                 <Link href={`/sign-in?redirect_url=${encodeURIComponent(back)}`}>
-                  <LogIn /> Sign in
+                  <LogIn /> {t("Sign in")}
                 </Link>
               </Button>
             }
@@ -54,16 +58,16 @@ export default async function NewInterviewPage({ searchParams }: { searchParams:
               .then((j) => (j ? { resumeId: j.resumeId, tailoringId: null, jdText: j.jdText ?? "", jobTitle: j.title, company: j.company } : null))
           : null,
     ]);
-    const cvs = cards.filter((c) => c.doc.content.experience.length > 0).map((c) => ({ id: c.id, title: c.title || "Untitled CV" }));
+    const cvs = cards.filter((c) => c.doc.content.experience.length > 0).map((c) => ({ id: c.id, title: c.title || t("Untitled CV") }));
     if (cvs.length === 0) {
       return (
         <div className="rounded-panel border border-hairline bg-surface">
           <EmptyState
             icon={<FileText />}
-            title={cards.length > 0 ? "Add your experience to a CV first" : "Make a CV first"}
+            title={cards.length > 0 ? t("Add your experience to a CV first") : t("Make a CV first")}
             action={
               <Button asChild variant="primary" size="lg">
-                <Link href={cards[0] ? `/cv/${cards[0].id}` : "/start"}>{cards[0] ? "Open CV" : <><Plus /> New CV</>}</Link>
+                <Link href={cards[0] ? `/cv/${cards[0].id}` : "/start"}>{cards[0] ? t("Open CV") : <><Plus /> {t("New CV")}</>}</Link>
               </Button>
             }
           />
@@ -100,8 +104,8 @@ export default async function NewInterviewPage({ searchParams }: { searchParams:
   return (
     <div className="min-h-dvh bg-canvas">
       <AppHeader />
-      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10 md:px-8">
-        <PageTitle>Practice interview</PageTitle>
+      <main dir={dir} className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10 md:px-8">
+        <PageTitle>{t("Practice interview")}</PageTitle>
         {await body()}
       </main>
     </div>

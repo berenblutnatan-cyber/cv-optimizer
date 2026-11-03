@@ -8,6 +8,7 @@ import { BEGIN_QUESTION_TOOL, INTERVIEW } from "@/lib/interview/types";
 import { readVoiceSupport } from "@/lib/voice/support";
 import { Badge, Button, cn, CopyButton, EmptyState, IconButton, Progress, Skeleton, Textarea, toast, Tooltip, VoiceOrb, type VoiceState } from "@/components/ui";
 import { askMic, Connection, ELEVENLABS, fmt, LiveOrb, micHelp, postJson, type CallControls, type CallConn, type VoiceSdk } from "@/components/v2/voice/call";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { Debrief } from "./Debrief";
 
 // One practice session, start to debrief. Voice: an ElevenLabs interviewer
@@ -63,7 +64,8 @@ function useStored<T>(key: string, initial: T): [T, (v: T) => void] {
 }
 
 function JobTitle({ iv }: { iv: PublicInterview }) {
-  const title = [iv.jobTitle, iv.company].filter(Boolean).join(" · ") || "Practice interview";
+  const { t } = useT();
+  const title = [iv.jobTitle, iv.company].filter(Boolean).join(" · ") || t("Practice interview");
   return <h1 className="text-h2 font-semibold tracking-tight text-ink">{title}</h1>;
 }
 
@@ -71,6 +73,7 @@ function JobTitle({ iv }: { iv: PublicInterview }) {
 function TextPractice({ iv, onSubmitted }: { iv: PublicInterview; onSubmitted: (iv: PublicInterview | null, error?: string) => void }) {
   const [drafts, setDrafts] = useStored<string[]>(`hired:iv:${iv.id}:drafts`, iv.questions.map(() => ""));
   const [at, setAt] = useStored<number>(`hired:iv:${iv.id}:at`, 0);
+  const { t } = useT();
   const [sending, setSending] = React.useState(false);
   const boxRef = React.useRef<HTMLTextAreaElement>(null);
   const total = iv.questions.length;
@@ -90,7 +93,7 @@ function TextPractice({ iv, onSubmitted }: { iv: PublicInterview; onSubmitted: (
     onSubmitted(null); // straight to the scoring view: this takes a minute
     const r = await postJson(`/api/interview/${iv.id}/answers`, { answers }).catch(() => null);
     setSending(false);
-    if (!r?.ok) return onSubmitted(null, typeof r?.json?.error === "string" ? r.json.error : "Couldn't score your answers. Try again.");
+    if (!r?.ok) return onSubmitted(null, typeof r?.json?.error === "string" ? r.json.error : t("Couldn't score your answers. Try again."));
     try {
       localStorage.removeItem(`hired:iv:${iv.id}:drafts`);
       localStorage.removeItem(`hired:iv:${iv.id}:at`);
@@ -109,9 +112,9 @@ function TextPractice({ iv, onSubmitted }: { iv: PublicInterview; onSubmitted: (
     >
       <div className="flex items-center justify-between gap-4">
         <span className="tabular text-body font-medium text-ink-2">
-          {i + 1} of {total}
+          {t("{n} of {total}", { n: i + 1, total })}
         </span>
-        <Progress value={((i + 1) / total) * 100} label={`Question ${i + 1} of ${total}`} className="w-32" />
+        <Progress value={((i + 1) / total) * 100} label={t("Question {n} of {total}", { n: i + 1, total })} className="w-32" />
       </div>
       <label htmlFor="iv-answer" className="text-h3 font-semibold text-ink">
         {q.text}
@@ -133,23 +136,23 @@ function TextPractice({ iv, onSubmitted }: { iv: PublicInterview; onSubmitted: (
             e.currentTarget.form?.requestSubmit();
           }
         }}
-        placeholder="Answer as you would out loud"
+        placeholder={t("Answer as you would out loud")}
       />
       <div className="flex items-center justify-between gap-3">
         <Button type="button" variant="ghost" size="lg" disabled={i === 0} onClick={() => setAt(i - 1)}>
-          <ArrowLeft /> Back
+          <ArrowLeft className="rtl:-scale-x-100" /> {t("Back")}
         </Button>
         {last ? (
-          <Tooltip content={answered === 0 ? "Answer at least one question." : "Skipped questions score 0."}>
+          <Tooltip content={answered === 0 ? t("Answer at least one question.") : t("Skipped questions score 0.")}>
             <span tabIndex={answered === 0 ? 0 : -1}>
               <Button type="submit" variant="primary" size="lg" loading={sending} disabled={answered === 0}>
-                <Send /> Get feedback
+                <Send /> {t("Get feedback")}
               </Button>
             </span>
           </Tooltip>
         ) : (
           <Button type="submit" variant={value.trim() ? "primary" : "secondary"} size="lg">
-            {value.trim() ? "Next" : "Skip"} <ArrowRight data-nudge />
+            {value.trim() ? t("Next") : t("Skip")} <ArrowRight data-nudge className="rtl:-scale-x-100" />
           </Button>
         )}
       </div>
@@ -158,21 +161,22 @@ function TextPractice({ iv, onSubmitted }: { iv: PublicInterview; onSubmitted: (
 }
 
 function ScoringView({ slow, onCheck }: { slow?: boolean; onCheck: () => void }) {
+  const { t } = useT();
   return (
     <div className="flex flex-col gap-6" aria-busy>
       <span className="sr-only" role="status">
-        Scoring your answers
+        {t("Scoring your answers")}
       </span>
       <section className="flex flex-col items-center gap-5 rounded-panel border border-hairline bg-surface p-6 sm:flex-row sm:items-start md:p-8">
         <ScoringRing />
         <div className="flex w-full flex-1 flex-col gap-3 sm:pt-3">
-          <p className="text-emph font-medium text-ink">{slow ? "Taking longer than usual" : "Scoring your answers"}</p>
+          <p className="text-emph font-medium text-ink">{slow ? t("Taking longer than usual") : t("Scoring your answers")}</p>
           <Skeleton className="h-5 w-full max-w-md" />
           <Skeleton className="h-5 w-3/4 max-w-sm" />
           {slow && (
             <div>
               <Button variant="secondary" onClick={onCheck}>
-                <RotateCw /> Check again
+                <RotateCw /> {t("Check again")}
               </Button>
             </div>
           )}
@@ -200,6 +204,7 @@ function ScoringRing() {
 }
 
 export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicInterview; sdk?: VoiceSdk }) {
+  const { t, dir } = useT();
   const [iv, setIv] = React.useState(initial);
   const [phase, setPhaseState] = React.useState<Phase>(() => initialPhase(initial));
   const phaseRef = React.useRef(phase);
@@ -267,17 +272,17 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
     if (s !== "ok") return setPhase({ name: "blocked", reason: s });
     setPhase({ name: "starting" });
     if (!(await askMic())) return setPhase({ name: "blocked", reason: "mic_denied" });
-    const t = await token();
-    if ("error" in t) {
-      const reason = t.error === 410 ? "expired" : t.error === 503 ? "unavailable" : "error";
-      return setPhase({ name: "blocked", reason, message: t.message });
+    const tk = await token();
+    if ("error" in tk) {
+      const reason = tk.error === 410 ? "expired" : tk.error === 503 ? "unavailable" : "error";
+      return setPhase({ name: "blocked", reason, message: tk.message });
     }
     finishing.current = false;
     reconnects.current = 0;
     nudged.current = false;
-    deadline.current = Date.now() + t.seconds * 1000;
-    setLeft(t.seconds);
-    setConn({ attempt: t.attempt, token: t.token, variables: t.variables });
+    deadline.current = Date.now() + tk.seconds * 1000;
+    setLeft(tk.seconds);
+    setConn({ attempt: tk.attempt, token: tk.token, variables: tk.variables });
     setPhase({ name: "live" });
   };
 
@@ -289,17 +294,17 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
     setPhase({ name: "reconnecting" });
     await new Promise((res) => setTimeout(res, 800 * reconnects.current));
     if (phaseRef.current.name !== "reconnecting" || finishing.current) return;
-    const t = await token();
-    if ("error" in t) return void finish();
-    deadline.current = Date.now() + t.seconds * 1000;
-    setConn({ attempt: t.attempt, token: t.token, variables: t.variables });
+    const tk = await token();
+    if ("error" in tk) return void finish();
+    deadline.current = Date.now() + tk.seconds * 1000;
+    setConn({ attempt: tk.attempt, token: tk.token, variables: tk.variables });
     setPhase({ name: "live" });
   }, [finish, setPhase, token]);
 
   // The clock: warn the interviewer near the end, hang up at zero.
   React.useEffect(() => {
     if (phase.name !== "live") return;
-    const t = setInterval(() => {
+    const tick = setInterval(() => {
       if (!deadline.current) return;
       const s = Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000));
       setLeft(s);
@@ -309,7 +314,7 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
       }
       if (s === 0) void finish();
     }, 250);
-    return () => clearInterval(t);
+    return () => clearInterval(tick);
   }, [phase.name, finish]);
 
   // A call left running in a hidden tab ends after a minute (and on page close).
@@ -396,11 +401,11 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
   React.useEffect(() => {
     if (phase.name !== "scoring") return;
     const began = Date.now();
-    const t = setInterval(() => {
+    const tick = setInterval(() => {
       if (Date.now() - began > SLOW_AFTER_MS && !(phaseRef.current.name === "scoring" && phaseRef.current.slow)) setPhase({ name: "scoring", slow: true });
       void refresh();
     }, POLL_MS);
-    return () => clearInterval(t);
+    return () => clearInterval(tick);
   }, [phase.name, refresh, setPhase]);
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -409,12 +414,12 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
   const back = (
     <Button asChild variant="ghost" size="sm" className="-ms-2 w-fit">
       <Link href="/interview">
-        <ArrowLeft /> Interview
+        <ArrowLeft className="rtl:-scale-x-100" /> {t("Interview")}
       </Link>
     </Button>
   );
   const shell = (body: React.ReactNode, wide = false) => (
-    <div className={cn("mx-auto flex w-full flex-col gap-6 px-4 py-6 md:px-8 md:py-10", wide ? "max-w-3xl" : "max-w-2xl")}>
+    <div dir={dir} className={cn("mx-auto flex w-full flex-col gap-6 px-4 py-6 md:px-8 md:py-10", wide ? "max-w-3xl" : "max-w-2xl")}>
       <div className="flex flex-col gap-2">
         {back}
         <JobTitle iv={iv} />
@@ -440,13 +445,13 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
       <div className="rounded-panel border border-hairline bg-surface">
         <EmptyState
           icon={<MicOff />}
-          title={nothing ? "Nothing to score" : "Couldn't score this one"}
+          title={nothing ? t("Nothing to score") : t("Couldn't score this one")}
           action={
             <div className="flex flex-col items-center gap-3">
-              {iv.refunded && <Badge tone="neutral">Credit refunded</Badge>}
+              {iv.refunded && <Badge tone="neutral">{t("Credit refunded")}</Badge>}
               <Button asChild variant="primary" size="lg">
                 <Link href={againHref}>
-                  <RotateCw /> Try again
+                  <RotateCw /> {t("Try again")}
                 </Link>
               </Button>
             </div>
@@ -474,36 +479,36 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
   if (phase.name === "blocked") {
     const view: Record<typeof phase.reason, { title: string; hint?: string; action: React.ReactNode }> = {
       mic_denied: {
-        title: "Microphone blocked",
-        hint: micHelp(),
+        title: t("Microphone blocked"),
+        hint: t(micHelp()),
         action: (
           <Button size="lg" variant="primary" onClick={() => setPhase({ name: "voice-ready" })}>
-            <RotateCw /> Try again
+            <RotateCw /> {t("Try again")}
           </Button>
         ),
       },
-      unsupported: { title: "This browser can't use the mic", hint: "Try Chrome, Edge or Safari.", action: null },
+      unsupported: { title: t("This browser can't use the mic"), hint: t("Try Chrome, Edge or Safari."), action: null },
       in_app: {
-        title: "Open in Safari or Chrome",
-        hint: "In-app browsers block the microphone.",
+        title: t("Open in Safari or Chrome"),
+        hint: t("In-app browsers block the microphone."),
         action: (
-          <CopyButton text={() => window.location.href} label="Copy link" variant="primary" size="lg" />
+          <CopyButton text={() => window.location.href} label={t("Copy link")} variant="primary" size="lg" />
         ),
       },
-      unavailable: { title: phase.message ?? "Voice isn't available right now", action: null },
+      unavailable: { title: phase.message ?? t("Voice isn't available right now"), action: null },
       expired: {
-        title: phase.message ?? "This practice has ended",
+        title: phase.message ?? t("This practice has ended"),
         action: (
           <Button size="lg" variant="primary" onClick={() => void finish()}>
-            Get feedback
+            {t("Get feedback")}
           </Button>
         ),
       },
       error: {
-        title: phase.message ?? "Couldn't start the call",
+        title: phase.message ?? t("Couldn't start the call"),
         action: (
           <Button size="lg" variant="primary" onClick={() => setPhase({ name: "voice-ready" })}>
-            <RotateCw /> Try again
+            <RotateCw /> {t("Try again")}
           </Button>
         ),
       },
@@ -532,15 +537,15 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
       <div className="flex flex-col items-center gap-6 rounded-panel border border-hairline bg-surface px-6 py-12">
         <VoiceOrb
           state={phase.name === "starting" ? "connecting" : "idle"}
-          label={phase.name === "starting" ? "Connecting" : resuming ? "Resume interview" : "Start interview"}
+          label={phase.name === "starting" ? t("Connecting") : resuming ? t("Resume interview") : t("Start interview")}
           onClick={phase.name === "starting" ? undefined : () => void start()}
           size={112}
         />
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <Badge tone="neutral">{iv.questions.length} questions</Badge>
-          <Badge tone="neutral">Up to {minutes} min</Badge>
-          <Tooltip content="An AI interviewer asks the questions and follows up. Audio isn't recorded.">
-            <span tabIndex={0} aria-label="About the interviewer" className="grid size-11 place-items-center rounded-control text-ink-3 hover:text-ink">
+          <Badge tone="neutral">{iv.questions.length === 1 ? t("1 question") : t("{n} questions", { n: iv.questions.length })}</Badge>
+          <Badge tone="neutral">{t("Up to {n} min", { n: minutes })}</Badge>
+          <Tooltip content={t("An AI interviewer asks the questions and follows up. Audio isn't recorded.")}>
+            <span tabIndex={0} aria-label={t("About the interviewer")} className="grid size-11 place-items-center rounded-control text-ink-3 hover:text-ink">
               <Info className="size-4" />
             </span>
           </Tooltip>
@@ -553,10 +558,10 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
   const q = current >= 0 ? iv.questions[current] : null;
   const orbState: VoiceState = !connected ? "connecting" : muted ? "muted" : speaking ? "speaking" : "listening";
   const low = left !== null && left <= 60;
-  const status = phase.name === "reconnecting" ? "Reconnecting" : phase.name === "ending" ? "Ending" : null;
-  const timeNotice = left === null ? "" : left <= 30 ? "30 seconds left" : left <= 60 ? "1 minute left" : "";
+  const status = phase.name === "reconnecting" ? t("Reconnecting") : phase.name === "ending" ? t("Ending") : null;
+  const timeNotice = left === null ? "" : left <= 30 ? t("30 seconds left") : left <= 60 ? t("1 minute left") : "";
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-57px-var(--bottom-nav,0px))] w-full max-w-2xl flex-col px-4 py-6 md:px-8 md:py-10">
+    <div dir={dir} className="mx-auto flex min-h-[calc(100dvh-57px-var(--bottom-nav,0px))] w-full max-w-2xl flex-col px-4 py-6 md:px-8 md:py-10">
       {conn && (
         <sdk.Provider key={conn.attempt}>
           <Connection
@@ -574,7 +579,7 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
       )}
 
       <div className="flex items-center justify-between gap-4">
-        <span className="tabular text-body font-medium text-ink-2">{q ? `Question ${current + 1} of ${iv.questions.length}` : "Getting started"}</span>
+        <span className="tabular text-body font-medium text-ink-2">{q ? t("Question {n} of {total}", { n: current + 1, total: iv.questions.length }) : t("Getting started")}</span>
         <span className="flex items-center gap-2">
           <span aria-hidden className="relative grid size-2.5 place-items-center">
             {phase.name === "live" && <span className="absolute inline-flex size-full animate-ping rounded-full bg-danger/50" />}
@@ -603,18 +608,18 @@ export function InterviewRoom({ initial, sdk = ELEVENLABS }: { initial: PublicIn
         {phase.name === "live" ? (
           <LiveOrb state={orbState} controlsRef={controlsRef} muted={muted} onToggleMute={() => setMuted((m) => !m)} />
         ) : (
-          <VoiceOrb state="connecting" label={status ?? "Connecting"} size={88} />
+          <VoiceOrb state="connecting" label={status ?? t("Connecting")} size={88} />
         )}
         {/* Spoken aloud already: shown, not re-announced. */}
         <p className="line-clamp-3 min-h-18 max-w-md text-center text-body text-ink-2">{caption}</p>
       </div>
 
       <div className="sticky bottom-[calc(var(--bottom-nav,0px)+16px)] flex items-center justify-center gap-3">
-        <IconButton size="lg" label={muted ? "Unmute" : "Mute"} active={muted} disabled={phase.name !== "live"} onClick={() => setMuted((m) => !m)}>
+        <IconButton size="lg" label={muted ? t("Unmute") : t("Mute")} active={muted} disabled={phase.name !== "live"} onClick={() => setMuted((m) => !m)}>
           {muted ? <MicOff /> : <Mic />}
         </IconButton>
         <Button ref={endRef} size="lg" variant="danger" loading={phase.name === "ending"} onClick={() => void finish()}>
-          <PhoneOff /> End interview
+          <PhoneOff /> {t("End interview")}
         </Button>
       </div>
     </div>

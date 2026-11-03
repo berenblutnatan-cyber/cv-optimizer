@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Segmented } from "./segmented";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type Theme = "system" | "light" | "dark";
 const KEY = "hired-theme";
@@ -11,6 +12,7 @@ const KEY = "hired-theme";
 export const themeBootScript = `try{var t=localStorage.getItem("${KEY}");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export function ThemeToggle() {
+  const { t: tr } = useT();
   const [theme, setTheme] = React.useState<Theme>("system");
   React.useEffect(() => {
     try {
@@ -30,14 +32,14 @@ export function ThemeToggle() {
   };
   return (
     <Segmented<Theme>
-      aria-label="Theme"
+      aria-label={tr("Theme")}
       size="sm"
       value={theme}
       onChange={apply}
       options={[
-        { value: "system", label: null, icon: <Monitor />, ariaLabel: "System theme" },
-        { value: "light", label: null, icon: <Sun />, ariaLabel: "Light theme" },
-        { value: "dark", label: null, icon: <Moon />, ariaLabel: "Dark theme" },
+        { value: "system", label: null, icon: <Monitor />, ariaLabel: tr("System theme") },
+        { value: "light", label: null, icon: <Sun />, ariaLabel: tr("Light theme") },
+        { value: "dark", label: null, icon: <Moon />, ariaLabel: tr("Dark theme") },
       ]}
     />
   );

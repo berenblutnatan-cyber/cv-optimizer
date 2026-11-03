@@ -8,6 +8,7 @@ import { PAGE_HEIGHT_PX } from "@/lib/builder/autofit";
 import { useAutoFit, type FitSolution } from "@/hooks/useAutoFit";
 import { DEFAULT_DESIGN, type ResumeDocument } from "@/lib/resume/document";
 import { toTemplateData } from "@/lib/resume/view";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { cn } from "@/components/ui/cn";
 
 export const A4_WIDTH_PX = 794;
@@ -36,7 +37,9 @@ export function CvPreview({
   const [scale, setScale] = React.useState(0.6);
   const [height, setHeight] = React.useState(PAGE_HEIGHT_PX);
   const { design } = doc;
-  const data = React.useMemo(() => toTemplateData(doc.content), [doc.content]);
+  const { t } = useT();
+  const placeholderName = t("Your Name");
+  const data = React.useMemo(() => toTemplateData(doc.content, { placeholderName }), [doc.content, placeholderName]);
   const multi = design.pageMode === "multi";
 
   // Fit the A4 page to the pane width.
@@ -86,7 +89,8 @@ export function CvPreview({
   const pages = Math.round(height / PAGE_HEIGHT_PX);
 
   return (
-    <div ref={frameRef} className={cn("w-full", className)}>
+    // The CV is the user's document in its own language: it never flips with the UI.
+    <div ref={frameRef} dir="ltr" className={cn("w-full", className)}>
       <div className="relative mx-auto" style={{ width: A4_WIDTH_PX * scale, height: height * scale }}>
         <div
           className="absolute left-0 top-0 origin-top-left overflow-hidden rounded-[2px] bg-white shadow-pop"

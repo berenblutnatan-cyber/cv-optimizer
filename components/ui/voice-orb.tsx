@@ -3,16 +3,18 @@
 import * as React from "react";
 import { Mic, MicOff, Loader2, AlertTriangle } from "lucide-react";
 import { cn } from "./cn";
+import { useT } from "@/lib/i18n/LanguageProvider";
+import { msg } from "@/lib/i18n/config";
 
 export type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "muted" | "error";
 
 const LABEL: Record<VoiceState, string> = {
-  idle: "Tap to talk",
-  connecting: "Connecting",
-  listening: "Listening",
-  speaking: "Speaking",
-  muted: "Muted",
-  error: "Mic unavailable",
+  idle: msg("Tap to talk"),
+  connecting: msg("Connecting"),
+  listening: msg("Listening"),
+  speaking: msg("Speaking"),
+  muted: msg("Muted"),
+  error: msg("Mic unavailable"),
 };
 
 /**
@@ -40,9 +42,10 @@ export function VoiceOrb({
   actionLabel?: string;
   announce?: boolean;
 }) {
+  const { t } = useT();
   const active = state === "listening" || state === "speaking";
   const halo = 1 + Math.min(1, Math.max(0, level)) * 0.35;
-  const text = label ?? LABEL[state];
+  const text = label ?? t(LABEL[state]);
   const className = cn(
     "relative grid place-items-center rounded-full transition-[background-color,box-shadow,transform] duration-panel focus-visible:outline-offset-4",
     state === "idle" && "bg-ink text-canvas hover:scale-[1.03]",

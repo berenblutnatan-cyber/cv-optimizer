@@ -35,10 +35,10 @@ function MatrixTable({ rows }: { rows: Matrix }) {
               {t("Weight")}
             </th>
             <th scope="col" className="px-3 py-2 text-end font-medium">
-              A
+              {t("A")}
             </th>
             <th scope="col" className="px-3 py-2 text-end font-medium">
-              B
+              {t("B")}
             </th>
           </tr>
         </thead>

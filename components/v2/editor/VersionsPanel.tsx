@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { History, MoreHorizontal, PenLine, RotateCcw, Save } from "lucide-react";
+import { msg } from "@/lib/i18n/config";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ResumeDocument } from "@/lib/resume/document";
 import { Button, cn, EmptyState, ErrorState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, toast } from "@/components/ui";
 import { RelativeTime } from "@/components/v2/cv/RelativeTime";
@@ -11,19 +13,23 @@ export type Version = { id: string; number: number; label: string | null; create
 export type Viewing = { version: Version; doc: ResumeDocument } | null;
 
 const AUTHOR: Record<string, string> = {
-  user: "You",
-  chat: "Chat",
-  import: "Imported",
-  intake_agent: "Voice",
-  tailor: "Tailored",
-  migration: "Original",
+  user: msg("You"),
+  chat: msg("Chat"),
+  import: msg("Imported"),
+  intake_agent: msg("Voice"),
+  tailor: msg("Tailored"),
+  migration: msg("Original"),
 };
 
-export const versionTitle = (v: Version) => v.label || `Version ${v.number}`;
+type T = ReturnType<typeof useT>["t"];
+const plain: T = (source, vars) => (vars ? source.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : source);
+
+/** A version's name: its label, or "Version 3". Pass `t` from useT() to localize the fallback. */
+export const versionTitle = (v: Version, t: T = plain) => v.label || t("Version {n}", { n: v.number });
 
 async function json<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(body?.error ?? "Something went wrong");
+  if (!res.ok) throw new Error(body?.error ?? msg("Something went wrong"));
   return body as T;
 }
 
@@ -41,6 +47,7 @@ export function useVersions({
   settle: () => Promise<boolean>;
   adoptServer: (s: { doc: ResumeDocument; lastSeq: number }) => void;
 }) {
+  const { t } = useT();
   const [versions, setVersions] = React.useState<Version[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [viewing, setViewing] = React.useState<Viewing>(null);
@@ -60,17 +67,17 @@ export function useVersions({
   const save = React.useCallback(async () => {
     setBusy("save");
     try {
-      if (!(await settle())) throw new Error("Your latest edits aren't saved yet. Try again.");
+      if (!(await settle())) throw new Error(msg("Your latest edits aren't saved yet. Try again."));
       const v = await json<Version>(await fetch(`/api/cv/${cvId}/versions`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }));
       setVersions((list) => [v, ...(list ?? [])]);
       return v;
     } catch (err) {
-      toast.error((err as Error).message);
+      toast.error(t((err as Error).message));
       return null;
     } finally {
       setBusy(null);
     }
-  }, [cvId, settle]);
+  }, [cvId, settle, t]);
 
   const rename = React.useCallback(
     async (v: Version, label: string) => {
@@ -80,10 +87,10 @@ export function useVersions({
         await json(await fetch(`/api/cv/${cvId}/versions/${v.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ label }) }));
       } catch (err) {
         setVersions(prev);
-        toast.error((err as Error).message);
+        toast.error(t((err as Error).message));
       }
     },
-    [cvId, versions],
+    [cvId, versions, t],
   );
 
   const view = React.useCallback(
@@ -95,19 +102,19 @@ export function useVersions({
         const out = await json<{ doc: ResumeDocument }>(await fetch(`/api/cv/${cvId}/versions/${v.id}`));
         if (seq === viewSeq.current) setViewing({ version: v, doc: out.doc });
       } catch (err) {
-        toast.error((err as Error).message);
+        toast.error(t((err as Error).message));
       } finally {
         if (seq === viewSeq.current) setBusy(null);
       }
     },
-    [cvId],
+    [cvId, t],
   );
 
   const restore = React.useCallback(
     async (v: Version, opts: { undoOf?: Version } = {}): Promise<boolean> => {
       setBusy(`restore:${v.id}`);
       try {
-        if (!(await settle())) throw new Error("Your latest edits aren't saved yet. Try again.");
+        if (!(await settle())) throw new Error(msg("Your latest edits aren't saved yet. Try again."));
         const out = await json<{ doc: ResumeDocument; lastSeq: number; restored: number; backup: Version | null }>(
           await fetch(`/api/cv/${cvId}/versions/${v.id}/restore`, {
             method: "POST",
@@ -121,20 +128,20 @@ export function useVersions({
         void load();
         const backup = out.backup;
         if (!opts.undoOf && backup) {
-          toast(`Restored ${versionTitle(v)}`, {
+          toast(t("Restored {title}", { title: versionTitle(v, t) }), {
             duration: 10_000,
-            action: { label: "Undo", onClick: () => void restoreRef.current(backup, { undoOf: v }) },
+            action: { label: t("Undo"), onClick: () => void restoreRef.current(backup, { undoOf: v }) },
           });
         }
         return true;
       } catch (err) {
-        toast.error((err as Error).message);
+        toast.error(t((err as Error).message));
         return false;
       } finally {
         setBusy(null);
       }
     },
-    [adoptServer, cvId, load, settle],
+    [adoptServer, cvId, load, settle, t],
   );
   const restoreRef = React.useRef(restore);
   restoreRef.current = restore;
@@ -145,6 +152,7 @@ export function useVersions({
 export type VersionsApi = ReturnType<typeof useVersions>;
 
 function VersionRow({ v, api }: { v: Version; api: VersionsApi }) {
+  const { t, lang } = useT();
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(v.label ?? "");
   const active = api.viewing?.version.id === v.id;
@@ -160,14 +168,15 @@ function VersionRow({ v, api }: { v: Version; api: VersionsApi }) {
       {editing ? (
         <div className="flex min-h-14 flex-1 items-center px-3">
           <label htmlFor={`v-${v.id}`} className="sr-only">
-            Version name
+            {t("Version name")}
           </label>
           <input
             id={`v-${v.id}`}
             autoFocus
             value={draft}
             maxLength={80}
-            placeholder={`Version ${v.number}`}
+            placeholder={t("Version {n}", { n: v.number })}
+            dir="auto"
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
@@ -189,25 +198,26 @@ function VersionRow({ v, api }: { v: Version; api: VersionsApi }) {
           className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-control px-3 text-start"
         >
           <span className={cn("grid h-7 min-w-9 shrink-0 place-items-center rounded-[6px] px-1.5 text-dense font-semibold tabular", active ? "bg-accent text-on-accent" : "bg-surface-2 text-ink-2 group-hover:bg-surface")}>
-            v{v.number}
+            {/* "v3" in English; Hebrew shows the bare number (the title beside it already reads "גרסה 3"). */}
+            {lang === "he" ? v.number : t("v{n}", { n: v.number })}
           </span>
           <span className="min-w-0 flex-1">
-            <span className={cn("block truncate text-body font-medium", loading ? "text-ink-2" : "text-ink")}>{versionTitle(v)}</span>
+            <span dir="auto" className={cn("block truncate text-body font-medium", loading ? "text-ink-2" : "text-ink")}>{versionTitle(v, t)}</span>
             <span className="block truncate text-dense text-ink-2">
-              {AUTHOR[v.createdBy] ?? "You"} · <RelativeTime iso={v.createdAt} />
+              {t(AUTHOR[v.createdBy] ?? AUTHOR.user)} · <RelativeTime iso={v.createdAt} />
             </span>
           </span>
         </button>
       )}
       <Menu>
         <MenuTrigger asChild>
-          <IconButton label="Version actions" className="opacity-60 group-hover:opacity-100 group-focus-within:opacity-100">
+          <IconButton label={t("Version actions")} className="opacity-60 group-hover:opacity-100 group-focus-within:opacity-100">
             <MoreHorizontal />
           </IconButton>
         </MenuTrigger>
         <MenuContent align="end">
           <MenuItem icon={<RotateCcw />} onSelect={() => void api.restore(v)}>
-            Restore
+            {t("Restore")}
           </MenuItem>
           <MenuItem
             icon={<PenLine />}
@@ -217,7 +227,7 @@ function VersionRow({ v, api }: { v: Version; api: VersionsApi }) {
               setTimeout(() => setEditing(true), 0);
             }}
           >
-            Rename
+            {t("Rename")}
           </MenuItem>
         </MenuContent>
       </Menu>
@@ -226,6 +236,7 @@ function VersionRow({ v, api }: { v: Version; api: VersionsApi }) {
 }
 
 export function VersionsPanel({ api, onClose }: { api: VersionsApi; onClose: () => void }) {
+  const { t, dir } = useT();
   const { load } = api;
   React.useEffect(() => {
     void load();
@@ -233,14 +244,14 @@ export function VersionsPanel({ api, onClose }: { api: VersionsApi; onClose: () 
 
   const saveButton = (
     <Button size="sm" onClick={() => void api.save()} loading={api.busy === "save"}>
-      <Save /> Save version
+      <Save /> {t("Save version")}
     </Button>
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div dir={dir} className="flex h-full min-h-0 flex-col">
       <PanelHeader
-        title="Versions"
+        title={t("Versions")}
         onClose={() => {
           void api.view(null);
           onClose();
@@ -249,9 +260,9 @@ export function VersionsPanel({ api, onClose }: { api: VersionsApi; onClose: () 
       />
       <div className="min-h-0 flex-1 relative overflow-y-auto p-2">
         {api.error ? (
-          <ErrorState className="m-2" title="Couldn't load versions" action={<Button size="sm" onClick={() => void load()}>Retry</Button>} />
+          <ErrorState className="m-2" title={t("Couldn't load versions")} action={<Button size="sm" onClick={() => void load()}>{t("Retry")}</Button>} />
         ) : api.versions === null ? (
-          <ul aria-label="Loading versions" className="flex flex-col gap-1">
+          <ul aria-label={t("Loading versions")} className="flex flex-col gap-1">
             {[0, 1, 2].map((i) => (
               <li key={i} className="flex min-h-14 items-center gap-3 px-3">
                 <Skeleton className="h-7 w-9 rounded-[6px]" />
@@ -263,7 +274,7 @@ export function VersionsPanel({ api, onClose }: { api: VersionsApi; onClose: () 
             ))}
           </ul>
         ) : api.versions.length === 0 ? (
-          <EmptyState icon={<History />} title="No versions yet" action={saveButton} />
+          <EmptyState icon={<History />} title={t("No versions yet")} action={saveButton} />
         ) : (
           <ul className="flex flex-col gap-0.5">
             {api.versions.map((v) => (

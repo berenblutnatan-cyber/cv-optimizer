@@ -216,11 +216,23 @@ function insertEntry(c: ResumeData, input: Record<string, unknown>): ResumeData 
   return { ...c, [section]: next } as ResumeData;
 }
 
-/** Short human title for lists and the browser tab. */
+/**
+ * Short human title for lists and the browser tab. Empty when the CV has no
+ * name or headline: the screen shows its own "Untitled CV" in the reader's
+ * language, so no English placeholder is ever stored as the title.
+ */
 export function documentTitle(doc: ResumeDocument): string {
   const { name, title } = doc.content.personalInfo;
   if (name && title) return `${name} — ${title}`;
-  return name || title || "Untitled CV";
+  return name || title || "";
+}
+
+/** Titles saved before documentTitle went empty hold this English placeholder. */
+const LEGACY_UNTITLED = "Untitled CV";
+
+/** A stored CV title as screens should read it: "" means untitled. */
+export function storedTitle(title: string | null | undefined): string {
+  return !title || title === LEGACY_UNTITLED ? "" : title;
 }
 
 /** How much of a usable CV exists, for the completeness checklist. */

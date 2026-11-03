@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ArrowDown, ArrowUp, ChevronDown, MoreHorizontal, Plus, Trash2, X } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import { cn, IconButton, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui";
 
 /** Textarea that grows with its content (no inner scrollbar, no layout jump). */
@@ -86,7 +87,7 @@ export function BulletList({
   items,
   onChange,
   placeholder,
-  addLabel = "Add bullet",
+  addLabel,
 }: {
   label: string;
   items: string[];
@@ -94,6 +95,7 @@ export function BulletList({
   placeholder?: string;
   addLabel?: string;
 }) {
+  const { t } = useT();
   const refs = React.useRef<(HTMLTextAreaElement | null)[]>([]);
   const [focusIndex, setFocusIndex] = React.useState<number | null>(null);
   // Draft rows: the stored list never contains empty strings (the reducer
@@ -156,7 +158,7 @@ export function BulletList({
               }
             }}
           />
-          <IconButton label="Remove bullet" className="mt-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100" onClick={() => remove(i)}>
+          <IconButton label={t("Remove bullet")} className="mt-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100" onClick={() => remove(i)}>
             <X />
           </IconButton>
         </div>
@@ -166,7 +168,7 @@ export function BulletList({
         onClick={() => insertAfter(rows.length - 1)}
         className="inline-flex h-9 w-fit items-center gap-1.5 rounded-control px-2 text-body font-medium text-ink-2 hover:bg-surface-2 hover:text-ink"
       >
-        <Plus className="size-4" /> {addLabel}
+        <Plus className="size-4" /> {addLabel ?? t("Add bullet")}
       </button>
     </fieldset>
   );
@@ -174,6 +176,7 @@ export function BulletList({
 
 /** Chips with an inline input. Enter or comma adds, Backspace on empty removes the last. */
 export function TagInput({ label, values, onChange, placeholder }: { label: string; values: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
+  const { t } = useT();
   const [draft, setDraft] = React.useState("");
   const id = React.useId();
   const commit = (raw: string) => {
@@ -198,7 +201,7 @@ export function TagInput({ label, values, onChange, placeholder }: { label: stri
             {v}
             <button
               type="button"
-              aria-label={`Remove ${v}`}
+              aria-label={t("Remove {item}", { item: v })}
               onClick={() => onChange(values.filter((_, k) => k !== i))}
               className="grid size-5 place-items-center rounded-[4px] text-ink-3 hover:bg-hairline hover:text-ink"
             >
@@ -254,6 +257,7 @@ export function EntryCard({
   onDelete: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = useT();
   const bodyRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     if (!open || !autoFocus) return;
@@ -266,27 +270,27 @@ export function EntryCard({
       <div className="flex items-center gap-1 pe-1.5">
         <button type="button" onClick={onToggle} aria-expanded={open} className="flex min-h-13 min-w-0 flex-1 items-center gap-3 rounded-card px-4 text-start">
           <span className="min-w-0 flex-1">
-            <span className={cn("block truncate text-body font-medium", title ? "text-ink" : "text-ink-3")}>{title || "Untitled"}</span>
+            <span className={cn("block truncate text-body font-medium", title ? "text-ink" : "text-ink-3")}>{title || t("Untitled")}</span>
             {meta && <span className="block truncate text-dense text-ink-2">{meta}</span>}
           </span>
           <ChevronDown className={cn("size-4 shrink-0 text-ink-3 transition-transform duration-panel", open && "rotate-180")} aria-hidden />
         </button>
         <Menu>
           <MenuTrigger asChild>
-            <IconButton label="Entry actions">
+            <IconButton label={t("Entry actions")}>
               <MoreHorizontal />
             </IconButton>
           </MenuTrigger>
           <MenuContent>
             <MenuItem icon={<ArrowUp />} disabled={!onMoveUp} onSelect={onMoveUp}>
-              Move up
+              {t("Move up")}
             </MenuItem>
             <MenuItem icon={<ArrowDown />} disabled={!onMoveDown} onSelect={onMoveDown}>
-              Move down
+              {t("Move down")}
             </MenuItem>
             <MenuSeparator />
             <MenuItem icon={<Trash2 />} tone="danger" onSelect={onDelete}>
-              Delete
+              {t("Delete")}
             </MenuItem>
           </MenuContent>
         </Menu>

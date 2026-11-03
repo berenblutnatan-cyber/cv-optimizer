@@ -4,6 +4,7 @@ import { currentOwner } from "@/lib/resume/owner";
 import { loadResume } from "@/lib/resume/store";
 import { documentTitle } from "@/lib/resume/document";
 import { EditorShell } from "@/components/v2/editor/EditorShell";
+import { getServerT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,11 @@ async function load(id: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const cv = await load((await params).id);
-  return { title: cv ? documentTitle(cv.doc) : "CV not found", robots: { index: false } };
+  const { t } = await getServerT();
+  // documentTitle falls back to English "Untitled CV" when the CV has no name or headline.
+  const pi = cv?.doc.content.personalInfo;
+  const title = !cv ? t("CV not found") : pi?.name || pi?.title ? documentTitle(cv.doc) : t("Untitled CV");
+  return { title, robots: { index: false } };
 }
 
 export default async function CvEditorPage({

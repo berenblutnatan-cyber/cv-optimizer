@@ -43,7 +43,7 @@ export function Field({
         {optional && <span className="text-dense text-ink-3">{t("optional")}</span>}
         {hint && (
           <Tooltip content={hint}>
-            <button type="button" aria-label={`About ${label}`} className="text-ink-3 hover:text-ink-2">
+            <button type="button" aria-label={t("About {label}", { label })} className="text-ink-3 hover:text-ink-2">
               <Info className="size-4" />
             </button>
           </Tooltip>

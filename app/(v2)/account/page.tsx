@@ -9,32 +9,40 @@ import { ensureUser } from "@/lib/users";
 import { Button, Card, EmptyState } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { AccountView, type AccountData } from "@/components/v2/billing/AccountView";
+import { getServerT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Account", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerT();
+  return { title: t("Account"), robots: { index: false } };
+}
 export const dynamic = "force-dynamic";
 
-const nav = (
-  <Link href="/cv" className="inline-flex h-9 items-center rounded-control px-3 text-body font-medium text-ink-2 hover:bg-surface-2 hover:text-ink">
-    Your CVs
-  </Link>
-);
+function YourCvsLink({ label }: { label: string }) {
+  return (
+    <Link href="/cv" className="inline-flex h-9 items-center rounded-control px-3 text-body font-medium text-ink-2 hover:bg-surface-2 hover:text-ink">
+      {label}
+    </Link>
+  );
+}
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ portal?: string }> }) {
   const { userId } = await auth().catch(() => ({ userId: null }));
   const { portal } = await searchParams;
+  const { t, dir } = await getServerT();
+  const nav = <YourCvsLink label={t("Your CVs")} />;
 
   if (!userId) {
     return (
       <div className="min-h-dvh bg-canvas">
         <AppHeader>{nav}</AppHeader>
-        <main className="mx-auto max-w-3xl px-4 py-10 md:px-8">
+        <main dir={dir} className="mx-auto max-w-3xl px-4 py-10 md:px-8">
           <Card>
             <EmptyState
               icon={<UserRound />}
-              title="Sign in to see your account"
+              title={t("Sign in to see your account")}
               action={
                 <Button asChild variant="primary">
-                  <Link href="/sign-in?redirect_url=/account">Sign in</Link>
+                  <Link href="/sign-in?redirect_url=/account">{t("Sign in")}</Link>
                 </Button>
               }
             />
@@ -57,8 +65,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   return (
     <div className="min-h-dvh bg-canvas">
       <AppHeader>{nav}</AppHeader>
-      <main className="mx-auto max-w-3xl px-4 py-10 md:px-8">
-        <PageTitle className="mb-6">Account</PageTitle>
+      <main dir={dir} className="mx-auto max-w-3xl px-4 py-10 md:px-8">
+        <PageTitle className="mb-6">{t("Account")}</PageTitle>
         <AccountView initial={initial} portalUnavailable={portal === "unavailable"} />
       </main>
     </div>
