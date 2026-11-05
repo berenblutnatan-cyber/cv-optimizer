@@ -36,6 +36,7 @@ const TRANSLATED = [
   "app/(v2)/cv/[id]/not-found.tsx",
   "components/v2/editor/EditorShell.tsx",
   "components/v2/editor/SectionEditor.tsx",
+  "components/v2/editor/PhotoField.tsx",
   "components/v2/editor/fields.tsx",
   "components/v2/editor/DesignPanel.tsx",
   "components/v2/editor/PanelHeader.tsx",

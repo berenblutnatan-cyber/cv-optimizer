@@ -77,6 +77,8 @@ export interface ResumeData {
   certifications: Certification[];
   languages: string[];
   customSections: CustomSection[];
+  /** Body section order (lib/resume/sectionOrder.ts). Absent means the default order. */
+  sectionOrder?: string[];
 }
 
 /**

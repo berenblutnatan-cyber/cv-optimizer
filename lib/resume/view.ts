@@ -4,6 +4,7 @@
 // names and job titles; v2 never rewrites what the user typed).
 
 import type { ResumeData } from "@/types/resume";
+import { inSectionOrder } from "./sectionOrder";
 import type { ResumeData as TemplateData } from "@/components/cv-templates/templates/TemplateProps";
 
 export type { TemplateData };
@@ -42,7 +43,7 @@ export function toTemplateData(c: ResumeData, fmt: ViewFormatters = {}): Templat
     skills: nonEmpty(c.skills),
     languages: nonEmpty(c.languages),
     photo: c.personalInfo.photo || undefined,
-    sections: [
+    sections: inSectionOrder(c, [
       ...(c.experience.length
         ? [
             {
@@ -104,12 +105,13 @@ export function toTemplateData(c: ResumeData, fmt: ViewFormatters = {}): Templat
             },
           ]
         : []),
-      ...c.customSections.map((s) => ({
+      // A section with nothing in it yet stays out of the CV: a bare heading reads as a mistake.
+      ...c.customSections.filter((s) => s.items.some((it) => it.text.trim())).map((s) => ({
         id: s.id,
         title: s.title,
         type: "custom" as const,
-        items: s.items.map((it) => ({ id: it.id, description: it.text })),
+        items: s.items.filter((it) => it.text.trim()).map((it) => ({ id: it.id, description: it.text })),
       })),
-    ],
+    ]),
   };
 }

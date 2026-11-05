@@ -11,6 +11,7 @@
 import type { ResumeData } from "@/types/resume";
 import { applyCvToolCall, sanitizeDesign, DESIGN_COLORS, DESIGN_TEMPLATES } from "@/lib/chat/cvTools";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
+import { isPhotoDataUrl } from "./photo";
 
 export const SCHEMA_VERSION = 2 as const;
 
@@ -89,7 +90,7 @@ export function normalizeContent(raw: unknown): ResumeData {
       website: str(pi.website),
       location: str(pi.location),
       title: str(pi.title),
-      ...(typeof pi.photo === "string" && pi.photo ? { photo: pi.photo } : {}),
+      ...(isPhotoDataUrl(pi.photo) ? { photo: pi.photo } : {}),
     },
     summary: isPlaceholderSummary(summary) ? "" : summary,
     experience: arr<ResumeData["experience"][number]>(r.experience).map((e) => ({ ...e, description: arr<string>(e.description) })),
@@ -99,6 +100,7 @@ export function normalizeContent(raw: unknown): ResumeData {
     certifications: arr<ResumeData["certifications"][number]>(r.certifications),
     languages: arr<string>(r.languages).filter((s) => typeof s === "string"),
     customSections: arr<ResumeData["customSections"][number]>(r.customSections).map((c) => ({ ...c, items: arr(c.items) })),
+    ...(Array.isArray(r.sectionOrder) ? { sectionOrder: r.sectionOrder.filter((k): k is string => typeof k === "string").slice(0, 60) } : {}),
   };
 }
 

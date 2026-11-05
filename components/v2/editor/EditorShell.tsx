@@ -48,6 +48,7 @@ import { useT } from "@/lib/i18n/LanguageProvider";
 import { useCvDocument, type SaveState } from "./useCvDocument";
 import { CvPreview, type FitState } from "./CvPreview";
 import { SectionEditor, type SectionId } from "./SectionEditor";
+import { getTemplateEntry } from "@/lib/templates/registry";
 import { ChatPanel } from "./ChatPanel";
 import { DesignPanel } from "./DesignPanel";
 import { useVersions, versionTitle, VersionsPanel } from "./VersionsPanel";
@@ -330,7 +331,7 @@ export function EditorShell({
           <CompletenessButton doc={doc} onJump={jumpTo} />
         </div>
         <div className={cn("min-h-0 flex-1", mode === "type" ? "relative overflow-y-auto" : "hidden")}>
-          <SectionEditor content={doc.content} apply={apply} openSections={openSections} setOpenSections={setOpenSections} />
+          <SectionEditor content={doc.content} apply={apply} openSections={openSections} setOpenSections={setOpenSections} photoShown={getTemplateEntry(doc.design.template)?.supportsPhoto ?? false} onOpenDesign={() => setPanel("design")} />
         </div>
         {/* Kept mounted while hidden so a streaming reply survives a mode or panel switch. */}
         <div className={cn("min-h-0 flex-1", mode === "chat" ? "flex flex-col" : "hidden")}>
