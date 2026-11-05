@@ -43,9 +43,12 @@ export function ChatPanel({
   flush,
   applyRemote,
   adoptServer,
+  ask,
 }: {
   cvId: string;
   hasContent: boolean;
+  /** A request from elsewhere in the editor (a score fix): sent as the user's next message. */
+  ask?: { id: number; text: string } | null;
   fit: FitState | null;
   flush: () => Promise<unknown>;
   applyRemote: (name: string, input: Record<string, unknown>) => void;
@@ -86,6 +89,17 @@ export function ChatPanel({
       copy[copy.length - 1] = fn(copy[copy.length - 1]);
       return copy;
     });
+
+  // A fix asked for from the score: send it once; mid-reply, it waits in the box.
+  const sendRef = React.useRef<(text: string) => void>(() => {});
+  const busyRef = React.useRef(false);
+  const lastAsk = React.useRef(0);
+  React.useEffect(() => {
+    if (!ask || ask.id === lastAsk.current) return;
+    lastAsk.current = ask.id;
+    if (busyRef.current) setDraft(ask.text);
+    else sendRef.current(ask.text);
+  }, [ask]);
 
   const send = async (text: string) => {
     const content = text.trim();
@@ -140,6 +154,8 @@ export function ChatPanel({
       inputRef.current?.focus();
     }
   };
+  sendRef.current = (text) => void send(text);
+  busyRef.current = busy;
 
   const userTurns = messages.filter((m) => m.role === "user").length;
 

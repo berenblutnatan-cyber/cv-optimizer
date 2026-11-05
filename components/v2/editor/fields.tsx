@@ -44,9 +44,12 @@ export function TextField({
   type = "text",
   autoComplete,
   disabled,
+  invalid,
 }: {
   label: string;
   value: string;
+  /** Shown once the field is left with a value that can't be right (never while typing). */
+  invalid?: (v: string) => string | null;
   onChange: (v: string) => void;
   placeholder?: string;
   srLabel?: boolean;
@@ -57,6 +60,8 @@ export function TextField({
   disabled?: boolean;
 }) {
   const id = React.useId();
+  const [left, setLeft] = React.useState(false);
+  const error = left && value.trim() && invalid ? invalid(value) : null;
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       <label htmlFor={id} className={cn("text-dense font-medium text-ink-2", srLabel && "sr-only")}>
@@ -71,8 +76,16 @@ export function TextField({
         disabled={disabled}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full rounded-control border border-hairline-strong bg-surface px-3 text-body text-ink placeholder:text-ink-3 transition-[border-color,box-shadow] hover:border-control focus-visible:border-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-2"
+        onBlur={() => setLeft(true)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-err` : undefined}
+        className="h-9 w-full rounded-control border border-hairline-strong aria-[invalid=true]:border-danger bg-surface px-3 text-body text-ink placeholder:text-ink-3 transition-[border-color,box-shadow] hover:border-control focus-visible:border-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-2"
       />
+      {error && (
+        <p id={`${id}-err`} role="alert" className="text-dense text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

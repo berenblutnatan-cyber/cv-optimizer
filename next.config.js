@@ -23,6 +23,11 @@ const nextConfig = {
   async redirects() {
     return [{ source: "/build/voice", destination: "/start", permanent: false }];
   },
+  // Headless Chromium for the PDF route finds its binary by relative path: it
+  // must stay outside the bundle, and its files must ship with that function
+  // Key with "*": a "[id]" key shipped none of the files in a real build (2026-11-05).
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  outputFileTracingIncludes: { "/api/cv/*/pdf": ["./node_modules/@sparticuz/chromium/bin/**"] },
   skipTrailingSlashRedirect: true,
   // Dev-only badge. Bottom-left covered the v2 editor's chat box.
   devIndicators: { position: "bottom-right" },

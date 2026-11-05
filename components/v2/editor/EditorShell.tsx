@@ -54,6 +54,8 @@ import { DesignPanel } from "./DesignPanel";
 import { useVersions, versionTitle, VersionsPanel } from "./VersionsPanel";
 import { VoicePanel, type VoiceSdk } from "./VoicePanel";
 import { TailorPanel } from "./TailorPanel";
+import type { LocalProblem } from "@/lib/optimizer/localChecks";
+import { problemTitle } from "./problemTitle";
 
 type Mode = "type" | "chat" | "talk";
 type MobilePane = "edit" | "preview";
@@ -81,6 +83,16 @@ function SaveIndicator({ state, onRetry }: { state: SaveState; onRetry: () => vo
     </Tooltip>
   );
 }
+
+// Score problems with no AI fix are typed in: each opens its section.
+const PROBLEM_TARGET = new Map<string, SectionId>([
+  ["completeness:name", "profile"],
+  ["completeness:title", "profile"],
+  ["completeness:email", "profile"],
+  ["completeness:phone", "profile"],
+  ["completeness:location", "profile"],
+  ["completeness:education", "education"],
+]);
 
 // Which editor section each completeness item opens.
 const COMPLETENESS_TARGET = new Map<string, SectionId>([
@@ -220,6 +232,7 @@ export function EditorShell({
     });
   };
   const closePanel = React.useCallback(() => setPanel("edit"), []);
+  const [chatAsk, setChatAsk] = React.useState<{ id: number; text: string } | null>(null);
 
   // documentTitle falls back to English "Untitled CV" when there is no name or headline.
   const title = doc.content.personalInfo.name || doc.content.personalInfo.title ? documentTitle(doc) : t("Untitled CV");
@@ -229,21 +242,40 @@ export function EditorShell({
 
   const fileBase = cvFileBase(doc.content.personalInfo.name);
 
+  // The browser's print dialog: only the fallback now, when the server PDF fails.
+  const printPdf = React.useCallback(async () => {
+    if (!docRef.current) return;
+    try {
+      const { exportToPdf } = await import("@/utils/exportToPdf");
+      await exportToPdf(docRef.current, fileBase, { mode: "print" });
+    } catch (err) {
+      console.error(err);
+      toast.error(t("Couldn't open the print dialog. Try Word instead."));
+    }
+  }, [fileBase, t]);
+
+  // A real PDF file, printed on the server from exactly what the preview shows.
   const exportPdf = React.useCallback(async () => {
     if (!docRef.current || exporting) return;
     setExporting("pdf");
     try {
       void settle();
-      const { exportToPdf } = await import("@/utils/exportToPdf");
-      await exportToPdf(docRef.current, fileBase, { mode: "print" });
+      const { printDocumentHtml } = await import("@/lib/export/printDocument");
+      const res = await fetch(`/api/cv/${id}/pdf`, {
+        method: "POST",
+        headers: { "content-type": "text/html; charset=utf-8" },
+        body: printDocumentHtml(docRef.current, fileBase),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't make the PDF.");
+      download(await res.blob(), `${fileBase}.pdf`);
       celebrate();
     } catch (err) {
       console.error(err);
-      toast.error(t("Couldn't open the print dialog. Try Word instead."));
+      toast.error(t((err as Error).message || "Couldn't make the PDF."), { action: { label: t("Print instead"), onClick: () => void printPdf() } });
     } finally {
       setExporting(null);
     }
-  }, [exporting, fileBase, settle, celebrate, t]);
+  }, [exporting, fileBase, id, settle, celebrate, printPdf, t]);
 
   // Word and text come from the server copy, so everything typed is saved first.
   const exportFile = React.useCallback(
@@ -283,6 +315,15 @@ export function EditorShell({
     requestAnimationFrame(() => document.getElementById(`section-${s}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
+  // A fix from the score: typed fields open where they're typed; the rest go to Chat as the user's ask.
+  const fixProblem = (p: LocalProblem) => {
+    const section = PROBLEM_TARGET.get(p.id);
+    if (section || p.fix?.kind !== "ai") return jumpTo(section ?? "profile");
+    setMode("chat");
+    setMobilePane("edit");
+    setChatAsk((prev) => ({ id: (prev?.id ?? 0) + 1, text: problemTitle(p.title, t) }));
+  };
+
   const actions: CommandAction[] = [
     { id: "type", label: t("Edit by typing"), group: t("Mode"), icon: <PenLine />, run: () => setMode("type") },
     { id: "chat", label: t("Edit by chatting"), group: t("Mode"), icon: <MessageSquare />, run: () => setMode("chat") },
@@ -305,7 +346,7 @@ export function EditorShell({
     <div className="flex h-full min-h-0 flex-col bg-surface">
       {panel === "design" && <DesignPanel doc={doc} apply={apply} onClose={closePanel} />}
       {panel === "versions" && <VersionsPanel api={versions} onClose={closePanel} />}
-      {panel === "tailor" && <TailorPanel cvId={id} doc={doc} signedIn={signedIn} settle={settle} adoptServer={adoptServer} onClose={closePanel} />}
+      {panel === "tailor" && <TailorPanel cvId={id} doc={doc} signedIn={signedIn} settle={settle} adoptServer={adoptServer} onClose={closePanel} onFix={fixProblem} />}
       <div className={cn("flex min-h-0 flex-1 flex-col", panel !== "edit" && "hidden")}>
         <div className="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-hairline px-3">
           <Segmented
@@ -335,7 +376,7 @@ export function EditorShell({
         </div>
         {/* Kept mounted while hidden so a streaming reply survives a mode or panel switch. */}
         <div className={cn("min-h-0 flex-1", mode === "chat" ? "flex flex-col" : "hidden")}>
-          <ChatPanel cvId={id} hasContent={hasContent} fit={fit} flush={settle} applyRemote={applyRemote} adoptServer={adoptServer} />
+          <ChatPanel cvId={id} hasContent={hasContent} fit={fit} flush={settle} applyRemote={applyRemote} adoptServer={adoptServer} ask={chatAsk} />
         </div>
         {/* Kept mounted too: switching mode mid-call doesn't hang up. */}
         <div className={cn("min-h-0 flex-1", mode === "talk" ? "flex flex-col" : "hidden")}>

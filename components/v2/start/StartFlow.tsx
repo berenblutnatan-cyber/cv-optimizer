@@ -12,6 +12,7 @@ import { readSse } from "@/lib/http/readSse";
 import { trackConversion } from "@/lib/gtag";
 import { computeLocalScore } from "@/lib/optimizer/localChecks";
 import type { ResumeData } from "@/types/resume";
+import { filledEducation, filledExperience, realSkills } from "@/lib/resume/substance";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { msg } from "@/lib/i18n/config";
 import { Button, cn, ErrorState, Textarea } from "@/components/ui";
@@ -35,10 +36,10 @@ function checkFile(file: File): string | null {
 }
 
 const SECTIONS: { key: string; label: string; done: (c: ResumeData) => boolean }[] = [
-  { key: "profile", label: msg("Profile"), done: (c) => !!c.personalInfo.name },
-  { key: "experience", label: msg("Experience"), done: (c) => c.experience.length > 0 },
-  { key: "education", label: msg("Education"), done: (c) => c.education.length > 0 },
-  { key: "skills", label: msg("Skills"), done: (c) => c.skills.length > 0 },
+  { key: "profile", label: msg("Profile"), done: (c) => !!c.personalInfo.name.trim() },
+  { key: "experience", label: msg("Experience"), done: (c) => filledExperience(c).length > 0 },
+  { key: "education", label: msg("Education"), done: (c) => filledEducation(c).length > 0 },
+  { key: "skills", label: msg("Skills"), done: (c) => realSkills(c).length > 0 },
 ];
 
 function Tile({

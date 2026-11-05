@@ -11,6 +11,7 @@ import { unlimitedSecondsUsed } from "@/lib/voice/sessions";
 import { Button, EmptyState } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { InterviewSetup } from "@/components/v2/interview/InterviewSetup";
+import { filledExperience } from "@/lib/resume/substance";
 import { getServerT } from "@/lib/i18n/server";
 
 export async function generateMetadata() {
@@ -58,7 +59,7 @@ export default async function NewInterviewPage({ searchParams }: { searchParams:
               .then((j) => (j ? { resumeId: j.resumeId, tailoringId: null, jdText: j.jdText ?? "", jobTitle: j.title, company: j.company } : null))
           : null,
     ]);
-    const cvs = cards.filter((c) => c.doc.content.experience.length > 0).map((c) => ({ id: c.id, title: c.title || t("Untitled CV") }));
+    const cvs = cards.filter((c) => filledExperience(c.doc.content).length > 0).map((c) => ({ id: c.id, title: c.title || t("Untitled CV") }));
     if (cvs.length === 0) {
       return (
         <div className="rounded-panel border border-hairline bg-surface">

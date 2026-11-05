@@ -16,6 +16,8 @@
  * Uses dynamic imports to avoid SSR issues with jspdf.
  */
 
+import { escapeHtml, PRINT_CSS, resetRoot, rootAttributes } from "@/lib/export/printDocument";
+
 // A4 dimensions in mm
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
@@ -61,13 +63,6 @@ export async function exportToPdf(
 // VECTOR PATH — hidden-iframe print (selectable text, N pages)
 // ============================================================
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /** Wait for cloned stylesheets, images and fonts inside the print frame. */
 async function waitForFrameAssets(doc: Document): Promise<void> {
@@ -133,39 +128,20 @@ async function exportViaPrint(element: HTMLElement, fileName: string): Promise<v
       doc.head.appendChild(doc.importNode(node, true));
     });
 
-    // Print overrides: strict A4 pages, exact colors, and — critically — lift
-    // the one-page A4 clip (A4PageWrapper enforces height + overflow:hidden)
-    // so content past page 1 flows onto page 2+ instead of being cut.
+    // Fonts are variables set on the page's <body>; without them the print falls back to serif.
+    const root = rootAttributes();
+    for (const [k, v] of Object.entries(root.html)) doc.documentElement.setAttribute(k, v);
+    doc.body.className = root.bodyClass;
+
     const overrides = doc.createElement("style");
-    overrides.textContent = `
-      @page { size: A4; margin: 0; }
-      html, body { margin: 0 !important; padding: 0 !important; background: #ffffff; }
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      .a4-wrapper {
-        height: auto !important;
-        max-height: none !important;
-        overflow: visible !important;
-        margin: 0 !important;
-        box-shadow: none !important;
-      }
-      /* Print safety: never split a bullet/paragraph or a whole CV entry
-         (.cv-item) across the page boundary, and never strand a section
-         heading at the bottom of a page. */
-      .a4-wrapper li, .a4-wrapper p { break-inside: avoid; page-break-inside: avoid; }
-      .a4-wrapper .cv-item { break-inside: avoid; page-break-inside: avoid; }
-      .a4-wrapper h1, .a4-wrapper h2, .a4-wrapper h3 { break-after: avoid; page-break-after: avoid; }
-    `;
+    overrides.textContent = PRINT_CSS;
     doc.head.appendChild(overrides);
 
     // Clone the export element into the frame. Neutralize any positioning /
     // transform on the root (some call sites keep the export render off-screen
     // or scaled) so the clone prints from the top-left of the page.
     const clone = doc.importNode(element, true) as HTMLElement;
-    clone.style.position = "static";
-    clone.style.left = "auto";
-    clone.style.top = "auto";
-    clone.style.transform = "none";
-    clone.style.margin = "0";
+    resetRoot(clone);
     doc.body.appendChild(clone);
 
     await waitForFrameAssets(doc);

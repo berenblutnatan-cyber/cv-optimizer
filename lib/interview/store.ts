@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { canAfford, charge, InsufficientCredits, refundCharge } from "@/lib/billing/ledger";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { appendOps, createVersion, loadResume } from "@/lib/resume/store";
+import { filledExperience } from "@/lib/resume/substance";
 import { unlimitedSecondsUsed } from "@/lib/voice/sessions";
 import { VOICE } from "@/lib/voice/protocol";
 import type { Owner } from "@/lib/resume/owner-types";
@@ -62,7 +63,7 @@ export async function createInterview(
 ): Promise<InterviewRow> {
   const resume = await loadResume(p.resumeId, userOwner(userId));
   if (!resume) throw new InterviewError("NOT_FOUND", "CV not found");
-  if (resume.doc.content.experience.length === 0) throw new InterviewError("EMPTY_CV", "Add your experience first.");
+  if (filledExperience(resume.doc.content).length === 0) throw new InterviewError("EMPTY_CV", "Add your experience first.");
 
   let jd = (p.jd ?? "").trim();
   let jobTitle = (p.jobTitle ?? "").trim();

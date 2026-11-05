@@ -5,6 +5,7 @@
 // always the ground truth; this is the coarse predictor.
 
 import type { ResumeData } from "@/types/resume";
+import { withoutBlanks } from "@/lib/resume/substance";
 import { TEMPLATE_REGISTRY, type TemplateRegistryId } from "@/lib/templates/registry";
 
 const SECTION_OVERHEAD_LINES = 2; // heading + breathing room
@@ -17,7 +18,9 @@ function textLines(text: string, charsPerLine: number): number {
 }
 
 /** Approximate body lines this CV occupies in the given template's main column. */
-export function estimateLines(data: ResumeData, templateId: TemplateRegistryId): number {
+export function estimateLines(raw: ResumeData, templateId: TemplateRegistryId): number {
+  // Count what the page will show: blank entries never render.
+  const data = withoutBlanks(raw);
   const { charsPerLine } = TEMPLATE_REGISTRY[templateId].capacity;
   let lines = 4; // name + contact header
   if (data.summary.trim()) lines += SECTION_OVERHEAD_LINES + textLines(data.summary, charsPerLine);

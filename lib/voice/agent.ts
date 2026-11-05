@@ -6,6 +6,7 @@
 
 import { CV_TOOLS, snapshotForPrompt } from "@/lib/chat/cvTools";
 import type { ResumeData } from "@/types/resume";
+import { hasBody } from "@/lib/resume/substance";
 
 export const INTAKE_AGENT_NAME = "Hired · CV intake";
 
@@ -57,7 +58,7 @@ export const INTAKE_FIRST_MESSAGE = "{{opening}}";
 /** The variables every intake call starts with (all strings: ElevenLabs substitutes them as text). */
 export function intakeVariables(opts: { content: ResumeData; userName: string | null; sessionId: string; attempt: number; seconds: number }) {
   const first = (opts.userName ?? opts.content.personalInfo.name ?? "").trim().split(/\s+/)[0] ?? "";
-  const hasContent = !!(opts.content.personalInfo.name || opts.content.experience.length || opts.content.summary);
+  const hasContent = !!opts.content.personalInfo.name?.trim() || hasBody(opts.content);
   const hi = first ? `Hi ${first}` : "Hi";
   const opening =
     opts.attempt > 0
