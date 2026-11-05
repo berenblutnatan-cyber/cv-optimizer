@@ -14,6 +14,8 @@
 import type { ResumeData, Experience, Education, Project } from "@/types/resume";
 import { generateId } from "@/types/resume";
 import { TEMPLATE_IDS } from "@/lib/templates/registry";
+import { isPhotoDataUrl } from "@/lib/resume/photo";
+import { sectionKeys } from "@/lib/resume/sectionOrder";
 
 export type CvToolName =
   | "update_personal_info"
@@ -37,6 +39,7 @@ export type CvToolName =
   | "update_custom_section"
   | "remove_custom_section"
   | "move_entry"
+  | "set_section_order"
   | "set_design";
 
 // Design targets the agent can set via set_design. Derived from the canonical
@@ -435,8 +438,12 @@ export function applyCvToolCall(
         location: s(input.location),
         title: s(input.title),
       });
-      if (Object.keys(patch).length === 0) return data;
-      return { ...data, personalInfo: { ...data.personalInfo, ...patch } };
+      // Editor-only: the photo is an inline image we resized, or "" to remove it.
+      const photo = input.photo === "" ? "" : isPhotoDataUrl(input.photo) ? input.photo : undefined;
+      if (Object.keys(patch).length === 0 && photo === undefined) return data;
+      if (photo === "" && !data.personalInfo.photo && Object.keys(patch).length === 0) return data;
+      const { photo: _old, ...rest } = data.personalInfo;
+      return { ...data, personalInfo: { ...(photo === "" ? rest : data.personalInfo), ...patch, ...(photo ? { photo } : {}) } };
     }
 
     case "update_summary": {
@@ -676,6 +683,16 @@ export function applyCvToolCall(
       };
     }
 
+    case "set_section_order": {
+      // Editor-only: the full body-section order after a drag or a move.
+      const order = sa(input.order);
+      if (!order) return data;
+      const next = sectionKeys({ ...data, sectionOrder: order });
+      const now = sectionKeys(data);
+      if (next.every((k, i) => k === now[i])) return data;
+      return { ...data, sectionOrder: next };
+    }
+
     case "move_entry": {
       // Editor-only reorder (not exposed to the model): move one entry up/down
       // within its section, addressed by id.
@@ -776,6 +793,7 @@ export function describeToolCall(
     case "remove_custom_section":
       return t("Removed a section");
     case "move_entry":
+    case "set_section_order":
       return t("Reordered");
     case "set_design":
       return t("Styled your CV");

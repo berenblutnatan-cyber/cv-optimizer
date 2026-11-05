@@ -3,6 +3,7 @@
 
 import type { ResumeData } from "@/types/resume";
 import { formatDateRange } from "./view";
+import { sectionKeys } from "./sectionOrder";
 
 export function toPlainText(c: ResumeData): string {
   const out: string[] = [];
@@ -23,34 +24,41 @@ export function toPlainText(c: ResumeData): string {
   };
 
   section("Summary", () => c.summary.trim() && line(c.summary.trim()));
-  section("Experience", () =>
-    c.experience.forEach((e, i) => {
-      if (i) line();
-      line([e.role, e.company].filter(Boolean).join(", ") + (e.location ? ` (${e.location})` : ""));
-      const when = formatDateRange(e.startDate, e.endDate, e.current);
-      if (when) line(when);
-      e.description.filter((b) => b.trim()).forEach((b) => line(`- ${b.trim()}`));
-    }),
-  );
-  section("Education", () =>
-    c.education.forEach((e) => {
-      line([e.degree + (e.field ? ` in ${e.field}` : ""), e.institution].filter((x) => x && x.trim()).join(", "));
-      const when = formatDateRange(e.startDate, e.endDate);
-      if (when || e.gpa) line([when, e.gpa ? `GPA ${e.gpa}` : ""].filter(Boolean).join(" | "));
-      e.achievements.filter((a) => a.trim()).forEach((a) => line(`- ${a.trim()}`));
-    }),
-  );
+  // Body sections follow the CV's own order; skills and languages close it.
+  const body: Record<string, () => void> = {
+    experience: () =>
+      section("Experience", () =>
+        c.experience.forEach((e, i) => {
+          if (i) line();
+          line([e.role, e.company].filter(Boolean).join(", ") + (e.location ? ` (${e.location})` : ""));
+          const when = formatDateRange(e.startDate, e.endDate, e.current);
+          if (when) line(when);
+          e.description.filter((b) => b.trim()).forEach((b) => line(`- ${b.trim()}`));
+        }),
+      ),
+    education: () =>
+      section("Education", () =>
+        c.education.forEach((e) => {
+          line([e.degree + (e.field ? ` in ${e.field}` : ""), e.institution].filter((x) => x && x.trim()).join(", "));
+          const when = formatDateRange(e.startDate, e.endDate);
+          if (when || e.gpa) line([when, e.gpa ? `GPA ${e.gpa}` : ""].filter(Boolean).join(" | "));
+          e.achievements.filter((a) => a.trim()).forEach((a) => line(`- ${a.trim()}`));
+        }),
+      ),
+    projects: () =>
+      section("Projects", () =>
+        c.projects.forEach((p) => {
+          line([p.name, p.technologies.join(", ")].filter(Boolean).join(" | "));
+          if (p.description) line(p.description);
+          p.bullets.filter((b) => b.trim()).forEach((b) => line(`- ${b.trim()}`));
+        }),
+      ),
+    certifications: () => section("Certifications", () => c.certifications.forEach((x) => line([x.name, x.issuer, x.date].filter(Boolean).join(", ")))),
+  };
+  for (const s of c.customSections) body[s.id] = () => section(s.title || "Other", () => s.items.filter((it) => it.text.trim()).forEach((it) => line(`- ${it.text.trim()}`)));
+  for (const key of sectionKeys(c)) body[key]?.();
   section("Skills", () => c.skills.length && line(c.skills.join(", ")));
-  section("Projects", () =>
-    c.projects.forEach((p) => {
-      line([p.name, p.technologies.join(", ")].filter(Boolean).join(" | "));
-      if (p.description) line(p.description);
-      p.bullets.filter((b) => b.trim()).forEach((b) => line(`- ${b.trim()}`));
-    }),
-  );
-  section("Certifications", () => c.certifications.forEach((x) => line([x.name, x.issuer, x.date].filter(Boolean).join(", "))));
   section("Languages", () => c.languages.length && line(c.languages.join(", ")));
-  c.customSections.forEach((s) => section(s.title || "Other", () => s.items.filter((it) => it.text.trim()).forEach((it) => line(`- ${it.text.trim()}`))));
 
   return out.join("\n").trim() + "\n";
 }
