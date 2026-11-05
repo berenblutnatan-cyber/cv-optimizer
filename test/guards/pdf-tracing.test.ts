@@ -1,6 +1,5 @@
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
-import picomatch from "next/dist/compiled/picomatch";
 
 // The PDF route runs headless Chromium, whose binary ships only if
 // next.config's outputFileTracingIncludes matches the route. With the key
@@ -11,11 +10,8 @@ import picomatch from "next/dist/compiled/picomatch";
 const config = createRequire(import.meta.url)("../../next.config.js");
 
 describe("PDF route tracing", () => {
-  it("ships Chromium's files with /api/cv/[id]/pdf", () => {
-    const includes: Record<string, string[]> = config.outputFileTracingIncludes ?? {};
-    const files = Object.entries(includes)
-      .filter(([glob]) => picomatch(glob, { dot: true, contains: true })("/api/cv/[id]/pdf"))
-      .flatMap(([, f]) => f);
+  it("ships Chromium's files with the PDF route", () => {
+    const files: string[] = config.outputFileTracingIncludes?.["/api/cv/*/pdf"] ?? [];
     expect(files.some((f) => f.includes("@sparticuz/chromium/bin"))).toBe(true);
   });
 
