@@ -14,6 +14,7 @@ import { isToolId, TOOLS } from "@/lib/toolkit/tools";
 import { Button } from "@/components/ui";
 import { AppHeader } from "@/components/v2/AppHeader";
 import { TOOL_ICONS } from "@/components/v2/toolkit/icons";
+import { filledExperience } from "@/lib/resume/substance";
 import { ToolRunner } from "@/components/v2/toolkit/ToolRunner";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export default async function ToolPage({ params }: { params: Promise<{ tool: str
   const { t, dir } = await getServerT();
   const ip = ipFromHeaders(await headers());
   const [free, cards] = await Promise.all([freeToolsLeft([tool], userId ? `u:${userId}` : `ip:${ip}`), userId ? listResumeCards({ userId, anonKeyHash: null }) : Promise.resolve([])]);
-  const cvs = cards.filter((c) => c.doc.content.experience.length > 0).map((c) => ({ id: c.id, title: c.title || t("Untitled CV"), text: snapshotForPrompt(c.doc.content).slice(0, 30_000) }));
+  const cvs = cards.filter((c) => filledExperience(c.doc.content).length > 0).map((c) => ({ id: c.id, title: c.title || t("Untitled CV"), text: snapshotForPrompt(c.doc.content).slice(0, 30_000) }));
 
   return (
     <div className="min-h-dvh bg-canvas">

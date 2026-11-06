@@ -3,9 +3,11 @@
 
 import type { ResumeData } from "@/types/resume";
 import { formatDateRange } from "./view";
+import { withoutBlanks } from "./substance";
 import { sectionKeys } from "./sectionOrder";
 
-export function toPlainText(c: ResumeData): string {
+export function toPlainText(raw: ResumeData): string {
+  const c = withoutBlanks(raw);
   const out: string[] = [];
   const line = (s?: string) => out.push(s ?? "");
   const pi = c.personalInfo;

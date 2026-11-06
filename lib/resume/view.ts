@@ -5,6 +5,7 @@
 
 import type { ResumeData } from "@/types/resume";
 import { inSectionOrder } from "./sectionOrder";
+import { withoutBlanks } from "./substance";
 import type { ResumeData as TemplateData } from "@/components/cv-templates/templates/TemplateProps";
 
 export type { TemplateData };
@@ -25,7 +26,9 @@ export function formatDateRange(startDate?: string, endDate?: string, current?: 
   return start || end;
 }
 
-export function toTemplateData(c: ResumeData, fmt: ViewFormatters = {}): TemplateData {
+export function toTemplateData(raw: ResumeData, fmt: ViewFormatters = {}): TemplateData {
+  // An entry with nothing in it stays out of the CV: a bare heading reads as a mistake.
+  const c = withoutBlanks(raw);
   const name = fmt.name ?? keep;
   const jobTitle = fmt.jobTitle ?? keep;
   const nonEmpty = (xs: string[] | undefined) => (xs ?? []).filter((x) => x && x.trim());

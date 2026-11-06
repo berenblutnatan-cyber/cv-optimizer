@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canAfford, charge, InsufficientCredits } from "@/lib/billing/ledger";
 import { inventedNumbers } from "@/lib/grounding/numbers";
 import { loadResume } from "@/lib/resume/store";
+import { filledExperience } from "@/lib/resume/substance";
 import { letterSources, writeCoverLetter } from "./ai";
 
 // Cover letters for tracked jobs. One credit per letter, charged in the same
@@ -39,7 +40,7 @@ async function jobContext(userId: string, jobId: string) {
   if (jd.length < MIN_JD) throw new LetterError("BAD_REQUEST", "Add the job description first.");
   const resume = await loadResume(job.resumeId, { userId, anonKeyHash: null });
   if (!resume) throw new LetterError("NOT_FOUND", "CV not found");
-  if (resume.doc.content.experience.length === 0) throw new LetterError("BAD_REQUEST", "Add your experience to the CV first.");
+  if (filledExperience(resume.doc.content).length === 0) throw new LetterError("BAD_REQUEST", "Add your experience to the CV first.");
   return { job, jd, content: resume.doc.content };
 }
 

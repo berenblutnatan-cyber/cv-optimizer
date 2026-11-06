@@ -16,6 +16,7 @@ import { resumeToText } from "@/types/resume";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 import type { CvToolName } from "@/lib/chat/cvTools";
 import { bandFor, type ScoreBand } from "@/lib/score/bands";
+import { filledEducation, filledExperience, hasBody, isEmail, isPhone, realBullets, realSkills } from "@/lib/resume/substance";
 
 export type ScoreCategory =
   | "impact"
@@ -145,15 +146,11 @@ function firstWord(bullet: string): string {
   return m ? m[0] : "";
 }
 
-function allBullets(cv: ResumeData): string[] {
-  const out: string[] = [];
-  for (const e of cv.experience) {
-    for (const b of e.description) {
-      if (b && b.trim()) out.push(b.trim());
-    }
-  }
-  return out;
-}
+// Every check scores only what the CV actually says: an empty slot is not
+// content, and no text is not "clear". Otherwise a blank CV earns points for
+// the mistakes it has no words to make. Content questions go through
+// lib/resume/substance, never an array length.
+const allBullets = realBullets;
 
 function tokenize(text: string): string[] {
   return (text.toLowerCase().match(/[a-z][a-z+#.]{2,}/g) ?? []).filter(
@@ -177,12 +174,12 @@ function scoreCompleteness(cv: ResumeData): CategoryScore {
       problem: { id: "completeness:title", severity: "high", title: "Add a target job title", detail: "A headline title tells ATS and recruiters which role you're aiming at.", scoreImpact: 6 },
     },
     {
-      ok: Boolean(pi.email.trim()),
+      ok: isEmail(pi.email),
       weight: 3,
       problem: { id: "completeness:email", severity: "high", title: "Add a contact email", detail: "Recruiters can't reach you without one.", scoreImpact: 6 },
     },
     {
-      ok: Boolean(pi.phone.trim()),
+      ok: isPhone(pi.phone),
       weight: 1,
       problem: { id: "completeness:phone", severity: "low", title: "Add a phone number", detail: "Optional, but most recruiters expect one.", scoreImpact: 2 },
     },
@@ -192,19 +189,19 @@ function scoreCompleteness(cv: ResumeData): CategoryScore {
       problem: { id: "completeness:location", severity: "low", title: "Add your location", detail: "City and country help with role matching.", scoreImpact: 2 },
     },
     {
-      ok: cv.experience.length > 0,
+      ok: filledExperience(cv).length > 0,
       weight: 4,
       problem: { id: "completeness:experience", severity: "high", title: "Add work experience", detail: "Experience is the core of any CV — add at least one role.", scoreImpact: 12, fix: { kind: "ai", instruction: "Interview me about my most recent job and add it to my CV — company, role, dates, and 2-3 achievement bullets." } },
     },
     {
-      ok: cv.education.length > 0,
+      ok: filledEducation(cv).length > 0,
       weight: 2,
       problem: { id: "completeness:education", severity: "medium", title: "Add education", detail: "Add at least one degree or qualification.", scoreImpact: 5 },
     },
     {
-      ok: cv.skills.length >= 5,
+      ok: realSkills(cv).length >= 5,
       weight: 2,
-      problem: { id: "completeness:skills", severity: "medium", title: "Add more skills", detail: `You have ${cv.skills.length} skill${cv.skills.length === 1 ? "" : "s"} — aim for at least 5–8.`, scoreImpact: 5, fix: { kind: "ai", instruction: "Suggest and add the most relevant skills for my target role, drawn from my experience. Don't invent skills I haven't shown." } },
+      problem: { id: "completeness:skills", severity: "medium", title: "Add more skills", detail: `You have ${realSkills(cv).length} skill${realSkills(cv).length === 1 ? "" : "s"} — aim for at least 5–8.`, scoreImpact: 5, fix: { kind: "ai", instruction: "Suggest and add the most relevant skills for my target role, drawn from my experience. Don't invent skills I haven't shown." } },
     },
     {
       ok: !isPlaceholderSummary(cv.summary),
@@ -226,11 +223,12 @@ function scoreImpact(cv: ResumeData): CategoryScore {
   const bullets = allBullets(cv);
   const problems: LocalProblem[] = [];
 
-  if (cv.experience.length === 0 || bullets.length === 0) {
+  if (bullets.length === 0) {
     return {
       category: "impact",
       label: "Impact",
-      score: 25,
+      // Roles without a single result show a little; nothing shows nothing.
+      score: filledExperience(cv).length > 0 ? 15 : 0,
       weight: 0,
       problems: [
         {
@@ -286,6 +284,9 @@ function scoreClarity(cv: ResumeData): CategoryScore {
   const summary = isPlaceholderSummary(cv.summary) ? "" : cv.summary;
   const texts = [...bullets, summary].filter(Boolean);
   const problems: LocalProblem[] = [];
+  // Nothing written yet: there is no clarity to judge (the impact and
+  // completeness checks already ask for the words).
+  if (texts.length === 0) return { category: "clarity", label: "Clarity", score: 0, weight: 0, problems };
   let score = 100;
 
   // First-person pronouns (resume voice drops them).
@@ -363,7 +364,8 @@ function scoreLength(cv: ResumeData): CategoryScore {
   let score = 100;
 
   if (words < 250) {
-    score = Math.max(35, Math.round((words / 250) * 80));
+    // The floor is for a short CV, not an empty one.
+    score = hasBody(cv) ? Math.max(35, Math.round((words / 250) * 80)) : Math.round((words / 250) * 80);
     problems.push({
       id: "length:thin",
       category: "length",
@@ -393,12 +395,17 @@ function scoreAts(cv: ResumeData, jobMatch?: { coverage: number; missing: string
   const problems: LocalProblem[] = [];
   let score = 100;
 
-  if (cv.skills.length < 6) {
+  const skills = realSkills(cv).length;
+  if (filledExperience(cv).length === 0) {
+    // Screening matches titles and experience first; without them there is little to parse.
+    score -= 25;
+  }
+  if (skills < 6) {
     score -= 22;
     problems.push({
       id: "ats:skills",
       category: "ats",
-      severity: cv.skills.length < 3 ? "high" : "medium",
+      severity: skills < 3 ? "high" : "medium",
       title: "Add a fuller skills list",
       detail: "ATS systems match on a Skills section. List 8–15 role-relevant hard skills.",
       scoreImpact: 8,
@@ -409,16 +416,18 @@ function scoreAts(cv: ResumeData, jobMatch?: { coverage: number; missing: string
     score -= 12;
     // (summary problem already raised under completeness; keep ATS score effect only)
   }
-  if (!cv.personalInfo.email.trim()) {
+  if (!isEmail(cv.personalInfo.email)) {
     score -= 12;
   }
-  if (cv.education.length === 0) {
+  if (filledEducation(cv).length === 0) {
     score -= 8;
   }
 
   if (jobMatch) {
     score -= Math.round((1 - jobMatch.coverage) * 30);
   }
+  // A header alone gives screening software nothing to match.
+  if (!hasBody(cv)) score = 0;
 
   return { category: "ats", label: "ATS & Keywords", score: clamp(score), weight: 0, problems };
 }

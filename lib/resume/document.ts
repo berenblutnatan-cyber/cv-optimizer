@@ -12,6 +12,7 @@ import type { ResumeData } from "@/types/resume";
 import { applyCvToolCall, sanitizeDesign, DESIGN_COLORS, DESIGN_TEMPLATES } from "@/lib/chat/cvTools";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 import { isPhotoDataUrl } from "./photo";
+import { filledEducation, filledExperience, isEmail, isPhone, realBullets, realSkills, realSummary } from "./substance";
 
 export const SCHEMA_VERSION = 2 as const;
 
@@ -241,15 +242,17 @@ export function storedTitle(title: string | null | undefined): string {
 export type CompletenessItem = { key: string; label: string; done: boolean };
 
 export function completeness(c: ResumeData): CompletenessItem[] {
-  const bullets = c.experience.reduce((n, e) => n + e.description.filter((b) => b.trim()).length, 0);
+  const p = c.personalInfo;
   return [
-    { key: "name", label: "Name and title", done: !!c.personalInfo.name.trim() && !!c.personalInfo.title.trim() },
-    { key: "contact", label: "Email or phone", done: !!c.personalInfo.email.trim() || !!c.personalInfo.phone.trim() },
-    { key: "experience", label: "One role", done: c.experience.length > 0 },
-    { key: "bullets", label: "Three achievements", done: bullets >= 3 },
-    { key: "education", label: "Education", done: c.education.length > 0 },
-    { key: "skills", label: "Six skills", done: c.skills.filter((s) => s.trim()).length >= 6 },
-    { key: "summary", label: "Summary", done: c.summary.trim().length >= 40 },
+    { key: "name", label: "Name and title", done: !!p.name.trim() && !!p.title.trim() },
+    // A typo'd address is no way to reach someone: it must look like one.
+    { key: "contact", label: "Email or phone", done: isEmail(p.email) || isPhone(p.phone) },
+    // "Add role" leaves a blank entry behind: only a filled one counts.
+    { key: "experience", label: "One role", done: filledExperience(c).length > 0 },
+    { key: "bullets", label: "Three achievements", done: realBullets(c).length >= 3 },
+    { key: "education", label: "Education", done: filledEducation(c).length > 0 },
+    { key: "skills", label: "Six skills", done: realSkills(c).length >= 6 },
+    { key: "summary", label: "Summary", done: realSummary(c).length >= 40 },
   ];
 }
 

@@ -8,6 +8,7 @@ import { cn, IconButton, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger
 import { useT } from "@/lib/i18n/LanguageProvider";
 import { moveSection, sectionKeys } from "@/lib/resume/sectionOrder";
 import { AddRow, AutoTextarea, BulletList, EntryCard, TagInput, TextField } from "./fields";
+import { isEmail, isPhone } from "@/lib/resume/substance";
 import { PhotoField } from "./PhotoField";
 
 type Apply = (name: string, input: Record<string, unknown>, key?: string) => boolean;
@@ -360,8 +361,8 @@ export function SectionEditor({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <TextField label={t("Full name")} value={pi.name} onChange={setPi("name")} placeholder={t("Dana Levi")} autoComplete="name" />
           <TextField label={t("Headline")} value={pi.title} onChange={setPi("title")} placeholder={t("Senior Product Manager")} autoComplete="organization-title" />
-          <TextField label={t("Email")} type="email" value={pi.email} onChange={setPi("email")} placeholder={EMAIL_EXAMPLE} autoComplete="email" />
-          <TextField label={t("Phone")} type="tel" value={pi.phone} onChange={setPi("phone")} placeholder="+972 50 000 0000" autoComplete="tel" />
+          <TextField label={t("Email")} type="email" value={pi.email} onChange={setPi("email")} placeholder={EMAIL_EXAMPLE} autoComplete="email" invalid={(v) => (isEmail(v) ? null : t("Check the address, like name@gmail.com"))} />
+          <TextField label={t("Phone")} type="tel" value={pi.phone} onChange={setPi("phone")} placeholder="+972 50 000 0000" autoComplete="tel"  invalid={(v) => (isPhone(v) ? null : t("Check the number"))} />
           <TextField label={t("Location")} value={pi.location} onChange={setPi("location")} placeholder={t("Tel Aviv, Israel")} />
           <TextField label={t("LinkedIn")} value={pi.linkedin} onChange={setPi("linkedin")} placeholder={LINKEDIN_EXAMPLE} />
           <TextField label={t("Website")} value={pi.website} onChange={setPi("website")} placeholder={WEBSITE_EXAMPLE} className="sm:col-span-2" />

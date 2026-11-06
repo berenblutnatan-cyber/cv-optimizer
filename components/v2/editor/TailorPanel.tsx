@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Briefcase, Check, CircleDashed, History, Link2, LogIn, MessagesSquare, RotateCw, Target } from "lucide-react";
+import { ArrowLeft, ArrowRight, Briefcase, Check, CircleDashed, History, Link2, LogIn, MessagesSquare, RotateCw, Target } from "lucide-react";
 import { readSse } from "@/lib/http/readSse";
 import { msg } from "@/lib/i18n/config";
 import { problemTitle } from "./problemTitle";
 import { useT } from "@/lib/i18n/LanguageProvider";
-import { computeLocalScore, flattenProblems } from "@/lib/optimizer/localChecks";
+import { computeLocalScore, flattenProblems, type LocalProblem } from "@/lib/optimizer/localChecks";
 import { completeness, type ResumeDocument } from "@/lib/resume/document";
 import { coverageCounts, isAppliable, requirementRows, type TailorDetail, type TailorEvent, type TailorSummary } from "@/lib/tailor/view";
 import type { ApplyVerdict } from "@/lib/knowledge";
@@ -118,6 +118,7 @@ export function TailorPanel({
   settle,
   adoptServer,
   onClose,
+  onFix,
 }: {
   cvId: string;
   doc: ResumeDocument;
@@ -125,6 +126,8 @@ export function TailorPanel({
   settle: () => Promise<boolean>;
   adoptServer: (s: { doc: ResumeDocument; lastSeq: number }) => void;
   onClose: () => void;
+  /** Act on one of the free score's problems (open its section, or ask Chat). */
+  onFix: (p: LocalProblem) => void;
 }) {
   const { t, dir, lang } = useT();
   const [view, setView] = React.useState<View>({ name: "start" });
@@ -140,6 +143,7 @@ export function TailorPanel({
 
   const hasExperience = completeness(doc.content).some((i) => i.key === "experience" && i.done);
   const local = React.useMemo(() => computeLocalScore(doc.content), [doc.content]);
+  const part = (c: "ats" | "impact" | "clarity") => local.categories.find((x) => x.category === c)?.score ?? null;
   // One fix per topic: two checks often flag the same gap (ats:skills and
   // completeness:skills both say "add skills"). Ids are "<check>:<topic>".
   const problems = React.useMemo(() => {
@@ -270,28 +274,47 @@ export function TailorPanel({
 
   // ── Views ──────────────────────────────────────────────────────────────────
 
+  // The same three parts the landing page shows, then what to fix: the top fix
+  // is this panel's main action, signed in or not.
   const localScore = (
-    <section className="flex items-start gap-5 border-b border-hairline p-5">
-      <ScoreGauge value={local.overall} size={88} />
-      <div className="min-w-0 flex-1">
-        <Tooltip content={t("From your CV alone, free and instant. Tailoring scores it against a real job.")}>
-          <p tabIndex={0} className="w-fit text-emph font-medium text-ink">
-            {t("Before any job")}
-          </p>
-        </Tooltip>
-        {problems.length > 0 ? (
-          <ul className="mt-2 flex flex-col gap-1.5">
-            {problems.map((p) => (
-              <li key={p.id} className="flex items-start gap-2 text-body text-ink-2">
-                <span aria-hidden className={cn("mt-2 size-1.5 shrink-0 rounded-full", p.severity === "high" ? "bg-danger" : p.severity === "medium" ? "bg-warn" : "bg-ink-3")} />
-                {problemTitle(p.title, t)}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-body text-ink-2">{t("Nothing obvious to fix.")}</p>
-        )}
+    <section className="flex flex-col gap-4 border-b border-hairline p-5">
+      <div className="flex items-start gap-5">
+        <ScoreGauge value={local.overall} size={88} />
+        <div className="flex min-w-0 flex-1 flex-col gap-2 pt-1">
+          <Tooltip content={t("From your CV alone, free and instant. Tailoring scores it against a real job.")}>
+            <p tabIndex={0} className="w-fit text-emph font-medium text-ink">
+              {t("Before any job")}
+            </p>
+          </Tooltip>
+          <ScoreBar label="ATS" value={part("ats")} why={t("Can screening software read it: skills, contact, structure.")} />
+          <ScoreBar label={t("Impact")} value={part("impact")} why={t("Results with numbers, not duties.")} />
+          <ScoreBar label={t("Clarity")} value={part("clarity")} why={t("Easy to scan in ten seconds.")} />
+        </div>
       </div>
+      {problems.length > 0 ? (
+        <ul className="flex flex-col gap-1" aria-label={t("Fix first")}>
+          {problems.map((p, i) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => onFix(p)}
+                className={cn(
+                  "group flex min-h-11 w-full items-center gap-3 rounded-control px-3 text-start text-body transition-colors duration-micro",
+                  i === 0 ? "bg-accent text-on-accent hover:bg-accent/90" : "text-ink hover:bg-surface-2",
+                )}
+              >
+                <span aria-hidden className={cn("size-2 shrink-0 rounded-full", i === 0 ? "bg-on-accent" : p.severity === "high" ? "bg-danger" : p.severity === "medium" ? "bg-warn" : "bg-ink-3")} />
+                <span className="min-w-0 flex-1">{problemTitle(p.title, t)}</span>
+                <span className={cn("inline-flex shrink-0 items-center gap-1 font-medium", i === 0 ? "text-on-accent" : "text-accent-ink")}>
+                  {t("Fix")} <ArrowRight className="size-4 rtl:-scale-x-100" aria-hidden />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-body text-ink-2">{t("Nothing obvious to fix.")}</p>
+      )}
     </section>
   );
 
@@ -300,19 +323,19 @@ export function TailorPanel({
       <div dir={dir} className="flex h-full min-h-0 flex-col">
         <PanelHeader title={t("Tailor")} onClose={onClose} />
         {/* The free score needs no account; tailoring to a job does. */}
-        {localScore}
-        <div className="flex flex-1 items-center justify-center">
-          <EmptyState
-            icon={<Target />}
-            title={t("Sign in to tailor")}
-            action={
-              <Button asChild size="lg" variant="primary">
-                <a href={`/sign-in?redirect_url=${encodeURIComponent(`/cv/${cvId}?panel=tailor`)}`}>
-                  <LogIn /> {t("Sign in")}
-                </a>
-              </Button>
-            }
-          />
+        <div className="min-h-0 flex-1 relative overflow-y-auto">
+          {localScore}
+          {/* Fixing needs no account; tailoring to a job does. */}
+          <div className="flex items-center justify-between gap-3 p-5">
+            <span className="flex items-center gap-2 text-body text-ink-2">
+              <Target className="size-4 shrink-0" aria-hidden /> {t("Sign in to tailor")}
+            </span>
+            <Button asChild size="sm" variant="secondary">
+              <a href={`/sign-in?redirect_url=${encodeURIComponent(`/cv/${cvId}?panel=tailor`)}`}>
+                <LogIn /> {t("Sign in")}
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
     );
