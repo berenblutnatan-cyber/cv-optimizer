@@ -260,6 +260,7 @@ model Resume {
   ops           ResumeOp[]
   voiceSessions VoiceSession[]
   tailorings    Tailoring[]
+  reviews       CvReview[]
   interviews    InterviewSession[]
   jobs          JobApplication[]
   coverLetters  CoverLetter[]
@@ -522,3 +523,22 @@ model InterviewSession {
   @@index([conversationIds], type: Gin)
   @@index([status, updatedAt])
 }
+
+// The free deep read of a CV against the job it's aimed at, shown before any
+// edit (/cv/[id]/review). Kept per content + target, so reopening the page
+// never runs the model twice for the same CV. Anonymous drafts have one too.
+model CvReview {
+  id          String   @id @default(cuid())
+  resumeId    String
+  // Hash of the CV content and the target it was read against.
+  readHash    String
+  targetTitle String   @default("")
+  audit       Json
+  createdAt   DateTime @default(now())
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, readHash])
+  @@index([resumeId, createdAt])
+}
+

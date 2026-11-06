@@ -8,15 +8,16 @@
 // direction. Every change goes through applyDocumentOp, which is pure and runs
 // identically on the client (instant preview) and the server (authoritative).
 
-import type { ResumeData } from "@/types/resume";
+import { TITLED_SECTIONS, type ResumeData, type SectionTitles } from "@/types/resume";
 import { applyCvToolCall, sanitizeDesign, DESIGN_COLORS, DESIGN_TEMPLATES } from "@/lib/chat/cvTools";
 import { isPlaceholderSummary } from "@/lib/chat/prompts";
 import { isPhotoDataUrl } from "./photo";
+import type { AccentHex } from "@/lib/design/accents";
 import { filledEducation, filledExperience, isEmail, isPhone, realBullets, realSkills, realSummary } from "./substance";
 
 export const SCHEMA_VERSION = 2 as const;
 
-export type DesignColor = (typeof DESIGN_COLORS)[number];
+export type DesignColor = (typeof DESIGN_COLORS)[number] | AccentHex;
 export type DesignTemplate = (typeof DESIGN_TEMPLATES)[number];
 
 export type DesignState = {
@@ -28,13 +29,46 @@ export type DesignState = {
   pageMode: "one" | "multi";
 };
 
+/** The job this CV is aimed at: asked at upload, read by every analysis. */
+export type CvTarget = { title: string; description?: string };
+
+/** How the uploaded file looked, and the Hired design that matches it ("Back to your original"). */
+export type OriginalDesign = {
+  design: Pick<DesignState, "template" | "accentColor">;
+  layout: string;
+  photo: boolean;
+};
+
 export type ResumeDocument = {
   schemaVersion: typeof SCHEMA_VERSION;
   locale: string;
   direction: "ltr" | "rtl";
   content: ResumeData;
   design: DesignState;
+  target?: CvTarget;
+  original?: OriginalDesign;
 };
+
+export const TARGET_TITLE_MAX = 120;
+// Fits one editor operation (lib/resume/store MAX_OP_BYTES); job ads run far shorter.
+export const TARGET_DESCRIPTION_MAX = 20_000;
+
+export function normalizeTarget(raw: unknown): CvTarget | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+  const title = str(r.title).replace(/\s+/g, " ").trim().slice(0, TARGET_TITLE_MAX);
+  const description = str(r.description).trim().slice(0, TARGET_DESCRIPTION_MAX);
+  if (!title && !description) return undefined;
+  return { title, ...(description ? { description } : {}) };
+}
+
+function normalizeOriginal(raw: unknown): OriginalDesign | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+  const d = sanitizeDesign((r.design ?? {}) as Record<string, unknown>);
+  if (!d?.template || !d.accentColor) return undefined;
+  return { design: { template: d.template, accentColor: d.accentColor }, layout: str(r.layout).slice(0, 40), photo: r.photo === true };
+}
 
 export const DEFAULT_DESIGN: DesignState = {
   template: "minimalist",
@@ -102,7 +136,18 @@ export function normalizeContent(raw: unknown): ResumeData {
     languages: arr<string>(r.languages).filter((s) => typeof s === "string"),
     customSections: arr<ResumeData["customSections"][number]>(r.customSections).map((c) => ({ ...c, items: arr(c.items) })),
     ...(Array.isArray(r.sectionOrder) ? { sectionOrder: r.sectionOrder.filter((k): k is string => typeof k === "string").slice(0, 60) } : {}),
+    ...sectionTitlesOf(r.sectionTitles),
   };
+}
+
+function sectionTitlesOf(raw: unknown): { sectionTitles?: SectionTitles } {
+  if (!raw || typeof raw !== "object") return {};
+  const out: SectionTitles = {};
+  for (const k of TITLED_SECTIONS) {
+    const v = (raw as Record<string, unknown>)[k];
+    if (typeof v === "string" && v.trim()) out[k] = v.trim().slice(0, 80);
+  }
+  return Object.keys(out).length ? { sectionTitles: out } : {};
 }
 
 function normalizeDesign(raw: unknown, legacy?: { template?: string | null; themeColor?: string | null }): DesignState {
@@ -134,6 +179,8 @@ export function toDocument(
       direction: s.direction === "rtl" ? "rtl" : "ltr",
       content: normalizeContent(s.content),
       design: normalizeDesign(s.design, legacy),
+      ...withOptional("target", normalizeTarget(s.target)),
+      ...withOptional("original", normalizeOriginal(s.original)),
     };
   }
   // v1 row: Resume.data was the bare ResumeData; template/color lived in columns.
@@ -146,9 +193,12 @@ export function toDocument(
   };
 }
 
+const withOptional = <K extends string, V>(key: K, v: V | undefined) => (v === undefined ? {} : ({ [key]: v } as Record<K, V>));
+
 /**
- * Apply one operation to a document. `set_design` changes the design; every
- * other name goes through the content reducer. Returns the SAME reference
+ * Apply one operation to a document. `set_design` changes the design,
+ * `set_target` the job it's aimed at; every other name goes through the
+ * content reducer. Returns the SAME reference
  * when nothing changed, so callers can detect no-ops with `===`.
  */
 export function applyDocumentOp(doc: ResumeDocument, name: string, input: Record<string, unknown>): ResumeDocument {
@@ -163,6 +213,16 @@ export function applyDocumentOp(doc: ResumeDocument, name: string, input: Record
     }
     const same = (Object.keys(next) as (keyof DesignState)[]).every((k) => next[k] === doc.design[k]);
     return same ? doc : { ...doc, design: next };
+  }
+  if (name === "set_target") {
+    const target = normalizeTarget(input);
+    if (!target) {
+      if (!doc.target) return doc;
+      const { target: _gone, ...rest } = doc;
+      return rest;
+    }
+    const same = target.title === doc.target?.title && target.description === doc.target?.description;
+    return same ? doc : { ...doc, target };
   }
   if (name === "insert_entry") {
     const content = insertEntry(doc.content, input);

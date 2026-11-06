@@ -41,6 +41,8 @@ export interface ResumeData {
   languages?: string[];
   sections: ResumeSection[];
   photo?: string;
+  /** The CV's own words for the headings templates write themselves (TemplateRenderer applies them). */
+  headings?: { summary?: string; skills?: string; languages?: string };
 }
 
 export interface TemplateProps {

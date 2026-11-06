@@ -17,6 +17,26 @@ Based on: a hands-on QA run (blank CV, Fix, export in English and Hebrew, a two-
 
 ## P0: an upload that keeps who you are
 
+**Status (6 Nov, branch `claude/upload-keeps-design`, not committed):** built and checked in a browser on real PDFs.
+- **Target job:** asked while the file is read (title, with the job ad optional). Stored on the CV (`doc.target`), read by the review and the tailor panel.
+- **Design read from the PDF itself** (`lib/import/pdfDesign.ts`), not by a model:
+  - sidebar side and colour, a header band, two columns;
+  - accent, serif/sans/mono;
+  - the photo (extracted and encoded to JPEG).
+- **Mapping to a template** (`lib/import/mapDesign.ts`), with the exact colour: templates now accept any hex.
+- **Structure kept:** section order and headings as written. Letter-spaced headings ("E X P E R…") are joined back at text extraction, for every upload path.
+- **The review** (`/cv/[id]/review`): the free deep read before any edit, with the Opus audit and quotes from the CV.
+  - Kept per content + target + language.
+  - Prose is in the reader's language.
+  - The editor's tailor panel shows the same score and fixes.
+- **"Your file":** shown beside the Hired version while the upload is in this visit.
+- **"Back to your original":** in Design.
+- **Not done:**
+  - DOCX design (only order and headings).
+  - Hebrew CVs still render LTR (the Hebrew templates branch).
+  - The production DB migration (`2026-11-07-v2-cv-review.sql`).
+  - `eval:optimizer` after the audit prompt change (pronouns, Hebrew prose).
+
 1. **Target job when uploading.**
    - One question: the job title, with a job description or link as an option. It can be skipped.
    - It stays with the CV, and every analysis is measured against it.

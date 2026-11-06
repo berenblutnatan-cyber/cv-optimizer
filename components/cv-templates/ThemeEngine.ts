@@ -5,7 +5,8 @@
  * Provides consistent theming across all 8 template archetypes.
  */
 
-import { ThemeColor, THEME_COLOR_VALUES } from "@/context/BuilderContext";
+import type { ThemeColor } from "@/context/BuilderContext";
+import { accentPalette } from "@/lib/design/accents";
 import { TEMPLATE_LIST } from "@/lib/templates/registry";
 
 // ==========================================
@@ -29,7 +30,7 @@ const DEFAULT_THEME: ThemeColors = {
 
 export function getThemeColors(theme?: ThemeColor | string): ThemeColors {
   if (!theme) return DEFAULT_THEME;
-  return THEME_COLOR_VALUES[theme as ThemeColor] || DEFAULT_THEME;
+  return accentPalette(theme);
 }
 
 // ==========================================
@@ -268,4 +269,4 @@ export function skillStyle(
 // EXPORTS
 // ==========================================
 
-export { THEME_COLOR_VALUES };
+export { THEME_COLOR_VALUES } from "@/lib/design/accents";

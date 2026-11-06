@@ -147,3 +147,17 @@ export function useT(): LanguageContextValue {
     toggle: () => {},
   };
 }
+
+/**
+ * Inside a CV template: the CV's own headings ("About me", "Core skills")
+ * replace the template's words for those strings; everything else translates
+ * as usual. Templates keep calling useT() and need no changes.
+ */
+export function TextOverride({ words, children }: { words: Record<string, string>; children: React.ReactNode }) {
+  const parent = useT();
+  const value = useMemo<LanguageContextValue>(
+    () => ({ ...parent, t: (source, vars) => words[source] ?? parent.t(source, vars) }),
+    [parent, words],
+  );
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+}

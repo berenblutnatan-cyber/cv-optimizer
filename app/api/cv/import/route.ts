@@ -2,11 +2,14 @@ import Anthropic from "@anthropic-ai/sdk";
 import { extractCvFileText } from "@/lib/cvFileText";
 import { parseCvTextStreaming } from "@/lib/optimizer/parseCv";
 import { clientIp, limit, limitResponse, limitSignedOut } from "@/lib/limits";
-import { emptyDocument, normalizeContent } from "@/lib/resume/document";
+import { DEFAULT_DESIGN, emptyDocument, normalizeContent, normalizeTarget, type CvTarget, type ResumeDocument } from "@/lib/resume/document";
+import { isPdfFile } from "@/lib/cvFileText";
+import { readPdfDesign } from "@/lib/import/pdfDesign";
+import { designFromPdf, layoutOf } from "@/lib/import/mapDesign";
 import { ensureOwner, ownerKey } from "@/lib/resume/owner";
 import { createResume, createVersion } from "@/lib/resume/store";
 import { ensureUser } from "@/lib/users";
-import { MAX_IMPORT_BYTES, type ImportEvent } from "@/lib/resume/import-types";
+import { MAX_IMPORT_BYTES, type ImportedLook, type ImportEvent } from "@/lib/resume/import-types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -18,16 +21,33 @@ const enc = new TextEncoder();
 const frame = (e: ImportEvent) => enc.encode(`data: ${JSON.stringify(e)}\n\n`);
 const fail = (status: number, code: string, error: string) => Response.json({ error, code }, { status });
 
+type Source = {
+  text: string;
+  label: string;
+  /** The PDF's own design, read while the text is parsed. */
+  look: Promise<ImportedLook | null>;
+  target?: CvTarget;
+};
+
+async function lookOf(file: File): Promise<ImportedLook | null> {
+  if (!isPdfFile(file)) return null;
+  const read = await readPdfDesign(new Uint8Array(await file.arrayBuffer()));
+  return read ? { design: designFromPdf(read), photo: read.photo, layout: layoutOf(read) } : null;
+}
+
 /** The CV text and a label for the "Imported" version, or an error response. */
-async function readSource(request: Request): Promise<{ text: string; label: string } | Response> {
+async function readSource(request: Request): Promise<Source | Response> {
   const declared = Number(request.headers.get("content-length") || 0);
   if (declared > MAX_IMPORT_BYTES + 64 * 1024) return fail(413, "TOO_LARGE", "That file is over 5 MB.");
 
   const type = request.headers.get("content-type") || "";
   if (type.includes("multipart/form-data")) {
     let file: FormDataEntryValue | null = null;
+    let target: CvTarget | undefined;
     try {
-      file = (await request.formData()).get("file");
+      const form = await request.formData();
+      file = form.get("file");
+      target = normalizeTarget({ title: form.get("targetTitle"), description: form.get("targetDescription") });
     } catch {
       return fail(400, "BAD_REQUEST", "Couldn't read the upload. Try again.");
     }
@@ -36,10 +56,10 @@ async function readSource(request: Request): Promise<{ text: string; label: stri
     const res = await extractCvFileText(file).catch(() => null);
     if (!res) return fail(422, "UNREADABLE", "Couldn't read that file. Try a PDF or Word file.");
     if (!res.ok) return fail(res.status, res.status === 415 ? "UNSUPPORTED" : "UNREADABLE", res.error);
-    return { text: res.text, label: `Imported from ${file.name}`.slice(0, 80) };
+    return { text: res.text, label: `Imported from ${file.name}`.slice(0, 80), look: lookOf(file).catch(() => null), target };
   }
 
-  let body: { text?: unknown } | null = null;
+  let body: { text?: unknown; targetTitle?: unknown; targetDescription?: unknown } | null = null;
   try {
     body = await request.json();
   } catch {
@@ -47,7 +67,7 @@ async function readSource(request: Request): Promise<{ text: string; label: stri
   }
   const text = typeof body?.text === "string" ? body.text.replace(/ /g, " ").replace(/\r\n/g, "\n").trim() : "";
   if (text.length < MIN_TEXT) return fail(422, "TOO_SHORT", "That's too short to be a CV. Paste the whole thing.");
-  return { text, label: "Imported from pasted text" };
+  return { text, label: "Imported from pasted text", look: Promise.resolve(null), target: normalizeTarget({ title: body?.targetTitle, description: body?.targetDescription }) };
 }
 
 // POST /api/cv/import — a CV file (multipart `file`: PDF, DOCX, TXT) or
@@ -90,6 +110,8 @@ export async function POST(request: Request) {
         }
       };
       try {
+        // The design is read in parallel and shown the moment it's known.
+        void source.look.then((look) => look && send({ type: "design", look }));
         const { resumeData, degraded } = await parseCvTextStreaming(
           anthropic,
           source.text,
@@ -101,7 +123,17 @@ export async function POST(request: Request) {
           return;
         }
         if (owner.userId) await ensureUser(owner.userId);
-        const doc = { ...emptyDocument(), content: normalizeContent(resumeData) };
+        const look = await source.look;
+        const content = normalizeContent(resumeData);
+        if (look?.photo) content.personalInfo.photo = look.photo;
+        const doc: ResumeDocument = {
+          ...emptyDocument(),
+          content,
+          ...(look
+            ? { design: { ...DEFAULT_DESIGN, ...look.design }, original: { design: look.design, layout: look.layout, photo: !!look.photo } }
+            : {}),
+          ...(source.target ? { target: source.target } : {}),
+        };
         const created = await createResume(owner, { doc, source: "import" });
         await createVersion(created.id, owner, { label: source.label, createdBy: "import" });
         send({ type: "done", id: created.id });

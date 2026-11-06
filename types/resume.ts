@@ -79,7 +79,13 @@ export interface ResumeData {
   customSections: CustomSection[];
   /** Body section order (lib/resume/sectionOrder.ts). Absent means the default order. */
   sectionOrder?: string[];
+  /** Headings as the CV itself wrote them ("Work History", "ניסיון תעסוקתי"), by section kind. Absent means the template's own words. */
+  sectionTitles?: SectionTitles;
 }
+
+export const TITLED_SECTIONS = ["summary", "experience", "education", "skills", "languages", "projects", "certifications"] as const;
+export type TitledSection = (typeof TITLED_SECTIONS)[number];
+export type SectionTitles = Partial<Record<TitledSection, string>>;
 
 /**
  * Initial state for the resume builder with helpful defaults

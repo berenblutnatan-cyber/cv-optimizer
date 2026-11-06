@@ -16,6 +16,7 @@ import { generateId } from "@/types/resume";
 import { TEMPLATE_IDS } from "@/lib/templates/registry";
 import { isPhotoDataUrl } from "@/lib/resume/photo";
 import { sectionKeys } from "@/lib/resume/sectionOrder";
+import { isAccentHex, type AccentHex } from "@/lib/design/accents";
 
 export type CvToolName =
   | "update_personal_info"
@@ -63,7 +64,8 @@ export const DESIGN_COLORS = [
 
 export type DesignPatchValidated = {
   template?: (typeof DESIGN_TEMPLATES)[number];
-  accentColor?: (typeof DESIGN_COLORS)[number];
+  /** A preset name, or the exact colour an imported CV came with. */
+  accentColor?: (typeof DESIGN_COLORS)[number] | AccentHex;
   fontLevel?: number;
   spacingLevel?: number;
   autoFit?: boolean;
@@ -82,9 +84,11 @@ export function sanitizeDesign(input: Record<string, unknown>): DesignPatchValid
   if (tmpl && (DESIGN_TEMPLATES as readonly string[]).includes(tmpl)) {
     out.template = tmpl as (typeof DESIGN_TEMPLATES)[number];
   }
-  const color = s(input.accentColor);
+  const color = (s(input.accentColor) ?? "").toLowerCase();
   if (color && (DESIGN_COLORS as readonly string[]).includes(color)) {
     out.accentColor = color as (typeof DESIGN_COLORS)[number];
+  } else if (isAccentHex(color)) {
+    out.accentColor = color;
   }
   const clampLevel = (v: unknown): number | undefined => {
     const n = Number(v);

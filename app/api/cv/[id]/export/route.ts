@@ -1,4 +1,4 @@
-import { THEME_COLOR_VALUES, type ThemeColor } from "@/lib/design/accents";
+import { accentPalette } from "@/lib/design/accents";
 import { wordBuffer } from "@/lib/export/docx";
 import { attachmentHeader, cvFileBase } from "@/lib/export/filename";
 import { clientIp, limit, limitResponse } from "@/lib/limits";
@@ -33,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     });
   }
   try {
-    const accent = THEME_COLOR_VALUES[cv.doc.design.accentColor as ThemeColor]?.dark;
+    const accent = accentPalette(cv.doc.design.accentColor).dark;
     const buf = await wordBuffer(toTemplateData(cv.doc.content), { accent });
     return new Response(new Uint8Array(buf), {
       headers: {

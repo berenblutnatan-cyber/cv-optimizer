@@ -35,5 +35,5 @@ export default async function CvEditorPage({
   const cv = await load(id);
   if (!cv) notFound();
   // Keyed by id: a different CV is a fresh editor with its own save queue.
-  return <EditorShell key={cv.id} id={cv.id} initial={{ doc: cv.doc, lastSeq: cv.lastSeq }} signedIn={cv.signedIn} startInTalk={talk === "1"} startPanel={panel === "tailor" ? "tailor" : undefined} />;
+  return <EditorShell key={cv.id} id={cv.id} initial={{ doc: cv.doc, lastSeq: cv.lastSeq }} signedIn={cv.signedIn} startInTalk={talk === "1"} startPanel={panel === "tailor" || panel === "design" ? panel : undefined} />;
 }
