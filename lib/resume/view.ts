@@ -32,6 +32,8 @@ export function toTemplateData(raw: ResumeData, fmt: ViewFormatters = {}): Templ
   const name = fmt.name ?? keep;
   const jobTitle = fmt.jobTitle ?? keep;
   const nonEmpty = (xs: string[] | undefined) => (xs ?? []).filter((x) => x && x.trim());
+  const titles = c.sectionTitles ?? {};
+  const headings = { summary: titles.summary, skills: titles.skills, languages: titles.languages };
   return {
     name: name(c.personalInfo.name) || (fmt.placeholderName ?? "Your Name"),
     title: jobTitle(c.personalInfo.title) || undefined,
@@ -46,12 +48,13 @@ export function toTemplateData(raw: ResumeData, fmt: ViewFormatters = {}): Templ
     skills: nonEmpty(c.skills),
     languages: nonEmpty(c.languages),
     photo: c.personalInfo.photo || undefined,
+    ...(headings.summary || headings.skills || headings.languages ? { headings } : {}),
     sections: inSectionOrder(c, [
       ...(c.experience.length
         ? [
             {
               id: "experience",
-              title: "Experience",
+              title: titles.experience || "Experience",
               type: "experience" as const,
               items: c.experience.map((e) => ({
                 id: e.id,
@@ -68,7 +71,7 @@ export function toTemplateData(raw: ResumeData, fmt: ViewFormatters = {}): Templ
         ? [
             {
               id: "education",
-              title: "Education",
+              title: titles.education || "Education",
               type: "education" as const,
               items: c.education.map((e) => ({
                 id: e.id,
@@ -86,7 +89,7 @@ export function toTemplateData(raw: ResumeData, fmt: ViewFormatters = {}): Templ
         ? [
             {
               id: "projects",
-              title: "Projects",
+              title: titles.projects || "Projects",
               type: "projects" as const,
               items: c.projects.map((p) => ({
                 id: p.id,
@@ -102,7 +105,7 @@ export function toTemplateData(raw: ResumeData, fmt: ViewFormatters = {}): Templ
         ? [
             {
               id: "certifications",
-              title: "Certifications",
+              title: titles.certifications || "Certifications",
               type: "certifications" as const,
               items: c.certifications.map((x) => ({ id: x.id, title: x.name, subtitle: x.issuer, date: x.date || undefined })),
             },

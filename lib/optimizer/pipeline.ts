@@ -73,6 +73,8 @@ export type PipelineInput = {
   track?: Track;
   seniority?: Seniority | null;
   goal?: Goal | null;
+  /** The reader's language for the audit's prose (lib/optimizer/prompts REPLY_LANGUAGE). */
+  replyLanguage?: "he";
 };
 
 export type PipelineProgress = {
@@ -341,6 +343,7 @@ export async function runAuditPass(
     jobDescription: input.jobDescription,
     companyName: input.companyName,
     mode: input.mode,
+    replyLanguage: input.replyLanguage,
     knowledge: knowledgeFor({
       surface: "audit",
       track,

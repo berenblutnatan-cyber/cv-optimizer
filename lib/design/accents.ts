@@ -27,3 +27,42 @@ export const THEME_COLOR_VALUES: Record<ThemeColor, { primary: string; dark: str
   orange: { primary: "#f97316", dark: "#ea580c", light: "#ffedd5", ring: "ring-orange-500" },
   black: { primary: "#18181b", dark: "#09090b", light: "#f4f4f5", ring: "ring-zinc-900" },
 };
+
+export type AccentPalette = { primary: string; dark: string; light: string; ring: string };
+
+/** An exact colour, as an imported CV used it ("#0f9b8e"). The named colours above are presets. */
+export type AccentHex = `#${string}`;
+
+export const isAccentHex = (v: unknown): v is AccentHex => typeof v === "string" && /^#[0-9a-f]{6}$/.test(v);
+
+const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const toHex = (rgb: number[]) => `#${rgb.map((c) => Math.round(Math.min(255, Math.max(0, c))).toString(16).padStart(2, "0")).join("")}`;
+const mix = (hex: string, to: number, amount: number) => toHex(channels(hex).map((c) => c + (to - c) * amount));
+
+/**
+ * The palette every template and export reads: a preset by name, or one made
+ * from an exact colour, so a CV keeps the colour it came with. Unknown → indigo.
+ */
+export function accentPalette(accent: string | undefined | null): AccentPalette {
+  if (isAccentHex(accent)) return { primary: accent, dark: mix(accent, 0, 0.18), light: mix(accent, 255, 0.88), ring: "ring-zinc-900" };
+  return THEME_COLOR_VALUES[accent as ThemeColor] ?? THEME_COLOR_VALUES.indigo;
+}
+
+/** How far apart two colours look (0 = same). Plain RGB distance, weighted for the eye. */
+export function colorDistance(a: string, b: string): number {
+  const [r1, g1, b1] = channels(a);
+  const [r2, g2, b2] = channels(b);
+  const rm = (r1 + r2) / 2;
+  return Math.sqrt((2 + rm / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - rm) / 256) * (b1 - b2) ** 2);
+}
+
+/** The preset closest to an exact colour, or the colour itself when no preset is close. */
+export function nearestAccent(hex: AccentHex): ThemeColor | AccentHex {
+  let best: ThemeColor = "black";
+  let bestD = Infinity;
+  for (const [name, v] of Object.entries(THEME_COLOR_VALUES) as [ThemeColor, AccentPalette][]) {
+    const d = Math.min(colorDistance(hex, v.primary), colorDistance(hex, v.dark));
+    if (d < bestD) [best, bestD] = [name, d];
+  }
+  return bestD <= 40 ? best : hex;
+}

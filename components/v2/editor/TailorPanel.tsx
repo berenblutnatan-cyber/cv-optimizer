@@ -33,6 +33,8 @@ import {
   Tooltip,
 } from "@/components/ui";
 import { PanelHeader } from "./PanelHeader";
+import { fetchReview } from "@/lib/review/client";
+import type { CvReadout } from "@/lib/review/view";
 
 // Tailor the CV to one job: paste the job, get coverage + grounded rewrites,
 // apply the ones you want (saved as a version). The free local score sits on
@@ -119,6 +121,7 @@ export function TailorPanel({
   adoptServer,
   onClose,
   onFix,
+  onAsk,
 }: {
   cvId: string;
   doc: ResumeDocument;
@@ -128,6 +131,8 @@ export function TailorPanel({
   onClose: () => void;
   /** Act on one of the free score's problems (open its section, or ask Chat). */
   onFix: (p: LocalProblem) => void;
+  /** Hand a review fix to Chat, in the review's words. */
+  onAsk: (text: string) => void;
 }) {
   const { t, dir, lang } = useT();
   const [view, setView] = React.useState<View>({ name: "start" });
@@ -142,6 +147,18 @@ export function TailorPanel({
   const abortRef = React.useRef<AbortController | null>(null);
 
   const hasExperience = completeness(doc.content).some((i) => i.key === "experience" && i.done);
+  // The deep read from upload: when there is one, this panel shows its score
+  // and fixes, so the review and the editor never disagree.
+  const [review, setReview] = React.useState<{ readout: CvReadout; current: boolean } | null>(null);
+  React.useEffect(() => {
+    let live = true;
+    fetchReview(cvId)
+      .then((r) => live && r.readout && setReview({ readout: r.readout, current: r.current }))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [cvId]);
   const local = React.useMemo(() => computeLocalScore(doc.content), [doc.content]);
   const part = (c: "ats" | "impact" | "clarity") => local.categories.find((x) => x.category === c)?.score ?? null;
   // One fix per topic: two checks often flag the same gap (ats:skills and
@@ -158,14 +175,19 @@ export function TailorPanel({
       .slice(0, 3);
   }, [local]);
 
-  // A job handed over from /score (pasted there before the CV existed).
+  // A job handed over from the Jobs tracker wins; otherwise the job this CV is
+  // aimed at (asked at upload, kept on the CV) fills the form.
+  const target = doc.target;
   React.useEffect(() => {
+    let handed = "";
     try {
       // Kept until a run starts: it must survive the sign-in round trip.
-      const saved = sessionStorage.getItem(`hired:tailor-jd:${cvId}`);
-      if (saved) setJd(saved);
+      handed = sessionStorage.getItem(`hired:tailor-jd:${cvId}`) ?? "";
     } catch {}
-  }, [cvId]);
+    if (handed) setJd(handed);
+    else if (target?.description) setJd((v) => v || target.description!);
+    if (target?.title && !handed) setJobTitle((v) => v || target.title);
+  }, [cvId, target?.title, target?.description]);
 
   const loadHistory = React.useCallback(async () => {
     if (!signedIn) return setHistory([]);
@@ -276,7 +298,48 @@ export function TailorPanel({
 
   // The same three parts the landing page shows, then what to fix: the top fix
   // is this panel's main action, signed in or not.
-  const localScore = (
+  const fixRow = (key: string, i: number, label: string, onClick: () => void, dot: string) => (
+    <li key={key}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "group flex min-h-11 w-full items-center gap-3 rounded-control px-3 py-2 text-start text-body transition-colors duration-micro",
+          i === 0 ? "bg-accent text-on-accent hover:bg-accent/90" : "text-ink hover:bg-surface-2",
+        )}
+      >
+        <span aria-hidden className={cn("size-2 shrink-0 rounded-full", i === 0 ? "bg-on-accent" : dot)} />
+        <span dir="auto" className="line-clamp-2 min-w-0 flex-1">{label}</span>
+        <span className={cn("inline-flex shrink-0 items-center gap-1 font-medium", i === 0 ? "text-on-accent" : "text-accent-ink")}>
+          {t("Fix")} <ArrowRight className="size-4 rtl:-scale-x-100" aria-hidden />
+        </span>
+      </button>
+    </li>
+  );
+
+  const reviewScore = review && (
+    <section className="flex flex-col gap-4 border-b border-hairline p-5">
+      <div className="flex items-start gap-5">
+        <ScoreGauge value={review.readout.score.total} size={88} />
+        <div className="flex min-w-0 flex-1 flex-col gap-2 pt-1">
+          <p dir="auto" className="truncate text-emph font-medium text-ink">
+            {review.readout.targetTitle ? t("For {title}", { title: review.readout.targetTitle }) : t("Your review")}
+          </p>
+          <ScoreBar label="ATS" value={review.readout.score.breakdown.ats} />
+          <ScoreBar label={t("Impact")} value={review.readout.score.breakdown.impact} />
+          <ScoreBar label={t("Clarity")} value={review.readout.score.breakdown.clarity} />
+        </div>
+      </div>
+      <ul className="flex flex-col gap-1" aria-label={t("Fix first")}>
+        {review.readout.fixes.slice(0, 3).map((f, i) => fixRow(`review:${i}`, i, f.text, () => onAsk(f.text), "bg-warn"))}
+      </ul>
+      <a href={`/cv/${cvId}/review`} className="w-fit text-body font-medium text-accent-ink underline-offset-4 hover:underline">
+        {review.current ? t("Open the full review") : t("Changed since. Read again")}
+      </a>
+    </section>
+  );
+
+  const localScore = reviewScore || (
     <section className="flex flex-col gap-4 border-b border-hairline p-5">
       <div className="flex items-start gap-5">
         <ScoreGauge value={local.overall} size={88} />

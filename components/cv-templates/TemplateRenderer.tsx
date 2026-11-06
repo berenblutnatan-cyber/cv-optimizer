@@ -1,6 +1,8 @@
 "use client";
 
+import * as React from "react";
 import type { ComponentType } from "react";
+import { TextOverride } from "@/lib/i18n/LanguageProvider";
 import type { TemplateRegistryId } from "@/lib/templates/registry";
 import type { TemplateProps } from "./templates/TemplateProps";
 import {
@@ -57,7 +59,33 @@ export const TEMPLATE_COMPONENTS: Record<TemplateRegistryId, ComponentType<Templ
   bands: BandsTemplate,
 };
 
+// Every way a template writes these three headings (lib/resume/view headings).
+const HEADING_KEYS = {
+  summary: ["Summary", "Profile", "Professional Summary", "Executive Summary", "about_me", "about", "What I Bring"],
+  skills: ["Skills", "Skills & Competencies", "Core Competencies", "tech_stack", "stack"],
+  languages: ["Languages", "languages", "lang"],
+} as const;
+
+export function headingWords(headings: TemplateProps["data"]["headings"]): Record<string, string> | null {
+  if (!headings) return null;
+  const words: Record<string, string> = {};
+  for (const [kind, keys] of Object.entries(HEADING_KEYS) as [keyof typeof HEADING_KEYS, readonly string[]][]) {
+    const title = headings[kind]?.trim();
+    if (!title) continue;
+    for (const k of keys) words[k] = title;
+    if (kind === "languages") words["Languages:"] = `${title}:`;
+  }
+  return Object.keys(words).length ? words : null;
+}
+
 export function TemplateRenderer({ templateId, ...props }: TemplateProps & { templateId: string }) {
   const Template = TEMPLATE_COMPONENTS[templateId as TemplateRegistryId] ?? ModernSidebarTemplate;
-  return <Template {...props} />;
+  const words = React.useMemo(() => headingWords(props.data.headings), [props.data.headings]);
+  return words ? (
+    <TextOverride words={words}>
+      <Template {...props} />
+    </TextOverride>
+  ) : (
+    <Template {...props} />
+  );
 }

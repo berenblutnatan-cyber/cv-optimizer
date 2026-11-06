@@ -173,8 +173,8 @@ export function EditorShell({
   initial: { doc: ResumeDocument; lastSeq: number };
   signedIn: boolean;
   startInTalk?: boolean;
-  /** Open a panel on load (e.g. ?panel=tailor from /score). */
-  startPanel?: "tailor";
+  /** Open a panel on load (?panel=tailor or ?panel=design, from the review). */
+  startPanel?: "tailor" | "design";
   /** Tests and QA only: a scripted agent in place of ElevenLabs. */
   voiceSdk?: VoiceSdk;
 }) {
@@ -319,9 +319,14 @@ export function EditorShell({
   const fixProblem = (p: LocalProblem) => {
     const section = PROBLEM_TARGET.get(p.id);
     if (section || p.fix?.kind !== "ai") return jumpTo(section ?? "profile");
+    askChat(problemTitle(p.title, t));
+  };
+
+  // A fix from the review, in its own words: Chat makes the change.
+  const askChat = (text: string) => {
     setMode("chat");
     setMobilePane("edit");
-    setChatAsk((prev) => ({ id: (prev?.id ?? 0) + 1, text: problemTitle(p.title, t) }));
+    setChatAsk((prev) => ({ id: (prev?.id ?? 0) + 1, text }));
   };
 
   const actions: CommandAction[] = [
@@ -346,7 +351,7 @@ export function EditorShell({
     <div className="flex h-full min-h-0 flex-col bg-surface">
       {panel === "design" && <DesignPanel doc={doc} apply={apply} onClose={closePanel} />}
       {panel === "versions" && <VersionsPanel api={versions} onClose={closePanel} />}
-      {panel === "tailor" && <TailorPanel cvId={id} doc={doc} signedIn={signedIn} settle={settle} adoptServer={adoptServer} onClose={closePanel} onFix={fixProblem} />}
+      {panel === "tailor" && <TailorPanel cvId={id} doc={doc} signedIn={signedIn} settle={settle} adoptServer={adoptServer} onClose={closePanel} onFix={fixProblem} onAsk={askChat} />}
       <div className={cn("flex min-h-0 flex-1 flex-col", panel !== "edit" && "hidden")}>
         <div className="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-hairline px-3">
           <Segmented

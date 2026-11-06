@@ -5,8 +5,11 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Check, ClipboardPaste, FileUp, Mic, PenLine } from "lucide-react";
-import { DEFAULT_DESIGN, emptyDocument, type ResumeDocument } from "@/lib/resume/document";
-import { IMPORT_ACCEPT, MAX_IMPORT_BYTES, type ImportEvent } from "@/lib/resume/import-types";
+import { DEFAULT_DESIGN, emptyDocument, type CvTarget, type ResumeDocument } from "@/lib/resume/document";
+import { IMPORT_ACCEPT, MAX_IMPORT_BYTES, type ImportedLook, type ImportEvent } from "@/lib/resume/import-types";
+import { bindOriginal, holdOriginal, releaseOriginal } from "@/lib/import/originalFile";
+import { saveTarget } from "@/lib/review/client";
+import { TargetForm } from "@/components/v2/review/TargetForm";
 import posthog from "posthog-js";
 import { readSse } from "@/lib/http/readSse";
 import { trackConversion } from "@/lib/gtag";
@@ -21,8 +24,8 @@ import { CvPreview } from "@/components/v2/editor/CvPreview";
 type Phase =
   | { kind: "choose" }
   | { kind: "paste" }
-  | { kind: "importing"; label: string; content: ResumeData | null }
-  | { kind: "opening"; label: string; content: ResumeData | null }
+  | { kind: "importing"; label: string; content: ResumeData | null; look: ImportedLook | null; id: string | null }
+  | { kind: "opening"; label: string; content: ResumeData | null; look: ImportedLook | null; id: string | null }
   | { kind: "error"; message: string; canPaste: boolean };
 
 /** Client-side checks that save a round trip. The server re-checks everything. */
@@ -94,8 +97,6 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
   const [creatingBlank, setCreatingBlank] = React.useState<false | "blank" | "talk">(false);
   const [pasted, setPasted] = React.useState("");
   const [jobText, setJobText] = React.useState("");
-  const jobRef = React.useRef("");
-  jobRef.current = jobText;
   const inputRef = React.useRef<HTMLInputElement>(null);
   const abortRef = React.useRef<AbortController | null>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
@@ -103,10 +104,34 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
 
   React.useEffect(() => () => abortRef.current?.abort(), []);
 
+  // The target question is answered while the file is still being read; the
+  // review opens once both are done, whichever finishes last.
+  const answerRef = React.useRef<{ target: CvTarget | undefined } | null>(null);
+  const createdRef = React.useRef<string | null>(null);
+  const [savingTarget, setSavingTarget] = React.useState(false);
+
+  const openReview = async (id: string, answer: { target: CvTarget | undefined }) => {
+    setSavingTarget(true);
+    try {
+      if (answer.target) await saveTarget(id, answer.target);
+    } catch {
+      // The review opens anyway; the job can be picked there.
+    }
+    router.push(`/cv/${id}/review`);
+  };
+
+  const answer = (target: CvTarget | undefined) => {
+    answerRef.current = { target };
+    setPhase((p) => (p.kind === "importing" ? { ...p, kind: "opening" } : p));
+    if (createdRef.current) void openReview(createdRef.current, answerRef.current);
+  };
+
   const run = async (body: BodyInit, label: string, headers?: HeadersInit) => {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setPhase({ kind: "importing", label, content: null });
+    setPhase({ kind: "importing", label, content: null, look: null, id: null });
+    answerRef.current = null;
+    createdRef.current = null;
     let latest: ResumeData | null = null;
     try {
       const res = await fetch("/api/cv/import", { method: "POST", body, headers, signal: ctrl.signal });
@@ -119,10 +144,14 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
       await readSse<ImportEvent>(res.body, (e) => {
         if (e.type === "partial") {
           latest = e.content;
-          setPhase((p) => (p.kind === "importing" ? { ...p, content: e.content } : p));
+          setPhase((p) => (p.kind === "importing" || p.kind === "opening" ? { ...p, content: e.content } : p));
+        } else if (e.type === "design") {
+          setPhase((p) => (p.kind === "importing" || p.kind === "opening" ? { ...p, look: e.look } : p));
         } else if (e.type === "done") {
           finished = true;
-          setPhase({ kind: "opening", label, content: latest });
+          createdRef.current = e.id;
+          bindOriginal(e.id);
+          setPhase((p) => (p.kind === "importing" || p.kind === "opening" ? { ...p, id: e.id } : p));
           if (variant === "score") {
             // The free score is ready (it renders from this content on the next screen):
             // the Google Ads goal ad traffic on /score is bid against.
@@ -131,12 +160,8 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
               const score = computeLocalScore(latest).overall;
               posthog.capture?.("score_generated", { score, band: score < 65 ? "low" : score < 80 ? "mid" : "high", source: "v2" });
             }
-            // The job pasted here rides along to the tailor panel (it opens on this CV).
-            try {
-              if (jobRef.current.trim()) sessionStorage.setItem(`hired:tailor-jd:${e.id}`, jobRef.current.trim());
-            } catch {}
-            router.push(`/cv/${e.id}?panel=tailor`);
-          } else router.push(`/cv/${e.id}`);
+          }
+          if (answerRef.current) void openReview(e.id, answerRef.current);
         } else if (e.type === "error") {
           finished = true;
           setPhase({ kind: "error", message: e.error, canPaste: e.code === "NO_CV" });
@@ -154,10 +179,12 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
     if (problem) return setPhase({ kind: "error", message: problem, canPaste: false });
     const form = new FormData();
     form.append("file", file);
+    holdOriginal(file);
     void run(form, file.name);
   };
 
   const importText = () => {
+    releaseOriginal();
     void run(JSON.stringify({ text: pasted }), "Pasted text", { "content-type": "application/json" });
   };
 
@@ -180,6 +207,7 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
 
   const cancel = () => {
     abortRef.current?.abort();
+    releaseOriginal();
     setPhase({ kind: "choose" });
   };
 
@@ -211,33 +239,55 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
 
   if (phase.kind === "importing" || phase.kind === "opening") {
     const c = phase.content;
-    const doc: ResumeDocument = { ...emptyDocument(), content: c ?? emptyDocument().content, design: { ...DEFAULT_DESIGN, pageMode: "multi", autoFit: false } };
+    const look = phase.look;
+    const content = c ? (look?.photo ? { ...c, personalInfo: { ...c.personalInfo, photo: look.photo } } : c) : emptyDocument().content;
+    // The file's own design shows the moment it's read: nothing to "convert".
+    const doc: ResumeDocument = { ...emptyDocument(), content, design: { ...DEFAULT_DESIGN, ...(look?.design ?? {}), pageMode: "multi", autoFit: false } };
+    const read = !!phase.id;
+    const answered = phase.kind === "opening";
     return (
-      <div dir={dir} className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-8 px-4 py-8 md:px-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:py-12">
-        <aside className="flex flex-col gap-6 lg:sticky lg:top-12 lg:self-start" aria-live="polite">
-          <div>
-            <h1 className="text-h2 font-semibold text-ink">{phase.kind === "opening" ? t("Opening your CV") : t("Reading your CV")}</h1>
-            <p className="mt-1 truncate text-body text-ink-2">{t(phase.label)}</p>
-          </div>
-          <ul className="flex flex-col gap-1">
-            {SECTIONS.map((s) => {
-              const done = !!c && s.done(c);
-              return (
-                <li key={s.key} className="flex h-10 items-center gap-3 text-body">
-                  <span className={cn("grid size-6 place-items-center rounded-full transition-colors duration-panel", done ? "bg-accent text-on-accent" : "border border-hairline-strong")}>
-                    {done ? <Check className="size-3.5" aria-hidden /> : <span className="size-1.5 animate-pulse rounded-full bg-ink-3" aria-hidden />}
-                  </span>
-                  <span className={done ? "text-ink" : "text-ink-2"}>{t(s.label)}</span>
-                  <span className="sr-only">{done ? t("found") : t("reading")}</span>
-                </li>
-              );
-            })}
-          </ul>
-          {phase.kind === "importing" && (
-            <Button variant="ghost" className="w-fit" onClick={cancel}>
-              {t("Cancel")}
-            </Button>
+      <div dir={dir} className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-8 px-4 py-8 md:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:py-12">
+        <aside className="flex flex-col gap-8 lg:sticky lg:top-12 lg:self-start">
+          {answered ? (
+            <div aria-live="polite">
+              <h1 className="text-h2 font-semibold text-ink">{read ? t("Opening your review") : t("Almost done reading")}</h1>
+              <p className="mt-1 truncate text-body text-ink-2">{t(phase.label)}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              <h1 className="text-h2 font-semibold text-ink">{t("Which job is it for?")}</h1>
+              <TargetForm
+                initial={variant === "score" && jobText.trim() ? { title: "", description: jobText.trim() } : undefined}
+                submitLabel={t("Continue")}
+                onSubmit={answer}
+                onSkip={() => answer(variant === "score" && jobText.trim() ? { title: "", description: jobText.trim() } : undefined)}
+                busy={savingTarget}
+                idPrefix="import-target"
+              />
+            </div>
           )}
+          <div className="flex flex-col gap-2 border-t border-hairline pt-6" aria-live="polite">
+            <p className="text-body text-ink-2">{read ? t("Read") : t("Reading your CV")}</p>
+            <ul className="flex flex-col gap-1">
+              {SECTIONS.map((s) => {
+                const done = read || (!!c && s.done(c));
+                return (
+                  <li key={s.key} className="flex h-10 items-center gap-3 text-body">
+                    <span className={cn("grid size-6 place-items-center rounded-full transition-colors duration-panel", done ? "bg-accent text-on-accent" : "border border-hairline-strong")}>
+                      {done ? <Check className="size-3.5" aria-hidden /> : <span className="size-1.5 animate-pulse rounded-full bg-ink-3" aria-hidden />}
+                    </span>
+                    <span className={done ? "text-ink" : "text-ink-2"}>{t(s.label)}</span>
+                    <span className="sr-only">{done ? t("found") : t("reading")}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            {!read && (
+              <Button variant="ghost" className="-ms-2 w-fit" onClick={cancel}>
+                {t("Cancel")}
+              </Button>
+            )}
+          </div>
         </aside>
         <div className="min-w-0">
           {c ? (

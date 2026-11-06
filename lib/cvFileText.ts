@@ -5,6 +5,7 @@
 
 import { extractText } from "unpdf";
 import mammoth from "mammoth";
+import { collapseLetterSpacing } from "@/lib/text/letterSpacing";
 
 export type CvFileTextResult =
   | { ok: true; text: string }
@@ -51,7 +52,7 @@ export async function extractCvFileText(file: File): Promise<CvFileTextResult> {
   if (isPdfFile(file)) {
     const arrayBuffer = await file.arrayBuffer();
     const extracted = await extractText(arrayBuffer);
-    text = Array.isArray(extracted.text) ? extracted.text.join("\n") : extracted.text;
+    text = collapseLetterSpacing(Array.isArray(extracted.text) ? extracted.text.join("\n") : extracted.text);
   } else if (isDocxFile(file)) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const result = await mammoth.extractRawText({ buffer });

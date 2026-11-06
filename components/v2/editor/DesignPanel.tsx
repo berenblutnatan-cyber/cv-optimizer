@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Check } from "lucide-react";
-import { THEME_COLOR_VALUES, type ThemeColor } from "@/lib/design/accents";
+import { Check, Undo2 } from "lucide-react";
+import { isAccentHex, THEME_COLOR_VALUES, type ThemeColor } from "@/lib/design/accents";
 import { DESIGN_COLORS } from "@/lib/chat/cvTools";
 import { TEMPLATE_LIST } from "@/lib/templates/registry";
 import type { DesignTemplate, ResumeDocument } from "@/lib/resume/document";
 import { toTemplateData } from "@/lib/resume/view";
-import { Badge, cn, Segmented, Tooltip } from "@/components/ui";
+import { Badge, Button, cn, Segmented, Tooltip } from "@/components/ui";
 import { CvThumbnail, type ThumbFit } from "@/components/v2/cv/CvThumbnail";
 import { msg } from "@/lib/i18n/config";
 import { useT } from "@/lib/i18n/LanguageProvider";
@@ -36,32 +36,47 @@ export function DesignPanel({ doc, apply, onClose }: { doc: ResumeDocument; appl
   const [fits, setFits] = React.useState<Record<string, ThumbFit>>({});
   const { design } = doc;
   const oneP = design.pageMode === "one";
+  // An imported CV keeps its own colour as the first swatch, and a way back to the design it came with.
+  const original = doc.original;
+  const ownColor = [design.accentColor, original?.design.accentColor].find(isAccentHex);
+  const swatches: { id: string; name: string; hex: string }[] = [
+    ...(ownColor ? [{ id: ownColor, name: t("Your colour"), hex: ownColor }] : []),
+    ...DESIGN_COLORS.map((c) => ({ id: c, name: t(COLOR_NAMES[c]), hex: THEME_COLOR_VALUES[c as ThemeColor].primary })),
+  ];
+  const changed = !!original && (original.design.template !== design.template || original.design.accentColor !== design.accentColor);
 
   return (
     <div dir={dir} className="flex h-full min-h-0 flex-col">
       <PanelHeader title={t("Design")} onClose={onClose} />
       <div className="min-h-0 flex-1 relative overflow-y-auto">
+        {changed && (
+          <div className="border-b border-hairline px-4 py-3">
+            <Button size="sm" onClick={() => apply("set_design", { ...original!.design })}>
+              <Undo2 /> {t("Back to your original")}
+            </Button>
+          </div>
+        )}
         <section className="border-b border-hairline px-4 py-4" aria-labelledby="design-accent">
           <h3 id="design-accent" className="mb-3 text-dense font-medium text-ink-2">
             {t("Accent")}
           </h3>
           <div className="flex flex-wrap gap-3" role="radiogroup" aria-labelledby="design-accent">
-            {DESIGN_COLORS.map((c) => {
+            {swatches.map(({ id: c, name, hex }) => {
               const on = design.accentColor === c;
               return (
-                <Tooltip key={c} content={t(COLOR_NAMES[c])}>
+                <Tooltip key={c} content={name}>
                   <button
                     type="button"
                     role="radio"
                     aria-checked={on}
-                    aria-label={t(COLOR_NAMES[c])}
+                    aria-label={name}
                     onClick={() => apply("set_design", { accentColor: c })}
                     className={cn(
                       // 32px swatch, 44px tap target (the ::after extends the hit area).
                       "relative grid size-8 place-items-center rounded-full text-white shadow-[inset_0_0_0_1px_rgb(var(--c-hairline-strong))] ring-offset-2 ring-offset-surface transition-shadow duration-micro after:absolute after:-inset-1.5 after:content-['']",
                       on ? "ring-2 ring-ink" : "hover:ring-2 hover:ring-hairline-strong",
                     )}
-                    style={{ background: THEME_COLOR_VALUES[c as ThemeColor].primary }}
+                    style={{ background: hex }}
                   >
                     {on && <Check className="size-4" aria-hidden />}
                   </button>

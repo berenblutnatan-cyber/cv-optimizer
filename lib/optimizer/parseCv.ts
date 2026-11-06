@@ -5,7 +5,9 @@
 // the live preview on the results page), so fidelity beats polish here.
 
 import type Anthropic from "@anthropic-ai/sdk";
-import { generateId, type ResumeData } from "@/types/resume";
+import { generateId, TITLED_SECTIONS, type ResumeData, type SectionTitles, type TitledSection } from "@/types/resume";
+import { BUILTIN_SECTIONS } from "@/lib/resume/sectionOrder";
+import { collapseLetterSpacing } from "@/lib/text/letterSpacing";
 
 export const PARSE_MODEL = "claude-sonnet-4-6";
 
@@ -18,6 +20,19 @@ export const EMIT_RESUME_TOOL = {
   input_schema: {
     type: "object" as const,
     properties: {
+      sections: {
+        type: "array" as const,
+        description:
+          "Every section heading printed in the CV, in the order they appear, each copied exactly as written (\"Work History\", \"About me\", \"ניסיון תעסוקתי\"). Only headings that are actually printed: a section with no heading above it (often the summary) gets no entry. kind says what the section holds; custom for anything else (it must match a customSections title).",
+        items: {
+          type: "object" as const,
+          properties: {
+            kind: { type: "string" as const, enum: ["summary", "experience", "education", "skills", "languages", "projects", "certifications", "custom"] },
+            title: str,
+          },
+          required: ["kind", "title"],
+        },
+      },
       personalInfo: {
         type: "object" as const,
         properties: {
@@ -106,6 +121,8 @@ const PARSE_SYSTEM_PROMPT =
   "You are a CV parser. Extract the resume into structured fields, copying every piece of text VERBATIM — never rewrite, summarize, translate, or improve anything. Preserve contact details, URLs, dates, GPAs, and honors exactly as written. Every job/role is its own experience entry (never merge several roles into one). Respond ONLY via the emit_resume tool.";
 
 const s = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
+/** A heading as written, minus the letter-spacing a PDF or a paste turns into spaces. */
+const heading = (v: unknown): string => collapseLetterSpacing(s(v));
 const sa = (v: unknown): string[] =>
   Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : [];
 
@@ -113,7 +130,7 @@ const sa = (v: unknown): string[] =>
  *  Also safe on a PARTIAL tool input (a streaming snapshot). */
 export function toResumeData(input: Record<string, unknown>): ResumeData {
   const pi = (input.personalInfo ?? {}) as Record<string, unknown>;
-  return {
+  return withLayout(input.sections, {
     personalInfo: {
       name: s(pi.name),
       email: s(pi.email),
@@ -173,10 +190,46 @@ export function toResumeData(input: Record<string, unknown>): ResumeData {
       const o = (cs ?? {}) as Record<string, unknown>;
       return {
         id: generateId(),
-        title: s(o.title),
+        title: heading(o.title),
         items: sa(o.items).map((text) => ({ id: generateId(), text })),
       };
     }).filter((cs) => cs.title && cs.items.length > 0),
+  });
+}
+
+const sameTitle = (a: string, b: string) => a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase();
+
+/**
+ * Keep the CV's own structure: its section order, and its headings as it wrote
+ * them. A heading the CV didn't write stays absent, so the template's words show.
+ */
+export function withLayout(rawSections: unknown, data: ResumeData): ResumeData {
+  const list = (Array.isArray(rawSections) ? rawSections : [])
+    .map((x) => (x ?? {}) as Record<string, unknown>)
+    .map((x) => ({ kind: s(x.kind), title: heading(x.title).slice(0, 80) }))
+    .filter((x) => x.title);
+  if (!list.length) return data;
+  // One printed heading belongs to one section. A heading claimed twice is a
+  // guess for one of them (a summary with no heading of its own gets the
+  // next one's), so neither keeps it and the template's words show.
+  const claims = new Map<string, Set<string>>();
+  for (const { kind, title } of list) claims.set(title.toLocaleLowerCase(), (claims.get(title.toLocaleLowerCase()) ?? new Set()).add(kind));
+  const ambiguous = (title: string) => (claims.get(title.toLocaleLowerCase())?.size ?? 0) > 1;
+  const titles: SectionTitles = {};
+  const order: string[] = [];
+  for (const { kind, title } of list) {
+    if ((TITLED_SECTIONS as readonly string[]).includes(kind)) {
+      if (!ambiguous(title)) titles[kind as TitledSection] ??= title;
+      if ((BUILTIN_SECTIONS as readonly string[]).includes(kind) && !order.includes(kind)) order.push(kind);
+    } else {
+      const custom = data.customSections.find((c) => sameTitle(c.title, title));
+      if (custom && !order.includes(custom.id)) order.push(custom.id);
+    }
+  }
+  return {
+    ...data,
+    ...(order.length ? { sectionOrder: order } : {}),
+    ...(Object.keys(titles).length ? { sectionTitles: titles } : {}),
   };
 }
 

@@ -34,6 +34,7 @@ EARLY=(
   2026-11-04-v2-interview.sql
   2026-11-05-v2-rate-limits.sql
   2026-11-06-v2-jobs.sql
+  2026-11-07-v2-cv-review.sql
 )
 FINAL=(2026-11-01-v2-credit-ledger.sql)
 
@@ -47,7 +48,7 @@ case "$step" in
     if [ "$(q "SELECT to_regclass('public.\"JobApplication\"') IS NOT NULL")" = "t" ]; then
       echo "Jobs with odd status:   $(q "SELECT count(*) FROM \"JobApplication\" WHERE status NOT IN ('BOOKMARKED','APPLIED','INTERVIEWING','OFFER','REJECTED')")  (kept; new rows are checked)"
     fi
-    for t in ResumeVersion CreditLedger PolarWebhookEvent VoiceConversation Tailoring InterviewSession RateLimitBucket CoverLetter; do
+    for t in ResumeVersion CreditLedger PolarWebhookEvent VoiceConversation Tailoring InterviewSession RateLimitBucket CoverLetter CvReview; do
       echo "Table $t: $(q "SELECT CASE WHEN to_regclass('public.\"$t\"') IS NULL THEN 'missing' ELSE 'present' END")"
     done
     ;;

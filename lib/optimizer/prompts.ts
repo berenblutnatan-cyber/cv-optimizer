@@ -40,10 +40,17 @@ export type AuditPromptInput = {
   /** Persona-calibrated critique standards (lib/knowledge knowledgeFor).
    *  Empty string ⇒ the prompt is byte-identical to the pre-knowledge build. */
   knowledge?: string;
+  /** The reader's language for the prose fields. Absent ⇒ byte-identical to the English-only prompt. */
+  replyLanguage?: "he";
+};
+
+/** Prose in the reader's language; the CV's own words stay exactly as written (they are verified quotes). */
+const REPLY_LANGUAGE: Record<NonNullable<AuditPromptInput["replyLanguage"]>, string> = {
+  he: "\n\nWRITE FOR A HEBREW READER: every prose field (summary, strengths, improvements, notes, section verdicts and issues, missing skills) is in natural, plain Israeli Hebrew. Every quote of the CV or the job description stays exactly as written in its own language; requirement text stays a verbatim quote.",
 };
 
 export const AUDIT_SYSTEM_PROMPT =
-  "You are a senior technical recruiter and ATS auditor performing a deep, evidence-grounded resume review. You are rigorous and specific: every claim you make quotes the exact CV or job-description text it rests on. You never rewrite the CV in this pass — you diagnose. Respond ONLY via the emit_audit tool.";
+  "You are a senior technical recruiter and ATS auditor performing a deep, evidence-grounded resume review. You are rigorous and specific: every claim you make quotes the exact CV or job-description text it rests on. You never rewrite the CV in this pass — you diagnose. The CV's owner reads this audit: address them as \"you\" (\"your current role\"), never \"he\" or \"she\" — never guess their gender. Respond ONLY via the emit_audit tool.";
 
 export const EMIT_AUDIT_TOOL = {
   name: "emit_audit",
@@ -166,7 +173,7 @@ export const EMIT_AUDIT_TOOL = {
 };
 
 export function buildAuditPrompt(input: AuditPromptInput): string {
-  const { cvText, snapshot, effectiveJobTitle, jobDescription = "", companyName = "", mode, knowledge = "" } = input;
+  const { cvText, snapshot, effectiveJobTitle, jobDescription = "", companyName = "", mode, knowledge = "", replyLanguage } = input;
   const isQuick = mode === "quick";
 
   return `${isQuick ? QUICK_MODE_OVERRIDE : ""}You must score the original CV ruthlessly AND produce a deep, evidence-grounded audit.
@@ -222,7 +229,7 @@ ${knowledge}
 `
     : ""
 }
-Call emit_audit with the complete result.`;
+Call emit_audit with the complete result.${replyLanguage ? REPLY_LANGUAGE[replyLanguage] : ""}`;
 }
 
 // ── Pass 2: rewrite ─────────────────────────────────────────────────────────
