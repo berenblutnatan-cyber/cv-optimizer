@@ -197,6 +197,13 @@ function MoveMenu({ job, onMove }: { job: JobSummary; onMove: (stage: JobStage) 
 function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: string) => void; onMove: (id: string, stage: JobStage) => void }) {
   const { t } = useT();
   const [over, setOver] = React.useState<JobStage | null>(null);
+  // The card being carried leaves a ghost behind; the one just moved lands in its new column.
+  const [dragging, setDragging] = React.useState<string | null>(null);
+  const [landed, setLanded] = React.useState<string | null>(null);
+  const move = (id: string, stage: JobStage) => {
+    setLanded(id);
+    onMove(id, stage);
+  };
   return (
     <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto relative px-4 pb-4 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
       {JOB_STAGES.map((stage) => {
@@ -214,7 +221,7 @@ function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: stri
               e.preventDefault();
               setOver(null);
               const id = e.dataTransfer.getData("text/job");
-              if (id) onMove(id, stage);
+              if (id && jobs.find((j) => j.id === id)?.stage !== stage) move(id, stage);
             }}
             className={cn(
               "flex w-[78vw] max-w-72 shrink-0 snap-start flex-col gap-2 rounded-panel border p-2 transition-colors duration-micro md:w-auto md:max-w-none",
@@ -232,8 +239,15 @@ function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: stri
                 onDragStart={(e) => {
                   e.dataTransfer.setData("text/job", j.id);
                   e.dataTransfer.effectAllowed = "move";
+                  setDragging(j.id);
                 }}
-                className="group relative flex cursor-grab flex-col gap-1.5 rounded-card border border-hairline bg-surface p-3 shadow-card transition-shadow duration-micro hover:shadow-pop active:cursor-grabbing"
+                onDragEnd={() => setDragging(null)}
+                onAnimationEnd={() => setLanded((l) => (l === j.id ? null : l))}
+                className={cn(
+                  "group relative flex cursor-grab flex-col gap-1.5 rounded-card border border-hairline bg-surface p-3 shadow-card transition-[box-shadow,opacity,transform] duration-micro hover:shadow-pop active:cursor-grabbing",
+                  dragging === j.id && "scale-[0.98] border-dashed opacity-40 shadow-none",
+                  landed === j.id && "card-land",
+                )}
               >
                 <button type="button" onClick={() => onOpen(j.id)} className="flex flex-col gap-0.5 pe-9 text-start after:absolute after:inset-0 after:rounded-card">
                   <span className="line-clamp-2 text-body font-medium text-ink">{j.title || t("Untitled job")}</span>
@@ -245,7 +259,7 @@ function Board({ jobs, onOpen, onMove }: { jobs: JobSummary[]; onOpen: (id: stri
                   </div>
                 )}
                 <div className="absolute end-1.5 top-1.5 z-10">
-                  <MoveMenu job={j} onMove={(s) => onMove(j.id, s)} />
+                  <MoveMenu job={j} onMove={(s) => move(j.id, s)} />
                 </div>
               </article>
             ))}

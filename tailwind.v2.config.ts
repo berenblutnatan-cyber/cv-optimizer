@@ -57,8 +57,8 @@ const config: Config = {
       mega: ["clamp(3rem, 1.6rem + 4.6vw, 5.25rem)", { lineHeight: "1", letterSpacing: "-0.04em" }],
     },
     fontFamily: {
-      // Rubik first, limited to Hebrew by its unicode-range (lib/fonts); Inter takes the rest.
-      sans: ["var(--font-hebrew)", "var(--font-sans)", "system-ui", "sans-serif"],
+      // Rubik first, limited to Hebrew by its unicode-range (lib/fonts); Instrument Sans takes the rest.
+      sans: ["var(--font-hebrew)", "var(--font-ui)", "var(--font-sans)", "system-ui", "sans-serif"],
       // Instrument Serif has no Hebrew, so Hebrew titles fall through to Rubik.
       display: ["var(--font-serif)", "var(--font-hebrew)", "Georgia", "serif"],
       pen: ["var(--font-pen)", "cursive"],
@@ -66,7 +66,7 @@ const config: Config = {
     },
     borderRadius: {
       none: "0",
-      control: "6px",
+      control: "8px",
       card: "10px",
       panel: "14px",
       full: "9999px",

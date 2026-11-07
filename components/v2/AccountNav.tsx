@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { buttonVariants, cn } from "@/components/ui";
 
 const item = "inline-flex h-9 touch:h-11 items-center rounded-control px-3 text-body font-medium text-ink-2 hover:bg-surface-2 hover:text-ink";
 
@@ -20,7 +21,8 @@ export function AccountNav() {
         </span>
       </SignedIn>
       <SignedOut>
-        <Link href="/sign-in" className={item}>
+        {/* A real control, not a text link: it's the way back into saved work. */}
+        <Link href="/sign-in" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "me-1")}>
           {t("Sign in")}
         </Link>
       </SignedOut>

@@ -4,11 +4,11 @@ import * as React from "react";
 import { cn } from "./cn";
 
 const fieldBase =
-  "w-full rounded-control border border-hairline-strong bg-surface text-ink placeholder:text-ink-3 transition-[border-color,box-shadow] duration-micro hover:border-control focus-visible:border-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-60 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15";
+  "w-full rounded-control border border-hairline-strong bg-surface text-ink placeholder:text-ink-3 transition-[border-color,box-shadow] duration-micro shadow-[inset_0_1px_2px_rgb(0_0_0/0.04)] hover:border-control focus-visible:border-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-60 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (
-    <input ref={ref} className={cn(fieldBase, "h-9 px-3 text-body", className)} {...props} />
+    <input ref={ref} className={cn(fieldBase, "h-10 px-3 text-body", className)} {...props} />
   ),
 );
 Input.displayName = "Input";
@@ -23,7 +23,7 @@ Textarea.displayName = "Textarea";
 export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
   ({ className, children, ...props }, ref) => (
     <div className="relative">
-      <select ref={ref} className={cn(fieldBase, "h-9 appearance-none pe-9 ps-3 text-body", className)} {...props}>
+      <select ref={ref} className={cn(fieldBase, "h-10 appearance-none pe-9 ps-3 text-body", className)} {...props}>
         {children}
       </select>
       <svg aria-hidden viewBox="0 0 16 16" className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3">

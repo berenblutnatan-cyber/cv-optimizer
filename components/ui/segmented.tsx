@@ -41,11 +41,11 @@ export function Segmented<T extends string>({
               value={o.value}
               aria-label={o.ariaLabel}
               className={cn(
-                "relative inline-flex items-center justify-center gap-1.5 rounded-[5px] font-medium text-ink-2 transition-colors duration-micro hover:text-ink data-[state=on]:text-ink [&_svg]:size-4",
-                size === "md" ? "h-8 px-3 text-body touch:h-11" : "h-7 px-2.5 text-dense touch:h-11",
+                "relative inline-flex items-center justify-center gap-1.5 rounded-[6px] font-medium text-ink-2 transition-colors duration-micro hover:text-ink data-[state=on]:text-ink [&_svg]:size-4",
+                size === "md" ? "h-9 px-3 text-body touch:h-11" : "h-7 px-2.5 text-dense touch:h-11",
               )}
             >
-              {o.value === value && <motion.span layoutId="pill" className="absolute inset-0 rounded-[5px] bg-surface shadow-card" aria-hidden />}
+              {o.value === value && <motion.span layoutId="pill" className="absolute inset-0 rounded-[6px] bg-surface shadow-card" aria-hidden />}
               <span className="relative inline-flex items-center gap-1.5">
                 {o.icon}
                 {o.label}

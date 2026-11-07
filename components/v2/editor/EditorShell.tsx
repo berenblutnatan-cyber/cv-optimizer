@@ -75,10 +75,17 @@ function SaveIndicator({ state, onRetry }: { state: SaveState; onRetry: () => vo
     );
   }
   const busy = state === "saving" || state === "retrying";
+  // The tick lands once per finished save (not on load), so a save reads as done.
+  const [saves, setSaves] = React.useState(0);
+  const wasBusy = React.useRef(false);
+  React.useEffect(() => {
+    if (wasBusy.current && !busy) setSaves((n) => n + 1);
+    wasBusy.current = busy;
+  }, [busy]);
   return (
     <Tooltip content={state === "retrying" ? t("Reconnecting…") : busy ? t("Saving…") : t("All changes saved")}>
       <span role="status" aria-label={busy ? t("Saving") : t("All changes saved")} tabIndex={0} className="grid size-8 place-items-center text-ink-3">
-        {busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+        {busy ? <Loader2 className="size-4 animate-spin" /> : <Check key={saves} className={cn("size-4", saves > 0 && "tick-pop text-success")} />}
       </span>
     </Tooltip>
   );

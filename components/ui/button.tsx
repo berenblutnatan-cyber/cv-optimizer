@@ -8,20 +8,20 @@ import { cn } from "./cn";
 
 export const buttonVariants = cva(
   // Press: a small squeeze that answers before the click lands. Mouse and finger alike.
-  "relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-micro ease-strong active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-control font-semibold tracking-[-0.005em] transition-[background-color,border-color,color,box-shadow,transform] duration-micro ease-strong active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "btn-sheen bg-accent text-on-accent hover:bg-accent-hover shadow-card",
-        secondary: "border border-hairline-strong bg-surface text-ink hover:bg-surface-2 shadow-card",
+        primary: "btn-sheen btn-primary bg-accent text-on-accent hover:bg-accent-hover",
+        secondary: "btn-secondary border border-hairline-strong bg-surface text-ink hover:border-control hover:bg-surface-2",
         ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink",
-        danger: "bg-danger text-white hover:bg-danger/90",
+        danger: "btn-sheen bg-danger text-white hover:bg-danger/90",
         link: "h-auto px-0 text-accent-ink underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-8 px-3 text-dense touch:h-11",
-        md: "h-9 px-3.5 text-body touch:h-11",
-        lg: "h-11 px-5 text-emph",
+        md: "h-10 px-4 text-body touch:h-11",
+        lg: "h-12 px-6 text-emph",
       },
     },
     defaultVariants: { variant: "secondary", size: "md" },
