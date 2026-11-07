@@ -15,6 +15,15 @@ export const inter = localFont({
   display: "swap",
 });
 
+// The app's own voice: Instrument Serif's sans sibling, so titles and UI read as
+// one family. Inter stays as --font-sans because CV templates are drawn in it.
+export const instrumentSans = localFont({
+  src: "./instrument-sans-latin-wght-normal.woff2",
+  weight: "400 700",
+  variable: "--font-ui",
+  display: "swap",
+});
+
 // Page titles and the landing headline: the brand's voice, above the fold.
 export const instrumentSerif = localFont({
   src: [

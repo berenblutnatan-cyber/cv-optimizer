@@ -317,15 +317,18 @@ export function EntryCard({
   );
 }
 
-/** Ghost "+ Add …" row at the end of a section. */
+/** "+ Add …" at the end of a section: a quiet row whose plus turns into a filled chip on hover. */
 export function AddRow({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex h-11 w-full items-center justify-center gap-1.5 rounded-card border border-dashed border-hairline-strong text-body font-medium text-ink-2 transition-colors hover:border-control hover:bg-surface hover:text-ink"
+      className="group/add flex h-11 w-full items-center gap-2.5 rounded-card px-3 text-body font-medium text-ink-2 transition-colors duration-micro hover:bg-surface-2 hover:text-ink active:scale-[0.99]"
     >
-      <Plus className="size-4" /> {label}
+      <span className="grid size-6 place-items-center rounded-full bg-surface-2 text-ink-2 shadow-[inset_0_0_0_1px_rgb(var(--c-hairline-strong))] transition-[background-color,color,transform,box-shadow] duration-micro ease-strong group-hover/add:rotate-90 group-hover/add:bg-accent group-hover/add:text-on-accent group-hover/add:shadow-none motion-reduce:group-hover/add:rotate-0">
+        <Plus className="size-3.5" strokeWidth={2.5} />
+      </span>
+      {label}
     </button>
   );
 }

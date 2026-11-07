@@ -52,10 +52,11 @@ export function CvCard({
     <li className="group relative">
       <Link
         href={`/cv/${id}`}
-        className="flex h-full flex-col overflow-hidden rounded-card border border-hairline bg-surface shadow-card transition-[border-color,transform] duration-micro hover:-translate-y-0.5 hover:border-hairline-strong"
+        className="flex h-full flex-col overflow-hidden rounded-card border border-hairline bg-surface shadow-card transition-[border-color,transform,box-shadow] duration-panel ease-strong hover:-translate-y-0.5 hover:border-hairline-strong hover:shadow-pop motion-reduce:hover:translate-y-0"
       >
         <span className="relative block h-48 overflow-hidden border-b border-hairline bg-surface-2 px-6 pt-5">
-          <span className="block overflow-hidden rounded-t-[3px] shadow-card">
+          {/* The page rises out of its tray on hover, like picking it up. */}
+          <span className="block origin-bottom overflow-hidden rounded-t-[3px] shadow-card transition-transform duration-panel ease-strong group-hover:-translate-y-1 group-hover:scale-[1.02] motion-reduce:group-hover:transform-none">
             <CvThumbnail data={data} design={design} eager={eager} />
           </span>
         </span>

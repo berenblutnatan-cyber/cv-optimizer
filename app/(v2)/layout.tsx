@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toast";
 import { themeBootScript } from "@/components/ui/theme-toggle";
 import { ClaimDrafts } from "@/components/v2/cv/ClaimDrafts";
-import { inter as sans, jetbrainsMono as mono, lato, merriweather, montserrat, rubikHebrew as hebrew, instrumentSerif as serif } from "@/lib/fonts";
+import { inter as sans, instrumentSans as ui, jetbrainsMono as mono, lato, merriweather, montserrat, rubikHebrew as hebrew, instrumentSerif as serif } from "@/lib/fonts";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { getServerLang } from "@/lib/i18n/server";
 import "@/styles/v2/app.css";
@@ -40,7 +40,7 @@ export default async function V2RootLayout({ children }: { children: React.React
         <head>
           <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         </head>
-        <body className={`${sans.variable} ${serif.variable} ${hebrew.variable} ${mono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable}`}>
+        <body className={`${ui.variable} ${sans.variable} ${serif.variable} ${hebrew.variable} ${mono.variable} ${merriweather.variable} ${lato.variable} ${montserrat.variable}`}>
           <AnalyticsScripts />
           <LanguageProvider initialLang={lang} applyToDocument={false}>
             <TooltipProvider>

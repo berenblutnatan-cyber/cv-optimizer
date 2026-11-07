@@ -61,9 +61,26 @@ type State =
   | { kind: "ready"; readout: CvReadout }
   | { kind: "error"; message: string };
 
-function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
+/** Each block of a fresh read rises into place a beat after the one above it. */
+const rise = (i: number) => ({ style: { "--i": i } as React.CSSProperties });
+
+/** The verdict gets one highlighter pass, once it has risen in. */
+function Marked({ children }: { children: React.ReactNode }) {
+  const [on, setOn] = React.useState(false);
+  React.useEffect(() => {
+    const id = window.setTimeout(() => setOn(true), 450);
+    return () => window.clearTimeout(id);
+  }, []);
   return (
-    <section className={cn("flex flex-col gap-4", className)}>
+    <span className="marker" data-on={on ? "" : undefined}>
+      {children}
+    </span>
+  );
+}
+
+function Section({ title, children, className, i = 0 }: { title: string; children: React.ReactNode; className?: string; i?: number }) {
+  return (
+    <section {...rise(i)} className={cn("rise flex flex-col gap-4", className)}>
       <h2 className="text-h3 font-semibold text-ink">{title}</h2>
       {children}
     </section>
@@ -216,11 +233,13 @@ export function ReviewView({ id, doc }: { id: string; doc: ResumeDocument }) {
 
         {readout && (
           <>
-            <div className="flex flex-wrap items-center gap-8 rounded-panel border border-hairline bg-surface p-6 shadow-card animate-fade-in">
+            <div {...rise(0)} className="rise flex flex-wrap items-center gap-8 rounded-panel border border-hairline bg-surface p-6 shadow-card">
               <ScoreGauge value={readout.score.total} />
               {/* The bars need 220px: on a phone they wrap under the ring instead of pushing the page wider. */}
               <div className="flex min-w-[220px] flex-1 flex-col gap-4">
-                <p className="text-emph font-semibold text-ink">{t(VERDICT[readout.verdict])}</p>
+                <p className="text-emph font-semibold text-ink">
+                  <Marked>{t(VERDICT[readout.verdict])}</Marked>
+                </p>
                 <div className="flex flex-col gap-2">
                   <ScoreBar label={t("ATS")} value={readout.score.breakdown.ats} why={t("How well an applicant tracking system can read and match it.")} />
                   <ScoreBar label={t("Impact")} value={readout.score.breakdown.impact} why={t("Results and numbers, not duties.")} />
@@ -229,13 +248,13 @@ export function ReviewView({ id, doc }: { id: string; doc: ResumeDocument }) {
               </div>
             </div>
             {readout.summary && (
-              <p dir="auto" className="-mt-4 max-w-prose text-emph text-ink">
+              <p dir="auto" {...rise(1)} className="rise -mt-4 max-w-prose text-emph text-ink">
                 {readout.summary}
               </p>
             )}
 
             {readout.strengths.length > 0 && (
-              <Section title={t("What's working")}>
+              <Section i={2} title={t("What's working")}>
                 <ul className="flex flex-col gap-3">
                   {readout.strengths.map((s, i) => (
                     <li key={i} className="flex gap-3 text-body text-ink">
@@ -248,7 +267,7 @@ export function ReviewView({ id, doc }: { id: string; doc: ResumeDocument }) {
             )}
 
             {requirements.length > 0 && (
-              <Section title={readout.targetTitle ? t("What a {title} needs", { title: readout.targetTitle }) : t("What the role needs")}>
+              <Section i={3} title={readout.targetTitle ? t("What a {title} needs", { title: readout.targetTitle }) : t("What the role needs")}>
                 <ul className="flex flex-col divide-y divide-hairline rounded-panel border border-hairline bg-surface shadow-card">
                   {shown.map((r, i) => (
                     <li key={i} className="flex gap-3 p-4">
@@ -282,7 +301,7 @@ export function ReviewView({ id, doc }: { id: string; doc: ResumeDocument }) {
             )}
 
             {readout.sections.length > 0 && (
-              <Section title={t("Section by section")}>
+              <Section i={4} title={t("Section by section")}>
                 <div className="flex flex-col gap-3">
                   {readout.sections.map((s, i) => (
                     <details key={i} open={i < 2} className="group rounded-panel border border-hairline bg-surface shadow-card">
@@ -311,7 +330,7 @@ export function ReviewView({ id, doc }: { id: string; doc: ResumeDocument }) {
             )}
 
             {readout.fixes.length > 0 && (
-              <Section title={t("Fix first")}>
+              <Section i={5} title={t("Fix first")}>
                 <ol className="flex flex-col gap-3">
                   {readout.fixes.slice(0, 3).map((f, i) => (
                     <li key={i} className="flex gap-3 text-body text-ink">
@@ -344,7 +363,8 @@ export function ReviewView({ id, doc }: { id: string; doc: ResumeDocument }) {
             aria-label={t("Which version")}
           />
         )}
-        <div className="overflow-hidden rounded-card border border-hairline bg-surface shadow-card">
+        <div className={cn("rounded-card border border-hairline bg-surface shadow-card", kept && "beam-once")}>
+          <div className="overflow-hidden rounded-[inherit]">
           {view === "original" && original ? (
             <object data={`${original}#toolbar=0&navpanes=0&view=FitH`} type="application/pdf" className="aspect-[210/297] w-full" aria-label={t("Your file")}>
               <p className="p-4 text-body text-ink-2">{t("Your browser can't show the file here.")}</p>
@@ -352,12 +372,24 @@ export function ReviewView({ id, doc }: { id: string; doc: ResumeDocument }) {
           ) : (
             <CvThumbnail data={data} design={doc.design} eager />
           )}
+          </div>
         </div>
         {kept && (
           <ul className="flex flex-wrap gap-2" aria-label={t("Kept from your file")}>
-            {LAYOUT_LABEL[kept.layout] && <Badge>{t(LAYOUT_LABEL[kept.layout])}</Badge>}
-            {kept.photo && <Badge>{t("Photo")}</Badge>}
-            {data.headings || doc.content.sectionOrder ? <Badge>{t("Your section order")}</Badge> : null}
+            {[
+              LAYOUT_LABEL[kept.layout] && t(LAYOUT_LABEL[kept.layout]),
+              kept.photo && t("Photo"),
+              (data.headings || doc.content.sectionOrder) && t("Your section order"),
+            ]
+              .filter((x): x is string => !!x)
+              .map((label, i) => (
+                // Each kept trait checks in, after the beam passes.
+                <li key={label} className="rise" {...rise(i + 8)}>
+                  <Badge>
+                    <Check aria-hidden /> {label}
+                  </Badge>
+                </li>
+              ))}
           </ul>
         )}
         <Link href={`/cv/${id}?panel=design`} className={cn(buttonVariants({ variant: "secondary" }), "w-fit")}>

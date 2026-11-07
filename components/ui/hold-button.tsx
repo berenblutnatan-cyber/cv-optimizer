@@ -73,7 +73,7 @@ export function HoldButton({
         }}
         onContextMenu={(e) => e.preventDefault()}
         className={cn(
-          "relative inline-flex h-9 touch-none select-none items-center justify-center overflow-hidden rounded-control border border-danger/30 bg-danger-wash px-3.5 text-body font-medium text-danger transition-[transform,background-color,color] duration-micro ease-strong [-webkit-touch-callout:none] touch:h-11 [&_svg]:size-4",
+          "relative inline-flex h-10 touch-none select-none items-center justify-center overflow-hidden rounded-control border border-danger/30 bg-danger-wash px-4 text-body font-semibold text-danger transition-[transform,background-color,color] duration-micro ease-strong [-webkit-touch-callout:none] touch:h-11 [&_svg]:size-4",
           "data-[state=holding]:scale-[0.98] data-[state=done]:border-danger data-[state=done]:bg-danger data-[state=done]:text-white",
           className,
         )}

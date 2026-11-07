@@ -4,7 +4,7 @@ import { PageTitle } from "@/components/ui/page-title";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Check, ClipboardPaste, FileUp, Mic, PenLine } from "lucide-react";
+import { ArrowRight, Check, ClipboardPaste, FileUp, Mic, PenLine } from "lucide-react";
 import { DEFAULT_DESIGN, emptyDocument, type CvTarget, type ResumeDocument } from "@/lib/resume/document";
 import { IMPORT_ACCEPT, MAX_IMPORT_BYTES, type ImportedLook, type ImportEvent } from "@/lib/resume/import-types";
 import { bindOriginal, holdOriginal, releaseOriginal } from "@/lib/import/originalFile";
@@ -67,14 +67,16 @@ function Tile({
       onClick={onClick}
       disabled={busy}
       className={cn(
-        "group flex min-h-36 flex-col items-start justify-between gap-4 sm:min-h-[200px] sm:gap-6 rounded-panel border bg-surface p-6 text-start shadow-card transition-[border-color,background-color,transform] duration-micro hover:-translate-y-0.5 hover:border-hairline-strong disabled:pointer-events-none disabled:opacity-60",
+        // A first visit's three doors: each rises in, lifts toward the pointer, and its icon lights up.
+        "rise group relative flex min-h-36 flex-col items-start justify-between gap-4 overflow-hidden sm:min-h-[200px] sm:gap-6 rounded-panel border bg-surface p-6 text-start shadow-card transition-[border-color,background-color,transform,box-shadow] duration-panel ease-strong hover:-translate-y-1 hover:border-hairline-strong hover:shadow-pop active:translate-y-0 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60 motion-reduce:hover:translate-y-0",
         highlighted ? "border-accent bg-accent-wash" : "border-hairline",
       )}
       {...rest}
     >
-      <span className={cn("grid size-11 place-items-center rounded-card [&_svg]:size-5", highlighted ? "bg-accent text-on-accent" : "bg-surface-2 text-ink group-hover:bg-accent group-hover:text-on-accent")}>
+      <span className={cn("grid size-11 place-items-center rounded-card transition-[background-color,color,transform] duration-panel ease-strong [&_svg]:size-5 group-hover:-rotate-6 group-hover:scale-110 motion-reduce:group-hover:transform-none", highlighted ? "bg-accent text-on-accent" : "bg-surface-2 text-ink group-hover:bg-accent group-hover:text-on-accent")}>
         {icon}
       </span>
+      <ArrowRight aria-hidden className="absolute end-6 top-6 size-5 text-ink-3 opacity-0 transition-[opacity,transform] duration-panel ease-strong -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 rtl:-scale-x-100 rtl:translate-x-2" />
       <span>
         <span className="block text-h3 font-semibold text-ink">{title}</span>
         <span className="mt-1 block text-body text-ink-2">{meta}</span>
@@ -273,7 +275,7 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
                 const done = read || (!!c && s.done(c));
                 return (
                   <li key={s.key} className="flex h-10 items-center gap-3 text-body">
-                    <span className={cn("grid size-6 place-items-center rounded-full transition-colors duration-panel", done ? "bg-accent text-on-accent" : "border border-hairline-strong")}>
+                    <span className={cn("grid size-6 place-items-center rounded-full transition-colors duration-panel", done ? "tick-pop bg-accent text-on-accent" : "border border-hairline-strong")}>
                       {done ? <Check className="size-3.5" aria-hidden /> : <span className="size-1.5 animate-pulse rounded-full bg-ink-3" aria-hidden />}
                     </span>
                     <span className={done ? "text-ink" : "text-ink-2"}>{t(s.label)}</span>
@@ -291,9 +293,12 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
         </aside>
         <div className="min-w-0">
           {c ? (
-            <CvPreview doc={doc} docRef={previewRef} className="mx-auto max-w-[760px] animate-fade-in" />
+            // Scans while reading; the file's own design washes in the moment it's known (keyed, so it plays once).
+            <div className={cn("relative mx-auto max-w-[760px]", !read && "cv-scan overflow-hidden")}>
+              <CvPreview key={look ? `${look.design.template}:${look.design.accentColor}` : "plain"} doc={doc} docRef={previewRef} className={look ? "cv-wash" : "animate-fade-in"} />
+            </div>
           ) : (
-            <div className="mx-auto aspect-[210/297] w-full max-w-[760px] overflow-hidden rounded-[2px] bg-surface p-[8%] shadow-pop">
+            <div className="cv-scan mx-auto aspect-[210/297] w-full max-w-[760px] overflow-hidden rounded-[2px] bg-surface p-[8%] shadow-pop">
               <div className="flex flex-col gap-4" aria-hidden>
                 <div className="skeleton h-8 w-1/2" />
                 <div className="skeleton h-4 w-1/3" />
@@ -353,7 +358,7 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
       ) : (
         <>
           {variant === "score" ? (
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*:nth-child(2)]:[--i:1]">
               <Tile
                 icon={<FileUp />}
                 title={dragging ? t("Drop to upload") : t("Upload a CV")}
@@ -364,7 +369,7 @@ export function StartFlow({ variant = "start", voice = true }: { variant?: "star
               <Tile icon={<ClipboardPaste />} title={t("Paste it")} meta={t("Any text")} onClick={() => setPhase({ kind: "paste" })} />
             </div>
           ) : (
-            <div className={cn("mt-8 grid grid-cols-1 gap-4", voice ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+            <div className={cn("mt-8 grid grid-cols-1 gap-4 [&>*:nth-child(2)]:[--i:1] [&>*:nth-child(3)]:[--i:2]", voice ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
               <Tile
                 icon={<FileUp />}
                 title={dragging ? t("Drop to upload") : t("Upload a CV")}
